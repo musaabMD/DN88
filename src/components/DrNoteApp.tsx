@@ -294,35 +294,6 @@ function sessionItemCount(tab: string): number {
   return 1;
 }
 
-const HUES = {
-  violet: {
-    tile: "from-violet-500 to-purple-600",
-    hover: "hover:bg-violet-50 hover:border-violet-200",
-  },
-  sky: {
-    tile: "from-sky-400 to-blue-600",
-    hover: "hover:bg-sky-50 hover:border-sky-200",
-  },
-  teal: {
-    tile: "from-teal-400 to-emerald-600",
-    hover: "hover:bg-teal-50 hover:border-teal-200",
-  },
-  rose: {
-    tile: "from-rose-400 to-pink-600",
-    hover: "hover:bg-rose-50 hover:border-rose-200",
-  },
-  amber: {
-    tile: "from-amber-400 to-orange-500",
-    hover: "hover:bg-amber-50 hover:border-amber-200",
-  },
-  indigo: {
-    tile: "from-indigo-400 to-indigo-600",
-    hover: "hover:bg-indigo-50 hover:border-indigo-200",
-  },
-} as const;
-
-type SetHue = keyof typeof HUES;
-
 type StudySet = {
   id: string;
   title: string;
@@ -334,7 +305,6 @@ type StudySet = {
   tag: string;
   upvotes: number;
   comments: number;
-  hue: SetHue;
 };
 
 function filterSets(sets: StudySet[], query: string): StudySet[] {
@@ -362,7 +332,6 @@ const QUESTION_SETS: StudySet[] = [
     tag: "High Yield",
     upvotes: 248,
     comments: 142,
-    hue: "violet",
   },
   {
     id: "q2",
@@ -376,7 +345,6 @@ const QUESTION_SETS: StudySet[] = [
     tag: "Exam Ready",
     upvotes: 412,
     comments: 240,
-    hue: "sky",
   },
   {
     id: "q3",
@@ -390,7 +358,6 @@ const QUESTION_SETS: StudySet[] = [
     tag: "Review Needed",
     upvotes: 156,
     comments: 91,
-    hue: "teal",
   },
   {
     id: "q4",
@@ -404,7 +371,6 @@ const QUESTION_SETS: StudySet[] = [
     tag: "Week 2",
     upvotes: 89,
     comments: 52,
-    hue: "rose",
   },
 ];
 
@@ -421,7 +387,6 @@ const SUMMARY_SETS: StudySet[] = [
     tag: "HY Note",
     upvotes: 193,
     comments: 112,
-    hue: "indigo",
   },
   {
     id: "s2",
@@ -435,7 +400,6 @@ const SUMMARY_SETS: StudySet[] = [
     tag: "HY Note",
     upvotes: 327,
     comments: 189,
-    hue: "amber",
   },
   {
     id: "s3",
@@ -449,7 +413,6 @@ const SUMMARY_SETS: StudySet[] = [
     tag: "Week 3",
     upvotes: 74,
     comments: 43,
-    hue: "rose",
   },
 ];
 
@@ -466,7 +429,6 @@ const IMAGE_SETS: StudySet[] = [
     tag: "High Yield",
     upvotes: 201,
     comments: 117,
-    hue: "sky",
   },
   {
     id: "i2",
@@ -480,7 +442,6 @@ const IMAGE_SETS: StudySet[] = [
     tag: "Exam Ready",
     upvotes: 118,
     comments: 68,
-    hue: "teal",
   },
 ];
 
@@ -497,7 +458,6 @@ const FLASHCARD_SETS: StudySet[] = [
     tag: "High Yield",
     upvotes: 364,
     comments: 211,
-    hue: "violet",
   },
   {
     id: "f2",
@@ -511,7 +471,6 @@ const FLASHCARD_SETS: StudySet[] = [
     tag: "Master",
     upvotes: 521,
     comments: 302,
-    hue: "indigo",
   },
   {
     id: "f3",
@@ -525,7 +484,6 @@ const FLASHCARD_SETS: StudySet[] = [
     tag: "Week 4",
     upvotes: 142,
     comments: 83,
-    hue: "amber",
   },
 ];
 
@@ -731,67 +689,66 @@ function scoreColor(score: number) {
   return { color: "#dc2626", bg: "#fef2f2", border: "#fecaca", bar: "#ef4444" };
 }
 
-function masteryColor(pct: number): { bar: string; text: string } {
-  if (pct >= 80) return { bar: "bg-emerald-500", text: "text-emerald-600" };
-  if (pct >= 40) return { bar: "bg-amber-500", text: "text-amber-600" };
-  if (pct > 0) return { bar: "bg-orange-500", text: "text-orange-600" };
-  return { bar: "bg-slate-300", text: "text-slate-400" };
-}
-
 function setMastery(set: StudySet): number {
   return set.score ?? 0;
 }
 
-function LetterTile({ title, hue }: { title: string; hue: SetHue }) {
+function LetterTile({ title }: { title: string }) {
   return (
-    <div
-      className={`relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br shadow-sm ${HUES[hue].tile}`}
-    >
+    <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-b-4 border-green-600 bg-green-500">
       <span
         aria-hidden="true"
-        className="absolute -bottom-3 -right-1 select-none text-4xl font-black text-white opacity-20"
+        className="absolute -bottom-3 -right-1 select-none text-5xl font-black text-white opacity-20"
       >
         {title.charAt(0)}
       </span>
-      <span className="relative text-lg font-black text-white">{title.charAt(0)}</span>
+      <span className="relative text-2xl font-black text-white">{title.charAt(0)}</span>
     </div>
   );
 }
 
 function SetCard({ set, onOpen }: { set: StudySet; onOpen: () => void }) {
   const mastery = setMastery(set);
-  const { bar, text } = masteryColor(mastery);
+  const started = mastery > 0;
 
   return (
     <button
       type="button"
       onClick={onOpen}
-      className={`group w-full rounded-2xl border border-slate-200 bg-white p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-slate-200 ${HUES[set.hue].hover}`}
+      className="group w-full rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4 text-left transition-colors duration-150 hover:bg-slate-50 active:translate-y-0.5 active:border-b-2"
     >
-      <div className="flex items-center gap-3.5">
-        <LetterTile title={set.title} hue={set.hue} />
+      <div className="flex items-center gap-4">
+        <LetterTile title={set.title} />
 
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-bold tracking-tight text-slate-900 sm:text-base">
+          <h3 className="truncate text-base font-extrabold tracking-tight text-slate-700">
             {set.title}
           </h3>
-          <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-slate-500">
-            <Layers size={13} className="text-slate-400" />
+          <p className="mt-1 flex items-center gap-1.5 text-sm font-bold text-slate-400">
+            <Layers size={14} strokeWidth={2.5} />
             <span className="tabular-nums">{set.upvotes.toLocaleString()} cards</span>
           </p>
         </div>
 
-        <span className={`shrink-0 text-lg font-bold tabular-nums tracking-tight ${text}`}>
+        <span
+          className={`shrink-0 text-xl font-black tabular-nums ${
+            started ? "text-green-500" : "text-slate-300"
+          }`}
+        >
           {mastery}
-          <span className="text-xs font-semibold">%</span>
+          <span className="text-sm font-extrabold">%</span>
         </span>
       </div>
 
-      <div className="mt-3.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-        <div
-          className={`h-full rounded-full transition-all duration-500 ${bar}`}
-          style={{ width: `${mastery}%` }}
-        />
+      <div className="mt-4 h-4 w-full overflow-hidden rounded-full bg-slate-200">
+        {started && (
+          <div
+            className="relative h-full rounded-full bg-green-500 transition-all duration-500"
+            style={{ width: `${mastery}%` }}
+          >
+            <div className="absolute left-3 right-3 top-1 h-1 rounded-full bg-white opacity-30" />
+          </div>
+        )}
       </div>
     </button>
   );
@@ -2045,7 +2002,7 @@ function TabContent({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {sets.map((set) => (
             <SetCard key={set.id} set={set} onOpen={() => onOpenSet(set)} />
           ))}
