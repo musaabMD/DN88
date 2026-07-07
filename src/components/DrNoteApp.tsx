@@ -9,7 +9,7 @@ import {
 import { ReportSheet } from "@/components/ReportSheet";
 import { SessionPauseModal } from "@/components/SessionPauseModal";
 import { SessionReportView } from "@/components/SessionReportView";
-import { CitationList, type Citation } from "@/components/tool-ui/citation";
+import { CitationList, type SerializableCitation } from "@/components/tool-ui/citation";
 import type { LucideIcon } from "lucide-react";
 import {
   FileQuestion,
@@ -110,24 +110,32 @@ const SAMPLE_QUESTIONS = [
     citations: [
       {
         id: "c1",
+        href: "https://diabetesjournals.org/care/article/d/24/Supplement_1/1/153952/Standards-of-Care-in-Diabetes-2024",
         title: "Pharmacotherapy of hyperglycemia in type 2 diabetes",
-        source: "ADA Standards of Care in Diabetes",
-        year: "2024",
-        url: "https://diabetesjournals.org/care",
+        domain: "diabetesjournals.org",
+        author: "ADA Standards of Care in Diabetes",
+        publishedAt: "2024-01-01T00:00:00.000Z",
+        type: "document",
       },
       {
         id: "c2",
+        href: "https://accessmedicine.mhmedical.com/book.aspx?bookid=3199",
         title: "Biguanides and hepatic gluconeogenesis",
-        source: "Goodman & Gilman's Pharmacology",
-        year: "2023",
+        domain: "accessmedicine.mhmedical.com",
+        author: "Goodman & Gilman's Pharmacology",
+        publishedAt: "2023-01-01T00:00:00.000Z",
+        type: "document",
       },
       {
         id: "c3",
+        href: "https://www.mhmedical.com/firstaid",
         title: "Oral hypoglycemic agents overview",
-        source: "First Aid for the USMLE Step 1",
-        year: "2025",
+        domain: "mhmedical.com",
+        author: "First Aid for the USMLE Step 1",
+        publishedAt: "2025-01-01T00:00:00.000Z",
+        type: "document",
       },
-    ] satisfies Citation[],
+    ] satisfies SerializableCitation[],
   },
   {
     id: 2,
@@ -147,18 +155,23 @@ const SAMPLE_QUESTIONS = [
     citations: [
       {
         id: "c4",
+        href: "https://www.elsevier.com/books/grays-anatomy-for-students/drake/978-0-323-68050-2",
         title: "Carpal tunnel anatomy",
-        source: "Gray's Anatomy for Students",
-        year: "2024",
+        domain: "elsevier.com",
+        author: "Gray's Anatomy for Students",
+        publishedAt: "2024-01-01T00:00:00.000Z",
+        type: "document",
       },
       {
         id: "c5",
+        href: "https://www.ncbi.nlm.nih.gov/books/NBK553179/",
         title: "Median nerve entrapment syndromes",
-        source: "StatPearls",
-        year: "2024",
-        url: "https://www.ncbi.nlm.nih.gov/books/",
+        domain: "ncbi.nlm.nih.gov",
+        author: "StatPearls",
+        publishedAt: "2024-01-01T00:00:00.000Z",
+        type: "article",
       },
-    ] satisfies Citation[],
+    ] satisfies SerializableCitation[],
   },
   {
     id: 3,
@@ -178,17 +191,23 @@ const SAMPLE_QUESTIONS = [
     citations: [
       {
         id: "c6",
+        href: "https://www.elsevier.com/books/robbins-basic-pathology/kumar/978-0-323-55988-4",
         title: "Sarcoidosis pathology",
-        source: "Robbins Basic Pathology",
-        year: "2023",
+        domain: "elsevier.com",
+        author: "Robbins Basic Pathology",
+        publishedAt: "2023-01-01T00:00:00.000Z",
+        type: "document",
       },
       {
         id: "c7",
+        href: "https://accessmedicine.mhmedical.com/book.aspx?bookid=3099",
         title: "Granulomatous lung disease differential",
-        source: "Harrison's Principles of Internal Medicine",
-        year: "2024",
+        domain: "accessmedicine.mhmedical.com",
+        author: "Harrison's Principles of Internal Medicine",
+        publishedAt: "2024-01-01T00:00:00.000Z",
+        type: "document",
       },
-    ] satisfies Citation[],
+    ] satisfies SerializableCitation[],
   },
 ];
 
@@ -1160,16 +1179,11 @@ function LessonQuestionView({
             {q.explanation}
           </p>
           {citations.length > 0 && (
-            <div className="pt-2">
-              <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-3">
-                References
-              </p>
-              <CitationList
-                id={`citations-q${q.id}`}
-                citations={citations}
-                variant="stacked"
-              />
-            </div>
+            <CitationList
+              id={`citation-list-q${q.id}`}
+              citations={citations}
+              variant="stacked"
+            />
           )}
         </div>
       )}
