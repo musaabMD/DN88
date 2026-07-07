@@ -1716,85 +1716,40 @@ function DailyPopup({
   );
 }
 
-function StatsRow({
-  onStats,
-  onDaily,
-  onUpgrade,
+function HeaderStatButton({
+  onClick,
+  icon: Icon,
+  label,
+  ariaLabel,
+  colors,
 }: {
-  onStats: () => void;
-  onDaily: () => void;
-  onUpgrade: () => void;
+  onClick: () => void;
+  icon: LucideIcon;
+  label: string;
+  ariaLabel: string;
+  colors: {
+    background: string;
+    border: string;
+    shadow: string;
+    text: string;
+    icon: string;
+  };
 }) {
-  const streak = 14;
-  const rank = "Gold";
-  const pct = Math.round((DAILY_USED / DAILY_LIMIT) * 100);
-  const remaining = DAILY_LIMIT - DAILY_USED;
-
   return (
-    <div className="flex items-center gap-1.5 py-1.5">
-      <button
-        onClick={onStats}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl font-black text-xs flex-shrink-0"
-        style={{
-          background: "#fff7ed",
-          border: "2px solid #fed7aa",
-          color: "#ea580c",
-          boxShadow: "0 2px 0 #fed7aa",
-        }}
-      >
-        <Flame size={13} strokeWidth={2.5} />
-        {streak}
-        <span className="w-0.5 h-3.5 rounded-full" style={{ background: "#fed7aa" }} />
-        <Trophy size={13} strokeWidth={2.5} style={{ color: "#d97706" }} />
-        <span style={{ color: "#b45309" }}>{rank}</span>
-      </button>
-
-      <button
-        onClick={onDaily}
-        className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl flex-1 min-w-0"
-        style={{
-          background: "#f0fdf4",
-          border: "2px solid #bbf7d0",
-          boxShadow: "0 2px 0 #bbf7d0",
-        }}
-      >
-        <Zap size={12} strokeWidth={2.5} style={{ color: "#16a34a", flexShrink: 0 }} />
-        <div className="flex-1 min-w-0">
-          <div
-            className="h-2 rounded-full overflow-hidden"
-            style={{ background: "#dcfce7" }}
-          >
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: `${pct}%`,
-                background:
-                  pct >= 90 ? "#ef4444" : pct >= 70 ? "#f97316" : "#22c55e",
-              }}
-            />
-          </div>
-        </div>
-        <span
-          className="text-xs font-black flex-shrink-0"
-          style={{ color: remaining <= 3 ? "#dc2626" : "#16a34a" }}
-        >
-          {remaining}
-        </span>
-      </button>
-
-      <button
-        onClick={onUpgrade}
-        aria-label="Upgrade to Pro"
-        className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-        style={{
-          background: "linear-gradient(135deg,#a855f7,#7c3aed)",
-          border: "2px solid #6d28d9",
-          boxShadow: "0 2px 0 #6d28d9",
-        }}
-      >
-        <Crown size={14} strokeWidth={2.5} className="text-white" />
-      </button>
-    </div>
+    <button
+      onClick={onClick}
+      aria-label={ariaLabel}
+      className="flex items-center gap-1.5 px-3 py-2 rounded-2xl font-black text-sm flex-shrink-0 transition-transform active:translate-y-0.5"
+      style={{
+        background: colors.background,
+        border: `2px solid ${colors.border}`,
+        boxShadow: `0 3px 0 ${colors.shadow}`,
+        color: colors.text,
+      }}
+    >
+      <Icon size={16} strokeWidth={2.5} style={{ color: colors.icon }} />
+      {label}
+    </button>
   );
 }
 
@@ -2171,6 +2126,9 @@ export default function DrNoteApp() {
   const totalFilters =
     appliedSubjects.size + appliedStatuses.size + appliedTags.size;
 
+  const streak = 14;
+  const dailyRemaining = DAILY_LIMIT - DAILY_USED;
+
   const openSidebar = (m: SidebarMode, text?: string) => {
     setSidebarMode(m);
     setSidebarText(text ?? "");
@@ -2182,60 +2140,99 @@ export default function DrNoteApp() {
         className="bg-white sticky top-0 z-40"
         style={{ borderBottom: "3px solid #e2e8f0" }}
       >
-        <div className="max-w-2xl mx-auto px-4">
-          <div className="h-12 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="max-w-2xl mx-auto px-4 py-3 space-y-3">
+          {/* Level 1: brand left, actions right */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 flex-shrink-0 min-w-0">
               <div
-                className="w-8 h-8 rounded-2xl flex items-center justify-center"
+                className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
                 style={{
                   background: "linear-gradient(135deg,#58CC02,#46A302)",
                   boxShadow: "0 3px 0 #3a8200",
                 }}
               >
-                <span className="text-white font-black text-base leading-none">
+                <span className="text-white font-black text-lg leading-none">
                   D
                 </span>
               </div>
-              <span className="font-black text-slate-900 text-lg tracking-tight">
+              <span className="font-black text-slate-900 text-xl tracking-tight truncate">
                 Dr<span style={{ color: "#58CC02" }}>note</span>
               </span>
             </div>
-            <button
-              onClick={() => setFilterOpen(true)}
-              aria-label="Filters"
-              className="w-8 h-8 rounded-xl flex items-center justify-center relative flex-shrink-0"
-              style={{
-                background: "#f1f5f9",
-                border: "2px solid #e2e8f0",
-                boxShadow: "0 2px 0 #e2e8f0",
-                color: "#475569",
-              }}
-            >
-              <SlidersHorizontal size={14} strokeWidth={2.5} />
-              {totalFilters > 0 && (
-                <span
-                  className="absolute -top-2 -right-2 w-4 h-4 rounded-full text-xs font-black flex items-center justify-center text-white"
-                  style={{
-                    background: "#58CC02",
-                    border: "2px solid #fff",
-                    fontSize: "10px",
-                  }}
-                >
-                  {totalFilters}
-                </span>
-              )}
-            </button>
+
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <HeaderStatButton
+                onClick={() => setStatsOpen(true)}
+                icon={Flame}
+                label={String(streak)}
+                ariaLabel="View streak and league"
+                colors={{
+                  background: "#fff7ed",
+                  border: "#fdba74",
+                  shadow: "#fb923c",
+                  text: "#c2410c",
+                  icon: "#f97316",
+                }}
+              />
+              <HeaderStatButton
+                onClick={() => setDailyOpen(true)}
+                icon={Zap}
+                label={String(dailyRemaining)}
+                ariaLabel="View daily limit"
+                colors={{
+                  background: dailyRemaining <= 3 ? "#fef2f2" : "#eff6ff",
+                  border: dailyRemaining <= 3 ? "#fca5a5" : "#93c5fd",
+                  shadow: dailyRemaining <= 3 ? "#f87171" : "#60a5fa",
+                  text: dailyRemaining <= 3 ? "#dc2626" : "#1d4ed8",
+                  icon: dailyRemaining <= 3 ? "#ef4444" : "#3b82f6",
+                }}
+              />
+              <HeaderStatButton
+                onClick={() => setUpgradeOpen(true)}
+                icon={Crown}
+                label="Pro"
+                ariaLabel="Upgrade to Pro"
+                colors={{
+                  background: "linear-gradient(135deg,#ddd6fe,#c4b5fd)",
+                  border: "#a78bfa",
+                  shadow: "#8b5cf6",
+                  text: "#5b21b6",
+                  icon: "#7c3aed",
+                }}
+              />
+              <button
+                onClick={() => setFilterOpen(true)}
+                aria-label="Filters"
+                className="flex items-center justify-center w-10 h-10 rounded-2xl relative flex-shrink-0 transition-transform active:translate-y-0.5"
+                style={{
+                  background: "#f8fafc",
+                  border: "2px solid #cbd5e1",
+                  boxShadow: "0 3px 0 #cbd5e1",
+                  color: "#475569",
+                }}
+              >
+                <SlidersHorizontal size={16} strokeWidth={2.5} />
+                {totalFilters > 0 && (
+                  <span
+                    className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-black flex items-center justify-center text-white"
+                    style={{
+                      background: "#58CC02",
+                      border: "2px solid #fff",
+                    }}
+                  >
+                    {totalFilters}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
-          <StatsRow
-            onStats={() => setStatsOpen(true)}
-            onDaily={() => setDailyOpen(true)}
-            onUpgrade={() => setUpgradeOpen(true)}
-          />
-          <div className="pb-2">
+
+          {/* Level 2: search, filters, tabs */}
+          <div className="space-y-2.5">
             <div className="relative">
               <Search
-                size={14}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                size={15}
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
                 strokeWidth={2.5}
               />
               <input
@@ -2243,7 +2240,7 @@ export default function DrNoteApp() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search sets..."
-                className="w-full pl-9 pr-9 py-2 rounded-2xl text-sm font-semibold text-slate-800 placeholder-slate-400 outline-none transition-all"
+                className="w-full pl-10 pr-10 py-2.5 rounded-2xl text-sm font-semibold text-slate-800 placeholder-slate-400 outline-none transition-all"
                 style={{ background: "#f1f5f9", border: "2px solid #e2e8f0" }}
                 onFocus={(e) => {
                   e.currentTarget.style.border = "2px solid #58CC02";
@@ -2257,58 +2254,60 @@ export default function DrNoteApp() {
               {search && (
                 <button
                   onClick={() => setSearch("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-300 flex items-center justify-center"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-300 flex items-center justify-center"
                 >
                   <X size={10} strokeWidth={3} className="text-white" />
                 </button>
               )}
             </div>
-          </div>
-          {totalFilters > 0 && (
-            <ActiveFilterPills
-              subjects={appliedSubjects}
-              statuses={appliedStatuses}
-              tags={appliedTags}
-              onRemoveSubject={removeSubject}
-              onRemoveStatus={removeStatus}
-              onRemoveTag={removeTag}
-              onClearAll={clearAll}
-            />
-          )}
-          <div className="flex gap-1.5 overflow-x-auto pb-2.5 scrollbar-hide">
-            {TABS.map((tab) => {
-              const Icon = tab.icon;
-              const active = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    setActiveTab(tab.id);
-                    setPage(1);
-                    setOpenSet(null);
-                  }}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl text-sm font-bold whitespace-nowrap flex-shrink-0 transition-all"
-                  style={
-                    active
-                      ? {
-                          background: "#58CC02",
-                          color: "#fff",
-                          border: "2px solid #46A302",
-                          boxShadow: "0 3px 0 #46A302",
-                        }
-                      : {
-                          background: "#fff",
-                          color: "#64748b",
-                          border: "2px solid #e2e8f0",
-                          boxShadow: "0 3px 0 #e2e8f0",
-                        }
-                  }
-                >
-                  <Icon size={13} strokeWidth={2.5} />
-                  {tab.label}
-                </button>
-              );
-            })}
+
+            {totalFilters > 0 && (
+              <ActiveFilterPills
+                subjects={appliedSubjects}
+                statuses={appliedStatuses}
+                tags={appliedTags}
+                onRemoveSubject={removeSubject}
+                onRemoveStatus={removeStatus}
+                onRemoveTag={removeTag}
+                onClearAll={clearAll}
+              />
+            )}
+
+            <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
+              {TABS.map((tab) => {
+                const Icon = tab.icon;
+                const active = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      setPage(1);
+                      setOpenSet(null);
+                    }}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-sm font-bold whitespace-nowrap flex-shrink-0 transition-all"
+                    style={
+                      active
+                        ? {
+                            background: "#58CC02",
+                            color: "#fff",
+                            border: "2px solid #46A302",
+                            boxShadow: "0 3px 0 #46A302",
+                          }
+                        : {
+                            background: "#fff",
+                            color: "#64748b",
+                            border: "2px solid #e2e8f0",
+                            boxShadow: "0 3px 0 #e2e8f0",
+                          }
+                    }
+                  >
+                    <Icon size={13} strokeWidth={2.5} />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </header>
