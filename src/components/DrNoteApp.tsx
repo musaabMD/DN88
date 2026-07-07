@@ -1,10 +1,6 @@
 "use client";
 
-import { useState, type Dispatch, type SetStateAction } from "react";
-
-/** Mobile: centered narrow column. Desktop: full width with edge padding. */
-const PAGE_SHELL =
-  "w-full max-w-2xl mx-auto px-4 md:max-w-none md:mx-0 md:px-8 lg:px-12 xl:px-16";
+import { useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   FileQuestion,
@@ -36,6 +32,10 @@ import {
   ChevronRight as Chevron,
   Target,
 } from "lucide-react";
+
+/** Mobile: centered narrow column. Desktop: full width with edge padding. */
+const PAGE_SHELL =
+  "w-full max-w-2xl mx-auto px-4 md:max-w-none md:mx-0 md:px-8 lg:px-12 xl:px-16";
 
 const TABS = [
   { id: "questions", label: "Questions", icon: FileQuestion },
@@ -199,6 +199,14 @@ const SAMPLE_FLASHCARDS = [
     back: "Elevated D-dimer, prolonged PT/PTT, low fibrinogen, thrombocytopenia — consumption of clotting factors",
   },
 ];
+
+function sessionItemCount(tab: string): number {
+  if (tab === "questions") return SAMPLE_QUESTIONS.length;
+  if (tab === "summary") return SAMPLE_SUMMARIES.length;
+  if (tab === "images") return SAMPLE_IMAGES.length;
+  if (tab === "flashcards") return SAMPLE_FLASHCARDS.length;
+  return 1;
+}
 
 type StudySet = {
   id: string;
@@ -1119,6 +1127,339 @@ function QuestionCard({
   );
 }
 
+function LessonQuestionView({
+  q,
+  onSidebar,
+  onAnswer,
+  onContinue,
+  onSkip,
+}: {
+  q: (typeof SAMPLE_QUESTIONS)[0];
+  onSidebar: (m: SidebarMode) => void;
+  onAnswer: (correct: boolean) => void;
+  onContinue: () => void;
+  onSkip: () => void;
+}) {
+  const [selected, setSelected] = useState<number | null>(null);
+  const [checked, setChecked] = useState(false);
+
+  const handlePrimary = () => {
+    if (!checked) {
+      if (selected === null) return;
+      setChecked(true);
+      onAnswer(selected === q.answer);
+      return;
+    }
+    onContinue();
+  };
+
+  return (
+    <>
+      <div className="flex-1 flex flex-col">
+        <span
+          className="inline-flex self-start text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg mb-4"
+          style={{
+            background: "#f5f3ff",
+            color: "#7c3aed",
+            border: "1.5px solid #ddd6fe",
+          }}
+        >
+          {q.subject} · {q.tag}
+        </span>
+        <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-8 leading-snug">
+          {q.text}
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+          {q.options.map((opt, i) => {
+            const isSelected = selected === i;
+            const isCorrect = checked && i === q.answer;
+            const isWrong = checked && isSelected && i !== q.answer;
+            return (
+              <button
+                key={i}
+                disabled={checked}
+                onClick={() => !checked && setSelected(i)}
+                className="relative p-4 rounded-2xl border-2 text-left font-semibold text-sm md:text-base min-h-[80px] transition-all active:scale-[0.98] disabled:cursor-default"
+                style={
+                  isCorrect
+                    ? {
+                        background: "#f0fdf4",
+                        borderColor: "#22c55e",
+                        color: "#15803d",
+                        boxShadow: "0 3px 0 #86efac",
+                      }
+                    : isWrong
+                      ? {
+                          background: "#fef2f2",
+                          borderColor: "#f87171",
+                          color: "#dc2626",
+                          boxShadow: "0 3px 0 #fca5a5",
+                        }
+                      : isSelected
+                        ? {
+                            background: "#eff6ff",
+                            borderColor: "#3b82f6",
+                            color: "#1d4ed8",
+                            boxShadow: "0 3px 0 #bfdbfe",
+                          }
+                        : {
+                            background: "#fff",
+                            borderColor: "#e2e8f0",
+                            color: "#334155",
+                            boxShadow: "0 3px 0 #e2e8f0",
+                          }
+                }
+              >
+                {opt}
+                <span className="absolute bottom-2 right-3 text-[10px] font-black text-slate-400">
+                  {i + 1}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        {checked && (
+          <div className="flex items-center gap-2 mb-4">
+            <button
+              onClick={() => onSidebar("explain")}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black"
+              style={{
+                background: "#fffbeb",
+                border: "1.5px solid #fde68a",
+                color: "#b45309",
+              }}
+            >
+              <Lightbulb size={12} strokeWidth={2.5} />
+              Explain
+            </button>
+            <button
+              onClick={() => onSidebar("comments")}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black"
+              style={{
+                background: "#eff6ff",
+                border: "1.5px solid #bfdbfe",
+                color: "#1d4ed8",
+              }}
+            >
+              <MessageCircle size={12} strokeWidth={2.5} />
+              Discuss
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div
+        className="flex-shrink-0 border-t border-slate-200 bg-white -mx-4 px-4 py-4 mt-auto"
+        style={{ borderTopWidth: "2px" }}
+      >
+        <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
+          <button
+            onClick={onSkip}
+            className="px-4 py-3 rounded-2xl text-sm font-black uppercase tracking-wide text-slate-400 border-2 border-slate-200 bg-white"
+          >
+            Skip
+          </button>
+          <button
+            onClick={handlePrimary}
+            disabled={!checked && selected === null}
+            className="px-10 py-3 rounded-2xl text-sm font-black uppercase tracking-wide text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all active:translate-y-0.5"
+            style={
+              checked
+                ? {
+                    background: "#58CC02",
+                    border: "2px solid #46A302",
+                    boxShadow: "0 4px 0 #46A302",
+                  }
+                : {
+                    background: selected !== null ? "#58CC02" : "#cbd5e1",
+                    border: `2px solid ${selected !== null ? "#46A302" : "#94a3b8"}`,
+                    boxShadow: `0 4px 0 ${selected !== null ? "#46A302" : "#94a3b8"}`,
+                  }
+            }
+          >
+            {checked ? "Continue" : "Check"}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function SetSessionView({
+  set,
+  tab,
+  page,
+  onPageChange,
+  onClose,
+  onSidebar,
+}: {
+  set: StudySet;
+  tab: string;
+  page: number;
+  onPageChange: (p: number) => void;
+  onClose: () => void;
+  onSidebar: (m: SidebarMode, text?: string) => void;
+}) {
+  const [sessionCorrect, setSessionCorrect] = useState(0);
+  const [sessionAnswered, setSessionAnswered] = useState(0);
+
+  const total = sessionItemCount(tab);
+  const idx = Math.min(page, total) - 1;
+  const progressPct = total > 0 ? (page / total) * 100 : 0;
+  const liveScore =
+    sessionAnswered > 0
+      ? Math.round((sessionCorrect / sessionAnswered) * 100)
+      : (set.score ?? 0);
+  const scoreStyle = scoreColor(liveScore);
+
+  const goNext = () => {
+    if (page < total) onPageChange(page + 1);
+    else onClose();
+  };
+
+  const renderSlide = () => {
+    if (tab === "questions") {
+      const q = SAMPLE_QUESTIONS[idx];
+      if (!q) return null;
+      return (
+        <LessonQuestionView
+          key={`${q.id}-${page}`}
+          q={q}
+          onSidebar={(m) => onSidebar(m, q.text)}
+          onAnswer={(correct) => {
+            setSessionAnswered((n) => n + 1);
+            if (correct) setSessionCorrect((n) => n + 1);
+          }}
+          onContinue={goNext}
+          onSkip={goNext}
+        />
+      );
+    }
+    if (tab === "summary") {
+      const s = SAMPLE_SUMMARIES[idx];
+      if (!s) return null;
+      return (
+        <SessionSlideShell onSkip={goNext} onContinue={goNext} continueLabel="Next">
+          <SummaryCard s={s} />
+        </SessionSlideShell>
+      );
+    }
+    if (tab === "images") {
+      const img = SAMPLE_IMAGES[idx];
+      if (!img) return null;
+      return (
+        <SessionSlideShell onSkip={goNext} onContinue={goNext} continueLabel="Next">
+          <ImageCard img={img} />
+        </SessionSlideShell>
+      );
+    }
+    if (tab === "flashcards") {
+      const card = SAMPLE_FLASHCARDS[idx];
+      if (!card) return null;
+      return (
+        <SessionSlideShell onSkip={goNext} onContinue={goNext} continueLabel="Next">
+          <div className="flex items-center justify-center py-4">
+            <FlashCard card={card} />
+          </div>
+        </SessionSlideShell>
+      );
+    }
+    return (
+      <SessionSlideShell onSkip={onClose} onContinue={onClose} continueLabel="Done">
+        <p className="text-center text-slate-500 font-semibold py-20">
+          No content for this tab yet.
+        </p>
+      </SessionSlideShell>
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-white">
+      <div
+        className="flex items-center gap-3 px-4 h-14 flex-shrink-0 bg-white"
+        style={{ borderBottom: "2px solid #e2e8f0" }}
+      >
+        <button
+          onClick={onClose}
+          aria-label="Close set"
+          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ color: "#94a3b8" }}
+        >
+          <X size={22} strokeWidth={2.5} />
+        </button>
+        <div
+          className="flex-1 h-3 rounded-full overflow-hidden"
+          style={{ background: "#e2e8f0" }}
+        >
+          <div
+            className="h-full rounded-full transition-all duration-300"
+            style={{ width: `${progressPct}%`, background: "#58CC02" }}
+          />
+        </div>
+        <div
+          className="flex items-center gap-1 flex-shrink-0 px-2.5 py-1 rounded-xl font-black text-sm"
+          style={{
+            background: scoreStyle.bg,
+            border: `1.5px solid ${scoreStyle.border}`,
+            color: scoreStyle.color,
+          }}
+        >
+          <Target size={14} strokeWidth={2.5} />
+          {liveScore}%
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto flex flex-col">
+        <div className="max-w-3xl mx-auto w-full px-4 py-6 min-h-full flex flex-col flex-1">
+          {renderSlide()}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SessionSlideShell({
+  children,
+  onSkip,
+  onContinue,
+  continueLabel,
+}: {
+  children: ReactNode;
+  onSkip: () => void;
+  onContinue: () => void;
+  continueLabel: string;
+}) {
+  return (
+    <>
+      <div className="flex-1">{children}</div>
+      <div
+        className="flex-shrink-0 border-t border-slate-200 bg-white -mx-4 px-4 py-4 mt-auto"
+        style={{ borderTopWidth: "2px" }}
+      >
+        <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
+          <button
+            onClick={onSkip}
+            className="px-4 py-3 rounded-2xl text-sm font-black uppercase tracking-wide text-slate-400 border-2 border-slate-200 bg-white"
+          >
+            Skip
+          </button>
+          <button
+            onClick={onContinue}
+            className="px-10 py-3 rounded-2xl text-sm font-black uppercase tracking-wide text-white active:translate-y-0.5"
+            style={{
+              background: "#58CC02",
+              border: "2px solid #46A302",
+              boxShadow: "0 4px 0 #46A302",
+            }}
+          >
+            {continueLabel}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 function SummaryCard({ s }: { s: (typeof SAMPLE_SUMMARIES)[0] }) {
   const [expanded, setExpanded] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
@@ -1461,12 +1802,7 @@ function TabContent({
   }
 
   if (openSet) {
-    return (
-      <>
-        <SetDetailHeader set={openSet} tab={tab} onBack={onCloseSet} />
-        <SetContent tab={tab} onSidebar={onSidebar} />
-      </>
-    );
+    return null;
   }
 
   const sets = SETS_BY_TAB[tab] ?? [];
@@ -2089,6 +2425,208 @@ function PaginationBar({
   );
 }
 
+function BrowseHeader({
+  search,
+  setSearch,
+  activeTab,
+  onTabChange,
+  totalFilters,
+  streak,
+  dailyRemaining,
+  appliedSubjects,
+  appliedStatuses,
+  appliedTags,
+  onStatsOpen,
+  onDailyOpen,
+  onUpgradeOpen,
+  onFilterOpen,
+  onRemoveSubject,
+  onRemoveStatus,
+  onRemoveTag,
+  onClearAll,
+}: {
+  search: string;
+  setSearch: (v: string) => void;
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  totalFilters: number;
+  streak: number;
+  dailyRemaining: number;
+  appliedSubjects: Set<string>;
+  appliedStatuses: Set<string>;
+  appliedTags: Set<string>;
+  onStatsOpen: () => void;
+  onDailyOpen: () => void;
+  onUpgradeOpen: () => void;
+  onFilterOpen: () => void;
+  onRemoveSubject: (v: string) => void;
+  onRemoveStatus: (v: string) => void;
+  onRemoveTag: (v: string) => void;
+  onClearAll: () => void;
+}) {
+  const searchField = (
+    <div className="flex w-full items-stretch rounded-full overflow-hidden border-2 border-slate-200 bg-white focus-within:border-[#58CC02] transition-colors">
+      <input
+        type="text"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search sets..."
+        className="flex-1 min-w-0 px-4 py-2 text-sm font-medium text-slate-800 placeholder-slate-400 outline-none bg-transparent"
+      />
+      {search ? (
+        <button
+          onClick={() => setSearch("")}
+          aria-label="Clear search"
+          className="px-3 flex items-center justify-center text-slate-400 hover:text-slate-600"
+        >
+          <X size={16} strokeWidth={2.5} />
+        </button>
+      ) : null}
+      <button
+        aria-label="Search"
+        className="px-4 flex items-center justify-center border-l-2 border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100"
+      >
+        <Search size={18} strokeWidth={2.5} />
+      </button>
+    </div>
+  );
+
+  return (
+    <header
+      className="bg-white sticky top-0 z-40"
+      style={{ borderBottom: "1px solid #e2e8f0" }}
+    >
+      <div className={`${PAGE_SHELL} py-2 space-y-2`}>
+        <div className="flex items-center gap-3 md:gap-4 min-h-[44px]">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{
+                background: "linear-gradient(135deg,#58CC02,#46A302)",
+                boxShadow: "0 2px 0 #3a8200",
+              }}
+            >
+              <span className="text-white font-black text-base leading-none">D</span>
+            </div>
+            <span className="font-black text-slate-900 text-lg tracking-tight hidden sm:block">
+              Drnote
+            </span>
+          </div>
+
+          <div className="hidden md:flex flex-1 max-w-[640px] mx-2 lg:mx-8">
+            {searchField}
+          </div>
+
+          <div className="flex items-center gap-1.5 ml-auto flex-shrink-0">
+            <HeaderStatButton
+              onClick={onStatsOpen}
+              icon={Flame}
+              label={String(streak)}
+              ariaLabel="View streak and league"
+              colors={{
+                background: "#fff7ed",
+                border: "#fdba74",
+                shadow: "#fb923c",
+                text: "#c2410c",
+                icon: "#f97316",
+              }}
+            />
+            <HeaderStatButton
+              onClick={onDailyOpen}
+              icon={Zap}
+              label={String(dailyRemaining)}
+              ariaLabel="View daily limit"
+              colors={{
+                background: dailyRemaining <= 3 ? "#fef2f2" : "#eff6ff",
+                border: dailyRemaining <= 3 ? "#fca5a5" : "#93c5fd",
+                shadow: dailyRemaining <= 3 ? "#f87171" : "#60a5fa",
+                text: dailyRemaining <= 3 ? "#dc2626" : "#1d4ed8",
+                icon: dailyRemaining <= 3 ? "#ef4444" : "#3b82f6",
+              }}
+            />
+            <HeaderStatButton
+              onClick={onUpgradeOpen}
+              icon={Crown}
+              label="Pro"
+              ariaLabel="Upgrade to Pro"
+              colors={{
+                background: "linear-gradient(135deg,#ddd6fe,#c4b5fd)",
+                border: "#a78bfa",
+                shadow: "#8b5cf6",
+                text: "#5b21b6",
+                icon: "#7c3aed",
+              }}
+            />
+            <button
+              onClick={onFilterOpen}
+              aria-label="Filters"
+              className="flex items-center justify-center w-9 h-9 rounded-xl relative flex-shrink-0 transition-transform active:translate-y-0.5"
+              style={{
+                background: "#f8fafc",
+                border: "2px solid #cbd5e1",
+                boxShadow: "0 2px 0 #cbd5e1",
+                color: "#475569",
+              }}
+            >
+              <SlidersHorizontal size={15} strokeWidth={2.5} />
+              {totalFilters > 0 && (
+                <span
+                  className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full text-[9px] font-black flex items-center justify-center text-white"
+                  style={{ background: "#58CC02", border: "2px solid #fff" }}
+                >
+                  {totalFilters}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div className="md:hidden">{searchField}</div>
+
+        {totalFilters > 0 && (
+          <ActiveFilterPills
+            subjects={appliedSubjects}
+            statuses={appliedStatuses}
+            tags={appliedTags}
+            onRemoveSubject={onRemoveSubject}
+            onRemoveStatus={onRemoveStatus}
+            onRemoveTag={onRemoveTag}
+            onClearAll={onClearAll}
+          />
+        )}
+
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
+          {TABS.map((tab) => {
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => onTabChange(tab.id)}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap flex-shrink-0 transition-colors"
+                style={
+                  active
+                    ? {
+                        background: "#58CC02",
+                        color: "#fff",
+                        border: "1.5px solid #46A302",
+                      }
+                    : {
+                        background: "#f1f5f9",
+                        color: "#475569",
+                        border: "1.5px solid transparent",
+                      }
+                }
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </header>
+  );
+}
+
 export default function DrNoteApp() {
   const [activeTab, setActiveTab] = useState("questions");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -2141,198 +2679,56 @@ export default function DrNoteApp() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans pb-20">
-      <header
-        className="bg-white sticky top-0 z-40"
-        style={{ borderBottom: "3px solid #e2e8f0" }}
-      >
-        <div className={`${PAGE_SHELL} py-3 space-y-3`}>
-          {/* Level 1: brand left, actions right */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 flex-shrink-0 min-w-0">
-              <div
-                className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
-                style={{
-                  background: "linear-gradient(135deg,#58CC02,#46A302)",
-                  boxShadow: "0 3px 0 #3a8200",
-                }}
-              >
-                <span className="text-white font-black text-lg leading-none">
-                  D
-                </span>
-              </div>
-              <span className="font-black text-slate-900 text-xl tracking-tight truncate">
-                Dr<span style={{ color: "#58CC02" }}>note</span>
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <HeaderStatButton
-                onClick={() => setStatsOpen(true)}
-                icon={Flame}
-                label={String(streak)}
-                ariaLabel="View streak and league"
-                colors={{
-                  background: "#fff7ed",
-                  border: "#fdba74",
-                  shadow: "#fb923c",
-                  text: "#c2410c",
-                  icon: "#f97316",
-                }}
-              />
-              <HeaderStatButton
-                onClick={() => setDailyOpen(true)}
-                icon={Zap}
-                label={String(dailyRemaining)}
-                ariaLabel="View daily limit"
-                colors={{
-                  background: dailyRemaining <= 3 ? "#fef2f2" : "#eff6ff",
-                  border: dailyRemaining <= 3 ? "#fca5a5" : "#93c5fd",
-                  shadow: dailyRemaining <= 3 ? "#f87171" : "#60a5fa",
-                  text: dailyRemaining <= 3 ? "#dc2626" : "#1d4ed8",
-                  icon: dailyRemaining <= 3 ? "#ef4444" : "#3b82f6",
-                }}
-              />
-              <HeaderStatButton
-                onClick={() => setUpgradeOpen(true)}
-                icon={Crown}
-                label="Pro"
-                ariaLabel="Upgrade to Pro"
-                colors={{
-                  background: "linear-gradient(135deg,#ddd6fe,#c4b5fd)",
-                  border: "#a78bfa",
-                  shadow: "#8b5cf6",
-                  text: "#5b21b6",
-                  icon: "#7c3aed",
-                }}
-              />
-              <button
-                onClick={() => setFilterOpen(true)}
-                aria-label="Filters"
-                className="flex items-center justify-center w-10 h-10 rounded-2xl relative flex-shrink-0 transition-transform active:translate-y-0.5"
-                style={{
-                  background: "#f8fafc",
-                  border: "2px solid #cbd5e1",
-                  boxShadow: "0 3px 0 #cbd5e1",
-                  color: "#475569",
-                }}
-              >
-                <SlidersHorizontal size={16} strokeWidth={2.5} />
-                {totalFilters > 0 && (
-                  <span
-                    className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-black flex items-center justify-center text-white"
-                    style={{
-                      background: "#58CC02",
-                      border: "2px solid #fff",
-                    }}
-                  >
-                    {totalFilters}
-                  </span>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Level 2: search, filters, tabs */}
-          <div className="space-y-2.5">
-            <div className="relative">
-              <Search
-                size={15}
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                strokeWidth={2.5}
-              />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search sets..."
-                className="w-full pl-10 pr-10 py-2.5 rounded-2xl text-sm font-semibold text-slate-800 placeholder-slate-400 outline-none transition-all"
-                style={{ background: "#f1f5f9", border: "2px solid #e2e8f0" }}
-                onFocus={(e) => {
-                  e.currentTarget.style.border = "2px solid #58CC02";
-                  e.currentTarget.style.background = "#fff";
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.border = "2px solid #e2e8f0";
-                  e.currentTarget.style.background = "#f1f5f9";
-                }}
-              />
-              {search && (
-                <button
-                  onClick={() => setSearch("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-300 flex items-center justify-center"
-                >
-                  <X size={10} strokeWidth={3} className="text-white" />
-                </button>
-              )}
-            </div>
-
-            {totalFilters > 0 && (
-              <ActiveFilterPills
-                subjects={appliedSubjects}
-                statuses={appliedStatuses}
-                tags={appliedTags}
-                onRemoveSubject={removeSubject}
-                onRemoveStatus={removeStatus}
-                onRemoveTag={removeTag}
-                onClearAll={clearAll}
-              />
-            )}
-
-            <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
-              {TABS.map((tab) => {
-                const Icon = tab.icon;
-                const active = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => {
-                      setActiveTab(tab.id);
-                      setPage(1);
-                      setOpenSet(null);
-                    }}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-sm font-bold whitespace-nowrap flex-shrink-0 transition-all"
-                    style={
-                      active
-                        ? {
-                            background: "#58CC02",
-                            color: "#fff",
-                            border: "2px solid #46A302",
-                            boxShadow: "0 3px 0 #46A302",
-                          }
-                        : {
-                            background: "#fff",
-                            color: "#64748b",
-                            border: "2px solid #e2e8f0",
-                            boxShadow: "0 3px 0 #e2e8f0",
-                          }
-                    }
-                  >
-                    <Icon size={13} strokeWidth={2.5} />
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className={`${PAGE_SHELL} py-4`}>
-        <TabContent
+    <div className={`min-h-screen bg-slate-50 font-sans ${openSet ? "" : "pb-8"}`}>
+      {openSet ? (
+        <SetSessionView
+          set={openSet}
           tab={activeTab}
-          openSet={openSet}
-          onOpenSet={(s) => {
-            setOpenSet(s);
-            setPage(1);
-          }}
-          onCloseSet={() => setOpenSet(null)}
+          page={page}
+          onPageChange={setPage}
+          onClose={() => setOpenSet(null)}
           onSidebar={openSidebar}
         />
-      </main>
+      ) : (
+        <>
+          <BrowseHeader
+            search={search}
+            setSearch={setSearch}
+            activeTab={activeTab}
+            onTabChange={(tab) => {
+              setActiveTab(tab);
+              setPage(1);
+              setOpenSet(null);
+            }}
+            totalFilters={totalFilters}
+            streak={streak}
+            dailyRemaining={dailyRemaining}
+            appliedSubjects={appliedSubjects}
+            appliedStatuses={appliedStatuses}
+            appliedTags={appliedTags}
+            onStatsOpen={() => setStatsOpen(true)}
+            onDailyOpen={() => setDailyOpen(true)}
+            onUpgradeOpen={() => setUpgradeOpen(true)}
+            onFilterOpen={() => setFilterOpen(true)}
+            onRemoveSubject={removeSubject}
+            onRemoveStatus={removeStatus}
+            onRemoveTag={removeTag}
+            onClearAll={clearAll}
+          />
 
-      {openSet && (
-        <PaginationBar page={page} total={6} onChange={setPage} />
+          <main className={`${PAGE_SHELL} py-4`}>
+            <TabContent
+              tab={activeTab}
+              openSet={openSet}
+              onOpenSet={(s) => {
+                setOpenSet(s);
+                setPage(1);
+              }}
+              onCloseSet={() => setOpenSet(null)}
+              onSidebar={openSidebar}
+            />
+          </main>
+        </>
       )}
 
       <FilterPage
