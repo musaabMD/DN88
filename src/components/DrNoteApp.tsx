@@ -42,9 +42,9 @@ import {
   MoreVertical,
   Pause,
   Share2,
-  ThumbsUp,
   Sparkles,
   BarChart3,
+  MessageCircle,
 } from "lucide-react";
 
 /** Mobile: centered narrow column. Desktop: full width with edge padding. */
@@ -307,6 +307,7 @@ type StudySet = {
   score: number | null;
   tag: string;
   upvotes: number;
+  comments: number;
 };
 
 function filterSets(sets: StudySet[], query: string): StudySet[] {
@@ -333,6 +334,7 @@ const QUESTION_SETS: StudySet[] = [
     score: 85,
     tag: "High Yield",
     upvotes: 248,
+    comments: 142,
   },
   {
     id: "q2",
@@ -345,6 +347,7 @@ const QUESTION_SETS: StudySet[] = [
     score: 92,
     tag: "Exam Ready",
     upvotes: 412,
+    comments: 240,
   },
   {
     id: "q3",
@@ -357,6 +360,7 @@ const QUESTION_SETS: StudySet[] = [
     score: 61,
     tag: "Review Needed",
     upvotes: 156,
+    comments: 91,
   },
   {
     id: "q4",
@@ -369,6 +373,7 @@ const QUESTION_SETS: StudySet[] = [
     score: null,
     tag: "Week 2",
     upvotes: 89,
+    comments: 52,
   },
 ];
 
@@ -384,6 +389,7 @@ const SUMMARY_SETS: StudySet[] = [
     score: 88,
     tag: "HY Note",
     upvotes: 193,
+    comments: 112,
   },
   {
     id: "s2",
@@ -396,6 +402,7 @@ const SUMMARY_SETS: StudySet[] = [
     score: 95,
     tag: "HY Note",
     upvotes: 327,
+    comments: 189,
   },
   {
     id: "s3",
@@ -408,6 +415,7 @@ const SUMMARY_SETS: StudySet[] = [
     score: null,
     tag: "Week 3",
     upvotes: 74,
+    comments: 43,
   },
 ];
 
@@ -423,6 +431,7 @@ const IMAGE_SETS: StudySet[] = [
     score: 78,
     tag: "High Yield",
     upvotes: 201,
+    comments: 117,
   },
   {
     id: "i2",
@@ -435,6 +444,7 @@ const IMAGE_SETS: StudySet[] = [
     score: 50,
     tag: "Exam Ready",
     upvotes: 118,
+    comments: 68,
   },
 ];
 
@@ -450,6 +460,7 @@ const FLASHCARD_SETS: StudySet[] = [
     score: 81,
     tag: "High Yield",
     upvotes: 364,
+    comments: 211,
   },
   {
     id: "f2",
@@ -462,6 +473,7 @@ const FLASHCARD_SETS: StudySet[] = [
     score: 96,
     tag: "Master",
     upvotes: 521,
+    comments: 302,
   },
   {
     id: "f3",
@@ -474,6 +486,7 @@ const FLASHCARD_SETS: StudySet[] = [
     score: 70,
     tag: "Week 4",
     upvotes: 142,
+    comments: 83,
   },
 ];
 
@@ -572,7 +585,7 @@ function SetIntroView({
             <div className="flex items-center justify-between text-sm">
               <span className="font-bold text-slate-500">Best score</span>
               <span className="font-black" style={{ color: scoreColor(set.score).color }}>
-                {set.score}%
+                {set.score}/100
               </span>
             </div>
           )}
@@ -610,11 +623,56 @@ function progressColor(pct: number) {
 }
 
 function scoreColor(score: number) {
-  if (score >= 85)
-    return { color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0" };
   if (score >= 70)
-    return { color: "#b45309", bg: "#fffbeb", border: "#fde68a" };
-  return { color: "#dc2626", bg: "#fef2f2", border: "#fecaca" };
+    return { color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0", bar: "#22c55e" };
+  if (score >= 55)
+    return { color: "#b45309", bg: "#fffbeb", border: "#fde68a", bar: "#f59e0b" };
+  return { color: "#dc2626", bg: "#fef2f2", border: "#fecaca", bar: "#ef4444" };
+}
+
+function SetMetricButton({
+  icon: Icon,
+  count,
+  active = false,
+  onClick,
+  ariaLabel,
+}: {
+  icon: LucideIcon;
+  count: number;
+  active?: boolean;
+  onClick?: () => void;
+  ariaLabel: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      onClick={onClick}
+      className="flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded-xl border transition-colors"
+      style={
+        active
+          ? {
+              background: "#fff7f6",
+              borderColor: "#f06a5d",
+              color: "#334155",
+            }
+          : {
+              background: "#fff",
+              borderColor: "#e2e8f0",
+              color: "#64748b",
+            }
+      }
+    >
+      <Icon
+        size={15}
+        strokeWidth={2}
+        className={active ? "text-[#f06a5d]" : "text-slate-500"}
+      />
+      <span className="text-[11px] font-bold tabular-nums leading-none">
+        {count.toLocaleString()}
+      </span>
+    </button>
+  );
 }
 
 function SetCard({
@@ -627,7 +685,15 @@ function SetCard({
   onOpen: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const pct = Math.round((set.done / set.total) * 100);
+  const [upvoted, setUpvoted] = useState(false);
+  const [voteCount, setVoteCount] = useState(set.upvotes);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const progressPct = Math.round((set.done / set.total) * 100);
+  const accent = TAB_ACCENT[tab] ?? TAB_ACCENT.questions;
+  const TabIcon = accent.icon;
+  const correctCount =
+    set.score !== null ? Math.round((set.score / 100) * set.total) : null;
+  const scoreStyle = set.score !== null ? scoreColor(set.score) : null;
 
   const menuItems = [
     { label: "Share", icon: Share2 },
@@ -637,86 +703,139 @@ function SetCard({
     { label: "Report", icon: Flag },
   ] as const;
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onPointerDown = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [menuOpen]);
+
   return (
     <div
-      className="bg-white rounded-2xl overflow-hidden relative"
-      style={{ border: "2px solid #e2e8f0", boxShadow: "0 2px 0 #e2e8f0" }}
+      className="relative overflow-visible rounded-2xl bg-white transition-shadow hover:shadow-sm"
+      style={{ border: "1.5px solid #e2e8f0", boxShadow: "0 1px 0 #e2e8f0" }}
     >
-      <button onClick={onOpen} className="w-full text-left px-4 pt-4 pb-3">
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <p className="font-black text-slate-900 text-sm leading-snug line-clamp-2">
-            {set.title}
-          </p>
-          <div className="relative shrink-0">
+      <div className="flex items-start gap-3 p-4 pb-3">
+        <button
+          type="button"
+          onClick={onOpen}
+          className="flex min-w-0 flex-1 items-start gap-3 text-left"
+        >
+          <div
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
+            style={{
+              background: accent.bg,
+              border: `1.5px solid ${accent.border}`,
+            }}
+          >
+            <TabIcon size={20} strokeWidth={2.5} style={{ color: accent.color }} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="line-clamp-2 text-sm font-black leading-snug text-slate-900">
+              {set.title}
+            </p>
+            <p className="mt-1 text-xs font-semibold text-slate-500">
+              {set.subject} · {set.tag}
+            </p>
+            <p className="mt-1.5 line-clamp-2 text-xs font-medium leading-relaxed text-slate-400">
+              {set.about}
+            </p>
+          </div>
+        </button>
+
+        <div className="flex shrink-0 items-start gap-1.5">
+          <SetMetricButton
+            icon={MessageCircle}
+            count={set.comments}
+            ariaLabel={`${set.comments} comments`}
+          />
+          <SetMetricButton
+            icon={ChevronUp}
+            count={voteCount}
+            active={upvoted}
+            ariaLabel={`${voteCount} upvotes`}
+            onClick={() => {
+              setUpvoted((prev) => {
+                const next = !prev;
+                setVoteCount((count) => count + (next ? 1 : -1));
+                return next;
+              });
+            }}
+          />
+          <div className="relative" ref={menuRef}>
             <button
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setMenuOpen((open) => !open);
-              }}
+              onClick={() => setMenuOpen((open) => !open)}
               aria-label="Set options"
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100"
+              aria-expanded={menuOpen}
+              className="flex h-12 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:bg-slate-50"
             >
               <MoreVertical size={16} strokeWidth={2.5} />
             </button>
             {menuOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMenuOpen(false);
-                  }}
-                />
-                <div
-                  className="absolute right-0 top-9 z-20 min-w-[140px] rounded-xl bg-white py-1 shadow-lg"
-                  style={{ border: "1.5px solid #e2e8f0" }}
-                >
-                  {menuItems.map(({ label, icon: Icon }) => (
-                    <button
-                      key={label}
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMenuOpen(false);
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm font-semibold text-slate-600 hover:bg-slate-50"
-                    >
-                      <Icon size={14} strokeWidth={2.5} />
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </>
+              <div
+                className="absolute right-0 top-full z-50 mt-1 min-w-[148px] rounded-xl bg-white py-1 shadow-lg"
+                style={{ border: "1.5px solid #e2e8f0" }}
+              >
+                {menuItems.map(({ label, icon: Icon }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                  >
+                    <Icon size={14} strokeWidth={2.5} />
+                    {label}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
         </div>
+      </div>
 
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <span className="text-xs font-bold text-slate-500">{set.subject}</span>
-          <span className="inline-flex items-center gap-1 text-xs font-black text-slate-600">
-            <ThumbsUp size={13} strokeWidth={2.5} className="text-green-600" />
-            {set.upvotes.toLocaleString()}
-          </span>
-        </div>
+      <button type="button" onClick={onOpen} className="block w-full px-4 pb-4 text-left">
+        {set.score !== null && scoreStyle && correctCount !== null && (
+          <div className="mb-2 flex items-start justify-between gap-3">
+            <p className="text-xs font-semibold text-slate-500">
+              {correctCount} of {set.total} correct
+            </p>
+            <p
+              className="text-xl font-black tabular-nums leading-none"
+              style={{ color: scoreStyle.color }}
+            >
+              {set.score}%
+            </p>
+          </div>
+        )}
 
         <div className="flex items-center gap-3">
           <div className="flex-1">
             <div
-              className="h-2 rounded-full overflow-hidden"
+              className="h-2 overflow-hidden rounded-full"
               style={{ background: "#f1f5f9" }}
             >
               <div
                 className="h-full rounded-full transition-all"
-                style={{ width: `${pct}%`, background: progressColor(pct) }}
+                style={{
+                  width: `${set.score !== null ? set.score : progressPct}%`,
+                  background:
+                    scoreStyle?.bar ?? progressColor(progressPct),
+                }}
               />
             </div>
           </div>
           <span
-            className="text-xs font-black shrink-0"
-            style={{ color: progressColor(pct) }}
+            className="shrink-0 text-xs font-black tabular-nums"
+            style={{
+              color: scoreStyle?.color ?? progressColor(progressPct),
+            }}
           >
-            {set.done}/{set.total}
+            {set.score !== null ? `${set.score}/100` : `${set.done}/${set.total}`}
           </span>
         </div>
       </button>
@@ -820,7 +939,7 @@ function SetDetailHeader({
               className="text-xs font-black"
               style={{ color: scoreColor(set.score).color }}
             >
-              {set.score}%
+              {set.score}/100
             </span>
           </div>
         )}
@@ -1931,7 +2050,7 @@ function TabContent({
           </p>
         </div>
       ) : (
-        <div className="space-y-3 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:gap-4 md:space-y-0">
+        <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 xl:grid-cols-3">
           {sets.map((set) => (
             <SetCard key={set.id} set={set} tab={tab} onOpen={() => onOpenSet(set)} />
           ))}
@@ -2617,28 +2736,24 @@ function BrowseHeader({
       className="bg-white sticky top-0 z-40"
       style={{ borderBottom: "1px solid #e2e8f0" }}
     >
-      <div className={`${PAGE_SHELL} py-2 space-y-2`}>
-        <div className="flex items-center gap-3 md:gap-4 min-h-[44px]">
-          <div className="flex items-center gap-2 flex-shrink-0">
+      <div className={`${PAGE_SHELL} space-y-3 py-2`}>
+        <div className="flex min-h-[44px] items-center gap-3 md:gap-4">
+          <div className="flex shrink-0 items-center gap-2">
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
               style={{
                 background: "linear-gradient(135deg,#58CC02,#46A302)",
                 boxShadow: "0 2px 0 #3a8200",
               }}
             >
-              <span className="text-white font-black text-base leading-none">D</span>
+              <span className="text-base font-black leading-none text-white">D</span>
             </div>
-            <span className="font-black text-slate-900 text-lg tracking-tight hidden sm:block">
+            <span className="hidden text-lg font-black tracking-tight text-slate-900 sm:block">
               Drnote
             </span>
           </div>
 
-          <div className="hidden md:flex flex-1 max-w-[640px] mx-2 lg:mx-8">
-            {searchField}
-          </div>
-
-          <div className="flex items-center gap-1.5 ml-auto flex-shrink-0">
+          <div className="ml-auto flex shrink-0 items-center gap-1.5">
             <HeaderStatButton
               onClick={onStatsOpen}
               icon={Flame}
@@ -2681,7 +2796,7 @@ function BrowseHeader({
             <button
               onClick={onFilterOpen}
               aria-label="Filters"
-              className="flex items-center justify-center w-9 h-9 rounded-xl relative flex-shrink-0 transition-transform active:translate-y-0.5"
+              className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-transform active:translate-y-0.5"
               style={{
                 background: "#f8fafc",
                 border: "2px solid #cbd5e1",
@@ -2692,7 +2807,7 @@ function BrowseHeader({
               <SlidersHorizontal size={15} strokeWidth={2.5} />
               {totalFilters > 0 && (
                 <span
-                  className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full text-[9px] font-black flex items-center justify-center text-white"
+                  className="absolute -right-1.5 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-black text-white"
                   style={{ background: "#58CC02", border: "2px solid #fff" }}
                 >
                   {totalFilters}
@@ -2702,7 +2817,7 @@ function BrowseHeader({
           </div>
         </div>
 
-        <div className="md:hidden">{searchField}</div>
+        <div className="mx-auto w-full max-w-xl">{searchField}</div>
 
         {totalFilters > 0 && (
           <ActiveFilterPills
@@ -2716,14 +2831,14 @@ function BrowseHeader({
           />
         )}
 
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
+        <div className="-mx-1 flex justify-center gap-2 overflow-x-auto px-1 pb-1 scrollbar-hide">
           {TABS.map((tab) => {
             const active = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap flex-shrink-0 transition-colors"
+                className="flex-shrink-0 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-colors"
                 style={
                   active
                     ? {
