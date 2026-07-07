@@ -41,6 +41,7 @@ import {
   Share2,
   Sparkles,
   BarChart3,
+  Layers,
 } from "lucide-react";
 
 /** Mobile: centered narrow column. Desktop: full width with edge padding. */
@@ -293,6 +294,35 @@ function sessionItemCount(tab: string): number {
   return 1;
 }
 
+const HUES = {
+  violet: {
+    tile: "from-violet-500 to-purple-600",
+    hover: "hover:bg-violet-50 hover:border-violet-200",
+  },
+  sky: {
+    tile: "from-sky-400 to-blue-600",
+    hover: "hover:bg-sky-50 hover:border-sky-200",
+  },
+  teal: {
+    tile: "from-teal-400 to-emerald-600",
+    hover: "hover:bg-teal-50 hover:border-teal-200",
+  },
+  rose: {
+    tile: "from-rose-400 to-pink-600",
+    hover: "hover:bg-rose-50 hover:border-rose-200",
+  },
+  amber: {
+    tile: "from-amber-400 to-orange-500",
+    hover: "hover:bg-amber-50 hover:border-amber-200",
+  },
+  indigo: {
+    tile: "from-indigo-400 to-indigo-600",
+    hover: "hover:bg-indigo-50 hover:border-indigo-200",
+  },
+} as const;
+
+type SetHue = keyof typeof HUES;
+
 type StudySet = {
   id: string;
   title: string;
@@ -304,6 +334,7 @@ type StudySet = {
   tag: string;
   upvotes: number;
   comments: number;
+  hue: SetHue;
 };
 
 function filterSets(sets: StudySet[], query: string): StudySet[] {
@@ -331,6 +362,7 @@ const QUESTION_SETS: StudySet[] = [
     tag: "High Yield",
     upvotes: 248,
     comments: 142,
+    hue: "violet",
   },
   {
     id: "q2",
@@ -344,6 +376,7 @@ const QUESTION_SETS: StudySet[] = [
     tag: "Exam Ready",
     upvotes: 412,
     comments: 240,
+    hue: "sky",
   },
   {
     id: "q3",
@@ -357,6 +390,7 @@ const QUESTION_SETS: StudySet[] = [
     tag: "Review Needed",
     upvotes: 156,
     comments: 91,
+    hue: "teal",
   },
   {
     id: "q4",
@@ -370,6 +404,7 @@ const QUESTION_SETS: StudySet[] = [
     tag: "Week 2",
     upvotes: 89,
     comments: 52,
+    hue: "rose",
   },
 ];
 
@@ -386,6 +421,7 @@ const SUMMARY_SETS: StudySet[] = [
     tag: "HY Note",
     upvotes: 193,
     comments: 112,
+    hue: "indigo",
   },
   {
     id: "s2",
@@ -399,6 +435,7 @@ const SUMMARY_SETS: StudySet[] = [
     tag: "HY Note",
     upvotes: 327,
     comments: 189,
+    hue: "amber",
   },
   {
     id: "s3",
@@ -412,6 +449,7 @@ const SUMMARY_SETS: StudySet[] = [
     tag: "Week 3",
     upvotes: 74,
     comments: 43,
+    hue: "rose",
   },
 ];
 
@@ -428,6 +466,7 @@ const IMAGE_SETS: StudySet[] = [
     tag: "High Yield",
     upvotes: 201,
     comments: 117,
+    hue: "sky",
   },
   {
     id: "i2",
@@ -441,6 +480,7 @@ const IMAGE_SETS: StudySet[] = [
     tag: "Exam Ready",
     upvotes: 118,
     comments: 68,
+    hue: "teal",
   },
 ];
 
@@ -457,6 +497,7 @@ const FLASHCARD_SETS: StudySet[] = [
     tag: "High Yield",
     upvotes: 364,
     comments: 211,
+    hue: "violet",
   },
   {
     id: "f2",
@@ -470,6 +511,7 @@ const FLASHCARD_SETS: StudySet[] = [
     tag: "Master",
     upvotes: 521,
     comments: 302,
+    hue: "indigo",
   },
   {
     id: "f3",
@@ -483,6 +525,7 @@ const FLASHCARD_SETS: StudySet[] = [
     tag: "Week 4",
     upvotes: 142,
     comments: 83,
+    hue: "amber",
   },
 ];
 
@@ -688,111 +731,69 @@ function scoreColor(score: number) {
   return { color: "#dc2626", bg: "#fef2f2", border: "#fecaca", bar: "#ef4444" };
 }
 
-function SetUpvoteButton({
-  count,
-  upvoted,
-  onToggle,
-}: {
-  count: number;
-  upvoted: boolean;
-  onToggle: () => void;
-}) {
+function masteryColor(pct: number): { bar: string; text: string } {
+  if (pct >= 80) return { bar: "bg-emerald-500", text: "text-emerald-600" };
+  if (pct >= 40) return { bar: "bg-amber-500", text: "text-amber-600" };
+  if (pct > 0) return { bar: "bg-orange-500", text: "text-orange-600" };
+  return { bar: "bg-slate-300", text: "text-slate-400" };
+}
+
+function setMastery(set: StudySet): number {
+  return set.score ?? 0;
+}
+
+function LetterTile({ title, hue }: { title: string; hue: SetHue }) {
   return (
-    <button
-      type="button"
-      aria-label={`${count} upvotes`}
-      onClick={(e) => {
-        e.stopPropagation();
-        onToggle();
-      }}
-      className="flex h-11 min-w-11 flex-col items-center justify-center gap-0.5 rounded-xl border px-2 transition-colors"
-      style={
-        upvoted
-          ? {
-              background: "#fff7f6",
-              borderColor: "#f06a5d",
-              color: "#ea580c",
-            }
-          : {
-              background: "#fff",
-              borderColor: "#e2e8f0",
-              color: "#334155",
-            }
-      }
+    <div
+      className={`relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br shadow-sm ${HUES[hue].tile}`}
     >
-      <ChevronUp size={18} strokeWidth={3} />
-      <span className="text-xs font-black tabular-nums leading-none">
-        {count.toLocaleString()}
+      <span
+        aria-hidden="true"
+        className="absolute -bottom-3 -right-1 select-none text-4xl font-black text-white opacity-20"
+      >
+        {title.charAt(0)}
       </span>
-    </button>
+      <span className="relative text-lg font-black text-white">{title.charAt(0)}</span>
+    </div>
   );
 }
 
-function SetCard({
-  set,
-  onOpen,
-}: {
-  set: StudySet;
-  tab: string;
-  onOpen: () => void;
-}) {
-  const [upvoted, setUpvoted] = useState(false);
-  const [voteCount, setVoteCount] = useState(set.upvotes);
-  const progressPct = Math.round((set.done / set.total) * 100);
-  const scoreStyle = set.score !== null ? scoreColor(set.score) : null;
-  const displayPct = set.score !== null ? set.score : progressPct;
+function SetCard({ set, onOpen }: { set: StudySet; onOpen: () => void }) {
+  const mastery = setMastery(set);
+  const { bar, text } = masteryColor(mastery);
 
   return (
-    <div
-      className="rounded-2xl bg-white transition-shadow hover:shadow-sm"
-      style={{ border: "1.5px solid #e2e8f0" }}
+    <button
+      type="button"
+      onClick={onOpen}
+      className={`group w-full rounded-2xl border border-slate-200 bg-white p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-slate-200 ${HUES[set.hue].hover}`}
     >
-      <div className="flex items-center gap-3 p-4 pb-3">
-        <button
-          type="button"
-          onClick={onOpen}
-          className="min-w-0 flex-1 text-left"
-        >
-          <p className="line-clamp-2 text-sm font-black leading-snug text-slate-900">
+      <div className="flex items-center gap-3.5">
+        <LetterTile title={set.title} hue={set.hue} />
+
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-sm font-bold tracking-tight text-slate-900 sm:text-base">
             {set.title}
+          </h3>
+          <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-slate-500">
+            <Layers size={13} className="text-slate-400" />
+            <span className="tabular-nums">{set.upvotes.toLocaleString()} cards</span>
           </p>
-        </button>
-        <SetUpvoteButton
-          count={voteCount}
-          upvoted={upvoted}
-          onToggle={() => {
-            setUpvoted((prev) => {
-              const next = !prev;
-              setVoteCount((count) => count + (next ? 1 : -1));
-              return next;
-            });
-          }}
-        />
+        </div>
+
+        <span className={`shrink-0 text-lg font-bold tabular-nums tracking-tight ${text}`}>
+          {mastery}
+          <span className="text-xs font-semibold">%</span>
+        </span>
       </div>
 
-      <button type="button" onClick={onOpen} className="block w-full px-4 pb-4 text-left">
-        <div className="mb-2 flex items-center justify-end">
-          <span
-            className="text-lg font-black tabular-nums leading-none"
-            style={{ color: scoreStyle?.color ?? progressColor(displayPct) }}
-          >
-            {displayPct}%
-          </span>
-        </div>
+      <div className="mt-3.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
         <div
-          className="h-2 overflow-hidden rounded-full"
-          style={{ background: "#f1f5f9" }}
-        >
-          <div
-            className="h-full rounded-full transition-all"
-            style={{
-              width: `${displayPct}%`,
-              background: scoreStyle?.bar ?? progressColor(displayPct),
-            }}
-          />
-        </div>
-      </button>
-    </div>
+          className={`h-full rounded-full transition-all duration-500 ${bar}`}
+          style={{ width: `${mastery}%` }}
+        />
+      </div>
+    </button>
   );
 }
 
@@ -2044,9 +2045,9 @@ function TabContent({
           </p>
         </div>
       ) : (
-        <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {sets.map((set) => (
-            <SetCard key={set.id} set={set} tab={tab} onOpen={() => onOpenSet(set)} />
+            <SetCard key={set.id} set={set} onOpen={() => onOpenSet(set)} />
           ))}
         </div>
       )}
