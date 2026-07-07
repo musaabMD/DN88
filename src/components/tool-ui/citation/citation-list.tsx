@@ -32,6 +32,70 @@ const TYPE_ICONS: Record<CitationType, LucideIcon> = {
   other: File,
 };
 
+const SITE_COLORS = [
+  "#1CB0F6",
+  "#58CC02",
+  "#FF9600",
+  "#FF4B4B",
+  "#CE82FF",
+  "#FFC800",
+  "#FF86D0",
+  "#00CD9C",
+];
+
+function siteLabel(domain?: string, title?: string): string {
+  const raw = (domain || title || "?").replace(/^www\./i, "");
+  const segment = raw.split(".")[0] ?? raw;
+  return segment.charAt(0).toUpperCase() || "?";
+}
+
+function siteColor(domain?: string, title?: string): string {
+  const label = siteLabel(domain, title);
+  const code = label.charCodeAt(0);
+  return SITE_COLORS[code % SITE_COLORS.length] ?? SITE_COLORS[0];
+}
+
+function SiteBadge({
+  citation,
+  size = "sm",
+  className,
+}: {
+  citation: SerializableCitation;
+  size?: "sm" | "md";
+  className?: string;
+}) {
+  const color = siteColor(citation.domain, citation.title);
+  const label = siteLabel(citation.domain, citation.title);
+  const dim = size === "sm" ? "size-6 text-[10px]" : "size-8 text-xs";
+
+  if (citation.favicon) {
+    return (
+      <img
+        src={citation.favicon}
+        alt=""
+        aria-hidden="true"
+        width={size === "sm" ? 18 : 24}
+        height={size === "sm" ? 18 : 24}
+        className={cn("shrink-0 rounded-full object-cover", dim, className)}
+      />
+    );
+  }
+
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "flex shrink-0 items-center justify-center rounded-full font-extrabold text-white",
+        dim,
+        className,
+      )}
+      style={{ backgroundColor: color }}
+    >
+      {label}
+    </span>
+  );
+}
+
 function useHoverPopover(delay = 100) {
   const [open, setOpen] = React.useState(false);
   const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -272,38 +336,30 @@ interface OverflowItemProps {
 }
 
 function OverflowItem({ citation, onClick }: OverflowItemProps) {
-  const TypeIcon = TYPE_ICONS[citation.type ?? "webpage"] ?? Globe;
+  const color = siteColor(citation.domain, citation.title);
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group hover:bg-muted focus-visible:bg-muted flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2 py-2 text-left transition-colors focus-visible:outline-none"
+      className="group flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2 py-2 text-left transition-colors hover:bg-[#F7F7F7] focus-visible:bg-[#F7F7F7] focus-visible:outline-none"
     >
-      {citation.favicon ? (
-        <img
-          src={citation.favicon}
-          alt=""
-          aria-hidden="true"
-          width={16}
-          height={16}
-          className="bg-muted size-4 shrink-0 rounded object-cover"
-        />
-      ) : (
-        <TypeIcon
-          className="text-muted-foreground size-4 shrink-0"
-          aria-hidden="true"
-        />
-      )}
+      <SiteBadge citation={citation} size="md" />
       <div className="min-w-0 flex-1">
-        <p className="group-hover:decoration-foreground/30 truncate text-sm font-medium group-hover:underline group-hover:underline-offset-2">
+        <p
+          className="truncate text-sm font-bold transition-colors group-hover:underline group-hover:underline-offset-2"
+          style={{ color }}
+        >
           {citation.title}
         </p>
-        <p className="text-muted-foreground truncate text-xs">
+        <p className="truncate text-xs font-semibold text-[#AFAFAF] group-hover:text-[#4B4B4B]">
           {citation.domain}
         </p>
       </div>
-      <ExternalLink className="text-muted-foreground mt-0.5 size-3.5 shrink-0 self-start opacity-0 transition-opacity group-hover:opacity-100" />
+      <ExternalLink
+        className="mt-0.5 size-3.5 shrink-0 self-start opacity-0 transition-opacity group-hover:opacity-100"
+        style={{ color }}
+      />
     </button>
   );
 }
@@ -332,6 +388,10 @@ function StackedCitations({
   const maxIcons = 4;
   const visibleCitations = citations.slice(0, maxIcons);
   const remainingCount = Math.max(0, citations.length - maxIcons);
+  const accentColor = siteColor(
+    citations[0]?.domain,
+    citations[0]?.title,
+  );
 
   const handleClick = (citation: SerializableCitation) => {
     const href = resolveSafeNavigationHref(citation.href);
@@ -346,28 +406,29 @@ function StackedCitations({
   return (
     <div ref={containerRef} onBlur={handleBlur} className="inline-flex">
       <Popover open={open}>
-        <PopoverTrigger render={<button type="button" data-tool-ui-id={id} data-slot="citation-list" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} onKeyDown={(e) => {
+        <PopoverTrigger render={<button type="button" data-tool-ui-id={id} data-slot="citation-list" style={{ "--accent": accentColor } as React.CSSProperties} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} onKeyDown={(e) => {
                             if (e.key === "Enter" || e.key === " ") {
                               e.preventDefault();
                               setOpen(true);
                             }
                           }} className={cn(
-                            "isolate inline-flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2",
-                            "bg-muted/40 outline-none",
-                            "transition-colors duration-150",
-                            "hover:bg-muted/70",
-                            "focus-visible:ring-ring focus-visible:ring-2",
+                            "group isolate inline-flex cursor-pointer items-center gap-2 rounded-xl border-2 border-b-4 border-[#E5E5E5] bg-white px-3 py-2 outline-none",
+                            "transition-all hover:bg-[#F7F7F7] active:translate-y-[2px] active:border-b-2",
+                            "focus-visible:ring-2 focus-visible:ring-[#1CB0F6]",
+                            open && "border-[#1CB0F6] bg-[#F7F7F7]",
                             className,
                           )} />}><div className="flex items-center">
                             {visibleCitations.map((citation, index) => {
-                              const TypeIcon =
-                                TYPE_ICONS[citation.type ?? "webpage"] ?? Globe;
+                              const color = siteColor(
+                                citation.domain,
+                                citation.title,
+                              );
                               return (
                                 <div
                                   key={citation.id}
                                   className={cn(
-                                    "border-border bg-background dark:border-foreground/20 relative flex size-6 items-center justify-center rounded-full border shadow-xs",
-                                    index > 0 && "-ml-2",
+                                    "relative flex size-7 items-center justify-center rounded-full border-2 border-white bg-white shadow-sm transition-transform group-hover:scale-105",
+                                    index > 0 && "-ml-2.5",
                                   )}
                                   style={{ zIndex: maxIcons - index }}
                                 >
@@ -376,30 +437,32 @@ function StackedCitations({
                                       src={citation.favicon}
                                       alt=""
                                       aria-hidden="true"
-                                      width={18}
-                                      height={18}
-                                      className="size-4.5 rounded-full object-cover"
+                                      width={22}
+                                      height={22}
+                                      className="size-5.5 rounded-full object-cover"
                                     />
                                   ) : (
-                                    <TypeIcon
-                                      className="text-muted-foreground size-3"
-                                      aria-hidden="true"
-                                    />
+                                    <span
+                                      className="flex size-6 items-center justify-center rounded-full text-[11px] font-extrabold text-white"
+                                      style={{ backgroundColor: color }}
+                                    >
+                                      {siteLabel(citation.domain, citation.title)}
+                                    </span>
                                   )}
                                 </div>
                               );
                             })}
                             {remainingCount > 0 && (
                               <div
-                                className="border-border bg-background dark:border-foreground/20 relative -ml-2 flex size-6 items-center justify-center rounded-full border shadow-xs"
+                                className="relative -ml-2.5 flex size-7 items-center justify-center rounded-full border-2 border-white bg-[#E5E5E5] shadow-sm"
                                 style={{ zIndex: 0 }}
                               >
-                                <span className="text-muted-foreground text-[10px] font-medium tracking-tight">
-                                  •••
+                                <span className="text-[9px] font-extrabold text-[#4B4B4B]">
+                                  +{remainingCount}
                                 </span>
                               </div>
                             )}
-                          </div><span className="text-muted-foreground text-sm tabular-nums">
+                          </div><span className="text-sm font-extrabold tabular-nums text-[#AFAFAF] transition-colors group-hover:text-[var(--accent)]">
                             {citations.length} source{citations.length !== 1 && "s"}
                           </span></PopoverTrigger>
         <PopoverContent

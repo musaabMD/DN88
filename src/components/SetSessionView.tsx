@@ -517,20 +517,15 @@ export function SetSessionView({
         style={{ borderTopWidth: "2px" }}
       >
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
-          <p className="text-sm font-bold text-slate-600">
-            Question {page} of {total}
-            <span className="text-slate-400 font-semibold">
-              {" "}
-              · {remaining} remaining
-            </span>
+          <p className="text-sm font-extrabold tabular-nums text-[#4B4B4B]">
+            {page} / {total}
           </p>
           <button
             onClick={() => setPauseOpen(true)}
             aria-label="Pause session"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black text-slate-600 border-2 border-slate-200 bg-white"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-b-4 border-[#E5E5E5] bg-white text-[#4B4B4B] transition-all hover:bg-[#F7F7F7] active:translate-y-[2px] active:border-b-2"
           >
-            <Pause size={13} strokeWidth={2.5} />
-            Pause
+            <Pause size={16} strokeWidth={2.5} />
           </button>
         </div>
 
