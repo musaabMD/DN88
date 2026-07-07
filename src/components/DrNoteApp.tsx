@@ -740,13 +740,13 @@ function SetCard({ set, onOpen }: { set: StudySet; onOpen: () => void }) {
         </span>
       </div>
 
-      <div className="mt-4 h-4 w-full overflow-hidden rounded-full bg-slate-200">
+      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-200">
         {started && (
           <div
             className="relative h-full rounded-full bg-green-500 transition-all duration-500"
             style={{ width: `${mastery}%` }}
           >
-            <div className="absolute left-3 right-3 top-1 h-1 rounded-full bg-white opacity-30" />
+            <div className="absolute inset-x-2 top-0.5 h-0.5 rounded-full bg-white/35" />
           </div>
         )}
       </div>
@@ -2091,6 +2091,40 @@ function UpgradeModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+function HeaderPopover({
+  onClose,
+  anchor,
+  caretClassName,
+  children,
+}: {
+  onClose: () => void;
+  anchor: "streak" | "daily";
+  caretClassName: string;
+  children: ReactNode;
+}) {
+  const positionClass =
+    anchor === "streak"
+      ? "right-[6.75rem] sm:right-[8.75rem]"
+      : "right-[3.75rem] sm:right-[4.75rem]";
+
+  return (
+    <div className="fixed inset-0 z-[60]" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/10" />
+      <div
+        className={`absolute top-[54px] ${positionClass} w-[280px] max-w-[calc(100vw-1rem)]`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-[-5px] flex justify-center">
+          <div
+            className={`h-2.5 w-2.5 rotate-45 border-l border-t ${caretClassName}`}
+          />
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function StatsPopup({
   streak,
   onClose,
@@ -2102,67 +2136,52 @@ function StatsPopup({
   const today = new Date().getDay();
 
   return (
-    <div className="fixed inset-0 z-[60]" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/25" />
+    <HeaderPopover onClose={onClose} anchor="streak" caretClassName="border-orange-300 bg-[#ff9600]">
       <div
-        className="absolute left-1/2 top-[72px] w-full max-w-sm -translate-x-1/2 px-4"
-        onClick={(e) => e.stopPropagation()}
+        className="overflow-hidden rounded-2xl p-4 text-white"
+        style={{ background: "#ff9600", boxShadow: "0 8px 24px rgba(255,150,0,0.28)" }}
       >
-        <div
-          className="overflow-hidden rounded-2xl p-5 text-white"
-          style={{ background: "#ff9600", boxShadow: "0 8px 24px rgba(255,150,0,0.35)" }}
-        >
-          <div className="mb-5 flex items-start justify-between gap-4">
-            <div>
-              <p className="text-2xl font-extrabold leading-tight">
-                {streak} day streak
-              </p>
-              <p className="mt-1 text-sm font-semibold text-white/90">
-                Study every day to keep it alive
-              </p>
-            </div>
-            <div
-              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full"
-              style={{ background: "rgba(255,255,255,0.2)" }}
-            >
-              <Flame size={34} strokeWidth={2} className="text-white" fill="white" />
-            </div>
+        <div className="mb-4 flex items-center gap-3">
+          <Flame size={28} strokeWidth={2.5} className="shrink-0 text-white" fill="white" />
+          <div>
+            <p className="text-xl font-extrabold leading-tight">{streak} day streak</p>
+            <p className="text-xs font-semibold text-white/90">
+              Keep studying daily to maintain it
+            </p>
           </div>
+        </div>
 
-          <div className="rounded-xl bg-white p-4">
-            <div className="grid grid-cols-7 gap-1 text-center">
-              {weekLabels.map((label) => (
-                <span
-                  key={label}
-                  className="text-[11px] font-bold uppercase text-slate-400"
-                >
-                  {label}
-                </span>
-              ))}
-            </div>
-            <div className="mt-2 grid grid-cols-7 gap-1">
-              {weekLabels.map((label, index) => {
-                const active = index === today;
-                return (
-                  <div key={`${label}-${index}`} className="flex justify-center">
-                    <div
-                      className="flex h-8 w-8 items-center justify-center rounded-full"
-                      style={{
-                        background: active ? "#ff9600" : "#e5e7eb",
-                      }}
-                    >
-                      {active && (
-                        <Check size={16} strokeWidth={3} className="text-white" />
-                      )}
-                    </div>
+        <div className="rounded-xl bg-white p-3">
+          <div className="grid grid-cols-7 gap-1 text-center">
+            {weekLabels.map((label, index) => (
+              <span
+                key={`${label}-${index}`}
+                className="text-[10px] font-bold text-slate-400"
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+          <div className="mt-1.5 grid grid-cols-7 gap-1">
+            {weekLabels.map((label, index) => {
+              const active = index === today;
+              return (
+                <div key={`dot-${label}-${index}`} className="flex justify-center">
+                  <div
+                    className="flex h-7 w-7 items-center justify-center rounded-full"
+                    style={{ background: active ? "#ff9600" : "#e5e7eb" }}
+                  >
+                    {active && (
+                      <Check size={14} strokeWidth={3} className="text-white" />
+                    )}
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
-    </div>
+    </HeaderPopover>
   );
 }
 
@@ -2185,74 +2204,59 @@ function DailyPopup({
   );
 
   return (
-    <div className="fixed inset-0 z-[60]" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/25" />
+    <HeaderPopover onClose={onClose} anchor="daily" caretClassName="border-slate-200 bg-white">
       <div
-        className="absolute left-1/2 top-[72px] w-full max-w-sm -translate-x-1/2 px-4"
-        onClick={(e) => e.stopPropagation()}
+        className="overflow-hidden rounded-2xl border-2 border-slate-200 bg-white p-4"
+        style={{ boxShadow: "0 8px 24px rgba(15,23,42,0.1)" }}
       >
-        <div
-          className="overflow-hidden rounded-2xl bg-white p-5"
-          style={{ border: "2px solid #e5e7eb", boxShadow: "0 12px 32px rgba(15,23,42,0.12)" }}
-        >
-          <p className="mb-4 text-center text-lg font-extrabold text-slate-700">
-            Daily questions
-          </p>
+        <p className="mb-3 text-center text-base font-extrabold text-slate-700">
+          Daily questions
+        </p>
 
-          <div className="mb-4 flex items-center justify-center gap-2">
-            {Array.from({ length: heartSlots }).map((_, index) => (
-              <Heart
-                key={index}
-                size={28}
-                strokeWidth={2}
-                className={
-                  index < filledHearts ? "text-[#ff4b4b]" : "text-slate-200"
-                }
-                fill={index < filledHearts ? "#ff4b4b" : "none"}
-              />
-            ))}
-          </div>
-
-          <p className="mb-1 text-center text-sm font-bold text-slate-700">
-            {remaining > 0 ? (
-              <>
-                <span className="text-[#ff4b4b]">{remaining} questions</span> left
-                today
-              </>
-            ) : (
-              "Daily limit reached"
-            )}
-          </p>
-          <p className="mb-5 text-center text-xs font-medium text-slate-400">
-            {remaining > 0
-              ? "Keep going while you still have questions!"
-              : "Come back tomorrow or upgrade for unlimited access."}
-          </p>
-
-          <button
-            type="button"
-            onClick={() => {
-              onClose();
-              onUpgrade();
-            }}
-            className="mb-2 w-full rounded-2xl border-2 border-b-4 py-3.5 text-sm font-extrabold uppercase tracking-wide text-slate-700"
-            style={{ borderColor: "#e5e7eb", background: "#fff" }}
-          >
-            <span className="inline-flex items-center gap-2">
-              <Crown size={16} className="text-violet-500" />
-              Unlimited questions
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full py-2 text-sm font-bold text-slate-400"
-          >
-            Maybe later
-          </button>
+        <div className="mb-3 flex items-center justify-center gap-1.5">
+          {Array.from({ length: heartSlots }).map((_, index) => (
+            <Heart
+              key={index}
+              size={22}
+              strokeWidth={2}
+              className={index < filledHearts ? "text-[#ff4b4b]" : "text-slate-200"}
+              fill={index < filledHearts ? "#ff4b4b" : "none"}
+            />
+          ))}
         </div>
+
+        <p className="mb-1 text-center text-sm font-bold text-slate-700">
+          {remaining > 0 ? (
+            <>
+              <span className="text-[#ff4b4b]">{remaining}</span> left today
+            </>
+          ) : (
+            "Limit reached"
+          )}
+        </p>
+        <p className="mb-4 text-center text-xs font-medium text-slate-400">
+          {remaining > 0 ? "You still have questions left." : "Come back tomorrow."}
+        </p>
+
+        <button
+          type="button"
+          onClick={() => {
+            onClose();
+            onUpgrade();
+          }}
+          className="mb-2 w-full rounded-xl border-2 border-b-4 border-violet-200 bg-violet-50 py-2.5 text-xs font-extrabold uppercase tracking-wide text-violet-700 active:translate-y-0.5 active:border-b-2"
+        >
+          Unlimited questions
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full py-1.5 text-xs font-bold text-slate-400"
+        >
+          Maybe later
+        </button>
       </div>
-    </div>
+    </HeaderPopover>
   );
 }
 
@@ -2678,10 +2682,7 @@ function BrowseHeader({
   );
 
   return (
-    <header
-      className="sticky top-0 z-40 bg-white"
-      style={{ borderBottom: "1px solid #e2e8f0" }}
-    >
+    <header className="sticky top-0 z-40 bg-white">
       <div className={`${PAGE_SHELL} space-y-3 py-2`}>
         <div className="flex min-h-[44px] items-center gap-3">
           <div className="flex shrink-0 items-center gap-2.5">
