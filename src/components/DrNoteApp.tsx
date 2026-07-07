@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { useEffect, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import {
   createInitialChat,
   QuestionChatPanel,
   type ChatMessage,
 } from "@/components/QuestionChatPanel";
 import { ReportSheet } from "@/components/ReportSheet";
+import { SessionPauseModal } from "@/components/SessionPauseModal";
+import { SessionReportView } from "@/components/SessionReportView";
+import { CitationList, type Citation } from "@/components/tool-ui/citation";
 import type { LucideIcon } from "lucide-react";
 import {
   FileQuestion,
@@ -29,7 +32,6 @@ import {
   Bookmark,
   Lightbulb,
   Flag,
-  MessageCircle,
   Send,
   RotateCcw,
   Heart,
@@ -37,6 +39,12 @@ import {
   ChevronUp,
   ChevronRight as Chevron,
   Target,
+  MoreVertical,
+  Pause,
+  Share2,
+  ThumbsUp,
+  Sparkles,
+  BarChart3,
 } from "lucide-react";
 
 /** Mobile: centered narrow column. Desktop: full width with edge padding. */
@@ -99,6 +107,27 @@ const SAMPLE_QUESTIONS = [
     status: "unused",
     explanation:
       "Metformin decreases hepatic glucose output by inhibiting mitochondrial glycerophosphate dehydrogenase, reducing gluconeogenesis. It does not primarily stimulate insulin secretion (sulfonylureas) or block intestinal absorption.",
+    citations: [
+      {
+        id: "c1",
+        title: "Pharmacotherapy of hyperglycemia in type 2 diabetes",
+        source: "ADA Standards of Care in Diabetes",
+        year: "2024",
+        url: "https://diabetesjournals.org/care",
+      },
+      {
+        id: "c2",
+        title: "Biguanides and hepatic gluconeogenesis",
+        source: "Goodman & Gilman's Pharmacology",
+        year: "2023",
+      },
+      {
+        id: "c3",
+        title: "Oral hypoglycemic agents overview",
+        source: "First Aid for the USMLE Step 1",
+        year: "2025",
+      },
+    ] satisfies Citation[],
   },
   {
     id: 2,
@@ -115,6 +144,21 @@ const SAMPLE_QUESTIONS = [
     status: "used",
     explanation:
       "The median nerve travels through the carpal tunnel with the flexor tendons. The ulnar nerve passes medial to the tunnel (Guyon's canal region), and the radial nerve does not enter the carpal tunnel.",
+    citations: [
+      {
+        id: "c4",
+        title: "Carpal tunnel anatomy",
+        source: "Gray's Anatomy for Students",
+        year: "2024",
+      },
+      {
+        id: "c5",
+        title: "Median nerve entrapment syndromes",
+        source: "StatPearls",
+        year: "2024",
+        url: "https://www.ncbi.nlm.nih.gov/books/",
+      },
+    ] satisfies Citation[],
   },
   {
     id: 3,
@@ -131,6 +175,20 @@ const SAMPLE_QUESTIONS = [
     status: "incorrect",
     explanation:
       "Non-caseating granulomas in the lung are classic for sarcoidosis. Tuberculosis typically shows caseating granulomas. Histoplasmosis and aspergillosis have different histologic patterns.",
+    citations: [
+      {
+        id: "c6",
+        title: "Sarcoidosis pathology",
+        source: "Robbins Basic Pathology",
+        year: "2023",
+      },
+      {
+        id: "c7",
+        title: "Granulomatous lung disease differential",
+        source: "Harrison's Principles of Internal Medicine",
+        year: "2024",
+      },
+    ] satisfies Citation[],
   },
 ];
 
@@ -229,6 +287,7 @@ type StudySet = {
   done: number;
   score: number | null;
   tag: string;
+  upvotes: number;
 };
 
 function filterSets(sets: StudySet[], query: string): StudySet[] {
@@ -254,6 +313,7 @@ const QUESTION_SETS: StudySet[] = [
     done: 13,
     score: 85,
     tag: "High Yield",
+    upvotes: 248,
   },
   {
     id: "q2",
@@ -265,6 +325,7 @@ const QUESTION_SETS: StudySet[] = [
     done: 15,
     score: 92,
     tag: "Exam Ready",
+    upvotes: 412,
   },
   {
     id: "q3",
@@ -276,6 +337,7 @@ const QUESTION_SETS: StudySet[] = [
     done: 4,
     score: 61,
     tag: "Review Needed",
+    upvotes: 156,
   },
   {
     id: "q4",
@@ -287,6 +349,7 @@ const QUESTION_SETS: StudySet[] = [
     done: 0,
     score: null,
     tag: "Week 2",
+    upvotes: 89,
   },
 ];
 
@@ -301,6 +364,7 @@ const SUMMARY_SETS: StudySet[] = [
     done: 6,
     score: 88,
     tag: "HY Note",
+    upvotes: 193,
   },
   {
     id: "s2",
@@ -312,6 +376,7 @@ const SUMMARY_SETS: StudySet[] = [
     done: 5,
     score: 95,
     tag: "HY Note",
+    upvotes: 327,
   },
   {
     id: "s3",
@@ -323,6 +388,7 @@ const SUMMARY_SETS: StudySet[] = [
     done: 0,
     score: null,
     tag: "Week 3",
+    upvotes: 74,
   },
 ];
 
@@ -337,6 +403,7 @@ const IMAGE_SETS: StudySet[] = [
     done: 9,
     score: 78,
     tag: "High Yield",
+    upvotes: 201,
   },
   {
     id: "i2",
@@ -348,6 +415,7 @@ const IMAGE_SETS: StudySet[] = [
     done: 2,
     score: 50,
     tag: "Exam Ready",
+    upvotes: 118,
   },
 ];
 
@@ -362,6 +430,7 @@ const FLASHCARD_SETS: StudySet[] = [
     done: 22,
     score: 81,
     tag: "High Yield",
+    upvotes: 364,
   },
   {
     id: "f2",
@@ -373,6 +442,7 @@ const FLASHCARD_SETS: StudySet[] = [
     done: 24,
     score: 96,
     tag: "Master",
+    upvotes: 521,
   },
   {
     id: "f3",
@@ -384,6 +454,7 @@ const FLASHCARD_SETS: StudySet[] = [
     done: 5,
     score: 70,
     tag: "Week 4",
+    upvotes: 142,
   },
 ];
 
@@ -536,84 +607,85 @@ function SetCard({
   tab: string;
   onOpen: () => void;
 }) {
-  const [bookmarked, setBookmarked] = useState(false);
-  const accent = TAB_ACCENT[tab];
-  const Icon = accent.icon;
+  const [menuOpen, setMenuOpen] = useState(false);
   const pct = Math.round((set.done / set.total) * 100);
-  const complete = pct >= 100;
+
+  const menuItems = [
+    { label: "Share", icon: Share2 },
+    { label: "Resume", icon: ChevronRight },
+    { label: "Result", icon: BarChart3 },
+    { label: "Restart", icon: RotateCcw },
+    { label: "Report", icon: Flag },
+  ] as const;
 
   return (
     <div
-      className="bg-white rounded-3xl mb-3 overflow-hidden transition-all"
+      className="bg-white rounded-2xl overflow-hidden relative"
       style={{ border: "2px solid #e2e8f0", boxShadow: "0 2px 0 #e2e8f0" }}
     >
-      <button onClick={onOpen} className="w-full text-left px-4 pt-3.5 pb-3">
-        <div className="flex items-start gap-3">
-          <div
-            className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
-            style={{
-              background: accent.bg,
-              border: `2px solid ${accent.border}`,
-            }}
-          >
-            <Icon size={20} strokeWidth={2.5} style={{ color: accent.color }} />
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5">
-              <p className="font-black text-slate-900 text-sm truncate">
-                {set.title}
-              </p>
-              {complete && (
-                <span
-                  className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: "#22c55e" }}
+      <button onClick={onOpen} className="w-full text-left px-4 pt-4 pb-3">
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <p className="font-black text-slate-900 text-sm leading-snug line-clamp-2">
+            {set.title}
+          </p>
+          <div className="relative shrink-0">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuOpen((open) => !open);
+              }}
+              aria-label="Set options"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100"
+            >
+              <MoreVertical size={16} strokeWidth={2.5} />
+            </button>
+            {menuOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuOpen(false);
+                  }}
+                />
+                <div
+                  className="absolute right-0 top-9 z-20 min-w-[140px] rounded-xl bg-white py-1 shadow-lg"
+                  style={{ border: "1.5px solid #e2e8f0" }}
                 >
-                  <Check size={10} strokeWidth={3.5} className="text-white" />
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span
-                className="text-xs font-black px-2 py-0.5 rounded-lg"
-                style={{
-                  background: accent.bg,
-                  color: accent.color,
-                  border: `1.5px solid ${accent.border}`,
-                }}
-              >
-                {set.subject}
-              </span>
-              <span
-                className="text-xs font-bold px-2 py-0.5 rounded-lg"
-                style={{ background: "#f0fdf4", color: "#16a34a" }}
-              >
-                {set.tag}
-              </span>
-            </div>
+                  {menuItems.map(({ label, icon: Icon }) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                    >
+                      <Icon size={14} strokeWidth={2.5} />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
-
-          <Chevron
-            size={16}
-            strokeWidth={2.5}
-            className="text-slate-300 flex-shrink-0 mt-2"
-          />
         </div>
 
-        <div className="flex items-center gap-3 mt-3">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <span className="text-xs font-bold text-slate-500">{set.subject}</span>
+          <span className="inline-flex items-center gap-1 text-xs font-black text-slate-600">
+            <ThumbsUp size={13} strokeWidth={2.5} className="text-green-600" />
+            {set.upvotes.toLocaleString()}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3">
           <div className="flex-1">
-            <div className="flex justify-between mb-1">
-              <span
-                className="text-xs font-black"
-                style={{ color: progressColor(pct) }}
-              >
-                {set.done}/{set.total}
-              </span>
-              <span className="text-xs font-bold text-slate-400">{pct}%</span>
-            </div>
             <div
-              className="h-2.5 rounded-full overflow-hidden"
-              style={{ background: "#f1f5f9", border: "1px solid #e2e8f0" }}
+              className="h-2 rounded-full overflow-hidden"
+              style={{ background: "#f1f5f9" }}
             >
               <div
                 className="h-full rounded-full transition-all"
@@ -621,73 +693,14 @@ function SetCard({
               />
             </div>
           </div>
-
-          {set.score !== null ? (
-            <div
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl flex-shrink-0"
-              style={{
-                background: scoreColor(set.score).bg,
-                border: `1.5px solid ${scoreColor(set.score).border}`,
-              }}
-            >
-              <Target
-                size={12}
-                strokeWidth={2.5}
-                style={{ color: scoreColor(set.score).color }}
-              />
-              <span
-                className="text-xs font-black"
-                style={{ color: scoreColor(set.score).color }}
-              >
-                {set.score}%
-              </span>
-            </div>
-          ) : (
-            <span
-              className="text-xs font-bold px-2.5 py-1.5 rounded-xl flex-shrink-0"
-              style={{
-                background: "#f8fafc",
-                color: "#94a3b8",
-                border: "1.5px solid #e2e8f0",
-              }}
-            >
-              New
-            </span>
-          )}
+          <span
+            className="text-xs font-black shrink-0"
+            style={{ color: progressColor(pct) }}
+          >
+            {set.done}/{set.total}
+          </span>
         </div>
       </button>
-
-      <div
-        className="flex items-center justify-between px-4 py-2"
-        style={{ borderTop: "2px solid #f8fafc" }}
-      >
-        <span className="text-xs font-bold text-slate-400">
-          {complete ? "Completed" : set.done > 0 ? "In progress" : "Not started"}
-        </span>
-        <button
-          onClick={() => setBookmarked((p) => !p)}
-          className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
-          style={
-            bookmarked
-              ? {
-                  background: "#fff7ed",
-                  border: "1.5px solid #fed7aa",
-                  color: "#ea580c",
-                }
-              : {
-                  background: "#f8fafc",
-                  border: "1.5px solid #e2e8f0",
-                  color: "#94a3b8",
-                }
-          }
-        >
-          <Bookmark
-            size={14}
-            strokeWidth={2.5}
-            fill={bookmarked ? "#ea580c" : "none"}
-          />
-        </button>
-      </div>
     </div>
   );
 }
@@ -953,18 +966,6 @@ function QuestionCard({
             <Flag size={12} strokeWidth={2.5} />
             Report
           </button>
-          <button
-            onClick={() => onSidebar("comments")}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all"
-            style={{
-              background: "#eff6ff",
-              border: "1.5px solid #bfdbfe",
-              color: "#1d4ed8",
-              boxShadow: "0 2px 0 #bfdbfe",
-            }}
-          >
-            <MessageCircle size={12} strokeWidth={2.5} />2
-          </button>
         </div>
         <button
           onClick={() => setBookmarked((p) => !p)}
@@ -994,24 +995,70 @@ function QuestionCard({
   );
 }
 
+function SessionNavButton({
+  onClick,
+  disabled,
+  children,
+  ariaLabel,
+  variant = "neutral",
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  children: ReactNode;
+  ariaLabel: string;
+  variant?: "neutral" | "primary" | "danger" | "ai";
+}) {
+  const styles = {
+    neutral: {
+      background: "#fff",
+      border: "2px solid #e2e8f0",
+      color: "#64748b",
+      boxShadow: "0 2px 0 #e2e8f0",
+    },
+    primary: {
+      background: "#58CC02",
+      border: "2px solid #46A302",
+      color: "#fff",
+      boxShadow: "0 3px 0 #46A302",
+    },
+    danger: {
+      background: "#fff",
+      border: "2px solid #fecaca",
+      color: "#dc2626",
+      boxShadow: "0 2px 0 #fecaca",
+    },
+    ai: {
+      background: "#f5f3ff",
+      border: "2px solid #ddd6fe",
+      color: "#6d28d9",
+      boxShadow: "0 2px 0 #ddd6fe",
+    },
+  }[variant];
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      className="w-11 h-11 rounded-xl flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed active:translate-y-0.5"
+      style={styles}
+    >
+      {children}
+    </button>
+  );
+}
+
 function LessonQuestionView({
   q,
   onAnswer,
-  onContinue,
-  onSkip,
-  onOpenReport,
-  onOpenChat,
 }: {
   q: (typeof SAMPLE_QUESTIONS)[0];
   onAnswer: (correct: boolean) => void;
-  onContinue: () => void;
-  onSkip: () => void;
-  onOpenReport: () => void;
-  onOpenChat: () => void;
 }) {
   const [selected, setSelected] = useState<number | null>(null);
   const [answered, setAnswered] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
+  const citations = "citations" in q ? q.citations : [];
 
   const pickOption = (index: number) => {
     if (answered) return;
@@ -1021,166 +1068,112 @@ function LessonQuestionView({
   };
 
   return (
-    <>
-      <div className="flex-1 flex flex-col">
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <span
-            className="inline-flex text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg"
-            style={{
-              background: "#f5f3ff",
-              color: "#7c3aed",
-              border: "1.5px solid #ddd6fe",
-            }}
-          >
-            {q.subject} · {q.tag}
-          </span>
-          <button
-            onClick={() => setBookmarked((prev) => !prev)}
-            aria-label={bookmarked ? "Remove bookmark" : "Bookmark question"}
-            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-            style={
-              bookmarked
-                ? {
-                    background: "#fff7ed",
-                    border: "2px solid #fed7aa",
-                    color: "#ea580c",
-                  }
-                : {
-                    background: "#f8fafc",
-                    border: "2px solid #e2e8f0",
-                    color: "#94a3b8",
-                  }
-            }
-          >
-            <Bookmark
-              size={18}
-              strokeWidth={2.5}
-              fill={bookmarked ? "#ea580c" : "none"}
-            />
-          </button>
-        </div>
-
-        <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-6 leading-snug">
-          {q.text}
-        </h2>
-
-        <div className="flex flex-col gap-3 mb-6">
-          {q.options.map((opt, i) => {
-            const isSelected = selected === i;
-            const isCorrect = answered && i === q.answer;
-            const isWrong = answered && isSelected && i !== q.answer;
-            return (
-              <button
-                key={i}
-                disabled={answered}
-                onClick={() => pickOption(i)}
-                className="w-full p-4 rounded-2xl border-2 text-left font-semibold text-sm md:text-base transition-all active:scale-[0.99] disabled:cursor-default"
-                style={
-                  isCorrect
-                    ? {
-                        background: "#f0fdf4",
-                        borderColor: "#22c55e",
-                        color: "#15803d",
-                        boxShadow: "0 3px 0 #86efac",
-                      }
-                    : isWrong
-                      ? {
-                          background: "#fef2f2",
-                          borderColor: "#f87171",
-                          color: "#dc2626",
-                          boxShadow: "0 3px 0 #fca5a5",
-                        }
-                      : isSelected
-                        ? {
-                            background: "#eff6ff",
-                            borderColor: "#3b82f6",
-                            color: "#1d4ed8",
-                            boxShadow: "0 3px 0 #bfdbfe",
-                          }
-                        : {
-                            background: "#fff",
-                            borderColor: "#e2e8f0",
-                            color: "#334155",
-                            boxShadow: "0 3px 0 #e2e8f0",
-                          }
+    <div className="flex-1 flex flex-col">
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <span className="text-xs font-bold text-slate-500">{q.subject}</span>
+        <button
+          onClick={() => setBookmarked((prev) => !prev)}
+          aria-label={bookmarked ? "Remove bookmark" : "Bookmark question"}
+          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+          style={
+            bookmarked
+              ? {
+                  background: "#fff7ed",
+                  border: "2px solid #fed7aa",
+                  color: "#ea580c",
                 }
-              >
-                {opt}
-              </button>
-            );
-          })}
-        </div>
+              : {
+                  background: "#f8fafc",
+                  border: "2px solid #e2e8f0",
+                  color: "#94a3b8",
+                }
+          }
+        >
+          <Bookmark
+            size={18}
+            strokeWidth={2.5}
+            fill={bookmarked ? "#ea580c" : "none"}
+          />
+        </button>
+      </div>
 
-        {answered && (
-          <div className="space-y-4 mb-4">
-            <div
-              className="rounded-2xl p-4"
-              style={{ background: "#f0fdf4", border: "2px solid #bbf7d0" }}
+      <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-6 leading-snug">
+        {q.text}
+      </h2>
+
+      <div className="flex flex-col gap-3 mb-6">
+        {q.options.map((opt, i) => {
+          const isSelected = selected === i;
+          const isCorrect = answered && i === q.answer;
+          const isWrong = answered && isSelected && i !== q.answer;
+          return (
+            <button
+              key={i}
+              disabled={answered}
+              onClick={() => pickOption(i)}
+              className="w-full p-4 rounded-2xl border-2 text-left font-semibold text-sm md:text-base transition-all active:scale-[0.99] disabled:cursor-default"
+              style={
+                isCorrect
+                  ? {
+                      background: "#f0fdf4",
+                      borderColor: "#22c55e",
+                      color: "#15803d",
+                      boxShadow: "0 3px 0 #86efac",
+                    }
+                  : isWrong
+                    ? {
+                        background: "#fef2f2",
+                        borderColor: "#f87171",
+                        color: "#dc2626",
+                        boxShadow: "0 3px 0 #fca5a5",
+                      }
+                    : isSelected
+                      ? {
+                          background: "#eff6ff",
+                          borderColor: "#3b82f6",
+                          color: "#1d4ed8",
+                          boxShadow: "0 3px 0 #bfdbfe",
+                        }
+                      : {
+                          background: "#fff",
+                          borderColor: "#e2e8f0",
+                          color: "#334155",
+                          boxShadow: "0 3px 0 #e2e8f0",
+                        }
+              }
             >
-              <p className="text-xs font-black uppercase tracking-widest text-green-700 mb-2">
-                Explanation
-              </p>
-              <p className="text-sm font-medium text-green-900 leading-relaxed">
-                {q.explanation}
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={onOpenChat}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
-                style={{
-                  background: "#f5f3ff",
-                  border: "1.5px solid #ddd6fe",
-                  color: "#6d28d9",
-                }}
-              >
-                <Lightbulb size={12} strokeWidth={2.5} />
-                Explain with AI
-              </button>
-              <button
-                onClick={onOpenReport}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
-                style={{
-                  background: "#fef2f2",
-                  border: "1.5px solid #fecaca",
-                  color: "#dc2626",
-                }}
-              >
-                <Flag size={12} strokeWidth={2.5} />
-                Report
-              </button>
-            </div>
-          </div>
-        )}
+              {opt}
+            </button>
+          );
+        })}
       </div>
 
-      <div
-        className="flex-shrink-0 border-t border-slate-200 bg-white -mx-4 px-4 py-4 mt-auto"
-        style={{ borderTopWidth: "2px" }}
-      >
-        <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
-          <button
-            onClick={onSkip}
-            className="px-4 py-3 rounded-2xl text-sm font-black uppercase tracking-wide text-slate-400 border-2 border-slate-200 bg-white"
-          >
-            Skip
-          </button>
-          <button
-            onClick={onContinue}
-            disabled={!answered}
-            className="px-10 py-3 rounded-2xl text-sm font-black uppercase tracking-wide text-white disabled:opacity-40 disabled:cursor-not-allowed active:translate-y-0.5"
-            style={{
-              background: "#58CC02",
-              border: "2px solid #46A302",
-              boxShadow: "0 4px 0 #46A302",
-            }}
-          >
-            Continue
-          </button>
+      {answered && (
+        <div
+          className="rounded-2xl p-5 md:p-6 mb-4 space-y-4"
+          style={{ background: "#f0fdf4", border: "2px solid #bbf7d0" }}
+        >
+          <p className="text-sm font-black uppercase tracking-widest text-green-700">
+            Explanation
+          </p>
+          <p className="text-base md:text-lg font-medium text-green-950 leading-relaxed">
+            {q.explanation}
+          </p>
+          {citations.length > 0 && (
+            <div className="pt-2">
+              <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-3">
+                References
+              </p>
+              <CitationList
+                id={`citations-q${q.id}`}
+                citations={citations}
+                variant="stacked"
+              />
+            </div>
+          )}
         </div>
-      </div>
-    </>
+      )}
+    </div>
   );
 }
 
@@ -1197,22 +1190,35 @@ function SetSessionView({
   onPageChange: (p: number) => void;
   onClose: () => void;
 }) {
-  const [phase, setPhase] = useState<"intro" | "active">("intro");
+  const [phase, setPhase] = useState<"intro" | "active" | "report">("intro");
   const [sessionCorrect, setSessionCorrect] = useState(0);
   const [sessionAnswered, setSessionAnswered] = useState(0);
+  const [subjectStats, setSubjectStats] = useState<
+    Record<string, { correct: number; total: number }>
+  >({});
+  const [currentAnswered, setCurrentAnswered] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [pauseOpen, setPauseOpen] = useState(false);
   const [questionChats, setQuestionChats] = useState<Record<string, ChatMessage[]>>({});
+  const sessionStartRef = useRef<number | null>(null);
+  const sessionEndRef = useRef<number | null>(null);
 
   const total = sessionItemCount(tab);
   const idx = Math.min(page, total) - 1;
+  const remaining = Math.max(total - page, 0);
   const progressPct =
-    phase === "intro" ? 0 : total > 0 ? (page / total) * 100 : 0;
+    phase === "intro"
+      ? 0
+      : phase === "report"
+        ? 100
+        : total > 0
+          ? (page / total) * 100
+          : 0;
   const liveScore =
     sessionAnswered > 0
       ? Math.round((sessionCorrect / sessionAnswered) * 100)
-      : (set.score ?? 0);
-  const scoreStyle = scoreColor(liveScore);
+      : 0;
 
   const currentQuestion =
     tab === "questions" ? SAMPLE_QUESTIONS[idx] : undefined;
@@ -1226,18 +1232,83 @@ function SetSessionView({
         ? createInitialChat(currentQuestion.text)
         : [];
 
+  useEffect(() => {
+    setCurrentAnswered(false);
+  }, [page, phase]);
+
   const updateChat = (messages: ChatMessage[]) => {
     if (!chatKey) return;
     setQuestionChats((prev) => ({ ...prev, [chatKey]: messages }));
   };
 
-  const goNext = () => {
+  const finishSession = () => {
+    sessionEndRef.current = Date.now();
     setChatOpen(false);
-    if (page < total) onPageChange(page + 1);
-    else onClose();
+    setPauseOpen(false);
+    setPhase("report");
   };
 
+  const goNext = () => {
+    if (tab === "questions" && !currentAnswered) return;
+    setChatOpen(false);
+    if (page < total) onPageChange(page + 1);
+    else finishSession();
+  };
+
+  const goBack = () => {
+    setChatOpen(false);
+    if (page > 1) onPageChange(page - 1);
+  };
+
+  const handleCloseRequest = () => {
+    if (phase === "intro") {
+      onClose();
+      return;
+    }
+    if (phase === "report") {
+      onClose();
+      return;
+    }
+    setPauseOpen(true);
+  };
+
+  const openChat = () => {
+    if (!currentQuestion || !chatKey) return;
+    if (!questionChats[chatKey]) {
+      setQuestionChats((prev) => ({
+        ...prev,
+        [chatKey]: createInitialChat(currentQuestion.text),
+      }));
+    }
+    setChatOpen(true);
+  };
+
+  const elapsedSeconds =
+    sessionStartRef.current && sessionEndRef.current
+      ? Math.max(
+          1,
+          Math.round((sessionEndRef.current - sessionStartRef.current) / 1000)
+        )
+      : sessionStartRef.current
+        ? Math.max(
+            1,
+            Math.round((Date.now() - sessionStartRef.current) / 1000)
+          )
+        : 0;
+
   const renderSlide = () => {
+    if (phase === "report") {
+      return (
+        <SessionReportView
+          setTitle={set.title}
+          elapsedSeconds={elapsedSeconds}
+          overallScore={liveScore}
+          subjectScores={subjectStats}
+          onClose={onClose}
+        />
+      );
+    }
+
     if (phase === "intro") {
       return (
         <SetIntroView
@@ -1245,6 +1316,7 @@ function SetSessionView({
           tab={tab}
           itemCount={total}
           onStart={() => {
+            sessionStartRef.current = Date.now();
             setPhase("active");
             onPageChange(1);
           }}
@@ -1261,20 +1333,19 @@ function SetSessionView({
           key={`${q.id}-${page}`}
           q={q}
           onAnswer={(correct) => {
+            setCurrentAnswered(true);
             setSessionAnswered((n) => n + 1);
             if (correct) setSessionCorrect((n) => n + 1);
-          }}
-          onContinue={goNext}
-          onSkip={goNext}
-          onOpenReport={() => setReportOpen(true)}
-          onOpenChat={() => {
-            if (chatKey && !questionChats[chatKey]) {
-              setQuestionChats((prev) => ({
+            setSubjectStats((prev) => {
+              const cur = prev[q.subject] ?? { correct: 0, total: 0 };
+              return {
                 ...prev,
-                [chatKey]: createInitialChat(q.text),
-              }));
-            }
-            setChatOpen(true);
+                [q.subject]: {
+                  correct: cur.correct + (correct ? 1 : 0),
+                  total: cur.total + 1,
+                },
+              };
+            });
           }}
         />
       );
@@ -1282,82 +1353,156 @@ function SetSessionView({
     if (tab === "summary") {
       const s = SAMPLE_SUMMARIES[idx];
       if (!s) return null;
-      return (
-        <SessionSlideShell onSkip={goNext} onContinue={goNext} continueLabel="Next">
-          <SummaryCard s={s} />
-        </SessionSlideShell>
-      );
+      return <SummaryCard s={s} />;
     }
     if (tab === "images") {
       const img = SAMPLE_IMAGES[idx];
       if (!img) return null;
-      return (
-        <SessionSlideShell onSkip={goNext} onContinue={goNext} continueLabel="Next">
-          <ImageCard img={img} />
-        </SessionSlideShell>
-      );
+      return <ImageCard img={img} />;
     }
     if (tab === "flashcards") {
       const card = SAMPLE_FLASHCARDS[idx];
       if (!card) return null;
       return (
-        <SessionSlideShell onSkip={goNext} onContinue={goNext} continueLabel="Next">
-          <div className="flex items-center justify-center py-4">
-            <FlashCard card={card} />
-          </div>
-        </SessionSlideShell>
+        <div className="flex items-center justify-center py-4">
+          <FlashCard card={card} />
+        </div>
       );
     }
     return (
-      <SessionSlideShell onSkip={onClose} onContinue={onClose} continueLabel="Done">
-        <p className="text-center text-slate-500 font-semibold py-20">
-          No content for this tab yet.
-        </p>
-      </SessionSlideShell>
+      <p className="text-center text-slate-500 font-semibold py-20">
+        No content for this tab yet.
+      </p>
     );
   };
 
+  const showSessionFooter = phase === "active";
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white">
-      <div
-        className="flex items-center gap-3 px-4 h-14 flex-shrink-0 bg-white"
-        style={{ borderBottom: "2px solid #e2e8f0" }}
-      >
-        <button
-          onClick={onClose}
-          aria-label="Close set"
-          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ color: "#94a3b8" }}
-        >
-          <X size={22} strokeWidth={2.5} />
-        </button>
+      {phase !== "report" && (
         <div
-          className="flex-1 h-3 rounded-full overflow-hidden"
-          style={{ background: "#e2e8f0" }}
+          className="flex items-center gap-3 px-4 h-14 flex-shrink-0 bg-white"
+          style={{ borderBottom: "2px solid #e2e8f0" }}
         >
-          <div
-            className="h-full rounded-full transition-all duration-300"
-            style={{ width: `${progressPct}%`, background: "#58CC02" }}
-          />
-        </div>
-        <div
-          className="flex items-center gap-1 flex-shrink-0 px-2.5 py-1 rounded-xl font-black text-sm"
-          style={{
-            background: scoreStyle.bg,
-            border: `1.5px solid ${scoreStyle.border}`,
-            color: scoreStyle.color,
-          }}
-        >
-          <Target size={14} strokeWidth={2.5} />
-          {liveScore}%
-        </div>
-      </div>
+          <button
+            onClick={handleCloseRequest}
+            aria-label="Close session"
+            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ color: "#94a3b8" }}
+          >
+            <X size={22} strokeWidth={2.5} />
+          </button>
 
-      <div className="flex-1 overflow-y-auto flex flex-col">
+          <div className="flex items-center gap-2 shrink-0">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{
+                background: "linear-gradient(135deg,#58CC02,#46A302)",
+                boxShadow: "0 2px 0 #3a8200",
+              }}
+            >
+              <span className="text-white font-black text-sm leading-none">D</span>
+            </div>
+            <span className="font-black text-slate-900 text-base hidden sm:block">
+              Drnote
+            </span>
+          </div>
+
+          <div
+            className="flex-1 h-3 rounded-full overflow-hidden min-w-0"
+            style={{ background: "#e2e8f0" }}
+          >
+            <div
+              className="h-full rounded-full transition-all duration-300"
+              style={{ width: `${progressPct}%`, background: "#58CC02" }}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto flex flex-col min-h-0">
         <div className="max-w-3xl mx-auto w-full px-4 py-6 min-h-full flex flex-col flex-1">
           {renderSlide()}
         </div>
       </div>
+
+      {showSessionFooter && (
+        <div
+          className="flex-shrink-0 bg-white border-t border-slate-200 px-4 py-3 space-y-3"
+          style={{ borderTopWidth: "2px" }}
+        >
+          <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
+            <p className="text-sm font-bold text-slate-600">
+              Question {page} of {total}
+              <span className="text-slate-400 font-semibold">
+                {" "}
+                · {remaining} remaining
+              </span>
+            </p>
+            <button
+              onClick={() => setPauseOpen(true)}
+              aria-label="Pause session"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black text-slate-600 border-2 border-slate-200 bg-white"
+            >
+              <Pause size={13} strokeWidth={2.5} />
+              Pause
+            </button>
+          </div>
+
+          <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <SessionNavButton
+                onClick={goBack}
+                disabled={page <= 1}
+                ariaLabel="Previous question"
+              >
+                <ChevronLeft size={20} strokeWidth={2.5} />
+              </SessionNavButton>
+              {tab === "questions" && (
+                <SessionNavButton
+                  onClick={() => setReportOpen(true)}
+                  ariaLabel="Report issue"
+                  variant="danger"
+                >
+                  <Flag size={18} strokeWidth={2.5} />
+                </SessionNavButton>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              {tab === "questions" && (
+                <SessionNavButton
+                  onClick={openChat}
+                  ariaLabel="Explain with AI"
+                  variant="ai"
+                >
+                  <Sparkles size={18} strokeWidth={2.5} />
+                </SessionNavButton>
+              )}
+              <SessionNavButton
+                onClick={goNext}
+                disabled={tab === "questions" && !currentAnswered}
+                ariaLabel="Next question"
+                variant="primary"
+              >
+                <ChevronRight size={20} strokeWidth={2.5} />
+              </SessionNavButton>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <SessionPauseModal
+        open={pauseOpen}
+        remaining={remaining}
+        onResume={() => setPauseOpen(false)}
+        onSaveLater={() => {
+          setPauseOpen(false);
+          onClose();
+        }}
+        onEnd={finishSession}
+      />
 
       {currentQuestion && (
         <>
@@ -1556,9 +1701,6 @@ function ImageCard({ img }: { img: (typeof SAMPLE_IMAGES)[0] }) {
             style={{ color: liked ? "#ef4444" : "#94a3b8" }}
           >
             <Heart size={18} strokeWidth={2} fill={liked ? "#ef4444" : "none"} />
-          </button>
-          <button className="text-xs font-black" style={{ color: "#94a3b8" }}>
-            <MessageCircle size={18} strokeWidth={2} />
           </button>
         </div>
         <button
