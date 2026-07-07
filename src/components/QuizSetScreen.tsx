@@ -37,6 +37,12 @@ const C = {
   sub: "#AFAFAF",
 };
 
+function progressBarColor(pct: number): string {
+  if (pct >= 85) return C.green;
+  if (pct >= 60) return C.yellow;
+  return C.red;
+}
+
 function Tile({
   icon: Icon,
   color,
@@ -262,6 +268,9 @@ export function QuizSetScreen({ tab, setId, data, onReport }: QuizSetScreenProps
     }
   };
 
+  const progressColor = progressBarColor(data.progress);
+  const bestColor = progressBarColor(data.best);
+
   return (
     <div className="min-h-screen bg-white text-[#4B4B4B] antialiased">
       <div className="mx-auto max-w-md px-5 py-6">
@@ -277,15 +286,15 @@ export function QuizSetScreen({ tab, setId, data, onReport }: QuizSetScreenProps
           <div className="flex items-center justify-between text-[13px] font-extrabold uppercase tracking-wide">
             <span className="text-[#AFAFAF]">{data.items} questions</span>
             <span>
-              <span style={{ color: C.green }}>{data.progress}%</span>
+              <span style={{ color: progressColor }}>{data.progress}%</span>
               <span className="text-[#AFAFAF]"> · best </span>
-              <span style={{ color: C.orange }}>{data.best}%</span>
+              <span style={{ color: bestColor }}>{data.best}%</span>
             </span>
           </div>
           <div className="mt-2 h-4 w-full overflow-hidden rounded-full border-2 border-[#E5E5E5] bg-[#E5E5E5]">
             <div
               className="h-full rounded-full"
-              style={{ width: `${data.progress}%`, backgroundColor: C.green }}
+              style={{ width: `${data.progress}%`, backgroundColor: progressColor }}
             />
           </div>
         </div>
