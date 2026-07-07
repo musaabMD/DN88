@@ -1,12 +1,22 @@
 # DrNote
 
-A mobile-friendly study app built with Next.js. Pick an exam, browse sets, and study with Learn, MCQs, and Review tabs.
+A mobile-friendly medical study app with Duolingo-inspired design. Browse question sets, summaries, images, and flashcards across subjects.
 
 **Live site:** https://dn88.pages.dev
 
+## Features
+
+- **Questions** — MCQ cards with explain, report, and comments sidebar
+- **Summary** — Expandable bullet-point notes
+- **Images** — Visual study cards with likes and bookmarks
+- **Flashcards** — Flip cards with Again/Hard/Good/Easy ratings
+- **Filters** — Subject, status, and tag filtering
+- **Stats** — Streak, league rank, and daily limit tracking
+- **Upgrade** — Pro plan modal
+
 ## Stack
 
-- Next.js 16 (App Router)
+- Next.js 16 (App Router, static export)
 - TypeScript
 - Tailwind CSS v4
 - lucide-react
@@ -20,20 +30,9 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## Pages
+## Deploy
 
-- **/** — Pick an exam, then browse and filter study sets
-- **/exam/[examId]/set/[setId]** — Set detail with Learn, MCQs, and Review tabs
-- **/add** — Create and manage your own sets
-
-## Deploy to Cloudflare Pages
-
-Push to `main` triggers the GitHub Actions workflow when these secrets are set:
-
-- `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_ACCOUNT_ID`
-
-Manual deploy:
+Push to `main` triggers Cloudflare Pages deploy when GitHub secrets are configured, or run:
 
 ```bash
 npm run build
