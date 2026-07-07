@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f5f9ff;
+  --foreground: #1e293b;
+  --primary: #1b8ae6;
+  --primary-light: #e8f4fd;
+  --primary-dark: #1565b8;
+  --card: #ffffff;
+  --muted: #64748b;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-light: var(--primary-light);
+  --color-primary-dark: var(--primary-dark);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --font-sans: var(--font-nunito);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-nunito), system-ui, sans-serif;
+}
+
+.card-shadow {
+  box-shadow: 0 4px 20px rgba(27, 138, 230, 0.08);
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  border-radius: 9999px;
+  font-weight: 700;
+  transition: transform 0.15s, background 0.15s;
+}
+
+.btn-primary:active {
+  transform: scale(0.97);
+  background: var(--primary-dark);
+}
+
+.btn-secondary {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-radius: 9999px;
+  font-weight: 700;
+  transition: transform 0.15s;
+}
+
+.btn-secondary:active {
+  transform: scale(0.97);
+}
