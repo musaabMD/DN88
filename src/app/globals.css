@@ -49,6 +49,7 @@
 
 body {
   font-family: var(--font-nunito), system-ui, sans-serif;
+  background: #ffffff;
 }
 
 .scrollbar-hide {

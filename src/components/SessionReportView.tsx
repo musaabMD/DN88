@@ -78,7 +78,7 @@ export function SessionReportView({
             </span>
           </div>
           <p className="text-2xl font-black" style={{ color: overallStyle.color }}>
-            {overallScore}/100
+            {overallScore}%
           </p>
         </div>
       </div>

@@ -25,8 +25,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Flame,
-  Trophy,
-  Zap,
   Crown,
   Star,
   Bookmark,
@@ -39,12 +37,10 @@ import {
   ChevronUp,
   ChevronRight as Chevron,
   Target,
-  MoreVertical,
   Pause,
   Share2,
   Sparkles,
   BarChart3,
-  MessageCircle,
 } from "lucide-react";
 
 /** Mobile: centered narrow column. Desktop: full width with edge padding. */
@@ -534,82 +530,144 @@ function SetIntroView({
   tab,
   itemCount,
   onStart,
+  onResume,
+  onResult,
+  onRestart,
+  onShare,
+  onReport,
   onClose,
 }: {
   set: StudySet;
   tab: string;
   itemCount: number;
   onStart: () => void;
+  onResume: () => void;
+  onResult: () => void;
+  onRestart: () => void;
+  onShare: () => void;
+  onReport: () => void;
   onClose: () => void;
 }) {
   const accent = TAB_ACCENT[tab] ?? TAB_ACCENT.questions;
   const Icon = accent.icon;
-  const pct = Math.round((set.done / set.total) * 100);
+  const progressPct = Math.round((set.done / set.total) * 100);
+  const hasProgress = set.done > 0;
+  const canResume = hasProgress && set.done < set.total;
+
+  const secondaryActions = [
+    ...(canResume
+      ? [{ label: "Resume", icon: ChevronRight, onClick: onResume }]
+      : []),
+    ...(set.score !== null
+      ? [{ label: "Result", icon: BarChart3, onClick: onResult }]
+      : []),
+    ...(hasProgress ? [{ label: "Restart", icon: RotateCcw, onClick: onRestart }] : []),
+    { label: "Share", icon: Share2, onClick: onShare },
+    { label: "Report", icon: Flag, onClick: onReport },
+  ];
 
   return (
-    <div className="flex-1 flex flex-col max-w-2xl mx-auto w-full px-4 py-8">
-      <div className="flex-1 flex flex-col justify-center">
-        <div
-          className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5"
-          style={{
-            background: accent.bg,
-            border: `2px solid ${accent.border}`,
-          }}
-        >
-          <Icon size={26} strokeWidth={2.5} style={{ color: accent.color }} />
+    <div className="flex flex-1 flex-col bg-white">
+      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col px-5 py-10">
+        <div className="flex flex-1 flex-col items-center justify-center text-center">
+          <div
+            className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl"
+            style={{
+              background: accent.bg,
+              border: `2px solid ${accent.border}`,
+              boxShadow: `0 6px 0 ${accent.border}`,
+            }}
+          >
+            <Icon size={36} strokeWidth={2.5} style={{ color: accent.color }} />
+          </div>
+
+          <h1 className="mb-6 max-w-sm text-3xl font-black leading-tight tracking-tight text-slate-900">
+            {set.title}
+          </h1>
+
+          <div className="mb-8 grid w-full max-w-xs grid-cols-3 gap-2">
+            <div
+              className="rounded-2xl px-3 py-3"
+              style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0" }}
+            >
+              <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">
+                Items
+              </p>
+              <p className="mt-1 text-lg font-black text-slate-900">{itemCount}</p>
+            </div>
+            <div
+              className="rounded-2xl px-3 py-3"
+              style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0" }}
+            >
+              <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">
+                Progress
+              </p>
+              <p
+                className="mt-1 text-lg font-black"
+                style={{ color: progressColor(progressPct) }}
+              >
+                {progressPct}%
+              </p>
+            </div>
+            <div
+              className="rounded-2xl px-3 py-3"
+              style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0" }}
+            >
+              <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">
+                Best
+              </p>
+              <p
+                className="mt-1 text-lg font-black"
+                style={{
+                  color:
+                    set.score !== null ? scoreColor(set.score).color : "#94a3b8",
+                }}
+              >
+                {set.score !== null ? `${set.score}%` : "—"}
+              </p>
+            </div>
+          </div>
         </div>
-        <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
-          {set.subject} · {set.tag}
-        </p>
-        <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-4 leading-tight">
-          {set.title}
-        </h1>
-        <p className="text-base font-medium text-slate-600 leading-relaxed mb-6">
-          {set.about}
-        </p>
-        <div
-          className="rounded-2xl p-4 mb-8 space-y-3"
-          style={{ background: "#f8fafc", border: "2px solid #e2e8f0" }}
-        >
-          <div className="flex items-center justify-between text-sm">
-            <span className="font-bold text-slate-500">Items in this set</span>
-            <span className="font-black text-slate-800">{itemCount}</span>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="font-bold text-slate-500">Your progress</span>
-            <span className="font-black" style={{ color: progressColor(pct) }}>
-              {set.done}/{set.total}
-            </span>
-          </div>
-          {set.score !== null && (
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-bold text-slate-500">Best score</span>
-              <span className="font-black" style={{ color: scoreColor(set.score).color }}>
-                {set.score}/100
-              </span>
+
+        <div className="space-y-3 pb-4">
+          <button
+            type="button"
+            onClick={onStart}
+            className="w-full rounded-2xl py-4 text-base font-black text-white active:translate-y-0.5"
+            style={{
+              background: "#58CC02",
+              border: "2px solid #46A302",
+              boxShadow: "0 4px 0 #46A302",
+            }}
+          >
+            {canResume ? "Start over" : "Start"}
+          </button>
+
+          {secondaryActions.length > 0 && (
+            <div className="grid grid-cols-2 gap-2">
+              {secondaryActions.map(({ label, icon: ActionIcon, onClick }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={onClick}
+                  className="flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold text-slate-600"
+                  style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0" }}
+                >
+                  <ActionIcon size={15} strokeWidth={2.5} />
+                  {label}
+                </button>
+              ))}
             </div>
           )}
-        </div>
-      </div>
 
-      <div className="flex flex-col gap-3 pb-4">
-        <button
-          onClick={onStart}
-          className="w-full py-4 rounded-2xl font-black text-base text-white active:translate-y-0.5"
-          style={{
-            background: "#58CC02",
-            border: "2px solid #46A302",
-            boxShadow: "0 4px 0 #46A302",
-          }}
-        >
-          Start
-        </button>
-        <button
-          onClick={onClose}
-          className="w-full py-3 rounded-2xl font-black text-sm text-slate-500"
-        >
-          Back to sets
-        </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full py-2 text-sm font-bold text-slate-400"
+          >
+            Back to sets
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -630,45 +688,40 @@ function scoreColor(score: number) {
   return { color: "#dc2626", bg: "#fef2f2", border: "#fecaca", bar: "#ef4444" };
 }
 
-function SetMetricButton({
-  icon: Icon,
+function SetUpvoteButton({
   count,
-  active = false,
-  onClick,
-  ariaLabel,
+  upvoted,
+  onToggle,
 }: {
-  icon: LucideIcon;
   count: number;
-  active?: boolean;
-  onClick?: () => void;
-  ariaLabel: string;
+  upvoted: boolean;
+  onToggle: () => void;
 }) {
   return (
     <button
       type="button"
-      aria-label={ariaLabel}
-      onClick={onClick}
-      className="flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded-xl border transition-colors"
+      aria-label={`${count} upvotes`}
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggle();
+      }}
+      className="flex h-11 min-w-11 flex-col items-center justify-center gap-0.5 rounded-xl border px-2 transition-colors"
       style={
-        active
+        upvoted
           ? {
               background: "#fff7f6",
               borderColor: "#f06a5d",
-              color: "#334155",
+              color: "#ea580c",
             }
           : {
               background: "#fff",
               borderColor: "#e2e8f0",
-              color: "#64748b",
+              color: "#334155",
             }
       }
     >
-      <Icon
-        size={15}
-        strokeWidth={2}
-        className={active ? "text-[#f06a5d]" : "text-slate-500"}
-      />
-      <span className="text-[11px] font-bold tabular-nums leading-none">
+      <ChevronUp size={18} strokeWidth={3} />
+      <span className="text-xs font-black tabular-nums leading-none">
         {count.toLocaleString()}
       </span>
     </button>
@@ -677,166 +730,66 @@ function SetMetricButton({
 
 function SetCard({
   set,
-  tab,
   onOpen,
 }: {
   set: StudySet;
   tab: string;
   onOpen: () => void;
 }) {
-  const [menuOpen, setMenuOpen] = useState(false);
   const [upvoted, setUpvoted] = useState(false);
   const [voteCount, setVoteCount] = useState(set.upvotes);
-  const menuRef = useRef<HTMLDivElement>(null);
   const progressPct = Math.round((set.done / set.total) * 100);
-  const accent = TAB_ACCENT[tab] ?? TAB_ACCENT.questions;
-  const TabIcon = accent.icon;
-  const correctCount =
-    set.score !== null ? Math.round((set.score / 100) * set.total) : null;
   const scoreStyle = set.score !== null ? scoreColor(set.score) : null;
-
-  const menuItems = [
-    { label: "Share", icon: Share2 },
-    { label: "Resume", icon: ChevronRight },
-    { label: "Result", icon: BarChart3 },
-    { label: "Restart", icon: RotateCcw },
-    { label: "Report", icon: Flag },
-  ] as const;
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onPointerDown = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", onPointerDown);
-    return () => document.removeEventListener("mousedown", onPointerDown);
-  }, [menuOpen]);
+  const displayPct = set.score !== null ? set.score : progressPct;
 
   return (
     <div
-      className="relative overflow-visible rounded-2xl bg-white transition-shadow hover:shadow-sm"
-      style={{ border: "1.5px solid #e2e8f0", boxShadow: "0 1px 0 #e2e8f0" }}
+      className="rounded-2xl bg-white transition-shadow hover:shadow-sm"
+      style={{ border: "1.5px solid #e2e8f0" }}
     >
-      <div className="flex items-start gap-3 p-4 pb-3">
+      <div className="flex items-center gap-3 p-4 pb-3">
         <button
           type="button"
           onClick={onOpen}
-          className="flex min-w-0 flex-1 items-start gap-3 text-left"
+          className="min-w-0 flex-1 text-left"
         >
-          <div
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-            style={{
-              background: accent.bg,
-              border: `1.5px solid ${accent.border}`,
-            }}
-          >
-            <TabIcon size={20} strokeWidth={2.5} style={{ color: accent.color }} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="line-clamp-2 text-sm font-black leading-snug text-slate-900">
-              {set.title}
-            </p>
-            <p className="mt-1 text-xs font-semibold text-slate-500">
-              {set.subject} · {set.tag}
-            </p>
-            <p className="mt-1.5 line-clamp-2 text-xs font-medium leading-relaxed text-slate-400">
-              {set.about}
-            </p>
-          </div>
+          <p className="line-clamp-2 text-sm font-black leading-snug text-slate-900">
+            {set.title}
+          </p>
         </button>
-
-        <div className="flex shrink-0 items-start gap-1.5">
-          <SetMetricButton
-            icon={MessageCircle}
-            count={set.comments}
-            ariaLabel={`${set.comments} comments`}
-          />
-          <SetMetricButton
-            icon={ChevronUp}
-            count={voteCount}
-            active={upvoted}
-            ariaLabel={`${voteCount} upvotes`}
-            onClick={() => {
-              setUpvoted((prev) => {
-                const next = !prev;
-                setVoteCount((count) => count + (next ? 1 : -1));
-                return next;
-              });
-            }}
-          />
-          <div className="relative" ref={menuRef}>
-            <button
-              type="button"
-              onClick={() => setMenuOpen((open) => !open)}
-              aria-label="Set options"
-              aria-expanded={menuOpen}
-              className="flex h-12 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:bg-slate-50"
-            >
-              <MoreVertical size={16} strokeWidth={2.5} />
-            </button>
-            {menuOpen && (
-              <div
-                className="absolute right-0 top-full z-50 mt-1 min-w-[148px] rounded-xl bg-white py-1 shadow-lg"
-                style={{ border: "1.5px solid #e2e8f0" }}
-              >
-                {menuItems.map(({ label, icon: Icon }) => (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => setMenuOpen(false)}
-                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-slate-600 hover:bg-slate-50"
-                  >
-                    <Icon size={14} strokeWidth={2.5} />
-                    {label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        <SetUpvoteButton
+          count={voteCount}
+          upvoted={upvoted}
+          onToggle={() => {
+            setUpvoted((prev) => {
+              const next = !prev;
+              setVoteCount((count) => count + (next ? 1 : -1));
+              return next;
+            });
+          }}
+        />
       </div>
 
       <button type="button" onClick={onOpen} className="block w-full px-4 pb-4 text-left">
-        {set.score !== null && scoreStyle && correctCount !== null && (
-          <div className="mb-2 flex items-start justify-between gap-3">
-            <p className="text-xs font-semibold text-slate-500">
-              {correctCount} of {set.total} correct
-            </p>
-            <p
-              className="text-xl font-black tabular-nums leading-none"
-              style={{ color: scoreStyle.color }}
-            >
-              {set.score}%
-            </p>
-          </div>
-        )}
-
-        <div className="flex items-center gap-3">
-          <div className="flex-1">
-            <div
-              className="h-2 overflow-hidden rounded-full"
-              style={{ background: "#f1f5f9" }}
-            >
-              <div
-                className="h-full rounded-full transition-all"
-                style={{
-                  width: `${set.score !== null ? set.score : progressPct}%`,
-                  background:
-                    scoreStyle?.bar ?? progressColor(progressPct),
-                }}
-              />
-            </div>
-          </div>
+        <div className="mb-2 flex items-center justify-end">
           <span
-            className="shrink-0 text-xs font-black tabular-nums"
-            style={{
-              color: scoreStyle?.color ?? progressColor(progressPct),
-            }}
+            className="text-lg font-black tabular-nums leading-none"
+            style={{ color: scoreStyle?.color ?? progressColor(displayPct) }}
           >
-            {set.score !== null ? `${set.score}/100` : `${set.done}/${set.total}`}
+            {displayPct}%
           </span>
+        </div>
+        <div
+          className="h-2 overflow-hidden rounded-full"
+          style={{ background: "#f1f5f9" }}
+        >
+          <div
+            className="h-full rounded-full transition-all"
+            style={{
+              width: `${displayPct}%`,
+              background: scoreStyle?.bar ?? progressColor(displayPct),
+            }}
+          />
         </div>
       </button>
     </div>
@@ -1450,9 +1403,46 @@ function SetSessionView({
           itemCount={total}
           onStart={() => {
             sessionStartRef.current = Date.now();
+            setSessionCorrect(0);
+            setSessionAnswered(0);
+            setSubjectStats({});
             setPhase("active");
             onPageChange(1);
           }}
+          onResume={() => {
+            sessionStartRef.current = Date.now();
+            setPhase("active");
+            const resumePage = Math.min(
+              Math.max(1, set.done + 1),
+              total
+            );
+            onPageChange(resumePage);
+          }}
+          onResult={() => {
+            sessionEndRef.current = Date.now();
+            setSubjectStats({
+              [set.subject]: {
+                correct: Math.round(((set.score ?? 0) / 100) * set.total),
+                total: set.total,
+              },
+            });
+            setSessionCorrect(Math.round(((set.score ?? 0) / 100) * set.total));
+            setSessionAnswered(set.total);
+            setPhase("report");
+          }}
+          onRestart={() => {
+            setSessionCorrect(0);
+            setSessionAnswered(0);
+            setSubjectStats({});
+            sessionStartRef.current = null;
+            sessionEndRef.current = null;
+          }}
+          onShare={() => {
+            if (typeof navigator !== "undefined" && navigator.share) {
+              void navigator.share({ title: set.title, text: set.about });
+            }
+          }}
+          onReport={() => setReportOpen(true)}
           onClose={onClose}
         />
       );
@@ -1537,7 +1527,10 @@ function SetSessionView({
             >
               <span className="text-white font-black text-sm leading-none">D</span>
             </div>
-            <span className="font-black text-slate-900 text-base hidden sm:block">
+            <span
+              className="hidden text-[1.35rem] font-extrabold tracking-[-0.04em] text-slate-900 sm:block"
+              style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
+            >
               Drnote
             </span>
           </div>
@@ -1646,9 +1639,10 @@ function SetSessionView({
             messages={currentChat}
             onMessagesChange={updateChat}
           />
-          <ReportSheet open={reportOpen} onClose={() => setReportOpen(false)} />
         </>
       )}
+
+      <ReportSheet open={reportOpen} onClose={() => setReportOpen(false)} />
     </div>
   );
 }
@@ -2141,77 +2135,74 @@ function UpgradeModal({ onClose }: { onClose: () => void }) {
 
 function StatsPopup({
   streak,
-  rank,
   onClose,
 }: {
   streak: number;
-  rank: string;
   onClose: () => void;
 }) {
-  const ranks = ["Bronze", "Silver", "Gold", "Platinum", "Diamond"];
-  const idx = ranks.indexOf(rank);
+  const weekLabels = ["S", "M", "T", "W", "T", "F", "S"];
+  const today = new Date().getDay();
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-end justify-center"
-      onClick={onClose}
-    >
-      <div className="absolute inset-0 bg-black/20" />
+    <div className="fixed inset-0 z-[60]" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/25" />
       <div
-        className="relative w-full max-w-sm mx-4 mb-8 rounded-3xl p-6"
-        style={{
-          background: "#fff",
-          border: "3px solid #fed7aa",
-          boxShadow: "0 8px 0 #fed7aa",
-        }}
+        className="absolute left-1/2 top-[72px] w-full max-w-sm -translate-x-1/2 px-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-4 mb-5">
-          <div
-            className="w-14 h-14 rounded-3xl flex items-center justify-center flex-shrink-0"
-            style={{ background: "#fff7ed", border: "3px solid #fed7aa" }}
-          >
-            <Flame size={26} style={{ color: "#f97316" }} strokeWidth={2} />
-          </div>
-          <div>
-            <p className="text-2xl font-black text-slate-900 leading-tight">
-              {streak} Day Streak
-            </p>
-            <p className="text-xs font-semibold text-slate-400">
-              Study every day to keep it alive
-            </p>
-          </div>
-        </div>
-        <div className="h-0.5 rounded-full mb-5" style={{ background: "#f1f5f9" }} />
-        <div className="flex items-center gap-4 mb-4">
-          <div
-            className="w-14 h-14 rounded-3xl flex items-center justify-center flex-shrink-0"
-            style={{ background: "#fefce8", border: "3px solid #fde68a" }}
-          >
-            <Trophy size={26} style={{ color: "#d97706" }} strokeWidth={2} />
-          </div>
-          <div>
-            <p className="text-2xl font-black text-slate-900 leading-tight">
-              {rank} League
-            </p>
-            <p className="text-xs font-semibold text-slate-400">
-              {idx < ranks.length - 1
-                ? `Reach ${ranks[idx + 1]} by answering more`
-                : "Top league!"}
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={onClose}
-          className="w-full py-3 rounded-2xl font-black text-sm text-white"
-          style={{
-            background: "#f97316",
-            border: "2px solid #ea580c",
-            boxShadow: "0 3px 0 #c2410c",
-          }}
+        <div
+          className="overflow-hidden rounded-2xl p-5 text-white"
+          style={{ background: "#ff9600", boxShadow: "0 8px 24px rgba(255,150,0,0.35)" }}
         >
-          Keep Going
-        </button>
+          <div className="mb-5 flex items-start justify-between gap-4">
+            <div>
+              <p className="text-2xl font-extrabold leading-tight">
+                {streak} day streak
+              </p>
+              <p className="mt-1 text-sm font-semibold text-white/90">
+                Study every day to keep it alive
+              </p>
+            </div>
+            <div
+              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full"
+              style={{ background: "rgba(255,255,255,0.2)" }}
+            >
+              <Flame size={34} strokeWidth={2} className="text-white" fill="white" />
+            </div>
+          </div>
+
+          <div className="rounded-xl bg-white p-4">
+            <div className="grid grid-cols-7 gap-1 text-center">
+              {weekLabels.map((label) => (
+                <span
+                  key={label}
+                  className="text-[11px] font-bold uppercase text-slate-400"
+                >
+                  {label}
+                </span>
+              ))}
+            </div>
+            <div className="mt-2 grid grid-cols-7 gap-1">
+              {weekLabels.map((label, index) => {
+                const active = index === today;
+                return (
+                  <div key={`${label}-${index}`} className="flex justify-center">
+                    <div
+                      className="flex h-8 w-8 items-center justify-center rounded-full"
+                      style={{
+                        background: active ? "#ff9600" : "#e5e7eb",
+                      }}
+                    >
+                      {active && (
+                        <Check size={16} strokeWidth={3} className="text-white" />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -2229,70 +2220,79 @@ function DailyPopup({
   onClose: () => void;
 }) {
   const remaining = limit - used;
-  const pct = Math.round((used / limit) * 100);
+  const heartSlots = 5;
+  const filledHearts = Math.max(
+    0,
+    Math.min(heartSlots, Math.ceil(remaining / (limit / heartSlots)))
+  );
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-end justify-center"
-      onClick={onClose}
-    >
-      <div className="absolute inset-0 bg-black/20" />
+    <div className="fixed inset-0 z-[60]" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/25" />
       <div
-        className="relative w-full max-w-sm mx-4 mb-8 rounded-3xl p-6"
-        style={{
-          background: "#fff",
-          border: "3px solid #bbf7d0",
-          boxShadow: "0 8px 0 #bbf7d0",
-        }}
+        className="absolute left-1/2 top-[72px] w-full max-w-sm -translate-x-1/2 px-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 mb-4">
-          <div
-            className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-            style={{ background: "#f0fdf4", border: "2.5px solid #bbf7d0" }}
-          >
-            <Zap size={22} style={{ color: "#16a34a" }} strokeWidth={2.5} />
+        <div
+          className="overflow-hidden rounded-2xl bg-white p-5"
+          style={{ border: "2px solid #e5e7eb", boxShadow: "0 12px 32px rgba(15,23,42,0.12)" }}
+        >
+          <p className="mb-4 text-center text-lg font-extrabold text-slate-700">
+            Daily questions
+          </p>
+
+          <div className="mb-4 flex items-center justify-center gap-2">
+            {Array.from({ length: heartSlots }).map((_, index) => (
+              <Heart
+                key={index}
+                size={28}
+                strokeWidth={2}
+                className={
+                  index < filledHearts ? "text-[#ff4b4b]" : "text-slate-200"
+                }
+                fill={index < filledHearts ? "#ff4b4b" : "none"}
+              />
+            ))}
           </div>
-          <div>
-            <p className="font-black text-slate-900 text-base">Daily Limit</p>
-            <p className="text-xs font-semibold text-slate-400">
-              {remaining > 0
-                ? `${remaining} questions left today`
-                : "Limit reached"}
-            </p>
-          </div>
-        </div>
-        <div className="h-3 rounded-full overflow-hidden mb-5" style={{ background: "#e2e8f0" }}>
-          <div
-            className="h-full rounded-full"
-            style={{
-              width: `${pct}%`,
-              background: pct >= 90 ? "#ef4444" : pct >= 70 ? "#f97316" : "#22c55e",
+
+          <p className="mb-1 text-center text-sm font-bold text-slate-700">
+            {remaining > 0 ? (
+              <>
+                <span className="text-[#ff4b4b]">{remaining} questions</span> left
+                today
+              </>
+            ) : (
+              "Daily limit reached"
+            )}
+          </p>
+          <p className="mb-5 text-center text-xs font-medium text-slate-400">
+            {remaining > 0
+              ? "Keep going while you still have questions!"
+              : "Come back tomorrow or upgrade for unlimited access."}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              onUpgrade();
             }}
-          />
+            className="mb-2 w-full rounded-2xl border-2 border-b-4 py-3.5 text-sm font-extrabold uppercase tracking-wide text-slate-700"
+            style={{ borderColor: "#e5e7eb", background: "#fff" }}
+          >
+            <span className="inline-flex items-center gap-2">
+              <Crown size={16} className="text-violet-500" />
+              Unlimited questions
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full py-2 text-sm font-bold text-slate-400"
+          >
+            Maybe later
+          </button>
         </div>
-        <button
-          onClick={() => {
-            onClose();
-            onUpgrade();
-          }}
-          className="w-full py-3 rounded-2xl font-black text-sm text-white mb-2"
-          style={{
-            background: "linear-gradient(135deg,#a855f7,#7c3aed)",
-            border: "2px solid #6d28d9",
-            boxShadow: "0 3px 0 #6d28d9",
-          }}
-        >
-          <Crown size={14} className="inline mr-1.5 -mt-0.5" strokeWidth={2.5} />
-          Upgrade for Unlimited
-        </button>
-        <button
-          onClick={onClose}
-          className="w-full py-2.5 rounded-2xl font-bold text-sm text-slate-500"
-          style={{ background: "#f1f5f9" }}
-        >
-          Maybe later
-        </button>
       </div>
     </div>
   );
@@ -2509,7 +2509,7 @@ function FilterPage({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-50 flex flex-col">
+    <div className="fixed inset-0 z-50 flex flex-col bg-white">
       <div className="bg-white" style={{ borderBottom: "3px solid #e2e8f0" }}>
         <div className={`${PAGE_SHELL} h-16 flex items-center justify-between`}>
           <div className="flex items-center gap-3">
@@ -2673,17 +2673,10 @@ function BrowseHeader({
   totalFilters,
   streak,
   dailyRemaining,
-  appliedSubjects,
-  appliedStatuses,
-  appliedTags,
   onStatsOpen,
   onDailyOpen,
   onUpgradeOpen,
   onFilterOpen,
-  onRemoveSubject,
-  onRemoveStatus,
-  onRemoveTag,
-  onClearAll,
 }: {
   search: string;
   setSearch: (v: string) => void;
@@ -2692,39 +2685,34 @@ function BrowseHeader({
   totalFilters: number;
   streak: number;
   dailyRemaining: number;
-  appliedSubjects: Set<string>;
-  appliedStatuses: Set<string>;
-  appliedTags: Set<string>;
   onStatsOpen: () => void;
   onDailyOpen: () => void;
   onUpgradeOpen: () => void;
   onFilterOpen: () => void;
-  onRemoveSubject: (v: string) => void;
-  onRemoveStatus: (v: string) => void;
-  onRemoveTag: (v: string) => void;
-  onClearAll: () => void;
 }) {
   const searchField = (
-    <div className="flex w-full items-stretch rounded-full overflow-hidden border-2 border-slate-200 bg-white focus-within:border-[#58CC02] transition-colors">
+    <div className="flex w-full items-stretch overflow-hidden rounded-full border-2 border-slate-200 bg-white transition-colors focus-within:border-[#58CC02]">
       <input
         type="text"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Search sets..."
-        className="flex-1 min-w-0 px-4 py-2 text-sm font-medium text-slate-800 placeholder-slate-400 outline-none bg-transparent"
+        className="min-w-0 flex-1 bg-transparent px-4 py-2 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400"
       />
       {search ? (
         <button
+          type="button"
           onClick={() => setSearch("")}
           aria-label="Clear search"
-          className="px-3 flex items-center justify-center text-slate-400 hover:text-slate-600"
+          className="flex items-center justify-center px-3 text-slate-400 hover:text-slate-600"
         >
           <X size={16} strokeWidth={2.5} />
         </button>
       ) : null}
       <button
+        type="button"
         aria-label="Search"
-        className="px-4 flex items-center justify-center border-l-2 border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100"
+        className="flex items-center justify-center border-l-2 border-slate-200 bg-white px-4 text-slate-500"
       >
         <Search size={18} strokeWidth={2.5} />
       </button>
@@ -2733,12 +2721,12 @@ function BrowseHeader({
 
   return (
     <header
-      className="bg-white sticky top-0 z-40"
+      className="sticky top-0 z-40 bg-white"
       style={{ borderBottom: "1px solid #e2e8f0" }}
     >
       <div className={`${PAGE_SHELL} space-y-3 py-2`}>
-        <div className="flex min-h-[44px] items-center gap-3 md:gap-4">
-          <div className="flex shrink-0 items-center gap-2">
+        <div className="flex min-h-[44px] items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2.5">
             <div
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
               style={{
@@ -2748,17 +2736,22 @@ function BrowseHeader({
             >
               <span className="text-base font-black leading-none text-white">D</span>
             </div>
-            <span className="hidden text-lg font-black tracking-tight text-slate-900 sm:block">
+            <span
+              className="hidden text-[1.35rem] font-extrabold tracking-[-0.04em] text-slate-900 sm:block"
+              style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
+            >
               Drnote
             </span>
           </div>
 
-          <div className="ml-auto flex shrink-0 items-center gap-1.5">
+          <div className="min-w-0 flex-1 px-1 md:px-4">{searchField}</div>
+
+          <div className="flex shrink-0 items-center gap-1.5">
             <HeaderStatButton
               onClick={onStatsOpen}
               icon={Flame}
               label={String(streak)}
-              ariaLabel="View streak and league"
+              ariaLabel="View streak"
               colors={{
                 background: "#fff7ed",
                 border: "#fdba74",
@@ -2769,15 +2762,15 @@ function BrowseHeader({
             />
             <HeaderStatButton
               onClick={onDailyOpen}
-              icon={Zap}
+              icon={Heart}
               label={String(dailyRemaining)}
               ariaLabel="View daily limit"
               colors={{
-                background: dailyRemaining <= 3 ? "#fef2f2" : "#eff6ff",
-                border: dailyRemaining <= 3 ? "#fca5a5" : "#93c5fd",
-                shadow: dailyRemaining <= 3 ? "#f87171" : "#60a5fa",
-                text: dailyRemaining <= 3 ? "#dc2626" : "#1d4ed8",
-                icon: dailyRemaining <= 3 ? "#ef4444" : "#3b82f6",
+                background: dailyRemaining <= 3 ? "#fef2f2" : "#fff",
+                border: dailyRemaining <= 3 ? "#fecaca" : "#e5e7eb",
+                shadow: dailyRemaining <= 3 ? "#fca5a5" : "#d1d5db",
+                text: dailyRemaining <= 3 ? "#dc2626" : "#475569",
+                icon: dailyRemaining <= 3 ? "#ef4444" : "#ff4b4b",
               }}
             />
             <HeaderStatButton
@@ -2794,22 +2787,24 @@ function BrowseHeader({
               }}
             />
             <button
+              type="button"
               onClick={onFilterOpen}
-              aria-label="Filters"
-              className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-transform active:translate-y-0.5"
+              aria-label={
+                totalFilters > 0
+                  ? `Filters (${totalFilters} active)`
+                  : "Filters"
+              }
+              className="relative flex h-9 min-w-9 shrink-0 items-center justify-center gap-1 rounded-xl px-2 transition-transform active:translate-y-0.5"
               style={{
-                background: "#f8fafc",
-                border: "2px solid #cbd5e1",
-                boxShadow: "0 2px 0 #cbd5e1",
-                color: "#475569",
+                background: totalFilters > 0 ? "#ecfccb" : "#fff",
+                border: `2px solid ${totalFilters > 0 ? "#84cc16" : "#d1d5db"}`,
+                boxShadow: `0 2px 0 ${totalFilters > 0 ? "#65a30d" : "#d1d5db"}`,
+                color: totalFilters > 0 ? "#3f6212" : "#475569",
               }}
             >
               <SlidersHorizontal size={15} strokeWidth={2.5} />
               {totalFilters > 0 && (
-                <span
-                  className="absolute -right-1.5 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-black text-white"
-                  style={{ background: "#58CC02", border: "2px solid #fff" }}
-                >
+                <span className="text-[11px] font-black tabular-nums">
                   {totalFilters}
                 </span>
               )}
@@ -2817,26 +2812,13 @@ function BrowseHeader({
           </div>
         </div>
 
-        <div className="mx-auto w-full max-w-xl">{searchField}</div>
-
-        {totalFilters > 0 && (
-          <ActiveFilterPills
-            subjects={appliedSubjects}
-            statuses={appliedStatuses}
-            tags={appliedTags}
-            onRemoveSubject={onRemoveSubject}
-            onRemoveStatus={onRemoveStatus}
-            onRemoveTag={onRemoveTag}
-            onClearAll={onClearAll}
-          />
-        )}
-
         <div className="-mx-1 flex justify-center gap-2 overflow-x-auto px-1 pb-1 scrollbar-hide">
           {TABS.map((tab) => {
             const active = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => onTabChange(tab.id)}
                 className="flex-shrink-0 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-colors"
                 style={
@@ -2877,30 +2859,6 @@ export default function DrNoteApp() {
   const [appliedStatuses, setAppliedStatuses] = useState<Set<string>>(new Set());
   const [appliedTags, setAppliedTags] = useState<Set<string>>(new Set());
 
-  const removeSubject = (v: string) =>
-    setAppliedSubjects((p) => {
-      const n = new Set(p);
-      n.delete(v);
-      return n;
-    });
-  const removeStatus = (v: string) =>
-    setAppliedStatuses((p) => {
-      const n = new Set(p);
-      n.delete(v);
-      return n;
-    });
-  const removeTag = (v: string) =>
-    setAppliedTags((p) => {
-      const n = new Set(p);
-      n.delete(v);
-      return n;
-    });
-  const clearAll = () => {
-    setAppliedSubjects(new Set());
-    setAppliedStatuses(new Set());
-    setAppliedTags(new Set());
-  };
-
   const totalFilters =
     appliedSubjects.size + appliedStatuses.size + appliedTags.size;
 
@@ -2908,7 +2866,7 @@ export default function DrNoteApp() {
   const dailyRemaining = DAILY_LIMIT - DAILY_USED;
 
   return (
-    <div className={`min-h-screen bg-slate-50 font-sans ${openSet ? "" : "pb-8"}`}>
+    <div className={`min-h-screen bg-white font-sans ${openSet ? "" : "pb-8"}`}>
       {openSet ? (
         <SetSessionView
           set={openSet}
@@ -2931,17 +2889,10 @@ export default function DrNoteApp() {
             totalFilters={totalFilters}
             streak={streak}
             dailyRemaining={dailyRemaining}
-            appliedSubjects={appliedSubjects}
-            appliedStatuses={appliedStatuses}
-            appliedTags={appliedTags}
             onStatsOpen={() => setStatsOpen(true)}
             onDailyOpen={() => setDailyOpen(true)}
             onUpgradeOpen={() => setUpgradeOpen(true)}
             onFilterOpen={() => setFilterOpen(true)}
-            onRemoveSubject={removeSubject}
-            onRemoveStatus={removeStatus}
-            onRemoveTag={removeTag}
-            onClearAll={clearAll}
           />
 
           <main className={`${PAGE_SHELL} py-4`}>
@@ -2969,7 +2920,7 @@ export default function DrNoteApp() {
       />
       {upgradeOpen && <UpgradeModal onClose={() => setUpgradeOpen(false)} />}
       {statsOpen && (
-        <StatsPopup streak={14} rank="Gold" onClose={() => setStatsOpen(false)} />
+        <StatsPopup streak={14} onClose={() => setStatsOpen(false)} />
       )}
       {dailyOpen && (
         <DailyPopup
