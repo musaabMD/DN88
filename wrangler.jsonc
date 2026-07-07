@@ -2,8 +2,5 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "dn88",
   "compatibility_date": "2026-07-07",
-  "pages_build_output_dir": "./public",
-  "assets": {
-    "directory": "./public"
-  }
+  "pages_build_output_dir": "./public"
 }
