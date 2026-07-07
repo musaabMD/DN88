@@ -1,6 +1,12 @@
 "use client";
 
 import { useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import {
+  createInitialChat,
+  QuestionChatPanel,
+  type ChatMessage,
+} from "@/components/QuestionChatPanel";
+import { ReportSheet } from "@/components/ReportSheet";
 import type { LucideIcon } from "lucide-react";
 import {
   FileQuestion,
@@ -91,6 +97,8 @@ const SAMPLE_QUESTIONS = [
     answer: 1,
     tag: "High Yield",
     status: "unused",
+    explanation:
+      "Metformin decreases hepatic glucose output by inhibiting mitochondrial glycerophosphate dehydrogenase, reducing gluconeogenesis. It does not primarily stimulate insulin secretion (sulfonylureas) or block intestinal absorption.",
   },
   {
     id: 2,
@@ -105,6 +113,8 @@ const SAMPLE_QUESTIONS = [
     answer: 2,
     tag: "Exam Ready",
     status: "used",
+    explanation:
+      "The median nerve travels through the carpal tunnel with the flexor tendons. The ulnar nerve passes medial to the tunnel (Guyon's canal region), and the radial nerve does not enter the carpal tunnel.",
   },
   {
     id: 3,
@@ -119,6 +129,8 @@ const SAMPLE_QUESTIONS = [
     answer: 1,
     tag: "High Yield",
     status: "incorrect",
+    explanation:
+      "Non-caseating granulomas in the lung are classic for sarcoidosis. Tuberculosis typically shows caseating granulomas. Histoplasmosis and aspergillosis have different histologic patterns.",
   },
 ];
 
@@ -212,17 +224,32 @@ type StudySet = {
   id: string;
   title: string;
   subject: string;
+  about: string;
   total: number;
   done: number;
   score: number | null;
   tag: string;
 };
 
+function filterSets(sets: StudySet[], query: string): StudySet[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return sets;
+  return sets.filter(
+    (set) =>
+      set.title.toLowerCase().includes(q) ||
+      set.subject.toLowerCase().includes(q) ||
+      set.tag.toLowerCase().includes(q) ||
+      set.about.toLowerCase().includes(q)
+  );
+}
+
 const QUESTION_SETS: StudySet[] = [
   {
     id: "q1",
     title: "Diabetes & Oral Hypoglycemics",
     subject: "Pharmacology",
+    about:
+      "High-yield MCQs on metformin, sulfonylureas, and first-line type 2 diabetes management for shelf and board prep.",
     total: 20,
     done: 13,
     score: 85,
@@ -232,6 +259,8 @@ const QUESTION_SETS: StudySet[] = [
     id: "q2",
     title: "Upper Limb Nerve Injuries",
     subject: "Anatomy",
+    about:
+      "Covers carpal tunnel, Erb's palsy, and peripheral nerve localization with clinical vignettes.",
     total: 15,
     done: 15,
     score: 92,
@@ -241,6 +270,8 @@ const QUESTION_SETS: StudySet[] = [
     id: "q3",
     title: "Granulomatous Lung Disease",
     subject: "Pathology",
+    about:
+      "Compare caseating vs non-caseating granulomas and tie histology findings to sarcoidosis and TB.",
     total: 25,
     done: 4,
     score: 61,
@@ -250,6 +281,8 @@ const QUESTION_SETS: StudySet[] = [
     id: "q4",
     title: "Cardiac Physiology Basics",
     subject: "Physiology",
+    about:
+      "Frank-Starling, preload/afterload, and pressure-volume relationships in short exam-style questions.",
     total: 18,
     done: 0,
     score: null,
@@ -262,6 +295,8 @@ const SUMMARY_SETS: StudySet[] = [
     id: "s1",
     title: "Autonomic Pharmacology Notes",
     subject: "Pharmacology",
+    about:
+      "Condensed summaries of adrenergic and cholinergic drugs with board-style bullet points.",
     total: 8,
     done: 6,
     score: 88,
@@ -271,6 +306,8 @@ const SUMMARY_SETS: StudySet[] = [
     id: "s2",
     title: "Brachial Plexus & Upper Limb",
     subject: "Anatomy",
+    about:
+      "Roots, trunks, cords, and classic injury patterns including waiter's tip and claw hand.",
     total: 5,
     done: 5,
     score: 95,
@@ -280,6 +317,8 @@ const SUMMARY_SETS: StudySet[] = [
     id: "s3",
     title: "Hemodynamics Quick Review",
     subject: "Physiology",
+    about:
+      "Quick review of CO, SVR, and hemodynamic curves for rapid pre-exam refresh.",
     total: 10,
     done: 0,
     score: null,
@@ -292,6 +331,8 @@ const IMAGE_SETS: StudySet[] = [
     id: "i1",
     title: "Neuroanatomy Cross-Sections",
     subject: "Anatomy",
+    about:
+      "Labeled cross-sectional anatomy slides for spinal cord and brainstem orientation.",
     total: 12,
     done: 9,
     score: 78,
@@ -301,6 +342,8 @@ const IMAGE_SETS: StudySet[] = [
     id: "i2",
     title: "Hematopathology Slides",
     subject: "Pathology",
+    about:
+      "Microscopy sets highlighting Reed-Sternberg cells, lymphoma patterns, and marrow findings.",
     total: 14,
     done: 2,
     score: 50,
@@ -313,6 +356,8 @@ const FLASHCARD_SETS: StudySet[] = [
     id: "f1",
     title: "Drug Mechanisms Rapid Fire",
     subject: "Pharmacology",
+    about:
+      "Fast recall flashcards for receptor targets, enzyme inhibitors, and mechanism mnemonics.",
     total: 30,
     done: 22,
     score: 81,
@@ -322,6 +367,8 @@ const FLASHCARD_SETS: StudySet[] = [
     id: "f2",
     title: "Muscles & Innervation",
     subject: "Anatomy",
+    about:
+      "SITS rotator cuff, peripheral nerve supply, and motor exam correlations.",
     total: 24,
     done: 24,
     score: 96,
@@ -331,6 +378,8 @@ const FLASHCARD_SETS: StudySet[] = [
     id: "f3",
     title: "Coagulation Disorders",
     subject: "Pathology",
+    about:
+      "DIC, hemophilia, and clotting pathway defects with lab pattern recognition.",
     total: 16,
     done: 5,
     score: 70,
@@ -375,273 +424,91 @@ const TAB_ACCENT: Record<
   },
 };
 
-type SidebarMode = "explain" | "report" | "comments" | null;
+type SidebarMode = "explain" | "report" | "comments";
 
-function Sidebar({
-  mode,
-  questionText,
+function SetIntroView({
+  set,
+  tab,
+  itemCount,
+  onStart,
   onClose,
 }: {
-  mode: SidebarMode;
-  questionText: string;
+  set: StudySet;
+  tab: string;
+  itemCount: number;
+  onStart: () => void;
   onClose: () => void;
 }) {
-  const [comment, setComment] = useState("");
-  const [comments, setComments] = useState([
-    {
-      id: 1,
-      author: "Dr. Sara",
-      time: "2h ago",
-      text: "Great explanation! The mechanism is well described here.",
-    },
-    {
-      id: 2,
-      author: "Med_Student99",
-      time: "5h ago",
-      text: "I always confuse this with the competitive inhibitor — the table in the notes helped a lot.",
-    },
-  ]);
-  const [reportSelected, setReportSelected] = useState<string[]>([]);
-  const reportOptions = [
-    "Typo / spelling error",
-    "Wrong answer marked",
-    "Unclear question",
-    "Outdated information",
-    "Image issue",
-    "Other",
-  ];
-
-  if (!mode) return null;
+  const accent = TAB_ACCENT[tab] ?? TAB_ACCENT.questions;
+  const Icon = accent.icon;
+  const pct = Math.round((set.done / set.total) * 100);
 
   return (
-    <>
-      <div className="fixed inset-0 z-[55] bg-black/30" onClick={onClose} />
-      <div
-        className="fixed right-0 top-0 h-full z-[56] flex flex-col bg-white w-full max-w-sm"
-        style={{
-          borderLeft: "3px solid #e2e8f0",
-          boxShadow: "-8px 0 32px rgba(0,0,0,0.08)",
-        }}
-      >
+    <div className="flex-1 flex flex-col max-w-2xl mx-auto w-full px-4 py-8">
+      <div className="flex-1 flex flex-col justify-center">
         <div
-          className="flex items-center justify-between px-4 h-14 flex-shrink-0"
-          style={{ borderBottom: "2px solid #f1f5f9" }}
+          className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5"
+          style={{
+            background: accent.bg,
+            border: `2px solid ${accent.border}`,
+          }}
         >
-          <div className="flex items-center gap-2">
-            {mode === "explain" && (
-              <>
-                <Lightbulb
-                  size={16}
-                  style={{ color: "#f59e0b" }}
-                  strokeWidth={2.5}
-                />
-                <span className="font-black text-slate-900 text-sm">
-                  Explanation
-                </span>
-              </>
-            )}
-            {mode === "report" && (
-              <>
-                <Flag size={16} style={{ color: "#ef4444" }} strokeWidth={2.5} />
-                <span className="font-black text-slate-900 text-sm">
-                  Report Issue
-                </span>
-              </>
-            )}
-            {mode === "comments" && (
-              <>
-                <MessageCircle
-                  size={16}
-                  style={{ color: "#3b82f6" }}
-                  strokeWidth={2.5}
-                />
-                <span className="font-black text-slate-900 text-sm">
-                  Comments
-                </span>
-              </>
-            )}
-          </div>
-          <button
-            onClick={onClose}
-            className="w-7 h-7 rounded-xl flex items-center justify-center"
-            style={{ background: "#f1f5f9" }}
-          >
-            <X size={14} strokeWidth={2.5} className="text-slate-500" />
-          </button>
+          <Icon size={26} strokeWidth={2.5} style={{ color: accent.color }} />
         </div>
-
-        <div className="flex-1 overflow-y-auto">
-          {mode === "explain" && (
-            <div className="p-4 space-y-4">
-              <div
-                className="p-3 rounded-2xl text-xs font-semibold text-slate-600"
-                style={{ background: "#fffbeb", border: "1.5px solid #fde68a" }}
-              >
-                {questionText}
-              </div>
-              <div>
-                <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                  Explanation
-                </p>
-                <p className="text-sm font-medium text-slate-700 leading-relaxed">
-                  The correct answer relates to the primary mechanism described in
-                  current pharmacological guidelines. The key concept here is
-                  receptor binding affinity and downstream signaling cascades that
-                  produce the observed clinical effects.
-                </p>
-              </div>
-              <div
-                className="p-3 rounded-2xl"
-                style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0" }}
-              >
-                <p className="text-xs font-black text-green-700 mb-1">
-                  Key Point
-                </p>
-                <p className="text-xs font-semibold text-green-800">
-                  Remember the mnemonic: the mechanism directly follows the drug
-                  class naming convention in most cases.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {mode === "report" && (
-            <div className="p-4 space-y-4">
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">
-                Issue Type
-              </p>
-              <div className="space-y-2">
-                {reportOptions.map((opt) => {
-                  const sel = reportSelected.includes(opt);
-                  return (
-                    <button
-                      key={opt}
-                      onClick={() =>
-                        setReportSelected((p) =>
-                          sel ? p.filter((x) => x !== opt) : [...p, opt]
-                        )
-                      }
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-bold text-left transition-all"
-                      style={
-                        sel
-                          ? {
-                              background: "#fee2e2",
-                              border: "2px solid #fca5a5",
-                              color: "#dc2626",
-                              boxShadow: "0 2px 0 #fca5a5",
-                            }
-                          : {
-                              background: "#fff",
-                              border: "2px solid #e2e8f0",
-                              color: "#64748b",
-                              boxShadow: "0 2px 0 #e2e8f0",
-                            }
-                      }
-                    >
-                      <div
-                        className="w-4 h-4 rounded-md flex-shrink-0 flex items-center justify-center"
-                        style={{ background: sel ? "#dc2626" : "#e2e8f0" }}
-                      >
-                        {sel && (
-                          <Check size={10} strokeWidth={3} className="text-white" />
-                        )}
-                      </div>
-                      {opt}
-                    </button>
-                  );
-                })}
-              </div>
-              <button
-                disabled={reportSelected.length === 0}
-                className="w-full py-3 rounded-2xl font-black text-sm text-white transition-all disabled:opacity-40"
-                style={{
-                  background: "#ef4444",
-                  border: "2px solid #dc2626",
-                  boxShadow: "0 3px 0 #dc2626",
-                }}
-              >
-                Submit Report
-              </button>
-            </div>
-          )}
-
-          {mode === "comments" && (
-            <div className="p-4 space-y-3">
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">
-                {comments.length} Comments
-              </p>
-              {comments.map((c) => (
-                <div
-                  key={c.id}
-                  className="p-3 rounded-2xl"
-                  style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0" }}
-                >
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <div
-                        className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white"
-                        style={{ background: "#3b82f6" }}
-                      >
-                        {c.author[0]}
-                      </div>
-                      <span className="text-xs font-black text-slate-700">
-                        {c.author}
-                      </span>
-                    </div>
-                    <span className="text-xs text-slate-400 font-medium">
-                      {c.time}
-                    </span>
-                  </div>
-                  <p className="text-sm font-medium text-slate-600 leading-relaxed">
-                    {c.text}
-                  </p>
-                </div>
-              ))}
+        <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
+          {set.subject} · {set.tag}
+        </p>
+        <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-4 leading-tight">
+          {set.title}
+        </h1>
+        <p className="text-base font-medium text-slate-600 leading-relaxed mb-6">
+          {set.about}
+        </p>
+        <div
+          className="rounded-2xl p-4 mb-8 space-y-3"
+          style={{ background: "#f8fafc", border: "2px solid #e2e8f0" }}
+        >
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-bold text-slate-500">Items in this set</span>
+            <span className="font-black text-slate-800">{itemCount}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-bold text-slate-500">Your progress</span>
+            <span className="font-black" style={{ color: progressColor(pct) }}>
+              {set.done}/{set.total}
+            </span>
+          </div>
+          {set.score !== null && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-bold text-slate-500">Best score</span>
+              <span className="font-black" style={{ color: scoreColor(set.score).color }}>
+                {set.score}%
+              </span>
             </div>
           )}
         </div>
-
-        {mode === "comments" && (
-          <div
-            className="px-4 py-3 flex-shrink-0"
-            style={{ borderTop: "2px solid #f1f5f9" }}
-          >
-            <div className="flex gap-2 items-end">
-              <input
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Add a comment..."
-                className="flex-1 px-3 py-2.5 rounded-2xl text-sm font-medium text-slate-700 placeholder-slate-400 outline-none"
-                style={{ background: "#f1f5f9", border: "2px solid #e2e8f0" }}
-              />
-              <button
-                onClick={() => {
-                  if (!comment.trim()) return;
-                  setComments((p) => [
-                    ...p,
-                    {
-                      id: Date.now(),
-                      author: "You",
-                      time: "now",
-                      text: comment.trim(),
-                    },
-                  ]);
-                  setComment("");
-                }}
-                className="w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all"
-                style={{
-                  background: "#3b82f6",
-                  border: "2px solid #2563eb",
-                  boxShadow: "0 3px 0 #2563eb",
-                }}
-              >
-                <Send size={14} strokeWidth={2.5} className="text-white" />
-              </button>
-            </div>
-          </div>
-        )}
       </div>
-    </>
+
+      <div className="flex flex-col gap-3 pb-4">
+        <button
+          onClick={onStart}
+          className="w-full py-4 rounded-2xl font-black text-base text-white active:translate-y-0.5"
+          style={{
+            background: "#58CC02",
+            border: "2px solid #46A302",
+            boxShadow: "0 4px 0 #46A302",
+          }}
+        >
+          Start
+        </button>
+        <button
+          onClick={onClose}
+          className="w-full py-3 rounded-2xl font-black text-sm text-slate-500"
+        >
+          Back to sets
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -1129,57 +996,85 @@ function QuestionCard({
 
 function LessonQuestionView({
   q,
-  onSidebar,
   onAnswer,
   onContinue,
   onSkip,
+  onOpenReport,
+  onOpenChat,
 }: {
   q: (typeof SAMPLE_QUESTIONS)[0];
-  onSidebar: (m: SidebarMode) => void;
   onAnswer: (correct: boolean) => void;
   onContinue: () => void;
   onSkip: () => void;
+  onOpenReport: () => void;
+  onOpenChat: () => void;
 }) {
   const [selected, setSelected] = useState<number | null>(null);
-  const [checked, setChecked] = useState(false);
+  const [answered, setAnswered] = useState(false);
+  const [bookmarked, setBookmarked] = useState(false);
 
-  const handlePrimary = () => {
-    if (!checked) {
-      if (selected === null) return;
-      setChecked(true);
-      onAnswer(selected === q.answer);
-      return;
-    }
-    onContinue();
+  const pickOption = (index: number) => {
+    if (answered) return;
+    setSelected(index);
+    setAnswered(true);
+    onAnswer(index === q.answer);
   };
 
   return (
     <>
       <div className="flex-1 flex flex-col">
-        <span
-          className="inline-flex self-start text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg mb-4"
-          style={{
-            background: "#f5f3ff",
-            color: "#7c3aed",
-            border: "1.5px solid #ddd6fe",
-          }}
-        >
-          {q.subject} · {q.tag}
-        </span>
-        <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-8 leading-snug">
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <span
+            className="inline-flex text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg"
+            style={{
+              background: "#f5f3ff",
+              color: "#7c3aed",
+              border: "1.5px solid #ddd6fe",
+            }}
+          >
+            {q.subject} · {q.tag}
+          </span>
+          <button
+            onClick={() => setBookmarked((prev) => !prev)}
+            aria-label={bookmarked ? "Remove bookmark" : "Bookmark question"}
+            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+            style={
+              bookmarked
+                ? {
+                    background: "#fff7ed",
+                    border: "2px solid #fed7aa",
+                    color: "#ea580c",
+                  }
+                : {
+                    background: "#f8fafc",
+                    border: "2px solid #e2e8f0",
+                    color: "#94a3b8",
+                  }
+            }
+          >
+            <Bookmark
+              size={18}
+              strokeWidth={2.5}
+              fill={bookmarked ? "#ea580c" : "none"}
+            />
+          </button>
+        </div>
+
+        <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-6 leading-snug">
           {q.text}
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+
+        <div className="flex flex-col gap-3 mb-6">
           {q.options.map((opt, i) => {
             const isSelected = selected === i;
-            const isCorrect = checked && i === q.answer;
-            const isWrong = checked && isSelected && i !== q.answer;
+            const isCorrect = answered && i === q.answer;
+            const isWrong = answered && isSelected && i !== q.answer;
             return (
               <button
                 key={i}
-                disabled={checked}
-                onClick={() => !checked && setSelected(i)}
-                className="relative p-4 rounded-2xl border-2 text-left font-semibold text-sm md:text-base min-h-[80px] transition-all active:scale-[0.98] disabled:cursor-default"
+                disabled={answered}
+                onClick={() => pickOption(i)}
+                className="w-full p-4 rounded-2xl border-2 text-left font-semibold text-sm md:text-base transition-all active:scale-[0.99] disabled:cursor-default"
                 style={
                   isCorrect
                     ? {
@@ -1211,39 +1106,51 @@ function LessonQuestionView({
                 }
               >
                 {opt}
-                <span className="absolute bottom-2 right-3 text-[10px] font-black text-slate-400">
-                  {i + 1}
-                </span>
               </button>
             );
           })}
         </div>
-        {checked && (
-          <div className="flex items-center gap-2 mb-4">
-            <button
-              onClick={() => onSidebar("explain")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black"
-              style={{
-                background: "#fffbeb",
-                border: "1.5px solid #fde68a",
-                color: "#b45309",
-              }}
+
+        {answered && (
+          <div className="space-y-4 mb-4">
+            <div
+              className="rounded-2xl p-4"
+              style={{ background: "#f0fdf4", border: "2px solid #bbf7d0" }}
             >
-              <Lightbulb size={12} strokeWidth={2.5} />
-              Explain
-            </button>
-            <button
-              onClick={() => onSidebar("comments")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black"
-              style={{
-                background: "#eff6ff",
-                border: "1.5px solid #bfdbfe",
-                color: "#1d4ed8",
-              }}
-            >
-              <MessageCircle size={12} strokeWidth={2.5} />
-              Discuss
-            </button>
+              <p className="text-xs font-black uppercase tracking-widest text-green-700 mb-2">
+                Explanation
+              </p>
+              <p className="text-sm font-medium text-green-900 leading-relaxed">
+                {q.explanation}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={onOpenChat}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
+                style={{
+                  background: "#f5f3ff",
+                  border: "1.5px solid #ddd6fe",
+                  color: "#6d28d9",
+                }}
+              >
+                <Lightbulb size={12} strokeWidth={2.5} />
+                Explain with AI
+              </button>
+              <button
+                onClick={onOpenReport}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
+                style={{
+                  background: "#fef2f2",
+                  border: "1.5px solid #fecaca",
+                  color: "#dc2626",
+                }}
+              >
+                <Flag size={12} strokeWidth={2.5} />
+                Report
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -1260,24 +1167,16 @@ function LessonQuestionView({
             Skip
           </button>
           <button
-            onClick={handlePrimary}
-            disabled={!checked && selected === null}
-            className="px-10 py-3 rounded-2xl text-sm font-black uppercase tracking-wide text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all active:translate-y-0.5"
-            style={
-              checked
-                ? {
-                    background: "#58CC02",
-                    border: "2px solid #46A302",
-                    boxShadow: "0 4px 0 #46A302",
-                  }
-                : {
-                    background: selected !== null ? "#58CC02" : "#cbd5e1",
-                    border: `2px solid ${selected !== null ? "#46A302" : "#94a3b8"}`,
-                    boxShadow: `0 4px 0 ${selected !== null ? "#46A302" : "#94a3b8"}`,
-                  }
-            }
+            onClick={onContinue}
+            disabled={!answered}
+            className="px-10 py-3 rounded-2xl text-sm font-black uppercase tracking-wide text-white disabled:opacity-40 disabled:cursor-not-allowed active:translate-y-0.5"
+            style={{
+              background: "#58CC02",
+              border: "2px solid #46A302",
+              boxShadow: "0 4px 0 #46A302",
+            }}
           >
-            {checked ? "Continue" : "Check"}
+            Continue
           </button>
         </div>
       </div>
@@ -1291,33 +1190,69 @@ function SetSessionView({
   page,
   onPageChange,
   onClose,
-  onSidebar,
 }: {
   set: StudySet;
   tab: string;
   page: number;
   onPageChange: (p: number) => void;
   onClose: () => void;
-  onSidebar: (m: SidebarMode, text?: string) => void;
 }) {
+  const [phase, setPhase] = useState<"intro" | "active">("intro");
   const [sessionCorrect, setSessionCorrect] = useState(0);
   const [sessionAnswered, setSessionAnswered] = useState(0);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [questionChats, setQuestionChats] = useState<Record<string, ChatMessage[]>>({});
 
   const total = sessionItemCount(tab);
   const idx = Math.min(page, total) - 1;
-  const progressPct = total > 0 ? (page / total) * 100 : 0;
+  const progressPct =
+    phase === "intro" ? 0 : total > 0 ? (page / total) * 100 : 0;
   const liveScore =
     sessionAnswered > 0
       ? Math.round((sessionCorrect / sessionAnswered) * 100)
       : (set.score ?? 0);
   const scoreStyle = scoreColor(liveScore);
 
+  const currentQuestion =
+    tab === "questions" ? SAMPLE_QUESTIONS[idx] : undefined;
+  const chatKey =
+    currentQuestion !== undefined ? `${set.id}:${currentQuestion.id}` : "";
+
+  const currentChat =
+    chatKey && questionChats[chatKey]
+      ? questionChats[chatKey]
+      : currentQuestion
+        ? createInitialChat(currentQuestion.text)
+        : [];
+
+  const updateChat = (messages: ChatMessage[]) => {
+    if (!chatKey) return;
+    setQuestionChats((prev) => ({ ...prev, [chatKey]: messages }));
+  };
+
   const goNext = () => {
+    setChatOpen(false);
     if (page < total) onPageChange(page + 1);
     else onClose();
   };
 
   const renderSlide = () => {
+    if (phase === "intro") {
+      return (
+        <SetIntroView
+          set={set}
+          tab={tab}
+          itemCount={total}
+          onStart={() => {
+            setPhase("active");
+            onPageChange(1);
+          }}
+          onClose={onClose}
+        />
+      );
+    }
+
     if (tab === "questions") {
       const q = SAMPLE_QUESTIONS[idx];
       if (!q) return null;
@@ -1325,13 +1260,22 @@ function SetSessionView({
         <LessonQuestionView
           key={`${q.id}-${page}`}
           q={q}
-          onSidebar={(m) => onSidebar(m, q.text)}
           onAnswer={(correct) => {
             setSessionAnswered((n) => n + 1);
             if (correct) setSessionCorrect((n) => n + 1);
           }}
           onContinue={goNext}
           onSkip={goNext}
+          onOpenReport={() => setReportOpen(true)}
+          onOpenChat={() => {
+            if (chatKey && !questionChats[chatKey]) {
+              setQuestionChats((prev) => ({
+                ...prev,
+                [chatKey]: createInitialChat(q.text),
+              }));
+            }
+            setChatOpen(true);
+          }}
         />
       );
     }
@@ -1414,6 +1358,19 @@ function SetSessionView({
           {renderSlide()}
         </div>
       </div>
+
+      {currentQuestion && (
+        <>
+          <QuestionChatPanel
+            open={chatOpen}
+            onClose={() => setChatOpen(false)}
+            questionText={currentQuestion.text}
+            messages={currentChat}
+            onMessagesChange={updateChat}
+          />
+          <ReportSheet open={reportOpen} onClose={() => setReportOpen(false)} />
+        </>
+      )}
     </div>
   );
 }
@@ -1776,14 +1733,12 @@ function TabContent({
   tab,
   openSet,
   onOpenSet,
-  onCloseSet,
-  onSidebar,
+  search,
 }: {
   tab: string;
   openSet: StudySet | null;
   onOpenSet: (s: StudySet) => void;
-  onCloseSet: () => void;
-  onSidebar: (m: SidebarMode, text?: string) => void;
+  search: string;
 }) {
   if (tab === "library") {
     return (
@@ -1805,17 +1760,27 @@ function TabContent({
     return null;
   }
 
-  const sets = SETS_BY_TAB[tab] ?? [];
+  const sets = filterSets(SETS_BY_TAB[tab] ?? [], search);
   return (
     <>
       <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 px-1">
-        {sets.length} Sets
+        {sets.length} Set{sets.length !== 1 ? "s" : ""}
+        {search.trim() ? ` matching "${search.trim()}"` : ""}
       </p>
-      <div className="space-y-3 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:gap-4 md:space-y-0">
-        {sets.map((set) => (
-          <SetCard key={set.id} set={set} tab={tab} onOpen={() => onOpenSet(set)} />
-        ))}
-      </div>
+      {sets.length === 0 ? (
+        <div className="text-center py-16 px-4">
+          <p className="font-black text-slate-600 mb-1">No sets found</p>
+          <p className="text-sm text-slate-400 font-medium">
+            Try a different search term or clear filters.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:gap-4 md:space-y-0">
+          {sets.map((set) => (
+            <SetCard key={set.id} set={set} tab={tab} onOpen={() => onOpenSet(set)} />
+          ))}
+        </div>
+      )}
     </>
   );
 }
@@ -2635,8 +2600,6 @@ export default function DrNoteApp() {
   const [dailyOpen, setDailyOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [sidebarMode, setSidebarMode] = useState<SidebarMode>(null);
-  const [sidebarText, setSidebarText] = useState("");
   const [openSet, setOpenSet] = useState<StudySet | null>(null);
 
   const [appliedSubjects, setAppliedSubjects] = useState<Set<string>>(new Set());
@@ -2673,11 +2636,6 @@ export default function DrNoteApp() {
   const streak = 14;
   const dailyRemaining = DAILY_LIMIT - DAILY_USED;
 
-  const openSidebar = (m: SidebarMode, text?: string) => {
-    setSidebarMode(m);
-    setSidebarText(text ?? "");
-  };
-
   return (
     <div className={`min-h-screen bg-slate-50 font-sans ${openSet ? "" : "pb-8"}`}>
       {openSet ? (
@@ -2687,7 +2645,6 @@ export default function DrNoteApp() {
           page={page}
           onPageChange={setPage}
           onClose={() => setOpenSet(null)}
-          onSidebar={openSidebar}
         />
       ) : (
         <>
@@ -2720,12 +2677,11 @@ export default function DrNoteApp() {
             <TabContent
               tab={activeTab}
               openSet={openSet}
+              search={search}
               onOpenSet={(s) => {
                 setOpenSet(s);
                 setPage(1);
               }}
-              onCloseSet={() => setOpenSet(null)}
-              onSidebar={openSidebar}
             />
           </main>
         </>
@@ -2755,11 +2711,6 @@ export default function DrNoteApp() {
           onClose={() => setDailyOpen(false)}
         />
       )}
-      <Sidebar
-        mode={sidebarMode}
-        questionText={sidebarText}
-        onClose={() => setSidebarMode(null)}
-      />
     </div>
   );
 }

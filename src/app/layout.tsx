@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Nunito } from "next/font/google";
+import { Nunito, Geist } from "next/font/google";
 import "./globals.css";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const nunito = Nunito({
   variable: "--font-nunito",
@@ -26,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${nunito.variable} h-full`}>
+    <html lang="en" className={cn("h-full", nunito.variable, "font-sans", geist.variable)}>
       <body className="min-h-full antialiased">{children}</body>
     </html>
   );
