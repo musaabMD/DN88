@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Bot, Send, Sparkles, X } from "lucide-react";
+import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import {
   Message,
   MessageAvatar,
@@ -19,6 +20,7 @@ import {
 } from "@/components/ui/message-scroller";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 export type ChatMessage = {
   id: string;
@@ -77,78 +79,83 @@ export function QuestionChatPanel({
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex flex-col bg-white">
-      <div
-        className="flex items-center justify-between px-4 h-14 flex-shrink-0 border-b border-slate-200"
-      >
-        <div className="flex items-center gap-2 min-w-0">
-          <Sparkles size={16} className="text-violet-600 shrink-0" strokeWidth={2.5} />
-          <span className="font-black text-slate-900 text-sm truncate">
+    <div className="fixed inset-0 z-[70] flex flex-col bg-background">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <Sparkles
+            size={16}
+            className="shrink-0 text-violet-600"
+            strokeWidth={2.5}
+          />
+          <span className="truncate text-sm font-semibold text-foreground">
             AI tutor
           </span>
         </div>
         <button
+          type="button"
           onClick={onClose}
           aria-label="Close chat"
-          className="w-8 h-8 rounded-xl flex items-center justify-center bg-slate-100 shrink-0"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-muted"
         >
-          <X size={15} strokeWidth={2.5} className="text-slate-500" />
+          <X size={15} strokeWidth={2.5} className="text-muted-foreground" />
         </button>
-      </div>
+      </header>
 
-      <MessageScrollerProvider autoScroll defaultScrollPosition="last-anchor">
-        <MessageScroller className="flex-1 min-h-0">
+      <MessageScrollerProvider
+        autoScroll
+        defaultScrollPosition="last-anchor"
+        scrollPreviousItemPeek={64}
+      >
+        <MessageScroller className="min-h-0 flex-1">
           <MessageScrollerViewport>
-            <MessageScrollerContent className="px-4 py-4">
-              {messages.map((message) => (
-                <MessageScrollerItem
-                  key={message.id}
-                  messageId={message.id}
-                  scrollAnchor={message.role === "user"}
-                >
-                  <Message align={message.role === "user" ? "end" : "start"}>
-                    {message.role === "assistant" && (
-                      <MessageAvatar className="size-8 bg-violet-100 text-violet-700">
-                        <Bot size={16} strokeWidth={2.5} />
-                      </MessageAvatar>
-                    )}
-                    <MessageContent>
-                      <MessageHeader>
-                        {message.role === "assistant" ? "Drnote AI" : "You"}
-                      </MessageHeader>
-                      <div
-                        className="rounded-2xl px-3 py-2.5 text-sm leading-relaxed whitespace-pre-wrap"
-                        style={
-                          message.role === "user"
-                            ? {
-                                background: "#58CC02",
-                                color: "#fff",
-                              }
-                            : {
-                                background: "#f1f5f9",
-                                color: "#334155",
-                                border: "1px solid #e2e8f0",
-                              }
-                        }
-                      >
-                        {message.content}
-                      </div>
-                      <MessageFooter>
-                        {message.role === "assistant" ? "Saved for this question" : ""}
-                      </MessageFooter>
-                    </MessageContent>
-                  </Message>
-                </MessageScrollerItem>
-              ))}
+            <MessageScrollerContent className="mx-auto w-full max-w-2xl px-4 py-6">
+              {messages.map((message) => {
+                const isUser = message.role === "user";
+
+                return (
+                  <MessageScrollerItem
+                    key={message.id}
+                    messageId={message.id}
+                    scrollAnchor={isUser}
+                  >
+                    <Message align={isUser ? "end" : "start"}>
+                      {!isUser && (
+                        <MessageAvatar className="size-8 bg-violet-100 text-violet-700">
+                          <Bot size={16} strokeWidth={2.5} />
+                        </MessageAvatar>
+                      )}
+                      <MessageContent>
+                        {!isUser && (
+                          <MessageHeader>Drnote AI</MessageHeader>
+                        )}
+                        <Bubble
+                          variant={isUser ? "default" : "muted"}
+                          className={cn(
+                            isUser &&
+                              "*:data-[slot=bubble-content]:border-transparent *:data-[slot=bubble-content]:bg-[#58CC02] *:data-[slot=bubble-content]:text-white",
+                          )}
+                        >
+                          <BubbleContent className="whitespace-pre-wrap">
+                            {message.content}
+                          </BubbleContent>
+                        </Bubble>
+                        {!isUser && (
+                          <MessageFooter>Saved for this question</MessageFooter>
+                        )}
+                      </MessageContent>
+                    </Message>
+                  </MessageScrollerItem>
+                );
+              })}
             </MessageScrollerContent>
           </MessageScrollerViewport>
           <MessageScrollerButton />
         </MessageScroller>
       </MessageScrollerProvider>
 
-      <div className="flex-shrink-0 border-t border-slate-200 p-3">
+      <footer className="shrink-0 border-t border-border p-3">
         <form
-          className="flex gap-2 max-w-3xl mx-auto"
+          className="mx-auto flex w-full max-w-2xl gap-2"
           onSubmit={(e) => {
             e.preventDefault();
             send();
@@ -158,19 +165,18 @@ export function QuestionChatPanel({
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Ask about this question..."
-            className="rounded-2xl h-11"
+            className="h-11 rounded-2xl"
           />
           <Button
             type="submit"
             size="icon-lg"
-            className="rounded-2xl shrink-0"
-            style={{ background: "#58CC02", color: "#fff" }}
+            className="shrink-0 rounded-2xl bg-[#58CC02] text-white hover:bg-[#4db802]"
             disabled={!draft.trim()}
           >
             <Send size={16} strokeWidth={2.5} />
           </Button>
         </form>
-      </div>
+      </footer>
     </div>
   );
 }
