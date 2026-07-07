@@ -1,5 +1,6 @@
-import DrNoteApp from "@/components/DrNoteApp";
+import { redirect } from "next/navigation";
+import { DEFAULT_TAB, tabPath } from "@/lib/routes";
 
 export default function HomePage() {
-  return <DrNoteApp />;
+  redirect(tabPath(DEFAULT_TAB));
 }

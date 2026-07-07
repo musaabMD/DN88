@@ -1,15 +1,23 @@
 "use client";
 
-import { useEffect, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { useRouter } from "next/navigation";
+import { useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import {
-  createInitialChat,
-  QuestionChatPanel,
-  type ChatMessage,
-} from "@/components/QuestionChatPanel";
-import { ReportSheet } from "@/components/ReportSheet";
-import { SessionPauseModal } from "@/components/SessionPauseModal";
-import { SessionReportView } from "@/components/SessionReportView";
-import { CitationList, type SerializableCitation } from "@/components/tool-ui/citation";
+  SAMPLE_FLASHCARDS,
+  SAMPLE_IMAGES,
+  SAMPLE_QUESTIONS,
+  SAMPLE_SUMMARIES,
+  SETS_BY_TAB,
+  type StudySet,
+} from "@/lib/mock-data";
+import {
+  FILTERS_PATH,
+  UPGRADE_PATH,
+  setPath,
+  tabPath,
+  type ContentTab,
+} from "@/lib/routes";
+import { CitationList } from "@/components/tool-ui/citation";
 import type { LucideIcon } from "lucide-react";
 import {
   FileQuestion,
@@ -88,225 +96,6 @@ const TAGS = [
 const DAILY_LIMIT = 20;
 const DAILY_USED = 13;
 
-const SAMPLE_QUESTIONS = [
-  {
-    id: 1,
-    subject: "Pharmacology",
-    text: "A 45-year-old patient is prescribed metformin for type 2 diabetes. Which of the following is the primary mechanism of action of metformin?",
-    options: [
-      "Increases insulin secretion",
-      "Decreases hepatic glucose output",
-      "Stimulates glucagon release",
-      "Inhibits intestinal glucose absorption",
-    ],
-    answer: 1,
-    tag: "High Yield",
-    status: "unused",
-    explanation:
-      "Metformin decreases hepatic glucose output by inhibiting mitochondrial glycerophosphate dehydrogenase, reducing gluconeogenesis. It does not primarily stimulate insulin secretion (sulfonylureas) or block intestinal absorption.",
-    citations: [
-      {
-        id: "c1",
-        href: "https://diabetesjournals.org/care/article/d/24/Supplement_1/1/153952/Standards-of-Care-in-Diabetes-2024",
-        title: "Pharmacotherapy of hyperglycemia in type 2 diabetes",
-        domain: "diabetesjournals.org",
-        author: "ADA Standards of Care in Diabetes",
-        publishedAt: "2024-01-01T00:00:00.000Z",
-        type: "document",
-      },
-      {
-        id: "c2",
-        href: "https://accessmedicine.mhmedical.com/book.aspx?bookid=3199",
-        title: "Biguanides and hepatic gluconeogenesis",
-        domain: "accessmedicine.mhmedical.com",
-        author: "Goodman & Gilman's Pharmacology",
-        publishedAt: "2023-01-01T00:00:00.000Z",
-        type: "document",
-      },
-      {
-        id: "c3",
-        href: "https://www.mhmedical.com/firstaid",
-        title: "Oral hypoglycemic agents overview",
-        domain: "mhmedical.com",
-        author: "First Aid for the USMLE Step 1",
-        publishedAt: "2025-01-01T00:00:00.000Z",
-        type: "document",
-      },
-    ] satisfies SerializableCitation[],
-  },
-  {
-    id: 2,
-    subject: "Anatomy",
-    text: "Which nerve passes through the carpal tunnel alongside the flexor tendons?",
-    options: [
-      "Ulnar nerve",
-      "Radial nerve",
-      "Median nerve",
-      "Musculocutaneous nerve",
-    ],
-    answer: 2,
-    tag: "Exam Ready",
-    status: "used",
-    explanation:
-      "The median nerve travels through the carpal tunnel with the flexor tendons. The ulnar nerve passes medial to the tunnel (Guyon's canal region), and the radial nerve does not enter the carpal tunnel.",
-    citations: [
-      {
-        id: "c4",
-        href: "https://www.elsevier.com/books/grays-anatomy-for-students/drake/978-0-323-68050-2",
-        title: "Carpal tunnel anatomy",
-        domain: "elsevier.com",
-        author: "Gray's Anatomy for Students",
-        publishedAt: "2024-01-01T00:00:00.000Z",
-        type: "document",
-      },
-      {
-        id: "c5",
-        href: "https://www.ncbi.nlm.nih.gov/books/NBK553179/",
-        title: "Median nerve entrapment syndromes",
-        domain: "ncbi.nlm.nih.gov",
-        author: "StatPearls",
-        publishedAt: "2024-01-01T00:00:00.000Z",
-        type: "article",
-      },
-    ] satisfies SerializableCitation[],
-  },
-  {
-    id: 3,
-    subject: "Pathology",
-    text: "A biopsy shows non-caseating granulomas in the lung parenchyma. What is the most likely diagnosis?",
-    options: [
-      "Tuberculosis",
-      "Sarcoidosis",
-      "Histoplasmosis",
-      "Aspergillosis",
-    ],
-    answer: 1,
-    tag: "High Yield",
-    status: "incorrect",
-    explanation:
-      "Non-caseating granulomas in the lung are classic for sarcoidosis. Tuberculosis typically shows caseating granulomas. Histoplasmosis and aspergillosis have different histologic patterns.",
-    citations: [
-      {
-        id: "c6",
-        href: "https://www.elsevier.com/books/robbins-basic-pathology/kumar/978-0-323-55988-4",
-        title: "Sarcoidosis pathology",
-        domain: "elsevier.com",
-        author: "Robbins Basic Pathology",
-        publishedAt: "2023-01-01T00:00:00.000Z",
-        type: "document",
-      },
-      {
-        id: "c7",
-        href: "https://accessmedicine.mhmedical.com/book.aspx?bookid=3099",
-        title: "Granulomatous lung disease differential",
-        domain: "accessmedicine.mhmedical.com",
-        author: "Harrison's Principles of Internal Medicine",
-        publishedAt: "2024-01-01T00:00:00.000Z",
-        type: "document",
-      },
-    ] satisfies SerializableCitation[],
-  },
-];
-
-const SAMPLE_SUMMARIES = [
-  {
-    id: 1,
-    subject: "Pharmacology",
-    title: "Beta Blockers",
-    bullets: [
-      "Competitively block β-adrenergic receptors",
-      "Cardioselective (β1): metoprolol, atenolol",
-      "Non-selective (β1+β2): propranolol, carvedilol",
-      "Uses: HTN, angina, HF, arrhythmias, post-MI",
-      "Side effects: bradycardia, bronchospasm, fatigue",
-      "Contraindicated in decompensated HF, severe asthma",
-    ],
-    tag: "HY Note",
-  },
-  {
-    id: 2,
-    subject: "Anatomy",
-    title: "Brachial Plexus Roots",
-    bullets: [
-      "C5-T1 nerve roots",
-      "5 roots → 3 trunks → 6 divisions → 3 cords → 5 terminal branches",
-      "MARMU: Musculocutaneous, Axillary, Radial, Median, Ulnar",
-      "Erb's palsy: C5-C6 injury → waiter's tip",
-      "Klumpke's palsy: C8-T1 injury → claw hand",
-    ],
-    tag: "HY Note",
-  },
-];
-
-const SAMPLE_IMAGES = [
-  {
-    id: 1,
-    subject: "Anatomy",
-    caption:
-      "Cross-section of the spinal cord showing grey and white matter organization",
-    tag: "High Yield",
-    gradient: "linear-gradient(135deg,#dbeafe,#bfdbfe)",
-  },
-  {
-    id: 2,
-    subject: "Pathology",
-    caption:
-      "Histological slide showing Reed-Sternberg cells in Hodgkin lymphoma",
-    tag: "Exam Ready",
-    gradient: "linear-gradient(135deg,#fce7f3,#fbcfe8)",
-  },
-  {
-    id: 3,
-    subject: "Pharmacology",
-    caption:
-      "Drug receptor interaction demonstrating competitive antagonism curve",
-    tag: "High Yield",
-    gradient: "linear-gradient(135deg,#d1fae5,#a7f3d0)",
-  },
-];
-
-const SAMPLE_FLASHCARDS = [
-  {
-    id: 1,
-    subject: "Pharmacology",
-    front: "What is the mechanism of action of ACE inhibitors?",
-    back: "Block conversion of Angiotensin I → Angiotensin II by inhibiting ACE enzyme, reducing vasoconstriction and aldosterone release",
-  },
-  {
-    id: 2,
-    subject: "Anatomy",
-    front: "Name the rotator cuff muscles (SITS)",
-    back: "Supraspinatus, Infraspinatus, Teres minor, Subscapularis",
-  },
-  {
-    id: 3,
-    subject: "Pathology",
-    front: "What is the hallmark finding in DIC?",
-    back: "Elevated D-dimer, prolonged PT/PTT, low fibrinogen, thrombocytopenia — consumption of clotting factors",
-  },
-];
-
-function sessionItemCount(tab: string): number {
-  if (tab === "questions") return SAMPLE_QUESTIONS.length;
-  if (tab === "summary") return SAMPLE_SUMMARIES.length;
-  if (tab === "images") return SAMPLE_IMAGES.length;
-  if (tab === "flashcards") return SAMPLE_FLASHCARDS.length;
-  return 1;
-}
-
-type StudySet = {
-  id: string;
-  title: string;
-  subject: string;
-  about: string;
-  total: number;
-  done: number;
-  score: number | null;
-  tag: string;
-  upvotes: number;
-  comments: number;
-};
-
 function filterSets(sets: StudySet[], query: string): StudySet[] {
   const q = query.trim().toLowerCase();
   if (!q) return sets;
@@ -319,180 +108,6 @@ function filterSets(sets: StudySet[], query: string): StudySet[] {
   );
 }
 
-const QUESTION_SETS: StudySet[] = [
-  {
-    id: "q1",
-    title: "Diabetes & Oral Hypoglycemics",
-    subject: "Pharmacology",
-    about:
-      "High-yield MCQs on metformin, sulfonylureas, and first-line type 2 diabetes management for shelf and board prep.",
-    total: 20,
-    done: 13,
-    score: 85,
-    tag: "High Yield",
-    upvotes: 248,
-    comments: 142,
-  },
-  {
-    id: "q2",
-    title: "Upper Limb Nerve Injuries",
-    subject: "Anatomy",
-    about:
-      "Covers carpal tunnel, Erb's palsy, and peripheral nerve localization with clinical vignettes.",
-    total: 15,
-    done: 15,
-    score: 92,
-    tag: "Exam Ready",
-    upvotes: 412,
-    comments: 240,
-  },
-  {
-    id: "q3",
-    title: "Granulomatous Lung Disease",
-    subject: "Pathology",
-    about:
-      "Compare caseating vs non-caseating granulomas and tie histology findings to sarcoidosis and TB.",
-    total: 25,
-    done: 4,
-    score: 61,
-    tag: "Review Needed",
-    upvotes: 156,
-    comments: 91,
-  },
-  {
-    id: "q4",
-    title: "Cardiac Physiology Basics",
-    subject: "Physiology",
-    about:
-      "Frank-Starling, preload/afterload, and pressure-volume relationships in short exam-style questions.",
-    total: 18,
-    done: 0,
-    score: null,
-    tag: "Week 2",
-    upvotes: 89,
-    comments: 52,
-  },
-];
-
-const SUMMARY_SETS: StudySet[] = [
-  {
-    id: "s1",
-    title: "Autonomic Pharmacology Notes",
-    subject: "Pharmacology",
-    about:
-      "Condensed summaries of adrenergic and cholinergic drugs with board-style bullet points.",
-    total: 8,
-    done: 6,
-    score: 88,
-    tag: "HY Note",
-    upvotes: 193,
-    comments: 112,
-  },
-  {
-    id: "s2",
-    title: "Brachial Plexus & Upper Limb",
-    subject: "Anatomy",
-    about:
-      "Roots, trunks, cords, and classic injury patterns including waiter's tip and claw hand.",
-    total: 5,
-    done: 5,
-    score: 95,
-    tag: "HY Note",
-    upvotes: 327,
-    comments: 189,
-  },
-  {
-    id: "s3",
-    title: "Hemodynamics Quick Review",
-    subject: "Physiology",
-    about:
-      "Quick review of CO, SVR, and hemodynamic curves for rapid pre-exam refresh.",
-    total: 10,
-    done: 0,
-    score: null,
-    tag: "Week 3",
-    upvotes: 74,
-    comments: 43,
-  },
-];
-
-const IMAGE_SETS: StudySet[] = [
-  {
-    id: "i1",
-    title: "Neuroanatomy Cross-Sections",
-    subject: "Anatomy",
-    about:
-      "Labeled cross-sectional anatomy slides for spinal cord and brainstem orientation.",
-    total: 12,
-    done: 9,
-    score: 78,
-    tag: "High Yield",
-    upvotes: 201,
-    comments: 117,
-  },
-  {
-    id: "i2",
-    title: "Hematopathology Slides",
-    subject: "Pathology",
-    about:
-      "Microscopy sets highlighting Reed-Sternberg cells, lymphoma patterns, and marrow findings.",
-    total: 14,
-    done: 2,
-    score: 50,
-    tag: "Exam Ready",
-    upvotes: 118,
-    comments: 68,
-  },
-];
-
-const FLASHCARD_SETS: StudySet[] = [
-  {
-    id: "f1",
-    title: "Drug Mechanisms Rapid Fire",
-    subject: "Pharmacology",
-    about:
-      "Fast recall flashcards for receptor targets, enzyme inhibitors, and mechanism mnemonics.",
-    total: 30,
-    done: 22,
-    score: 81,
-    tag: "High Yield",
-    upvotes: 364,
-    comments: 211,
-  },
-  {
-    id: "f2",
-    title: "Muscles & Innervation",
-    subject: "Anatomy",
-    about:
-      "SITS rotator cuff, peripheral nerve supply, and motor exam correlations.",
-    total: 24,
-    done: 24,
-    score: 96,
-    tag: "Master",
-    upvotes: 521,
-    comments: 302,
-  },
-  {
-    id: "f3",
-    title: "Coagulation Disorders",
-    subject: "Pathology",
-    about:
-      "DIC, hemophilia, and clotting pathway defects with lab pattern recognition.",
-    total: 16,
-    done: 5,
-    score: 70,
-    tag: "Week 4",
-    upvotes: 142,
-    comments: 83,
-  },
-];
-
-const SETS_BY_TAB: Record<string, StudySet[]> = {
-  questions: QUESTION_SETS,
-  summary: SUMMARY_SETS,
-  images: IMAGE_SETS,
-  flashcards: FLASHCARD_SETS,
-};
 
 const TAB_ACCENT: Record<
   string,
@@ -526,153 +141,6 @@ const TAB_ACCENT: Record<
 
 type SidebarMode = "explain" | "report" | "comments";
 
-function SetIntroView({
-  set,
-  tab,
-  itemCount,
-  onStart,
-  onResume,
-  onResult,
-  onRestart,
-  onShare,
-  onReport,
-  onClose,
-}: {
-  set: StudySet;
-  tab: string;
-  itemCount: number;
-  onStart: () => void;
-  onResume: () => void;
-  onResult: () => void;
-  onRestart: () => void;
-  onShare: () => void;
-  onReport: () => void;
-  onClose: () => void;
-}) {
-  const accent = TAB_ACCENT[tab] ?? TAB_ACCENT.questions;
-  const Icon = accent.icon;
-  const progressPct = Math.round((set.done / set.total) * 100);
-  const hasProgress = set.done > 0;
-  const canResume = hasProgress && set.done < set.total;
-
-  const secondaryActions = [
-    ...(canResume
-      ? [{ label: "Resume", icon: ChevronRight, onClick: onResume }]
-      : []),
-    ...(set.score !== null
-      ? [{ label: "Result", icon: BarChart3, onClick: onResult }]
-      : []),
-    ...(hasProgress ? [{ label: "Restart", icon: RotateCcw, onClick: onRestart }] : []),
-    { label: "Share", icon: Share2, onClick: onShare },
-    { label: "Report", icon: Flag, onClick: onReport },
-  ];
-
-  return (
-    <div className="flex flex-1 flex-col bg-white">
-      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col px-5 py-10">
-        <div className="flex flex-1 flex-col items-center justify-center text-center">
-          <div
-            className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl"
-            style={{
-              background: accent.bg,
-              border: `2px solid ${accent.border}`,
-              boxShadow: `0 6px 0 ${accent.border}`,
-            }}
-          >
-            <Icon size={36} strokeWidth={2.5} style={{ color: accent.color }} />
-          </div>
-
-          <h1 className="mb-6 max-w-sm text-3xl font-black leading-tight tracking-tight text-slate-900">
-            {set.title}
-          </h1>
-
-          <div className="mb-8 grid w-full max-w-xs grid-cols-3 gap-2">
-            <div
-              className="rounded-2xl px-3 py-3"
-              style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0" }}
-            >
-              <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">
-                Items
-              </p>
-              <p className="mt-1 text-lg font-black text-slate-900">{itemCount}</p>
-            </div>
-            <div
-              className="rounded-2xl px-3 py-3"
-              style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0" }}
-            >
-              <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">
-                Progress
-              </p>
-              <p
-                className="mt-1 text-lg font-black"
-                style={{ color: progressColor(progressPct) }}
-              >
-                {progressPct}%
-              </p>
-            </div>
-            <div
-              className="rounded-2xl px-3 py-3"
-              style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0" }}
-            >
-              <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">
-                Best
-              </p>
-              <p
-                className="mt-1 text-lg font-black"
-                style={{
-                  color:
-                    set.score !== null ? scoreColor(set.score).color : "#94a3b8",
-                }}
-              >
-                {set.score !== null ? `${set.score}%` : "—"}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-3 pb-4">
-          <button
-            type="button"
-            onClick={onStart}
-            className="w-full rounded-2xl py-4 text-base font-black text-white active:translate-y-0.5"
-            style={{
-              background: "#58CC02",
-              border: "2px solid #46A302",
-              boxShadow: "0 4px 0 #46A302",
-            }}
-          >
-            {canResume ? "Start over" : "Start"}
-          </button>
-
-          {secondaryActions.length > 0 && (
-            <div className="grid grid-cols-2 gap-2">
-              {secondaryActions.map(({ label, icon: ActionIcon, onClick }) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={onClick}
-                  className="flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold text-slate-600"
-                  style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0" }}
-                >
-                  <ActionIcon size={15} strokeWidth={2.5} />
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full py-2 text-sm font-bold text-slate-400"
-          >
-            Back to sets
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function progressColor(pct: number) {
   if (pct >= 100) return "#22c55e";
@@ -1221,389 +689,6 @@ function LessonQuestionView({
   );
 }
 
-function SetSessionView({
-  set,
-  tab,
-  page,
-  onPageChange,
-  onClose,
-}: {
-  set: StudySet;
-  tab: string;
-  page: number;
-  onPageChange: (p: number) => void;
-  onClose: () => void;
-}) {
-  const [phase, setPhase] = useState<"intro" | "active" | "report">("intro");
-  const [sessionCorrect, setSessionCorrect] = useState(0);
-  const [sessionAnswered, setSessionAnswered] = useState(0);
-  const [subjectStats, setSubjectStats] = useState<
-    Record<string, { correct: number; total: number }>
-  >({});
-  const [currentAnswered, setCurrentAnswered] = useState(false);
-  const [reportOpen, setReportOpen] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
-  const [pauseOpen, setPauseOpen] = useState(false);
-  const [questionChats, setQuestionChats] = useState<Record<string, ChatMessage[]>>({});
-  const sessionStartRef = useRef<number | null>(null);
-  const sessionEndRef = useRef<number | null>(null);
-
-  const total = sessionItemCount(tab);
-  const idx = Math.min(page, total) - 1;
-  const remaining = Math.max(total - page, 0);
-  const progressPct =
-    phase === "intro"
-      ? 0
-      : phase === "report"
-        ? 100
-        : total > 0
-          ? (page / total) * 100
-          : 0;
-  const liveScore =
-    sessionAnswered > 0
-      ? Math.round((sessionCorrect / sessionAnswered) * 100)
-      : 0;
-
-  const currentQuestion =
-    tab === "questions" ? SAMPLE_QUESTIONS[idx] : undefined;
-  const chatKey =
-    currentQuestion !== undefined ? `${set.id}:${currentQuestion.id}` : "";
-
-  const currentChat =
-    chatKey && questionChats[chatKey]
-      ? questionChats[chatKey]
-      : currentQuestion
-        ? createInitialChat(currentQuestion.text)
-        : [];
-
-  useEffect(() => {
-    setCurrentAnswered(false);
-  }, [page, phase]);
-
-  const updateChat = (messages: ChatMessage[]) => {
-    if (!chatKey) return;
-    setQuestionChats((prev) => ({ ...prev, [chatKey]: messages }));
-  };
-
-  const finishSession = () => {
-    sessionEndRef.current = Date.now();
-    setChatOpen(false);
-    setPauseOpen(false);
-    setPhase("report");
-  };
-
-  const goNext = () => {
-    if (tab === "questions" && !currentAnswered) return;
-    setChatOpen(false);
-    if (page < total) onPageChange(page + 1);
-    else finishSession();
-  };
-
-  const goBack = () => {
-    setChatOpen(false);
-    if (page > 1) onPageChange(page - 1);
-  };
-
-  const handleCloseRequest = () => {
-    if (phase === "intro") {
-      onClose();
-      return;
-    }
-    if (phase === "report") {
-      onClose();
-      return;
-    }
-    setPauseOpen(true);
-  };
-
-  const openChat = () => {
-    if (!currentQuestion || !chatKey) return;
-    if (!questionChats[chatKey]) {
-      setQuestionChats((prev) => ({
-        ...prev,
-        [chatKey]: createInitialChat(currentQuestion.text),
-      }));
-    }
-    setChatOpen(true);
-  };
-
-  const elapsedSeconds =
-    sessionStartRef.current && sessionEndRef.current
-      ? Math.max(
-          1,
-          Math.round((sessionEndRef.current - sessionStartRef.current) / 1000)
-        )
-      : sessionStartRef.current
-        ? Math.max(
-            1,
-            Math.round((Date.now() - sessionStartRef.current) / 1000)
-          )
-        : 0;
-
-  const renderSlide = () => {
-    if (phase === "report") {
-      return (
-        <SessionReportView
-          setTitle={set.title}
-          elapsedSeconds={elapsedSeconds}
-          overallScore={liveScore}
-          subjectScores={subjectStats}
-          onClose={onClose}
-        />
-      );
-    }
-
-    if (phase === "intro") {
-      return (
-        <SetIntroView
-          set={set}
-          tab={tab}
-          itemCount={total}
-          onStart={() => {
-            sessionStartRef.current = Date.now();
-            setSessionCorrect(0);
-            setSessionAnswered(0);
-            setSubjectStats({});
-            setPhase("active");
-            onPageChange(1);
-          }}
-          onResume={() => {
-            sessionStartRef.current = Date.now();
-            setPhase("active");
-            const resumePage = Math.min(
-              Math.max(1, set.done + 1),
-              total
-            );
-            onPageChange(resumePage);
-          }}
-          onResult={() => {
-            sessionEndRef.current = Date.now();
-            setSubjectStats({
-              [set.subject]: {
-                correct: Math.round(((set.score ?? 0) / 100) * set.total),
-                total: set.total,
-              },
-            });
-            setSessionCorrect(Math.round(((set.score ?? 0) / 100) * set.total));
-            setSessionAnswered(set.total);
-            setPhase("report");
-          }}
-          onRestart={() => {
-            setSessionCorrect(0);
-            setSessionAnswered(0);
-            setSubjectStats({});
-            sessionStartRef.current = null;
-            sessionEndRef.current = null;
-          }}
-          onShare={() => {
-            if (typeof navigator !== "undefined" && navigator.share) {
-              void navigator.share({ title: set.title, text: set.about });
-            }
-          }}
-          onReport={() => setReportOpen(true)}
-          onClose={onClose}
-        />
-      );
-    }
-
-    if (tab === "questions") {
-      const q = SAMPLE_QUESTIONS[idx];
-      if (!q) return null;
-      return (
-        <LessonQuestionView
-          key={`${q.id}-${page}`}
-          q={q}
-          onAnswer={(correct) => {
-            setCurrentAnswered(true);
-            setSessionAnswered((n) => n + 1);
-            if (correct) setSessionCorrect((n) => n + 1);
-            setSubjectStats((prev) => {
-              const cur = prev[q.subject] ?? { correct: 0, total: 0 };
-              return {
-                ...prev,
-                [q.subject]: {
-                  correct: cur.correct + (correct ? 1 : 0),
-                  total: cur.total + 1,
-                },
-              };
-            });
-          }}
-        />
-      );
-    }
-    if (tab === "summary") {
-      const s = SAMPLE_SUMMARIES[idx];
-      if (!s) return null;
-      return <SummaryCard s={s} />;
-    }
-    if (tab === "images") {
-      const img = SAMPLE_IMAGES[idx];
-      if (!img) return null;
-      return <ImageCard img={img} />;
-    }
-    if (tab === "flashcards") {
-      const card = SAMPLE_FLASHCARDS[idx];
-      if (!card) return null;
-      return (
-        <div className="flex items-center justify-center py-4">
-          <FlashCard card={card} />
-        </div>
-      );
-    }
-    return (
-      <p className="text-center text-slate-500 font-semibold py-20">
-        No content for this tab yet.
-      </p>
-    );
-  };
-
-  const showSessionFooter = phase === "active";
-
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white">
-      {phase !== "report" && (
-        <div
-          className="flex items-center gap-3 px-4 h-14 flex-shrink-0 bg-white"
-          style={{ borderBottom: "2px solid #e2e8f0" }}
-        >
-          <button
-            onClick={handleCloseRequest}
-            aria-label="Close session"
-            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ color: "#94a3b8" }}
-          >
-            <X size={22} strokeWidth={2.5} />
-          </button>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{
-                background: "linear-gradient(135deg,#58CC02,#46A302)",
-                boxShadow: "0 2px 0 #3a8200",
-              }}
-            >
-              <span className="text-white font-black text-sm leading-none">D</span>
-            </div>
-            <span
-              className="hidden text-[1.35rem] font-extrabold tracking-[-0.04em] text-slate-900 sm:block"
-              style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
-            >
-              Drnote
-            </span>
-          </div>
-
-          <div
-            className="flex-1 h-3 rounded-full overflow-hidden min-w-0"
-            style={{ background: "#e2e8f0" }}
-          >
-            <div
-              className="h-full rounded-full transition-all duration-300"
-              style={{ width: `${progressPct}%`, background: "#58CC02" }}
-            />
-          </div>
-        </div>
-      )}
-
-      <div className="flex-1 overflow-y-auto flex flex-col min-h-0">
-        <div className="max-w-3xl mx-auto w-full px-4 py-6 min-h-full flex flex-col flex-1">
-          {renderSlide()}
-        </div>
-      </div>
-
-      {showSessionFooter && (
-        <div
-          className="flex-shrink-0 bg-white border-t border-slate-200 px-4 py-3 space-y-3"
-          style={{ borderTopWidth: "2px" }}
-        >
-          <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
-            <p className="text-sm font-bold text-slate-600">
-              Question {page} of {total}
-              <span className="text-slate-400 font-semibold">
-                {" "}
-                · {remaining} remaining
-              </span>
-            </p>
-            <button
-              onClick={() => setPauseOpen(true)}
-              aria-label="Pause session"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black text-slate-600 border-2 border-slate-200 bg-white"
-            >
-              <Pause size={13} strokeWidth={2.5} />
-              Pause
-            </button>
-          </div>
-
-          <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <SessionNavButton
-                onClick={goBack}
-                disabled={page <= 1}
-                ariaLabel="Previous question"
-              >
-                <ChevronLeft size={20} strokeWidth={2.5} />
-              </SessionNavButton>
-              {tab === "questions" && (
-                <SessionNavButton
-                  onClick={() => setReportOpen(true)}
-                  ariaLabel="Report issue"
-                  variant="danger"
-                >
-                  <Flag size={18} strokeWidth={2.5} />
-                </SessionNavButton>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              {tab === "questions" && (
-                <SessionNavButton
-                  onClick={openChat}
-                  ariaLabel="Explain with AI"
-                  variant="ai"
-                >
-                  <Sparkles size={18} strokeWidth={2.5} />
-                </SessionNavButton>
-              )}
-              <SessionNavButton
-                onClick={goNext}
-                disabled={tab === "questions" && !currentAnswered}
-                ariaLabel="Next question"
-                variant="primary"
-              >
-                <ChevronRight size={20} strokeWidth={2.5} />
-              </SessionNavButton>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <SessionPauseModal
-        open={pauseOpen}
-        remaining={remaining}
-        onResume={() => setPauseOpen(false)}
-        onSaveLater={() => {
-          setPauseOpen(false);
-          onClose();
-        }}
-        onEnd={finishSession}
-      />
-
-      {currentQuestion && (
-        <>
-          <QuestionChatPanel
-            open={chatOpen}
-            onClose={() => setChatOpen(false)}
-            questionText={currentQuestion.text}
-            messages={currentChat}
-            onMessagesChange={updateChat}
-          />
-        </>
-      )}
-
-      <ReportSheet open={reportOpen} onClose={() => setReportOpen(false)} />
-    </div>
-  );
-}
 
 function SessionSlideShell({
   children,
@@ -1958,12 +1043,10 @@ function SetContent({
 
 function TabContent({
   tab,
-  openSet,
   onOpenSet,
   search,
 }: {
   tab: string;
-  openSet: StudySet | null;
   onOpenSet: (s: StudySet) => void;
   search: string;
 }) {
@@ -1981,10 +1064,6 @@ function TabContent({
         </p>
       </div>
     );
-  }
-
-  if (openSet) {
-    return null;
   }
 
   const sets = filterSets(SETS_BY_TAB[tab] ?? [], search);
@@ -2804,80 +1883,41 @@ function BrowseHeader({
   );
 }
 
-export default function DrNoteApp() {
-  const [activeTab, setActiveTab] = useState("questions");
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [upgradeOpen, setUpgradeOpen] = useState(false);
+export default function DrNoteApp({ tab: activeTab }: { tab: ContentTab }) {
+  const router = useRouter();
   const [statsOpen, setStatsOpen] = useState(false);
   const [dailyOpen, setDailyOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [openSet, setOpenSet] = useState<StudySet | null>(null);
 
-  const [appliedSubjects, setAppliedSubjects] = useState<Set<string>>(new Set());
-  const [appliedStatuses, setAppliedStatuses] = useState<Set<string>>(new Set());
-  const [appliedTags, setAppliedTags] = useState<Set<string>>(new Set());
-
-  const totalFilters =
-    appliedSubjects.size + appliedStatuses.size + appliedTags.size;
+  const totalFilters = 0;
 
   const streak = 14;
   const dailyRemaining = DAILY_LIMIT - DAILY_USED;
 
   return (
-    <div className={`min-h-screen bg-white font-sans ${openSet ? "" : "pb-8"}`}>
-      {openSet ? (
-        <SetSessionView
-          set={openSet}
-          tab={activeTab}
-          page={page}
-          onPageChange={setPage}
-          onClose={() => setOpenSet(null)}
-        />
-      ) : (
-        <>
-          <BrowseHeader
-            search={search}
-            setSearch={setSearch}
-            activeTab={activeTab}
-            onTabChange={(tab) => {
-              setActiveTab(tab);
-              setPage(1);
-              setOpenSet(null);
-            }}
-            totalFilters={totalFilters}
-            streak={streak}
-            dailyRemaining={dailyRemaining}
-            onStatsOpen={() => setStatsOpen(true)}
-            onDailyOpen={() => setDailyOpen(true)}
-            onUpgradeOpen={() => setUpgradeOpen(true)}
-            onFilterOpen={() => setFilterOpen(true)}
-          />
-
-          <main className={`${PAGE_SHELL} py-4`}>
-            <TabContent
-              tab={activeTab}
-              openSet={openSet}
-              search={search}
-              onOpenSet={(s) => {
-                setOpenSet(s);
-                setPage(1);
-              }}
-            />
-          </main>
-        </>
-      )}
-
-      <FilterPage
-        open={filterOpen}
-        onClose={() => setFilterOpen(false)}
-        onApply={(s, st, t) => {
-          setAppliedSubjects(s);
-          setAppliedStatuses(st);
-          setAppliedTags(t);
-        }}
+    <div className="min-h-screen bg-white font-sans pb-8">
+      <BrowseHeader
+        search={search}
+        setSearch={setSearch}
+        activeTab={activeTab}
+        onTabChange={(tab) => router.push(tabPath(tab as ContentTab))}
+        totalFilters={totalFilters}
+        streak={streak}
+        dailyRemaining={dailyRemaining}
+        onStatsOpen={() => setStatsOpen(true)}
+        onDailyOpen={() => setDailyOpen(true)}
+        onUpgradeOpen={() => router.push(UPGRADE_PATH)}
+        onFilterOpen={() => router.push(FILTERS_PATH)}
       />
-      {upgradeOpen && <UpgradeModal onClose={() => setUpgradeOpen(false)} />}
+
+      <main className={`${PAGE_SHELL} py-4`}>
+        <TabContent
+          tab={activeTab}
+          search={search}
+          onOpenSet={(s) => router.push(setPath(activeTab, s.id))}
+        />
+      </main>
+
       {statsOpen && (
         <StatsPopup streak={14} onClose={() => setStatsOpen(false)} />
       )}
@@ -2887,7 +1927,7 @@ export default function DrNoteApp() {
           limit={DAILY_LIMIT}
           onUpgrade={() => {
             setDailyOpen(false);
-            setUpgradeOpen(true);
+            router.push(UPGRADE_PATH);
           }}
           onClose={() => setDailyOpen(false)}
         />
