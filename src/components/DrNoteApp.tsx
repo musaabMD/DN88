@@ -1,6 +1,10 @@
 "use client";
 
 import { useState, type Dispatch, type SetStateAction } from "react";
+
+/** Mobile: centered narrow column. Desktop: full width with edge padding. */
+const PAGE_SHELL =
+  "w-full max-w-2xl mx-auto px-4 md:max-w-none md:mx-0 md:px-8 lg:px-12 xl:px-16";
 import type { LucideIcon } from "lucide-react";
 import {
   FileQuestion,
@@ -1471,9 +1475,11 @@ function TabContent({
       <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 px-1">
         {sets.length} Sets
       </p>
-      {sets.map((set) => (
-        <SetCard key={set.id} set={set} tab={tab} onOpen={() => onOpenSet(set)} />
-      ))}
+      <div className="space-y-3 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:gap-4 md:space-y-0">
+        {sets.map((set) => (
+          <SetCard key={set.id} set={set} tab={tab} onOpen={() => onOpenSet(set)} />
+        ))}
+      </div>
     </>
   );
 }
@@ -1929,7 +1935,7 @@ function FilterPage({
   return (
     <div className="fixed inset-0 z-50 bg-slate-50 flex flex-col">
       <div className="bg-white" style={{ borderBottom: "3px solid #e2e8f0" }}>
-        <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div className={`${PAGE_SHELL} h-16 flex items-center justify-between`}>
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
@@ -1966,7 +1972,7 @@ function FilterPage({
         </div>
       </div>
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto px-4 py-6">
+        <div className={`${PAGE_SHELL} py-6`}>
           <ChipGroup
             label="Subject"
             options={SUBJECTS}
@@ -1987,8 +1993,8 @@ function FilterPage({
           />
         </div>
       </div>
-      <div className="bg-white px-4 py-4" style={{ borderTop: "3px solid #e2e8f0" }}>
-        <div className="max-w-2xl mx-auto">
+      <div className="bg-white py-4" style={{ borderTop: "3px solid #e2e8f0" }}>
+        <div className={PAGE_SHELL}>
           <button
             onClick={() => {
               onApply(new Set(subjects), new Set(statuses), new Set(tags));
@@ -2022,10 +2028,10 @@ function PaginationBar({
 }) {
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-30 bg-white flex justify-center px-4 py-3"
+      className="fixed bottom-0 left-0 right-0 z-30 bg-white py-3"
       style={{ borderTop: "3px solid #e2e8f0" }}
     >
-      <div className="max-w-2xl w-full flex items-center justify-between gap-2">
+      <div className={`${PAGE_SHELL} flex items-center justify-between gap-2`}>
         <button
           onClick={() => page > 1 && onChange(page - 1)}
           disabled={page === 1}
@@ -2140,7 +2146,7 @@ export default function DrNoteApp() {
         className="bg-white sticky top-0 z-40"
         style={{ borderBottom: "3px solid #e2e8f0" }}
       >
-        <div className="max-w-2xl mx-auto px-4 py-3 space-y-3">
+        <div className={`${PAGE_SHELL} py-3 space-y-3`}>
           {/* Level 1: brand left, actions right */}
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 flex-shrink-0 min-w-0">
@@ -2312,7 +2318,7 @@ export default function DrNoteApp() {
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-4">
+      <main className={`${PAGE_SHELL} py-4`}>
         <TabContent
           tab={activeTab}
           openSet={openSet}
