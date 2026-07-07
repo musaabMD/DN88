@@ -32,9 +32,28 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Check Cloudflare credentials
+        id: cloudflare
+        run: |
+          if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ] || [ -z "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Cloudflare deploy secrets are not configured. Skipping Pages deploy."
+            echo "Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID at Settings → Secrets and variables → Actions, then re-run."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Deploy to Cloudflare Pages
+        if: steps.cloudflare.outputs.ready == 'true'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4"
           command: pages deploy out --project-name=dn88
+
+      - name: Deploy skipped summary
+        if: steps.cloudflare.outputs.ready != 'true'
+        run: |
+          echo "Build succeeded but deploy was skipped (missing CLOUDFLARE_API_TOKEN)."
+          echo "Required secrets: CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (5000e0a4f0ca6dd90b08bde9dc11ccb9)."

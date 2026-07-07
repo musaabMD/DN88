@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "deploy": "npm run build && wrangler pages deploy out --project-name=dn88"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -23,6 +24,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "wrangler": "^4.108.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
