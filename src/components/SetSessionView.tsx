@@ -6,9 +6,9 @@ import {
   QuestionChatPanel,
   type ChatMessage,
 } from "@/components/QuestionChatPanel";
-import { FlashcardSession } from "@/components/content/FlashcardSession";
-import { HYImagesSession } from "@/components/content/HYImagesSession";
-import { HYNotesSession } from "@/components/content/HYNotesSession";
+import Flashcard from "@/components/content/Flashcard";
+import HYImages from "@/components/content/HYImages";
+import HYNotesFeed from "@/components/content/HYNotesFeed";
 import { ReportSheet } from "@/components/ReportSheet";
 import { SessionPauseModal } from "@/components/SessionPauseModal";
 import { CitationList } from "@/components/tool-ui/citation";
@@ -458,9 +458,8 @@ export function SetSessionView({
 
   if (contentTab === "summary") {
     return (
-      <HYNotesSession
+      <HYNotesFeed
         notes={sessionItems as NoteItem[]}
-        setTitle={set.title}
         onClose={onClose}
       />
     );
@@ -468,9 +467,8 @@ export function SetSessionView({
 
   if (contentTab === "images") {
     return (
-      <HYImagesSession
+      <HYImages
         images={sessionItems as ImageItem[]}
-        setTitle={set.title}
         onClose={onClose}
       />
     );
@@ -478,11 +476,9 @@ export function SetSessionView({
 
   if (contentTab === "flashcards") {
     return (
-      <FlashcardSession
+      <Flashcard
         cards={sessionItems as FlashcardItem[]}
-        setTitle={set.title}
         onClose={onClose}
-        onComplete={onComplete}
       />
     );
   }

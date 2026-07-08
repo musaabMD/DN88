@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   ArrowLeft,
   Bookmark,
@@ -11,26 +10,22 @@ import {
 } from "lucide-react";
 import type { LibraryArticle } from "@/lib/set-content";
 
-export function LibraryArticleView({
+export default function LibraryArticle({
   article,
   onClose,
-  onBack,
 }: {
   article: LibraryArticle;
   onClose: () => void;
-  onBack?: () => void;
 }) {
-  const [activeSection, setActiveSection] = useState(
-    article.sections[0]?.id ?? ""
-  );
+  const sectionHeadings = article.sections.map((s) => s.heading);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white">
-      <article className="mx-auto flex w-full max-w-2xl flex-1 flex-col overflow-y-auto px-4 py-6 sm:px-6">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-white">
+      <article className="mx-auto w-full max-w-2xl bg-white px-4 py-8 sm:px-6">
         <div className="flex items-center justify-between">
           <button
             type="button"
-            onClick={onBack ?? onClose}
+            onClick={onClose}
             className="flex items-center gap-1.5 rounded-xl border-2 border-b-4 border-slate-200 bg-white px-3 py-1.5 text-xs font-extrabold text-slate-500 transition-colors hover:bg-slate-50 active:translate-y-0.5 active:border-b-2"
           >
             <ArrowLeft size={14} strokeWidth={3} />
@@ -74,30 +69,27 @@ export function LibraryArticleView({
           <span className="flex items-center gap-1 text-xs font-extrabold uppercase tracking-wide text-slate-400">
             <ListTree size={14} strokeWidth={2.5} /> Jump to
           </span>
-          {article.sections.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => {
-                setActiveSection(s.id);
-                document
-                  .getElementById(s.id)
-                  ?.scrollIntoView({ behavior: "smooth" });
-              }}
+          {sectionHeadings.map((s, i) => (
+            <a
+              key={s}
+              href={`#${s.toLowerCase().replace(/ /g, "-")}`}
               className={`rounded-full border-2 px-3 py-1 text-xs font-extrabold transition-colors ${
-                activeSection === s.id
+                i === 0
                   ? "border-green-500 bg-green-500 text-white"
                   : "border-slate-200 text-slate-500 hover:border-green-500 hover:text-green-600"
               }`}
             >
-              {s.heading}
-            </button>
+              {s}
+            </a>
           ))}
         </nav>
 
         <div className="mt-8 space-y-6">
           {article.sections.map((section) => (
-            <section key={section.id} id={section.id}>
+            <section
+              key={section.id}
+              id={section.heading.toLowerCase().replace(/ /g, "-")}
+            >
               <h2 className="text-xl font-black tracking-tight text-slate-800">
                 {section.heading}
               </h2>

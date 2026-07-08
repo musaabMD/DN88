@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { LibraryArticleView } from "@/components/content/LibraryArticleView";
+import LibraryArticle from "@/components/content/LibraryArticle";
 import { getLibraryArticleById } from "@/lib/mock-data";
 import { examTabPath } from "@/lib/routes";
 
@@ -32,10 +32,9 @@ export function LibraryArticleClient({
   }
 
   return (
-    <LibraryArticleView
+    <LibraryArticle
       article={article}
       onClose={() => router.push(examTabPath(examId, "library"))}
-      onBack={() => router.push(examTabPath(examId, "library"))}
     />
   );
 }

@@ -111,23 +111,18 @@ function ImageViewer({
   );
 }
 
-export function HYImagesSession({
+export default function HYImages({
   images,
-  setTitle,
   onClose,
 }: {
   images: ImageItem[];
-  setTitle: string;
   onClose: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [open, setOpen] = useState<ImageItem | null>(null);
 
-  const tags = useMemo(
-    () => [...new Set(images.map((i) => i.tag))],
-    [images]
-  );
+  const tags = useMemo(() => [...new Set(images.map((i) => i.tag))], [images]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -148,23 +143,12 @@ export function HYImagesSession({
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close images"
+          aria-label="Back to image sets"
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700"
         >
           <X size={22} strokeWidth={2.5} />
         </button>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-extrabold text-slate-700">
-            {setTitle}
-          </p>
-          <p className="text-xs font-bold text-slate-400">
-            {filtered.length} HY images
-          </p>
-        </div>
-      </div>
-
-      <div className="shrink-0 border-b-2 border-slate-100 px-4 py-3">
-        <div className="mx-auto flex max-w-4xl items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white px-4 py-2.5">
+        <div className="mx-auto flex max-w-4xl flex-1 items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white px-4 py-2.5">
           <Search size={18} strokeWidth={2.5} className="shrink-0 text-slate-400" />
           <input
             value={query}
@@ -173,7 +157,10 @@ export function HYImagesSession({
             className="w-full bg-transparent text-sm font-bold text-slate-700 outline-none placeholder:text-slate-400"
           />
         </div>
-        <div className="mx-auto mt-3 flex max-w-4xl flex-wrap gap-2">
+      </div>
+
+      <div className="shrink-0 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-4xl flex-wrap gap-2">
           <button
             type="button"
             onClick={() => setTagFilter(null)}
@@ -203,21 +190,11 @@ export function HYImagesSession({
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">
+        <div className="mx-auto w-full max-w-4xl bg-white px-4 py-8 sm:px-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {filtered.length === 0 ? (
-              <p className="col-span-full py-16 text-center text-sm font-bold text-slate-400">
-                No images match your search.
-              </p>
-            ) : (
-              filtered.map((img) => (
-                <ImageCard
-                  key={img.id}
-                  image={img}
-                  onOpen={() => setOpen(img)}
-                />
-              ))
-            )}
+            {filtered.map((img) => (
+              <ImageCard key={img.id} image={img} onOpen={() => setOpen(img)} />
+            ))}
           </div>
         </div>
       </div>

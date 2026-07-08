@@ -11,16 +11,12 @@ const GRADES = [
   { label: "Easy", interval: "4d", style: "border-sky-200 text-sky-600 hover:bg-sky-50" },
 ];
 
-export function FlashcardSession({
+export default function Flashcard({
   cards,
-  setTitle,
   onClose,
-  onComplete,
 }: {
   cards: FlashcardItem[];
-  setTitle: string;
   onClose: () => void;
-  onComplete: () => void;
 }) {
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
@@ -30,11 +26,7 @@ export function FlashcardSession({
 
   const grade = () => {
     setRevealed(false);
-    if (index + 1 >= cards.length) {
-      onComplete();
-    } else {
-      setIndex((i) => i + 1);
-    }
+    setIndex((i) => (i + 1) % cards.length);
   };
 
   return (
@@ -43,35 +35,29 @@ export function FlashcardSession({
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close flashcards"
+          aria-label="Back to card sets"
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700"
         >
           <X size={22} strokeWidth={2.5} />
         </button>
-        <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-1.5 truncate text-sm font-extrabold text-slate-700">
-            <Zap size={15} strokeWidth={3} className="shrink-0 text-green-500" />
-            {setTitle}
-          </p>
-        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto flex w-full max-w-xl flex-col px-4 py-8">
+        <div className="mx-auto flex w-full max-w-xl flex-col bg-white px-4 py-8">
           <div className="flex items-center justify-between">
             <p className="flex items-center gap-1.5 text-sm font-extrabold text-slate-700">
               <Zap size={15} strokeWidth={3} className="text-green-500" />
               {card.deck}
             </p>
             <p className="text-xs font-extrabold tabular-nums text-slate-400">
-              {index + 1} / {cards.length}
+              {(index % cards.length) + 1} / {cards.length}
             </p>
           </div>
           <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-slate-200">
             <div
               className="h-full rounded-full bg-green-500 transition-all duration-300"
               style={{
-                width: `${((index + 1) / cards.length) * 100}%`,
+                width: `${(((index % cards.length) + 1) / cards.length) * 100}%`,
               }}
             />
           </div>

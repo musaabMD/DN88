@@ -22,7 +22,6 @@ import {
   articlePath,
   examTabPath,
   filtersPath,
-  quizPath,
   setPath,
   UPGRADE_PATH,
   type ContentTab,
@@ -1707,15 +1706,6 @@ export default function DrNoteApp({
   const totalFilters = countBrowseFilters(browseFilters);
 
   const openSet = (s: StudySet) => {
-    if (
-      activeTab === "summary" ||
-      activeTab === "images" ||
-      activeTab === "flashcards" ||
-      activeTab === "library"
-    ) {
-      router.push(quizPath(examId, activeTab, s.id, { mode: "resume" }));
-      return;
-    }
     router.push(setPath(examId, activeTab, s.id));
   };
 
