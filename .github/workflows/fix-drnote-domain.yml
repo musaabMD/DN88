@@ -16,4 +16,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           PAGES_PROJECT_NAME: dn88
+          PAGES_CNAME_TARGET: dn88.pages.dev
+          CLOUDFLARE_ZONE_NAME: drnote.co
+          CLOUDFLARE_ZONE_ID: 789a9273b51c942e1f96be6186062963
           LEGACY_WORKER_NAME: drnote-app-v1
