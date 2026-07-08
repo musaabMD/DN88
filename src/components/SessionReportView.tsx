@@ -91,7 +91,7 @@ function StatCard({
   };
   const valueTones: Record<string, string> = {
     slate: "text-slate-900",
-    green: "text-emerald-600",
+    green: "text-slate-600",
     amber: "text-amber-600",
     rose: "text-rose-600",
   };
