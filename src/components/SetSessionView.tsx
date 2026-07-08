@@ -43,7 +43,7 @@ function SessionNavButton({
   disabled?: boolean;
   children: ReactNode;
   ariaLabel: string;
-  variant?: "neutral" | "primary" | "danger" | "ai";
+  variant?: "neutral" | "primary" | "danger" | "ai" | "pause";
 }) {
   const styles = {
     neutral: {
@@ -63,6 +63,12 @@ function SessionNavButton({
       border: "2px solid #fecaca",
       color: "#dc2626",
       boxShadow: "0 2px 0 #fecaca",
+    },
+    pause: {
+      background: "#FF4B4B",
+      border: "2px solid #EA2D2D",
+      color: "#fff",
+      boxShadow: "0 3px 0 #EA2D2D",
     },
     ai: {
       background: "#f5f3ff",
@@ -513,23 +519,10 @@ export function SetSessionView({
       </div>
 
       <div
-        className="flex-shrink-0 bg-white border-t border-slate-200 px-4 py-3 space-y-3"
+        className="flex-shrink-0 border-t border-slate-200 bg-white px-4 py-3"
         style={{ borderTopWidth: "2px" }}
       >
-        <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
-          <p className="text-sm font-extrabold tabular-nums text-[#4B4B4B]">
-            {page} / {total}
-          </p>
-          <button
-            onClick={() => setPauseOpen(true)}
-            aria-label="Pause session"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-b-4 border-[#E5E5E5] bg-white text-[#4B4B4B] transition-all hover:bg-[#F7F7F7] active:translate-y-[2px] active:border-b-2"
-          >
-            <Pause size={16} strokeWidth={2.5} />
-          </button>
-        </div>
-
-        <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
+        <div className="mx-auto flex max-w-3xl items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <SessionNavButton
               onClick={goBack}
@@ -549,7 +542,18 @@ export function SetSessionView({
             )}
           </div>
 
+          <span className="shrink-0 rounded-lg border border-[#E5E5E5] bg-[#F7F7F7] px-2.5 py-1 text-xs font-extrabold tabular-nums text-[#AFAFAF]">
+            {page} / {total}
+          </span>
+
           <div className="flex items-center gap-2">
+            <SessionNavButton
+              onClick={() => setPauseOpen(true)}
+              ariaLabel="Pause session"
+              variant="pause"
+            >
+              <Pause size={16} strokeWidth={2.5} />
+            </SessionNavButton>
             {tab === "questions" && (
               <SessionNavButton
                 onClick={openChat}
