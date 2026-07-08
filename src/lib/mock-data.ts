@@ -329,3 +329,91 @@ export function toQuizSetScreenData(
     flaggedCount: set.id === "q1" ? 2 : Math.min(2, set.done),
   };
 }
+
+export type SessionReportData = {
+  durationSec: number;
+  subjects: Array<{ subject: string; correct: number; total: number }>;
+  missedCards: Array<{ id: string; prompt: string; subject: string }>;
+  streakBest: number;
+};
+
+/** Mock session report — replace with API/session state when backend arrives. */
+export function getSessionReportData(
+  set: StudySet,
+  tab: string
+): SessionReportData {
+  if (set.id === "q1" && tab === "questions") {
+    return {
+      durationSec: 305,
+      subjects: [
+        { subject: "Sulfonylureas", correct: 6, total: 8 },
+        { subject: "Metformin & Biguanides", correct: 7, total: 7 },
+        { subject: "SGLT2 Inhibitors", correct: 3, total: 6 },
+        { subject: "DPP-4 / GLP-1 Agents", correct: 2, total: 5 },
+      ],
+      missedCards: [
+        {
+          id: "c1",
+          prompt: "First-line agent contraindicated in eGFR < 30",
+          subject: "Metformin & Biguanides",
+        },
+        {
+          id: "c2",
+          prompt: "Class associated with euglycemic DKA",
+          subject: "SGLT2 Inhibitors",
+        },
+        {
+          id: "c3",
+          prompt: "Agent requiring dose reduction with renal impairment",
+          subject: "DPP-4 / GLP-1 Agents",
+        },
+      ],
+      streakBest: 9,
+    };
+  }
+
+  const items = sessionItemCount(tab);
+  const score = set.score ?? 72;
+  const correct = Math.round((score / 100) * items);
+  const missed = Math.max(items - correct, 0);
+
+  const subjects =
+    tab === "questions"
+      ? SAMPLE_QUESTIONS.reduce<
+          Record<string, { correct: number; total: number }>
+        >((acc, q) => {
+          const entry = acc[q.subject] ?? { correct: 0, total: 0 };
+          entry.total += 1;
+          if (q.status !== "incorrect") entry.correct += 1;
+          acc[q.subject] = entry;
+          return acc;
+        }, {})
+      : { [set.subject]: { correct, total: items } };
+
+  const missedCards =
+    tab === "questions"
+      ? SAMPLE_QUESTIONS.filter((q) => q.status === "incorrect").map((q) => ({
+          id: String(q.id),
+          prompt: q.text,
+          subject: q.subject,
+        }))
+      : missed > 0
+        ? [
+            {
+              id: "m1",
+              prompt: `Review ${missed} missed item${missed === 1 ? "" : "s"} from this set`,
+              subject: set.subject,
+            },
+          ]
+        : [];
+
+  return {
+    durationSec: Math.max(items * 45, 120),
+    subjects: Object.entries(subjects).map(([subject, stats]) => ({
+      subject,
+      ...stats,
+    })),
+    missedCards,
+    streakBest: Math.min(correct, 5),
+  };
+}

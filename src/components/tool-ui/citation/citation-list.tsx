@@ -96,58 +96,6 @@ function SiteBadge({
   );
 }
 
-function useHoverPopover(delay = 100) {
-  const [open, setOpen] = React.useState(false);
-  const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const containerRef = React.useRef<HTMLDivElement>(null);
-
-  const handleMouseEnter = React.useCallback(() => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => setOpen(true), delay);
-  }, [delay]);
-
-  const handleMouseLeave = React.useCallback(() => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => setOpen(false), delay);
-  }, [delay]);
-
-  const handleFocus = React.useCallback(() => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    setOpen(true);
-  }, []);
-
-  const handleBlur = React.useCallback(
-    (e: React.FocusEvent) => {
-      const relatedTarget = e.relatedTarget as HTMLElement | null;
-      if (containerRef.current?.contains(relatedTarget)) {
-        return;
-      }
-      if (relatedTarget?.closest("[data-radix-popper-content-wrapper]")) {
-        return;
-      }
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(() => setOpen(false), delay);
-    },
-    [delay],
-  );
-
-  React.useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, []);
-
-  return {
-    open,
-    setOpen,
-    containerRef,
-    handleMouseEnter,
-    handleMouseLeave,
-    handleFocus,
-    handleBlur,
-  };
-}
-
 export interface CitationListProps {
   id: string;
   citations: SerializableCitation[];
@@ -258,7 +206,7 @@ function OverflowIndicator({
   variant,
   onNavigate,
 }: OverflowIndicatorProps) {
-  const { open, handleMouseEnter, handleMouseLeave } = useHoverPopover();
+  const [open, setOpen] = React.useState(false);
 
   const handleClick = (citation: SerializableCitation) => {
     const href = resolveSafeNavigationHref(citation.href);
@@ -284,8 +232,8 @@ function OverflowIndicator({
 
   if (variant === "inline") {
     return (
-      <Popover open={open}>
-        <PopoverTrigger render={<button type="button" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} className={cn(
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger render={<button type="button" onClick={() => setOpen((prev) => !prev)} className={cn(
                           "inline-flex items-center gap-1 rounded-md px-2 py-1",
                           "bg-muted/60 text-sm tabular-nums",
                           "transition-colors duration-150",
@@ -296,8 +244,6 @@ function OverflowIndicator({
           side="top"
           align="start"
           className="w-80 p-1"
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
         >
           {popoverContent}
         </PopoverContent>
@@ -307,8 +253,8 @@ function OverflowIndicator({
 
   // Default variant
   return (
-    <Popover open={open}>
-      <PopoverTrigger render={<button type="button" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} className={cn(
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger render={<button type="button" onClick={() => setOpen((prev) => !prev)} className={cn(
                       "flex items-center justify-center rounded-xl px-4 py-3",
                       "border-border bg-card border border-dashed",
                       "transition-colors duration-150",
@@ -321,8 +267,6 @@ function OverflowIndicator({
         side="bottom"
         align="start"
         className="w-80 p-1"
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
       >
         {popoverContent}
       </PopoverContent>
@@ -377,14 +321,7 @@ function StackedCitations({
   className,
   onNavigate,
 }: StackedCitationsProps) {
-  const {
-    open,
-    setOpen,
-    containerRef,
-    handleMouseEnter,
-    handleMouseLeave,
-    handleBlur,
-  } = useHoverPopover();
+  const [open, setOpen] = React.useState(false);
   const maxIcons = 4;
   const visibleCitations = citations.slice(0, maxIcons);
   const remainingCount = Math.max(0, citations.length - maxIcons);
@@ -404,14 +341,9 @@ function StackedCitations({
   };
 
   return (
-    <div ref={containerRef} onBlur={handleBlur} className="inline-flex">
-      <Popover open={open}>
-        <PopoverTrigger render={<button type="button" data-tool-ui-id={id} data-slot="citation-list" style={{ "--accent": accentColor } as React.CSSProperties} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              setOpen(true);
-                            }
-                          }} className={cn(
+    <div className="inline-flex">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger render={<button type="button" data-tool-ui-id={id} data-slot="citation-list" style={{ "--accent": accentColor } as React.CSSProperties} onClick={() => setOpen((prev) => !prev)} className={cn(
                             "group isolate inline-flex cursor-pointer items-center gap-2 rounded-xl border-2 border-b-4 border-[#E5E5E5] bg-white px-3 py-2 outline-none",
                             "transition-all hover:bg-[#F7F7F7] active:translate-y-[2px] active:border-b-2",
                             "focus-visible:ring-2 focus-visible:ring-[#1CB0F6]",
@@ -469,9 +401,6 @@ function StackedCitations({
           side="bottom"
           align="start"
           className="w-80 p-1"
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-          onBlur={handleBlur}
         >
           <div className="flex max-h-72 flex-col overflow-y-auto">
             {citations.map((citation) => (

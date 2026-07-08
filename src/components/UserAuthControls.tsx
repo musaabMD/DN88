@@ -42,11 +42,11 @@ function ClerkUserAuthControls({ compact = false }: { compact?: boolean }) {
             type="button"
             className={
               compact
-                ? "flex h-9 shrink-0 items-center rounded-xl border-2 border-b-4 border-[#46A302] bg-[#58CC02] px-2.5 text-[11px] font-extrabold uppercase tracking-wide text-white transition-all active:translate-y-0.5 active:border-b-2"
-                : "rounded-xl border-2 border-b-4 border-[#46A302] bg-[#58CC02] px-3 py-1.5 text-xs font-extrabold uppercase tracking-wide text-white transition-all active:translate-y-[2px] active:border-b-2"
+                ? "flex h-9 shrink-0 items-center rounded-lg bg-[#58CC02] px-3 text-xs font-extrabold text-white transition-colors hover:bg-[#46A302]"
+                : "rounded-lg bg-[#58CC02] px-4 py-2 text-sm font-extrabold text-white transition-colors hover:bg-[#46A302]"
             }
           >
-            Sign in
+            Get started
           </button>
         </SignInButton>
       </SignedOut>
