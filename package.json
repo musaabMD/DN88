@@ -7,13 +7,18 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "deploy": "npm run build && wrangler pages deploy out --project-name=dn88"
+    "deploy": "npm run build && wrangler pages deploy out --project-name=dn88",
+    "worker:dev": "wrangler dev -c workers/dn88/wrangler.jsonc",
+    "worker:deploy": "wrangler deploy -c workers/dn88/wrangler.jsonc"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
+    "@clerk/backend": "^3.11.1",
+    "@clerk/clerk-react": "^5.61.8",
     "@shadcn/react": "^0.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "hono": "^4.12.28",
     "lucide-react": "^1.23.0",
     "next": "16.2.10",
     "react": "19.2.4",
@@ -24,7 +29,6 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "wrangler": "^4.108.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -32,6 +36,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.108.0"
   }
 }

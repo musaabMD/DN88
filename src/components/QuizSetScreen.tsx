@@ -14,9 +14,9 @@ import {
   GraduationCap,
   Zap,
   X,
-  ArrowLeft,
 } from "lucide-react";
 import type { QuizSetScreenData } from "@/lib/mock-data";
+import { AppHeader } from "@/components/AppHeader";
 import {
   quizPath,
   resultsPath,
@@ -273,15 +273,12 @@ export function QuizSetScreen({ tab, setId, data, onReport }: QuizSetScreenProps
 
   return (
     <div className="min-h-screen bg-white text-[#4B4B4B] antialiased">
+      <AppHeader
+        showBack
+        onBack={() => router.push(tabPath(tab))}
+        title={data.title}
+      />
       <div className="mx-auto max-w-md px-5 py-6">
-        <button
-          onClick={() => router.push(tabPath(tab))}
-          className="mb-6 flex h-10 w-10 items-center justify-center rounded-xl border-2 border-b-4 border-[#E5E5E5] text-[#AFAFAF] transition-all hover:bg-[#F7F7F7] active:translate-y-[2px] active:border-b-2"
-          aria-label="Back to sets"
-        >
-          <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
-        </button>
-
         <div className="rounded-2xl border-2 border-b-4 border-[#E5E5E5] bg-white p-4">
           <div className="flex items-center justify-between text-[13px] font-extrabold uppercase tracking-wide">
             <span className="text-[#AFAFAF]">{data.items} questions</span>

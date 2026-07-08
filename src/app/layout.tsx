@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Nunito, Geist } from "next/font/google";
+import { ClerkProviderWrapper } from "@/components/providers/ClerkProviderWrapper";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +31,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={cn("h-full", nunito.variable, "font-sans", geist.variable)}>
-      <body className="min-h-full antialiased">{children}</body>
+      <body className="min-h-full antialiased">
+        <ClerkProviderWrapper>{children}</ClerkProviderWrapper>
+      </body>
     </html>
   );
 }

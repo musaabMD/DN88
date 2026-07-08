@@ -20,6 +20,46 @@ A mobile-friendly medical study app with Duolingo-inspired design. Browse questi
 - TypeScript
 - Tailwind CSS v4
 - lucide-react
+- Clerk (`@clerk/clerk-react`) for auth on `drnote.co` and `dn88.pages.dev`
+- Cloudflare Pages (frontend) + Worker **DN88** (API backend)
+
+## Auth (Clerk + drnote.co)
+
+1. Create an application at [dashboard.clerk.com](https://dashboard.clerk.com)
+2. Copy `.env.example` to `.env.local` and set:
+   - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+   - `CLERK_SECRET_KEY`
+3. In Clerk → **Configure** → **Domains**, add allowed origins:
+   - `http://localhost:3000`
+   - `https://drnote.co`
+   - `https://dn88.pages.dev`
+4. Point `drnote.co` at the Cloudflare Pages project (custom domain in dashboard)
+
+Without Clerk keys the app still builds and runs in guest mode.
+
+## DN88 API (Cloudflare Worker)
+
+The backend lives in `workers/dn88/` and exposes:
+
+- `GET /health` — service check
+- `GET /api/me` — current user (requires Clerk Bearer token)
+
+```bash
+# Local API on http://localhost:8787
+npm run worker:dev
+
+# Deploy Worker named DN88
+npm run worker:deploy
+```
+
+Set worker secrets after deploy:
+
+```bash
+wrangler secret put CLERK_SECRET_KEY -c workers/dn88/wrangler.jsonc
+wrangler secret put CLERK_PUBLISHABLE_KEY -c workers/dn88/wrangler.jsonc
+```
+
+Set `NEXT_PUBLIC_DN88_API_URL` in `.env.local` to your deployed Worker URL for production builds.
 
 ## Getting Started
 
