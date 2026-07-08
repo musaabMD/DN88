@@ -18,6 +18,8 @@ import {
   type ContentTab,
 } from "@/lib/routes";
 import { CitationList } from "@/components/tool-ui/citation";
+import { BottomTabBar } from "@/components/BottomTabBar";
+import { BrowseHeader } from "@/components/BrowseHeader";
 import type { LucideIcon } from "lucide-react";
 import {
   FileQuestion,
@@ -28,7 +30,6 @@ import {
   SlidersHorizontal,
   X,
   Check,
-  Search,
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
@@ -55,14 +56,6 @@ import {
 /** Mobile: centered narrow column. Desktop: full width with edge padding. */
 const PAGE_SHELL =
   "w-full max-w-2xl mx-auto px-4 md:max-w-none md:mx-0 md:px-8 lg:px-12 xl:px-16";
-
-const TABS = [
-  { id: "questions", label: "Questions", icon: FileQuestion },
-  { id: "summary", label: "Summary", icon: FileText },
-  { id: "images", label: "Images", icon: Image },
-  { id: "library", label: "Library", icon: BookOpen },
-  { id: "flashcards", label: "Flashcards", icon: CreditCard },
-] as const;
 
 const SUBJECTS = [
   "Anatomy",
@@ -1183,14 +1176,14 @@ function HeaderPopover({
 }) {
   const positionClass =
     anchor === "streak"
-      ? "right-[6.75rem] sm:right-[8.75rem]"
-      : "right-[3.75rem] sm:right-[4.75rem]";
+      ? "right-28 md:right-36"
+      : "right-16 md:right-24";
 
   return (
     <div className="fixed inset-0 z-[60]" onClick={onClose}>
       <div className="absolute inset-0 bg-black/10" />
       <div
-        className={`absolute top-[54px] ${positionClass} w-[280px] max-w-[calc(100vw-1rem)]`}
+        className={`absolute top-24 ${positionClass} w-[280px] max-w-[calc(100vw-1rem)]`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-[-5px] flex justify-center">
@@ -1336,43 +1329,6 @@ function DailyPopup({
         </button>
       </div>
     </HeaderPopover>
-  );
-}
-
-function HeaderStatButton({
-  onClick,
-  icon: Icon,
-  label,
-  ariaLabel,
-  colors,
-}: {
-  onClick: () => void;
-  icon: LucideIcon;
-  label: string;
-  ariaLabel: string;
-  colors: {
-    background: string;
-    border: string;
-    shadow: string;
-    text: string;
-    icon: string;
-  };
-}) {
-  return (
-    <button
-      onClick={onClick}
-      aria-label={ariaLabel}
-      className="flex items-center gap-1.5 px-3 py-2 rounded-2xl font-black text-sm flex-shrink-0 transition-transform active:translate-y-0.5"
-      style={{
-        background: colors.background,
-        border: `2px solid ${colors.border}`,
-        boxShadow: `0 3px 0 ${colors.shadow}`,
-        color: colors.text,
-      }}
-    >
-      <Icon size={16} strokeWidth={2.5} style={{ color: colors.icon }} />
-      {label}
-    </button>
   );
 }
 
@@ -1706,183 +1662,6 @@ function PaginationBar({
   );
 }
 
-function BrowseHeader({
-  search,
-  setSearch,
-  activeTab,
-  onTabChange,
-  totalFilters,
-  streak,
-  dailyRemaining,
-  onStatsOpen,
-  onDailyOpen,
-  onUpgradeOpen,
-  onFilterOpen,
-}: {
-  search: string;
-  setSearch: (v: string) => void;
-  activeTab: string;
-  onTabChange: (tab: string) => void;
-  totalFilters: number;
-  streak: number;
-  dailyRemaining: number;
-  onStatsOpen: () => void;
-  onDailyOpen: () => void;
-  onUpgradeOpen: () => void;
-  onFilterOpen: () => void;
-}) {
-  const searchField = (
-    <div className="flex w-full items-stretch overflow-hidden rounded-full border-2 border-slate-200 bg-white transition-colors focus-within:border-[#58CC02]">
-      <input
-        type="text"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="Search sets..."
-        className="min-w-0 flex-1 bg-transparent px-4 py-2 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400"
-      />
-      {search ? (
-        <button
-          type="button"
-          onClick={() => setSearch("")}
-          aria-label="Clear search"
-          className="flex items-center justify-center px-3 text-slate-400 hover:text-slate-600"
-        >
-          <X size={16} strokeWidth={2.5} />
-        </button>
-      ) : null}
-      <button
-        type="button"
-        aria-label="Search"
-        className="flex items-center justify-center border-l-2 border-slate-200 bg-white px-4 text-slate-500"
-      >
-        <Search size={18} strokeWidth={2.5} />
-      </button>
-    </div>
-  );
-
-  return (
-    <header className="sticky top-0 z-40 bg-white">
-      <div className={`${PAGE_SHELL} space-y-3 py-2`}>
-        <div className="flex min-h-[44px] items-center gap-3">
-          <div className="flex shrink-0 items-center gap-2.5">
-            <div
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-              style={{
-                background: "linear-gradient(135deg,#58CC02,#46A302)",
-                boxShadow: "0 2px 0 #3a8200",
-              }}
-            >
-              <span className="text-base font-black leading-none text-white">D</span>
-            </div>
-            <span
-              className="hidden text-[1.35rem] font-extrabold tracking-[-0.04em] text-slate-900 sm:block"
-              style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
-            >
-              Drnote
-            </span>
-          </div>
-
-          <div className="min-w-0 flex-1 px-1 md:px-4">{searchField}</div>
-
-          <div className="flex shrink-0 items-center gap-1.5">
-            <HeaderStatButton
-              onClick={onStatsOpen}
-              icon={Flame}
-              label={String(streak)}
-              ariaLabel="View streak"
-              colors={{
-                background: "#fff7ed",
-                border: "#fdba74",
-                shadow: "#fb923c",
-                text: "#c2410c",
-                icon: "#f97316",
-              }}
-            />
-            <HeaderStatButton
-              onClick={onDailyOpen}
-              icon={Heart}
-              label={String(dailyRemaining)}
-              ariaLabel="View daily limit"
-              colors={{
-                background: dailyRemaining <= 3 ? "#fef2f2" : "#fff",
-                border: dailyRemaining <= 3 ? "#fecaca" : "#e5e7eb",
-                shadow: dailyRemaining <= 3 ? "#fca5a5" : "#d1d5db",
-                text: dailyRemaining <= 3 ? "#dc2626" : "#475569",
-                icon: dailyRemaining <= 3 ? "#ef4444" : "#ff4b4b",
-              }}
-            />
-            <HeaderStatButton
-              onClick={onUpgradeOpen}
-              icon={Crown}
-              label="Pro"
-              ariaLabel="Upgrade to Pro"
-              colors={{
-                background: "linear-gradient(135deg,#ddd6fe,#c4b5fd)",
-                border: "#a78bfa",
-                shadow: "#8b5cf6",
-                text: "#5b21b6",
-                icon: "#7c3aed",
-              }}
-            />
-            <button
-              type="button"
-              onClick={onFilterOpen}
-              aria-label={
-                totalFilters > 0
-                  ? `Filters (${totalFilters} active)`
-                  : "Filters"
-              }
-              className="relative flex h-9 min-w-9 shrink-0 items-center justify-center gap-1 rounded-xl px-2 transition-transform active:translate-y-0.5"
-              style={{
-                background: totalFilters > 0 ? "#ecfccb" : "#fff",
-                border: `2px solid ${totalFilters > 0 ? "#84cc16" : "#d1d5db"}`,
-                boxShadow: `0 2px 0 ${totalFilters > 0 ? "#65a30d" : "#d1d5db"}`,
-                color: totalFilters > 0 ? "#3f6212" : "#475569",
-              }}
-            >
-              <SlidersHorizontal size={15} strokeWidth={2.5} />
-              {totalFilters > 0 && (
-                <span className="text-[11px] font-black tabular-nums">
-                  {totalFilters}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-
-        <div className="-mx-1 flex justify-center gap-2 overflow-x-auto px-1 pb-1 scrollbar-hide">
-          {TABS.map((tab) => {
-            const active = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => onTabChange(tab.id)}
-                className="flex-shrink-0 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-colors"
-                style={
-                  active
-                    ? {
-                        background: "#58CC02",
-                        color: "#fff",
-                        border: "1.5px solid #46A302",
-                      }
-                    : {
-                        background: "#f1f5f9",
-                        color: "#475569",
-                        border: "1.5px solid transparent",
-                      }
-                }
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </header>
-  );
-}
-
 export default function DrNoteApp({ tab: activeTab }: { tab: ContentTab }) {
   const router = useRouter();
   const [statsOpen, setStatsOpen] = useState(false);
@@ -1895,12 +1674,12 @@ export default function DrNoteApp({ tab: activeTab }: { tab: ContentTab }) {
   const dailyRemaining = DAILY_LIMIT - DAILY_USED;
 
   return (
-    <div className="min-h-screen bg-white font-sans pb-8">
+    <div className="min-h-screen bg-white font-sans pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:pb-8">
       <BrowseHeader
         search={search}
         setSearch={setSearch}
         activeTab={activeTab}
-        onTabChange={(tab) => router.push(tabPath(tab as ContentTab))}
+        onTabChange={(tab) => router.push(tabPath(tab))}
         totalFilters={totalFilters}
         streak={streak}
         dailyRemaining={dailyRemaining}
@@ -1917,6 +1696,8 @@ export default function DrNoteApp({ tab: activeTab }: { tab: ContentTab }) {
           onOpenSet={(s) => router.push(setPath(activeTab, s.id))}
         />
       </main>
+
+      <BottomTabBar />
 
       {statsOpen && (
         <StatsPopup streak={14} onClose={() => setStatsOpen(false)} />

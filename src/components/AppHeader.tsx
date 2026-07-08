@@ -6,8 +6,6 @@ import { useRouter } from "next/navigation";
 import { UserAuthControls } from "@/components/UserAuthControls";
 import { HOME_PATH } from "@/lib/routes";
 
-const PAGE_SHELL = "mx-auto w-full max-w-md px-5";
-
 type AppHeaderProps = {
   showBack?: boolean;
   onBack?: () => void;
@@ -26,15 +24,15 @@ export function AppHeader({ showBack, onBack, title }: AppHeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[#E5E5E5] bg-white">
-      <div className={`${PAGE_SHELL} flex min-h-[52px] items-center gap-3 py-2`}>
-        <div className="flex w-10 shrink-0 items-center justify-start">
+    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white">
+      <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:px-6">
+        <div className="flex w-9 shrink-0 items-center justify-start">
           {showBack ? (
             <button
               type="button"
               onClick={handleBack}
               aria-label="Go back"
-              className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-b-4 border-[#E5E5E5] text-[#AFAFAF] transition-all hover:bg-[#F7F7F7] active:translate-y-[2px] active:border-b-2"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
             >
               <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
             </button>
@@ -43,27 +41,26 @@ export function AppHeader({ showBack, onBack, title }: AppHeaderProps) {
 
         <Link
           href={HOME_PATH}
-          className="flex min-w-0 flex-1 items-center justify-center gap-2.5 sm:justify-start"
+          className="flex min-w-0 flex-1 items-center gap-2"
         >
           <div
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
             style={{
               background: "linear-gradient(135deg,#58CC02,#46A302)",
-              boxShadow: "0 2px 0 #3a8200",
             }}
           >
-            <span className="text-base font-black leading-none text-white">D</span>
+            <span className="text-sm font-black leading-none text-white">D</span>
           </div>
           <span
-            className="truncate text-[1.15rem] font-extrabold tracking-[-0.04em] text-slate-900"
+            className="truncate text-base font-extrabold tracking-tight text-slate-900 sm:text-lg"
             style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
           >
             {title ?? "Drnote"}
           </span>
         </Link>
 
-        <div className="flex shrink-0 items-center justify-end gap-2">
-          <UserAuthControls />
+        <div className="flex shrink-0 items-center justify-end">
+          <UserAuthControls compact />
         </div>
       </div>
     </header>
