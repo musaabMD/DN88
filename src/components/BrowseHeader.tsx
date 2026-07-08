@@ -128,7 +128,7 @@ export function BrowseHeader({
   hideFilterButton?: boolean;
 }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white">
+    <header className="sticky top-0 z-40 bg-white">
       <div className="mx-auto w-full max-w-6xl px-4 py-3 sm:px-6">
         <div className="flex items-center justify-between gap-3">
           <Link href={HOME_PATH} className="flex min-w-0 shrink-0 items-center">

@@ -24,7 +24,7 @@ export function AppHeader({ showBack, onBack, title }: AppHeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white">
+    <header className="sticky top-0 z-40 bg-white">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:px-6">
         <div className="flex w-9 shrink-0 items-center justify-start">
           {showBack ? (
