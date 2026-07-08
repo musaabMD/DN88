@@ -6,7 +6,7 @@ import {
   QuestionChatPanel,
   type ChatMessage,
 } from "@/components/QuestionChatPanel";
-import Flashcard from "@/components/content/Flashcard";
+import FlashcardStudy from "@/components/content/FlashcardStudy";
 import HYImages from "@/components/content/HYImages";
 import HYNotesFeed from "@/components/content/HYNotesFeed";
 import { ReportSheet } from "@/components/ReportSheet";
@@ -317,7 +317,7 @@ function QuestionsSession({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white">
+    <div className="flex flex-col">
       <div
         className="flex items-center gap-3 px-4 h-14 flex-shrink-0 bg-white"
         style={{ borderBottom: "2px solid #e2e8f0" }}
@@ -457,26 +457,16 @@ export function SetSessionView({
   const sessionItems = getSessionItems(contentTab, contentSetId);
 
   if (contentTab === "summary") {
-    return (
-      <HYNotesFeed
-        notes={sessionItems as NoteItem[]}
-        onClose={onClose}
-      />
-    );
+    return <HYNotesFeed notes={sessionItems as NoteItem[]} />;
   }
 
   if (contentTab === "images") {
-    return (
-      <HYImages
-        images={sessionItems as ImageItem[]}
-        onClose={onClose}
-      />
-    );
+    return <HYImages images={sessionItems as ImageItem[]} />;
   }
 
   if (contentTab === "flashcards") {
     return (
-      <Flashcard
+      <FlashcardStudy
         cards={sessionItems as FlashcardItem[]}
         onClose={onClose}
       />

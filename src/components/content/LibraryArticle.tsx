@@ -1,54 +1,31 @@
 "use client";
 
 import {
-  ArrowLeft,
   Bookmark,
   Clock3,
   ListTree,
-  X,
   Zap,
 } from "lucide-react";
 import type { LibraryArticle } from "@/lib/set-content";
 
 export default function LibraryArticle({
   article,
-  onClose,
 }: {
   article: LibraryArticle;
-  onClose: () => void;
 }) {
   const sectionHeadings = article.sections.map((s) => s.heading);
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-white">
-      <article className="mx-auto w-full max-w-2xl bg-white px-4 py-8 sm:px-6">
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex items-center gap-1.5 rounded-xl border-2 border-b-4 border-slate-200 bg-white px-3 py-1.5 text-xs font-extrabold text-slate-500 transition-colors hover:bg-slate-50 active:translate-y-0.5 active:border-b-2"
-          >
-            <ArrowLeft size={14} strokeWidth={3} />
-            Library
-          </button>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-b-4 border-slate-200 bg-white text-slate-400 transition-colors hover:bg-green-50 hover:text-green-600 active:translate-y-0.5 active:border-b-2"
-              aria-label="Save article"
-            >
-              <Bookmark size={16} strokeWidth={2.5} />
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close article"
-              className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-b-4 border-slate-200 bg-white text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700 active:translate-y-0.5 active:border-b-2"
-            >
-              <X size={18} strokeWidth={3} />
-            </button>
-          </div>
-        </div>
+    <article className="mx-auto w-full max-w-2xl">
+      <div className="flex items-center justify-end">
+        <button
+          type="button"
+          className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-b-4 border-slate-200 bg-white text-slate-400 transition-colors hover:bg-green-50 hover:text-green-600 active:translate-y-0.5 active:border-b-2"
+          aria-label="Save article"
+        >
+          <Bookmark size={16} strokeWidth={2.5} />
+        </button>
+      </div>
 
         <header className="mt-6">
           <span className="rounded-full bg-green-500 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
@@ -126,6 +103,5 @@ export default function LibraryArticle({
           ) : null}
         </div>
       </article>
-    </div>
   );
 }

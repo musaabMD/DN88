@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
+import { DrNoteShell } from "@/components/DrNoteShell";
 import { SetSessionView } from "@/components/SetSessionView";
 import { getSetById } from "@/lib/mock-data";
 import {
@@ -32,9 +33,9 @@ export function QuizSessionPage({
 
   if (!set) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-6 text-center">
-        <div>
-          <p className="font-bold text-slate-800 mb-2">Set not found</p>
+      <DrNoteShell examId={examId} activeTab={tab}>
+        <div className="py-16 text-center">
+          <p className="mb-2 font-bold text-slate-800">Set not found</p>
           <button
             onClick={() => router.push(examTabPath(examId, tab))}
             className="text-sm font-semibold text-indigo-600"
@@ -42,7 +43,7 @@ export function QuizSessionPage({
             Back to sets
           </button>
         </div>
-      </div>
+      </DrNoteShell>
     );
   }
 
@@ -53,16 +54,18 @@ export function QuizSessionPage({
     contentTab === "flashcards";
 
   return (
-    <SetSessionView
-      set={set}
-      tab={tab}
-      quizParams={quizParams}
-      onClose={() =>
-        router.push(
-          immersiveTab ? examTabPath(examId, tab) : setPath(examId, tab, setId)
-        )
-      }
-      onComplete={() => router.push(examTabPath(examId, tab))}
-    />
+    <DrNoteShell examId={examId} activeTab={tab}>
+      <SetSessionView
+        set={set}
+        tab={tab}
+        quizParams={quizParams}
+        onClose={() =>
+          router.push(
+            immersiveTab ? examTabPath(examId, tab) : setPath(examId, tab, setId)
+          )
+        }
+        onComplete={() => router.push(examTabPath(examId, tab))}
+      />
+    </DrNoteShell>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { DrNoteShell } from "@/components/DrNoteShell";
 import LibraryArticle from "@/components/content/LibraryArticle";
 import { getLibraryArticleById } from "@/lib/mock-data";
 import { examTabPath } from "@/lib/routes";
@@ -17,8 +18,8 @@ export function LibraryArticleClient({
 
   if (!article) {
     return (
-      <div className="flex min-h-screen items-center justify-center px-6 text-center">
-        <div>
+      <DrNoteShell examId={examId} activeTab="library">
+        <div className="py-16 text-center">
           <p className="mb-2 font-bold text-slate-800">Article not found</p>
           <button
             onClick={() => router.push(examTabPath(examId, "library"))}
@@ -27,14 +28,13 @@ export function LibraryArticleClient({
             Back to library
           </button>
         </div>
-      </div>
+      </DrNoteShell>
     );
   }
 
   return (
-    <LibraryArticle
-      article={article}
-      onClose={() => router.push(examTabPath(examId, "library"))}
-    />
+    <DrNoteShell examId={examId} activeTab="library">
+      <LibraryArticle article={article} />
+    </DrNoteShell>
   );
 }

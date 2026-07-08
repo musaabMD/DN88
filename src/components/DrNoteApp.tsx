@@ -1044,20 +1044,10 @@ function TabContent({
   examId: string;
 }) {
   if (tab === "library") {
-    const sets = filterSets(SETS_BY_TAB.library ?? [], search, filters);
     const articles = filterLibraryArticles(search);
     return (
       <>
         <p className="mb-3 px-1 text-xs font-black uppercase tracking-widest text-slate-400">
-          {sets.length} saved sets
-        </p>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {sets.map((set) => (
-            <SetCard key={set.id} set={set} tab={tab} onOpen={() => onOpenSet(set)} />
-          ))}
-        </div>
-
-        <p className="mb-3 mt-8 px-1 text-xs font-black uppercase tracking-widest text-slate-400">
           {articles.length} articles
         </p>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

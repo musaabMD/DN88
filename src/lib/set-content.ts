@@ -50,6 +50,7 @@ export type FlashcardItem = {
   deck: string;
   front: string;
   back: string;
+  status?: "correct" | "incorrect" | "new";
 };
 
 export type LibraryArticle = {
@@ -308,18 +309,21 @@ const FLASHCARDS_BY_SET: Record<string, FlashcardItem[]> = {
       deck: "Drug Mechanisms Rapid Fire",
       front: "ACE inhibitor mechanism?",
       back: "Blocks conversion of angiotensin I → angiotensin II",
+      status: "correct",
     },
     {
       id: 2,
       deck: "Drug Mechanisms Rapid Fire",
       front: "Metformin primary action?",
       back: "↓ hepatic gluconeogenesis",
+      status: "correct",
     },
     {
       id: 3,
       deck: "Drug Mechanisms Rapid Fire",
       front: "Sulfonylurea mechanism?",
       back: "Closes K-ATP channels → insulin release",
+      status: "incorrect",
     },
   ],
   f2: [
@@ -329,18 +333,21 @@ const FLASHCARDS_BY_SET: Record<string, FlashcardItem[]> = {
       front:
         "A patient cannot extend the wrist after a mid-shaft humerus fracture. Which nerve is injured?",
       back: "Radial nerve — it runs in the spiral groove of the humerus. Presents as wrist drop.",
+      status: "correct",
     },
     {
       id: 2,
       deck: "Upper Limb Nerve Injuries",
       front: "Which nerve is injured in a surgical neck fracture of the humerus?",
       back: "Axillary nerve — deltoid weakness and loss of sensation over the lateral shoulder.",
+      status: "new",
     },
     {
       id: 3,
       deck: "Upper Limb Nerve Injuries",
       front: "Claw hand with a fracture of the medial epicondyle points to which nerve?",
       back: "Ulnar nerve — weak interossei and sensory loss over the 4th and 5th digits.",
+      status: "incorrect",
     },
   ],
   f3: [
@@ -349,12 +356,14 @@ const FLASHCARDS_BY_SET: Record<string, FlashcardItem[]> = {
       deck: "Coagulation Disorders",
       front: "PTT elevated, PT normal — think?",
       back: "Intrinsic pathway defect (hemophilia)",
+      status: "new",
     },
     {
       id: 2,
       deck: "Coagulation Disorders",
       front: "DIC hallmark lab finding?",
       back: "↑ D-dimer with ↓ fibrinogen",
+      status: "new",
     },
   ],
 };
