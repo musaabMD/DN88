@@ -1,0 +1,19 @@
+name: Fix drnote.co domain routing
+
+on:
+  workflow_dispatch:
+
+jobs:
+  route-domain:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Route drnote.co to dn88 Pages
+        run: bash scripts/attach-pages-custom-domains.sh
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PAGES_PROJECT_NAME: dn88
+          LEGACY_WORKER_NAME: drnote-app-v1
