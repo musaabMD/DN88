@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UserAuthControls } from "@/components/UserAuthControls";
+import { HOME_PATH } from "@/lib/routes";
 
 const PAGE_SHELL = "mx-auto w-full max-w-md px-5";
 
@@ -41,7 +42,7 @@ export function AppHeader({ showBack, onBack, title }: AppHeaderProps) {
         </div>
 
         <Link
-          href="/questions"
+          href={HOME_PATH}
           className="flex min-w-0 flex-1 items-center justify-center gap-2.5 sm:justify-start"
         >
           <div

@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import DrNoteApp from "@/components/DrNoteApp";
-import { isValidTab, VALID_TABS } from "@/lib/routes";
+import { DEFAULT_TAB, isValidTab, VALID_TABS } from "@/lib/routes";
 
 export function generateStaticParams() {
-  return VALID_TABS.map((tab) => ({ tab }));
+  return VALID_TABS.filter((tab) => tab !== DEFAULT_TAB).map((tab) => ({ tab }));
 }
 
 export default async function TabBrowsePage({

@@ -7,10 +7,7 @@ import {
   UserButton,
   useUser,
 } from "@clerk/clerk-react";
-
-function hasClerk() {
-  return Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
-}
+import { isClerkConfigured } from "@/lib/clerk";
 
 function GuestAuthControls({ compact = false }: { compact?: boolean }) {
   return (
@@ -58,7 +55,7 @@ function ClerkUserAuthControls({ compact = false }: { compact?: boolean }) {
 }
 
 export function UserAuthControls({ compact = false }: { compact?: boolean }) {
-  if (!hasClerk()) {
+  if (!isClerkConfigured()) {
     return <GuestAuthControls compact={compact} />;
   }
 

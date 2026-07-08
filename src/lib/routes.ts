@@ -30,6 +30,9 @@ export type ContentTab = (typeof VALID_TABS)[number];
 
 export const DEFAULT_TAB: ContentTab = "questions";
 
+/** Canonical home URL (questions browse). */
+export const HOME_PATH = "/";
+
 export type QuizMode =
   | "resume"
   | "restart"
@@ -50,7 +53,7 @@ export function isValidTab(tab: string): tab is ContentTab {
 }
 
 export function tabPath(tab: ContentTab = DEFAULT_TAB): string {
-  return `/${tab}`;
+  return tab === DEFAULT_TAB ? HOME_PATH : `/${tab}`;
 }
 
 export function setPath(tab: ContentTab, setId: string): string {
