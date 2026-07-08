@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
-import { DrNoteShell } from "@/components/DrNoteShell";
+import { ContentShell } from "@/components/ContentShell";
 import { SetSessionView } from "@/components/SetSessionView";
 import { getSetById } from "@/lib/mock-data";
 import {
@@ -33,7 +33,11 @@ export function QuizSessionPage({
 
   if (!set) {
     return (
-      <DrNoteShell examId={examId} activeTab={tab}>
+      <ContentShell
+        examId={examId}
+        title="Set not found"
+        onBack={() => router.push(examTabPath(examId, tab))}
+      >
         <div className="py-16 text-center">
           <p className="mb-2 font-bold text-slate-800">Set not found</p>
           <button
@@ -43,7 +47,7 @@ export function QuizSessionPage({
             Back to sets
           </button>
         </div>
-      </DrNoteShell>
+      </ContentShell>
     );
   }
 
@@ -54,7 +58,15 @@ export function QuizSessionPage({
     contentTab === "flashcards";
 
   return (
-    <DrNoteShell examId={examId} activeTab={tab}>
+    <ContentShell
+      examId={examId}
+      title={set.title}
+      onBack={() =>
+        router.push(
+          immersiveTab ? examTabPath(examId, tab) : setPath(examId, tab, setId)
+        )
+      }
+    >
       <SetSessionView
         set={set}
         tab={tab}
@@ -66,6 +78,6 @@ export function QuizSessionPage({
         }
         onComplete={() => router.push(examTabPath(examId, tab))}
       />
-    </DrNoteShell>
+    </ContentShell>
   );
 }

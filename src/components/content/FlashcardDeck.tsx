@@ -25,6 +25,16 @@ function filterCards(
   });
 }
 
+function StatusIcon({ status }: { status?: FlashcardItem["status"] }) {
+  if (status === "correct") {
+    return <CheckCircle2 size={16} className="text-green-500" strokeWidth={2.5} />;
+  }
+  if (status === "incorrect") {
+    return <XCircle size={16} className="text-rose-500" strokeWidth={2.5} />;
+  }
+  return <Circle size={16} className="text-slate-300" strokeWidth={2.5} />;
+}
+
 export default function FlashcardDeck({
   set,
   cards,
@@ -55,7 +65,7 @@ export default function FlashcardDeck({
   ];
 
   return (
-    <div className="relative pb-24">
+    <div className="relative mx-auto w-full max-w-3xl pb-24">
       <div className="rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4">
         <div className="flex items-center gap-2">
           <Zap size={18} strokeWidth={3} className="text-green-500" />
@@ -116,7 +126,7 @@ export default function FlashcardDeck({
         ))}
       </div>
 
-      <div className="mt-4 space-y-2">
+      <div className="mt-4 space-y-3">
         {filtered.length === 0 ? (
           <p className="py-12 text-center text-sm font-bold text-slate-400">
             No cards in this filter.
@@ -125,24 +135,25 @@ export default function FlashcardDeck({
           filtered.map((card, i) => (
             <div
               key={card.id}
-              className="flex items-start gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4"
+              className="overflow-hidden rounded-2xl border-2 border-b-4 border-slate-200 bg-white shadow-sm"
             >
-              <span className="mt-0.5 shrink-0 text-slate-300">
-                {card.status === "correct" ? (
-                  <CheckCircle2 size={18} className="text-green-500" strokeWidth={2.5} />
-                ) : card.status === "incorrect" ? (
-                  <XCircle size={18} className="text-rose-500" strokeWidth={2.5} />
-                ) : (
-                  <Circle size={18} strokeWidth={2.5} />
-                )}
-              </span>
-              <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 px-4 py-2">
+                <StatusIcon status={card.status} />
                 <p className="text-xs font-extrabold uppercase tracking-wide text-slate-300">
                   Card {i + 1}
                 </p>
-                <p className="mt-1 text-sm font-bold leading-relaxed text-slate-700">
-                  {card.front}
-                </p>
+              </div>
+              <div className="grid grid-cols-1 divide-y divide-slate-100 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+                <div className="px-4 py-4 sm:py-5">
+                  <p className="text-sm font-bold leading-relaxed text-slate-800">
+                    {card.front}
+                  </p>
+                </div>
+                <div className="bg-slate-50/80 px-4 py-4 sm:py-5">
+                  <p className="text-sm font-bold leading-relaxed text-slate-600">
+                    {card.back}
+                  </p>
+                </div>
               </div>
             </div>
           ))
@@ -153,7 +164,7 @@ export default function FlashcardDeck({
         type="button"
         disabled={filtered.length === 0}
         onClick={() => onStart(filter, filtered)}
-        className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px)+1rem)] left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-2xl border-b-4 border-green-600 bg-green-500 px-8 py-3.5 text-base font-extrabold text-white shadow-lg transition-colors hover:bg-green-400 active:translate-y-0.5 active:border-b-2 disabled:opacity-40 md:bottom-8"
+        className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+1rem)] left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-2xl border-b-4 border-green-600 bg-green-500 px-8 py-3.5 text-base font-extrabold text-white shadow-lg transition-colors hover:bg-green-400 active:translate-y-0.5 active:border-b-2 disabled:opacity-40 md:bottom-8"
       >
         <Play size={18} strokeWidth={3} fill="white" />
         Start

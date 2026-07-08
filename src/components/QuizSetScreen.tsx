@@ -16,13 +16,9 @@ import {
   X,
 } from "lucide-react";
 import type { QuizSetScreenData } from "@/lib/mock-data";
-import { AppHeader } from "@/components/AppHeader";
 import {
-  examTabPath,
-  filtersPath,
   quizPath,
   resultsPath,
-  setPath,
   type ContentTab,
 } from "@/lib/routes";
 
@@ -281,14 +277,8 @@ export function QuizSetScreen({
   const bestColor = progressBarColor(data.best);
 
   return (
-    <div className="min-h-screen bg-white text-[#4B4B4B] antialiased">
-      <AppHeader
-        showBack
-        onBack={() => router.push(examTabPath(examId, tab))}
-        title={data.title}
-      />
-      <div className="mx-auto max-w-md px-5 py-6">
-        <div className="rounded-2xl border-2 border-b-4 border-[#E5E5E5] bg-white p-4">
+    <div className="mx-auto w-full max-w-md text-[#4B4B4B] antialiased">
+      <div className="rounded-2xl border-2 border-b-4 border-[#E5E5E5] bg-white p-4">
           <div className="flex items-center justify-between text-[13px] font-extrabold uppercase tracking-wide">
             <span className="text-[#AFAFAF]">
               {data.items} {data.itemLabel}
@@ -410,7 +400,6 @@ export function QuizSetScreen({
             Report a problem
           </button>
         )}
-      </div>
 
       {data.contentTab === "questions" && (
       <>

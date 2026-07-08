@@ -1,9 +1,10 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ContentShell } from "@/components/ContentShell";
 import { QuizSetScreen } from "@/components/QuizSetScreen";
 import { ReportSheet } from "@/components/ReportSheet";
-import { DrNoteShell } from "@/components/DrNoteShell";
 import FlashcardDeck, {
   type CardReviewFilter,
 } from "@/components/content/FlashcardDeck";
@@ -11,7 +12,7 @@ import FlashcardStudy from "@/components/content/FlashcardStudy";
 import HYImages from "@/components/content/HYImages";
 import HYNotesFeed from "@/components/content/HYNotesFeed";
 import { getSetById, toQuizSetScreenData } from "@/lib/mock-data";
-import { type ContentTab } from "@/lib/routes";
+import { examTabPath, type ContentTab } from "@/lib/routes";
 import {
   getSessionItems,
   resolveSessionSetId,
@@ -19,7 +20,6 @@ import {
   type FlashcardItem,
   type ImageItem,
   type NoteItem,
-  type QuestionItem,
 } from "@/lib/set-content";
 
 export function SetDetailClient({
@@ -31,6 +31,7 @@ export function SetDetailClient({
   tab: ContentTab;
   setId: string;
 }) {
+  const router = useRouter();
   const [reportOpen, setReportOpen] = useState(false);
   const [studying, setStudying] = useState(false);
   const [studyCards, setStudyCards] = useState<FlashcardItem[]>([]);
@@ -39,27 +40,28 @@ export function SetDetailClient({
   const contentTab = resolveSessionTab(tab, set);
   const contentSetId = resolveSessionSetId(tab, set);
   const sessionItems = getSessionItems(contentTab, contentSetId);
+  const backToBrowse = () => router.push(examTabPath(examId, tab));
 
   if (contentTab === "summary") {
     return (
-      <DrNoteShell examId={examId} activeTab={tab}>
+      <ContentShell examId={examId} title={set.title} onBack={backToBrowse}>
         <HYNotesFeed notes={sessionItems as NoteItem[]} />
-      </DrNoteShell>
+      </ContentShell>
     );
   }
 
   if (contentTab === "images") {
     return (
-      <DrNoteShell examId={examId} activeTab={tab}>
+      <ContentShell examId={examId} title={set.title} onBack={backToBrowse}>
         <HYImages images={sessionItems as ImageItem[]} />
-      </DrNoteShell>
+      </ContentShell>
     );
   }
 
   if (contentTab === "flashcards") {
     const cards = sessionItems as FlashcardItem[];
     return (
-      <DrNoteShell examId={examId} activeTab={tab}>
+      <ContentShell examId={examId} title={set.title} onBack={backToBrowse}>
         {studying ? (
           <FlashcardStudy
             cards={studyCards}
@@ -75,12 +77,12 @@ export function SetDetailClient({
             }}
           />
         )}
-      </DrNoteShell>
+      </ContentShell>
     );
   }
 
   return (
-    <DrNoteShell examId={examId} activeTab={tab}>
+    <ContentShell examId={examId} title={set.title} onBack={backToBrowse}>
       <QuizSetScreen
         examId={examId}
         tab={tab}
@@ -89,6 +91,6 @@ export function SetDetailClient({
         onReport={() => setReportOpen(true)}
       />
       <ReportSheet open={reportOpen} onClose={() => setReportOpen(false)} />
-    </DrNoteShell>
+    </ContentShell>
   );
 }

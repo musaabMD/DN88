@@ -132,8 +132,8 @@ export default function HYImages({ images }: { images: ImageItem[] }) {
   }, [images, query, tagFilter]);
 
   return (
-    <div>
-      <div className="mx-auto mb-4 flex max-w-4xl items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white px-4 py-2.5">
+    <div className="mx-auto w-full max-w-5xl">
+      <div className="mb-4 flex items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white px-4 py-2.5">
         <Search size={18} strokeWidth={2.5} className="shrink-0 text-slate-400" />
         <input
           value={query}
@@ -143,7 +143,7 @@ export default function HYImages({ images }: { images: ImageItem[] }) {
         />
       </div>
 
-      <div className="mx-auto mb-6 flex max-w-4xl flex-wrap gap-2">
+      <div className="mb-6 flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => setTagFilter(null)}

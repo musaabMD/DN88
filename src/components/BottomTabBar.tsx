@@ -24,7 +24,7 @@ export function BottomTabBar() {
   return (
     <nav
       aria-label="Browse sections"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur-md md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 bg-white/95 backdrop-blur-md md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       <div className="mx-auto flex max-w-lg items-stretch justify-around px-1 pt-1">
