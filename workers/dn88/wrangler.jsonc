@@ -1,6 +1,6 @@
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
-  "name": "DN88",
+  "name": "dn88-api",
   "main": "src/index.ts",
   "compatibility_date": "2026-07-07",
   "observability": {
