@@ -6,6 +6,9 @@ import {
   QuestionChatPanel,
   type ChatMessage,
 } from "@/components/QuestionChatPanel";
+import { FlashcardSession } from "@/components/content/FlashcardSession";
+import { HYImagesSession } from "@/components/content/HYImagesSession";
+import { HYNotesSession } from "@/components/content/HYNotesSession";
 import { ReportSheet } from "@/components/ReportSheet";
 import { SessionPauseModal } from "@/components/SessionPauseModal";
 import { CitationList } from "@/components/tool-ui/citation";
@@ -23,14 +26,10 @@ import {
 import type { QuizSearchParams } from "@/lib/routes";
 import {
   Bookmark,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
-  ChevronUp,
   Flag,
-  Image,
   Pause,
-  RotateCcw,
   Sparkles,
   X,
 } from "lucide-react";
@@ -218,141 +217,6 @@ function LessonQuestionView({
   );
 }
 
-function SummaryCard({ s }: { s: NoteItem }) {
-  const [expanded, setExpanded] = useState(false);
-  const preview = s.bullets.slice(0, 2);
-  const rest = s.bullets.slice(2);
-
-  return (
-    <div
-      className="bg-white rounded-3xl mb-3 overflow-hidden"
-      style={{ border: "2px solid #e2e8f0", boxShadow: "0 2px 0 #e2e8f0" }}
-    >
-      <div className="px-4 pt-3 pb-1">
-        <p className="font-black text-slate-900 text-base mb-3">{s.title}</p>
-        <ul className="space-y-2">
-          {preview.map((b, i) => (
-            <li key={i} className="flex gap-2 text-sm font-medium text-slate-700">
-              <span
-                className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0"
-                style={{ background: "#7c3aed" }}
-              />
-              {b}
-            </li>
-          ))}
-          {expanded &&
-            rest.map((b, i) => (
-              <li
-                key={i + 2}
-                className="flex gap-2 text-sm font-medium text-slate-700"
-              >
-                <span
-                  className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0"
-                  style={{ background: "#7c3aed" }}
-                />
-                {b}
-              </li>
-            ))}
-        </ul>
-      </div>
-      {rest.length > 0 && (
-        <button
-          onClick={() => setExpanded((p) => !p)}
-          className="flex items-center gap-1 mx-4 my-2.5 text-xs font-black transition-colors"
-          style={{ color: "#7c3aed" }}
-        >
-          {expanded ? (
-            <>
-              <ChevronUp size={13} strokeWidth={3} />
-              Show less
-            </>
-          ) : (
-            <>
-              <ChevronDown size={13} strokeWidth={3} />+{rest.length} more points
-            </>
-          )}
-        </button>
-      )}
-    </div>
-  );
-}
-
-function ImageCard({ img }: { img: ImageItem }) {
-  return (
-    <div
-      className="bg-white rounded-3xl mb-3 overflow-hidden"
-      style={{ border: "2px solid #e2e8f0", boxShadow: "0 2px 0 #e2e8f0" }}
-    >
-      <div
-        className="w-full aspect-square flex items-center justify-center relative"
-        style={{ background: img.gradient }}
-      >
-        <div className="text-center p-6">
-          <div className="w-16 h-16 rounded-2xl mx-auto mb-3 flex items-center justify-center bg-white/40">
-            <Image size={28} className="text-white" strokeWidth={1.5} />
-          </div>
-          <p className="text-xs font-bold text-white/80">Medical Diagram</p>
-        </div>
-      </div>
-      <div className="px-4 pb-4">
-        <span className="text-sm font-medium text-slate-700">{img.caption}</span>
-      </div>
-    </div>
-  );
-}
-
-function FlashCard({ card }: { card: FlashcardItem }) {
-  const [flipped, setFlipped] = useState(false);
-
-  return (
-    <div
-      className="mb-3 cursor-pointer"
-      onClick={() => setFlipped((p) => !p)}
-      style={{ perspective: "1000px" }}
-    >
-      <div
-        className="relative w-full transition-all duration-500"
-        style={{
-          transformStyle: "preserve-3d",
-          transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
-          minHeight: "160px",
-        }}
-      >
-        <div
-          className="absolute inset-0 rounded-3xl p-5 flex flex-col justify-between"
-          style={{
-            backfaceVisibility: "hidden",
-            background: "linear-gradient(135deg,#eff6ff,#dbeafe)",
-            border: "2px solid #bfdbfe",
-            boxShadow: "0 3px 0 #bfdbfe",
-          }}
-        >
-          <p className="text-sm font-bold text-blue-900 leading-relaxed mt-3">
-            {card.front}
-          </p>
-          <div className="flex justify-end mt-2">
-            <RotateCcw size={14} className="text-blue-400" strokeWidth={2.5} />
-          </div>
-        </div>
-        <div
-          className="absolute inset-0 rounded-3xl p-5 flex flex-col justify-between"
-          style={{
-            backfaceVisibility: "hidden",
-            transform: "rotateY(180deg)",
-            background: "linear-gradient(135deg,#f0fdf4,#dcfce7)",
-            border: "2px solid #86efac",
-            boxShadow: "0 3px 0 #86efac",
-          }}
-        >
-          <p className="text-sm font-bold text-green-900 leading-relaxed mt-3">
-            {card.back}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function initialPage(set: StudySet, total: number, quizParams: QuizSearchParams): number {
   if (quizParams.mode === "resume") {
     return Math.min(Math.max(1, set.done + 1), total);
@@ -360,23 +224,22 @@ function initialPage(set: StudySet, total: number, quizParams: QuizSearchParams)
   return 1;
 }
 
-export function SetSessionView({
+function QuestionsSession({
   set,
-  tab,
+  contentSetId,
+  sessionItems,
   quizParams,
   onClose,
   onComplete,
 }: {
   set: StudySet;
-  tab: string;
+  contentSetId: string;
+  sessionItems: QuestionItem[];
   quizParams: QuizSearchParams;
   onClose: () => void;
   onComplete: () => void;
 }) {
-  const contentTab = resolveSessionTab(tab, set);
-  const contentSetId = resolveSessionSetId(tab, set);
-  const sessionItems = getSessionItems(contentTab, contentSetId);
-  const total = sessionItemCount(contentTab, contentSetId);
+  const total = sessionItemCount("questions", contentSetId);
   const [page, setPage] = useState(() => initialPage(set, total, quizParams));
   const [answeredPage, setAnsweredPage] = useState<number | null>(null);
   const currentAnswered = answeredPage === page;
@@ -389,10 +252,7 @@ export function SetSessionView({
   const remaining = Math.max(total - page, 0);
   const progressPct = total > 0 ? (page / total) * 100 : 0;
 
-  const currentQuestion =
-    contentTab === "questions"
-      ? (sessionItems[idx] as QuestionItem | undefined)
-      : undefined;
+  const currentQuestion = sessionItems[idx];
   const chatKey =
     currentQuestion !== undefined ? `${set.id}:${currentQuestion.id}` : "";
 
@@ -415,7 +275,7 @@ export function SetSessionView({
   };
 
   const goNext = () => {
-    if (contentTab === "questions" && !currentAnswered) return;
+    if (!currentAnswered) return;
     setChatOpen(false);
     if (page < total) {
       setPage(page + 1);
@@ -443,42 +303,16 @@ export function SetSessionView({
   };
 
   const renderSlide = () => {
-    if (contentTab === "questions") {
-      const q = sessionItems[idx] as QuestionItem | undefined;
-      if (!q) return null;
-      return (
-        <LessonQuestionView
-          key={`${q.id}-${page}`}
-          q={q}
-          onAnswer={() => {
-            setAnsweredPage(page);
-          }}
-        />
-      );
-    }
-    if (contentTab === "summary") {
-      const s = sessionItems[idx] as NoteItem | undefined;
-      if (!s) return null;
-      return <SummaryCard s={s} />;
-    }
-    if (contentTab === "images") {
-      const img = sessionItems[idx] as ImageItem | undefined;
-      if (!img) return null;
-      return <ImageCard img={img} />;
-    }
-    if (contentTab === "flashcards") {
-      const card = sessionItems[idx] as FlashcardItem | undefined;
-      if (!card) return null;
-      return (
-        <div className="flex items-center justify-center py-4">
-          <FlashCard card={card} />
-        </div>
-      );
-    }
+    const q = sessionItems[idx];
+    if (!q) return null;
     return (
-      <p className="text-center text-slate-500 font-semibold py-20">
-        No content for this tab yet.
-      </p>
+      <LessonQuestionView
+        key={`${q.id}-${page}`}
+        q={q}
+        onAnswer={() => {
+          setAnsweredPage(page);
+        }}
+      />
     );
   };
 
@@ -539,15 +373,13 @@ export function SetSessionView({
             >
               <ChevronLeft size={20} strokeWidth={2.5} />
             </SessionNavButton>
-            {contentTab === "questions" && (
-              <SessionNavButton
-                onClick={() => setReportOpen(true)}
-                ariaLabel="Report issue"
-                variant="danger"
-              >
-                <Flag size={18} strokeWidth={2.5} />
-              </SessionNavButton>
-            )}
+            <SessionNavButton
+              onClick={() => setReportOpen(true)}
+              ariaLabel="Report issue"
+              variant="danger"
+            >
+              <Flag size={18} strokeWidth={2.5} />
+            </SessionNavButton>
           </div>
 
           <span className="shrink-0 rounded-lg border border-[#E5E5E5] bg-[#F7F7F7] px-2.5 py-1 text-xs font-extrabold tabular-nums text-[#AFAFAF]">
@@ -562,27 +394,17 @@ export function SetSessionView({
             >
               <Pause size={16} strokeWidth={2.5} />
             </SessionNavButton>
-            {contentTab === "questions" && (
-              <SessionNavButton
-                onClick={openChat}
-                ariaLabel="Explain with AI"
-                variant="ai"
-              >
-                <Sparkles size={18} strokeWidth={2.5} />
-              </SessionNavButton>
-            )}
+            <SessionNavButton
+              onClick={openChat}
+              ariaLabel="Explain with AI"
+              variant="ai"
+            >
+              <Sparkles size={18} strokeWidth={2.5} />
+            </SessionNavButton>
             <SessionNavButton
               onClick={goNext}
-              disabled={contentTab === "questions" && !currentAnswered}
-              ariaLabel={
-                contentTab === "flashcards"
-                  ? "Next card"
-                  : contentTab === "images"
-                    ? "Next image"
-                    : contentTab === "summary"
-                      ? "Next note"
-                      : "Next question"
-              }
+              disabled={!currentAnswered}
+              ariaLabel="Next question"
               variant="primary"
             >
               <ChevronRight size={20} strokeWidth={2.5} />
@@ -614,5 +436,65 @@ export function SetSessionView({
 
       <ReportSheet open={reportOpen} onClose={() => setReportOpen(false)} />
     </div>
+  );
+}
+
+export function SetSessionView({
+  set,
+  tab,
+  quizParams,
+  onClose,
+  onComplete,
+}: {
+  set: StudySet;
+  tab: string;
+  quizParams: QuizSearchParams;
+  onClose: () => void;
+  onComplete: () => void;
+}) {
+  const contentTab = resolveSessionTab(tab, set);
+  const contentSetId = resolveSessionSetId(tab, set);
+  const sessionItems = getSessionItems(contentTab, contentSetId);
+
+  if (contentTab === "summary") {
+    return (
+      <HYNotesSession
+        notes={sessionItems as NoteItem[]}
+        setTitle={set.title}
+        onClose={onClose}
+      />
+    );
+  }
+
+  if (contentTab === "images") {
+    return (
+      <HYImagesSession
+        images={sessionItems as ImageItem[]}
+        setTitle={set.title}
+        onClose={onClose}
+      />
+    );
+  }
+
+  if (contentTab === "flashcards") {
+    return (
+      <FlashcardSession
+        cards={sessionItems as FlashcardItem[]}
+        setTitle={set.title}
+        onClose={onClose}
+        onComplete={onComplete}
+      />
+    );
+  }
+
+  return (
+    <QuestionsSession
+      set={set}
+      contentSetId={contentSetId}
+      sessionItems={sessionItems as QuestionItem[]}
+      quizParams={quizParams}
+      onClose={onClose}
+      onComplete={onComplete}
+    />
   );
 }

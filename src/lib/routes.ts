@@ -107,6 +107,11 @@ export function filtersPath(examId: string = DEFAULT_EXAM_ID): string {
 }
 
 export const UPGRADE_PATH = "/upgrade";
+export const PRICING_PATH = "/pricing";
+
+export function articlePath(examId: string, articleId: string): string {
+  return `/${examId}/library/articles/${articleId}`;
+}
 
 /** @deprecated Use filtersPath(examId) */
 export const FILTERS_PATH = filtersPath(DEFAULT_EXAM_ID);

@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import {
+  filterLibraryArticles,
   getSessionItems,
   resolveSessionSetId,
   resolveSessionTab,
@@ -12,13 +13,16 @@ import {
   TAB_SET_LABEL,
   type FlashcardItem,
   type ImageItem,
+  type LibraryArticle,
   type NoteItem,
   type QuestionItem,
   type StudySet,
 } from "@/lib/set-content";
 import {
+  articlePath,
   examTabPath,
   filtersPath,
+  quizPath,
   setPath,
   UPGRADE_PATH,
   type ContentTab,
@@ -45,6 +49,7 @@ import {
   Check,
   ArrowLeft,
   ChevronLeft,
+  Clock3,
   ChevronRight,
   Flame,
   Crown,
@@ -209,6 +214,51 @@ function LetterTile({ title }: { title: string }) {
       </span>
       <span className="relative text-2xl font-black text-white">{title.charAt(0)}</span>
     </div>
+  );
+}
+
+function ArticleCard({
+  article,
+  onOpen,
+}: {
+  article: LibraryArticle;
+  onOpen: () => void;
+}) {
+  const { bg, border } = getTileColors(article.subject);
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group w-full rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4 text-left transition-colors duration-150 hover:bg-slate-50 active:translate-y-0.5 active:border-b-2"
+    >
+      <div className="flex items-center gap-4">
+        <div
+          className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-b-4"
+          style={{ background: bg, borderColor: border }}
+        >
+          <BookOpen size={20} strokeWidth={2.5} className="text-white" />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-base font-extrabold tracking-tight text-slate-700">
+            {article.title}
+          </h3>
+          <p className="mt-1 flex items-center gap-1.5 text-sm font-bold text-slate-400">
+            <Clock3 size={14} strokeWidth={2.5} />
+            <span>{article.readMinutes} min read</span>
+            <span>·</span>
+            <span>{article.subject}</span>
+          </p>
+        </div>
+
+        <ChevronRight
+          size={20}
+          strokeWidth={3}
+          className="shrink-0 text-slate-300 transition-all duration-150 group-hover:translate-x-1 group-hover:text-[#58CC02]"
+        />
+      </div>
+    </button>
   );
 }
 
@@ -785,10 +835,7 @@ function SessionSlideShell({
 }
 
 function SummaryCard({ s }: { s: NoteItem }) {
-  const [expanded, setExpanded] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
-  const preview = s.bullets.slice(0, 2);
-  const rest = s.bullets.slice(2);
 
   return (
     <div
@@ -808,7 +855,7 @@ function SummaryCard({ s }: { s: NoteItem }) {
               border: "1.5px solid #ddd6fe",
             }}
           >
-            {s.subject}
+            {s.author}
           </span>
           <span
             className="text-xs font-black px-2 py-0.5 rounded-lg"
@@ -834,58 +881,15 @@ function SummaryCard({ s }: { s: NoteItem }) {
         </button>
       </div>
 
-      <div className="px-4 pt-3 pb-1">
-        <p className="font-black text-slate-900 text-base mb-3">{s.title}</p>
-        <ul className="space-y-2">
-          {preview.map((b, i) => (
-            <li key={i} className="flex gap-2 text-sm font-medium text-slate-700">
-              <span
-                className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0"
-                style={{ background: "#7c3aed" }}
-              />
-              {b}
-            </li>
-          ))}
-          {expanded &&
-            rest.map((b, i) => (
-              <li
-                key={i + 2}
-                className="flex gap-2 text-sm font-medium text-slate-700"
-              >
-                <span
-                  className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0"
-                  style={{ background: "#7c3aed" }}
-                />
-                {b}
-              </li>
-            ))}
-        </ul>
+      <div className="px-4 pt-3 pb-4">
+        <p className="text-sm font-bold text-slate-500 mb-2">{s.specialty}</p>
+        <p className="font-bold text-slate-900 text-base leading-relaxed">{s.text}</p>
       </div>
-
-      {rest.length > 0 && (
-        <button
-          onClick={() => setExpanded((p) => !p)}
-          className="flex items-center gap-1 mx-4 my-2.5 text-xs font-black transition-colors"
-          style={{ color: "#7c3aed" }}
-        >
-          {expanded ? (
-            <>
-              <ChevronUp size={13} strokeWidth={3} />
-              Show less
-            </>
-          ) : (
-            <>
-              <ChevronDown size={13} strokeWidth={3} />+{rest.length} more points
-            </>
-          )}
-        </button>
-      )}
     </div>
   );
 }
 
 function ImageCard({ img }: { img: ImageItem }) {
-  const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
 
   return (
@@ -893,38 +897,22 @@ function ImageCard({ img }: { img: ImageItem }) {
       className="bg-white rounded-3xl mb-3 overflow-hidden"
       style={{ border: "2px solid #e2e8f0", boxShadow: "0 2px 0 #e2e8f0" }}
     >
-      <div
-        className="w-full aspect-square flex items-center justify-center relative"
-        style={{ background: img.gradient }}
-      >
+      <div className="w-full aspect-square flex items-center justify-center relative bg-slate-100">
         <div className="text-center p-6">
-          <div className="w-16 h-16 rounded-2xl mx-auto mb-3 flex items-center justify-center bg-white/40">
-            <Image size={28} className="text-white" strokeWidth={1.5} />
+          <div className="w-16 h-16 rounded-2xl mx-auto mb-3 flex items-center justify-center bg-white">
+            <Image size={28} className="text-slate-300" strokeWidth={1.5} />
           </div>
-          <p className="text-xs font-bold text-white/80">Medical Diagram</p>
+          <p className="text-xs font-bold text-slate-400">HY Image</p>
         </div>
         <span
-          className="absolute top-3 left-3 text-xs font-black px-2.5 py-1 rounded-xl"
-          style={{
-            background: "rgba(255,255,255,0.9)",
-            color: "#1d4ed8",
-            border: "1.5px solid #bfdbfe",
-          }}
+          className="absolute top-3 left-3 text-xs font-black px-2.5 py-1 rounded-xl bg-white text-slate-600 border border-slate-200"
         >
-          {img.subject}
+          {img.tag}
         </span>
       </div>
 
       <div className="flex items-center justify-between px-4 py-2.5">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setLiked((p) => !p)}
-            className="flex items-center gap-1 text-xs font-black transition-all"
-            style={{ color: liked ? "#ef4444" : "#94a3b8" }}
-          >
-            <Heart size={18} strokeWidth={2} fill={liked ? "#ef4444" : "none"} />
-          </button>
-        </div>
+        <span className="text-sm font-extrabold text-slate-700">{img.title}</span>
         <button
           onClick={() => setBookmarked((p) => !p)}
           style={{ color: bookmarked ? "#ea580c" : "#94a3b8" }}
@@ -938,12 +926,6 @@ function ImageCard({ img }: { img: ImageItem }) {
       </div>
 
       <div className="px-4 pb-4">
-        <span
-          className="text-xs font-black px-2 py-0.5 rounded-lg mr-2"
-          style={{ background: "#f0fdf4", color: "#16a34a" }}
-        >
-          {img.tag}
-        </span>
         <span className="text-sm font-medium text-slate-700">{img.caption}</span>
       </div>
     </div>
@@ -981,7 +963,7 @@ function FlashCard({ card }: { card: FlashcardItem }) {
               className="text-xs font-black px-2.5 py-1 rounded-xl"
               style={{ background: "rgba(255,255,255,0.8)", color: "#1d4ed8" }}
             >
-              {card.subject}
+              {card.deck}
             </span>
             <span className="text-xs font-bold text-blue-400">Tap to reveal</span>
           </div>
@@ -1007,7 +989,7 @@ function FlashCard({ card }: { card: FlashcardItem }) {
               className="text-xs font-black px-2.5 py-1 rounded-xl"
               style={{ background: "rgba(255,255,255,0.8)", color: "#15803d" }}
             >
-              {card.subject}
+              {card.deck}
             </span>
             <span className="text-xs font-bold text-green-500">Answer</span>
           </div>
@@ -1050,16 +1032,21 @@ function FlashCard({ card }: { card: FlashcardItem }) {
 function TabContent({
   tab,
   onOpenSet,
+  onOpenArticle,
   search,
   filters,
+  examId,
 }: {
   tab: string;
   onOpenSet: (s: StudySet) => void;
+  onOpenArticle: (article: LibraryArticle) => void;
   search: string;
   filters: BrowseFilters;
+  examId: string;
 }) {
   if (tab === "library") {
     const sets = filterSets(SETS_BY_TAB.library ?? [], search, filters);
+    const articles = filterLibraryArticles(search);
     return (
       <>
         <p className="mb-3 px-1 text-xs font-black uppercase tracking-widest text-slate-400">
@@ -1068,6 +1055,19 @@ function TabContent({
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {sets.map((set) => (
             <SetCard key={set.id} set={set} tab={tab} onOpen={() => onOpenSet(set)} />
+          ))}
+        </div>
+
+        <p className="mb-3 mt-8 px-1 text-xs font-black uppercase tracking-widest text-slate-400">
+          {articles.length} articles
+        </p>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {articles.map((article) => (
+            <ArticleCard
+              key={article.id}
+              article={article}
+              onOpen={() => onOpenArticle(article)}
+            />
           ))}
         </div>
       </>
@@ -1706,6 +1706,19 @@ export default function DrNoteApp({
 
   const totalFilters = countBrowseFilters(browseFilters);
 
+  const openSet = (s: StudySet) => {
+    if (
+      activeTab === "summary" ||
+      activeTab === "images" ||
+      activeTab === "flashcards" ||
+      activeTab === "library"
+    ) {
+      router.push(quizPath(examId, activeTab, s.id, { mode: "resume" }));
+      return;
+    }
+    router.push(setPath(examId, activeTab, s.id));
+  };
+
   const streak = 14;
   const dailyRemaining = DAILY_LIMIT - DAILY_USED;
 
@@ -1728,9 +1741,13 @@ export default function DrNoteApp({
       <main className={`${PAGE_SHELL} py-4`}>
         <TabContent
           tab={activeTab}
+          examId={examId}
           search={search}
           filters={browseFilters}
-          onOpenSet={(s) => router.push(setPath(examId, activeTab, s.id))}
+          onOpenSet={openSet}
+          onOpenArticle={(article) =>
+            router.push(articlePath(examId, article.id))
+          }
         />
       </main>
 

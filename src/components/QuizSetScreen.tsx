@@ -401,13 +401,15 @@ export function QuizSetScreen({
         </div>
         )}
 
-        <button
-          onClick={onReport}
-          className="mx-auto mt-6 flex items-center gap-1.5 text-[13px] font-extrabold uppercase tracking-wide text-[#AFAFAF] transition-colors hover:text-[#FF4B4B]"
-        >
-          <Flag className="h-4 w-4" strokeWidth={2.5} />
-          Report a problem
-        </button>
+        {data.contentTab === "questions" && (
+          <button
+            onClick={onReport}
+            className="mx-auto mt-6 flex items-center gap-1.5 text-[13px] font-extrabold uppercase tracking-wide text-[#AFAFAF] transition-colors hover:text-[#FF4B4B]"
+          >
+            <Flag className="h-4 w-4" strokeWidth={2.5} />
+            Report a problem
+          </button>
+        )}
       </div>
 
       {data.contentTab === "questions" && (

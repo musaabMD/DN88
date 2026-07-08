@@ -1,6 +1,7 @@
 import { EXAMS } from "@/lib/exams";
 import {
   getSessionItems,
+  LIBRARY_ARTICLES,
   resolveSessionSetId,
   resolveSessionTab,
   sessionItemCount,
@@ -11,6 +12,7 @@ import {
 export type {
   FlashcardItem,
   ImageItem,
+  LibraryArticle,
   NoteItem,
   QuestionItem,
   SessionItem,
@@ -19,8 +21,11 @@ export type {
 
 export {
   FLASHCARD_SETS,
+  filterLibraryArticles,
+  getLibraryArticleById,
   getSessionItems,
   IMAGE_SETS,
+  LIBRARY_ARTICLES,
   LIBRARY_SETS,
   QUESTION_SETS,
   resolveSessionSetId,
@@ -45,6 +50,18 @@ export function getAllSetStaticParams(): Array<{
     Object.entries(SETS_BY_TAB).flatMap(([tab, sets]) =>
       sets.map((set) => ({ examId: exam.id, tab, setId: set.id }))
     )
+  );
+}
+
+export function getAllArticleStaticParams(): Array<{
+  examId: string;
+  articleId: string;
+}> {
+  return EXAMS.flatMap((exam) =>
+    LIBRARY_ARTICLES.map((article) => ({
+      examId: exam.id,
+      articleId: article.id,
+    }))
   );
 }
 

@@ -31,25 +31,40 @@ export type QuestionItem = {
 
 export type NoteItem = {
   id: number;
-  subject: string;
-  title: string;
-  bullets: string[];
+  author: string;
+  specialty: string;
+  text: string;
   tag: string;
 };
 
 export type ImageItem = {
   id: number;
-  subject: string;
+  title: string;
   caption: string;
   tag: string;
-  gradient: string;
+  src?: string;
 };
 
 export type FlashcardItem = {
   id: number;
-  subject: string;
+  deck: string;
   front: string;
   back: string;
+};
+
+export type LibraryArticle = {
+  id: string;
+  subject: string;
+  title: string;
+  readMinutes: number;
+  updated: string;
+  sections: Array<{
+    id: string;
+    heading: string;
+    body: string;
+    bullets?: string[];
+  }>;
+  highYield?: string;
 };
 
 export type SessionItem =
@@ -167,62 +182,63 @@ const NOTES_BY_SET: Record<string, NoteItem[]> = {
   s1: [
     {
       id: 1,
-      subject: "Pharmacology",
-      title: "Adrenergic agonists",
-      bullets: [
-        "α1 → vasoconstriction; α2 → ↓ NE release",
-        "β1 → ↑ HR and contractility; β2 → bronchodilation",
-        "Epinephrine activates α and β receptors",
-      ],
-      tag: "HY Note",
+      author: "Dr. Sara",
+      specialty: "Internal Medicine",
+      text: "Metformin never causes hypoglycemia as monotherapy. If a diabetic on metformin alone is hypoglycemic, look for another cause.",
+      tag: "Endocrine",
     },
     {
       id: 2,
-      subject: "Pharmacology",
-      title: "Cholinergic drugs",
-      bullets: [
-        "Direct agonists: bethanechol, pilocarpine",
-        "Indirect: neostigmine, physostigmine",
-        "Atropine blocks muscarinic receptors",
-      ],
-      tag: "HY Note",
+      author: "Dr. Omar",
+      specialty: "Pharmacology",
+      text: "ACE inhibitors cause dry cough via bradykinin accumulation — switch to ARB if intolerable.",
+      tag: "Pharm",
+    },
+    {
+      id: 3,
+      author: "Dr. Lina",
+      specialty: "Endocrinology",
+      text: "Sulfonylureas close K-ATP channels → insulin release. Main risk is hypoglycemia, not lactic acidosis.",
+      tag: "Endocrine",
     },
   ],
   s2: [
     {
       id: 1,
-      subject: "Anatomy",
-      title: "Brachial plexus overview",
-      bullets: [
-        "Roots C5-T1 → trunks → divisions → cords → branches",
-        "Upper trunk (C5-C6) → Erb's palsy",
-        "Lower trunk (C8-T1) → Klumpke palsy",
-      ],
-      tag: "HY Note",
+      author: "Dr. Omar",
+      specialty: "Surgery",
+      text: "Wrist drop = radial nerve. Think mid-shaft humerus fracture or Saturday night palsy.",
+      tag: "Neuro",
     },
     {
       id: 2,
-      subject: "Anatomy",
-      title: "Rotator cuff (SITS)",
-      bullets: [
-        "Supraspinatus: abduction initiation",
-        "Infraspinatus & teres minor: external rotation",
-        "Subscapularis: internal rotation",
-      ],
-      tag: "HY Note",
+      author: "Dr. Sara",
+      specialty: "Anatomy",
+      text: "Erb's palsy (C5-C6): waiter's tip. Klumpke (C8-T1): claw hand with intrinsic weakness.",
+      tag: "Neuro",
+    },
+    {
+      id: 3,
+      author: "Dr. Lina",
+      specialty: "Orthopedics",
+      text: "Supraspinatus initiates abduction (first 15°). Infraspinatus and teres minor externally rotate.",
+      tag: "MSK",
     },
   ],
   s3: [
     {
       id: 1,
-      subject: "Physiology",
-      title: "Cardiac output determinants",
-      bullets: [
-        "CO = HR × SV",
-        "SV depends on preload, afterload, contractility",
-        "MAP ≈ CO × SVR",
-      ],
-      tag: "Week 3",
+      author: "Dr. Sara",
+      specialty: "Cardiology",
+      text: "CO = HR × SV. Frank-Starling: increased preload → increased stroke volume up to a point.",
+      tag: "Physio",
+    },
+    {
+      id: 2,
+      author: "Dr. Omar",
+      specialty: "Physiology",
+      text: "MAP ≈ CO × SVR. Afterload is the resistance the ventricle must overcome to eject blood.",
+      tag: "Physio",
     },
   ],
 };
@@ -231,33 +247,56 @@ const IMAGES_BY_SET: Record<string, ImageItem[]> = {
   i1: [
     {
       id: 1,
-      subject: "Anatomy",
-      caption: "Cervical spinal cord cross-section",
-      tag: "High Yield",
-      gradient: "linear-gradient(135deg,#dbeafe,#bfdbfe)",
+      title: "Bilateral hilar lymphadenopathy",
+      caption:
+        "Classic chest X-ray finding in sarcoidosis: symmetric enlargement of both hila.",
+      tag: "Pulm",
     },
     {
       id: 2,
-      subject: "Anatomy",
-      caption: "Brainstem level: medulla vs pons",
-      tag: "High Yield",
-      gradient: "linear-gradient(135deg,#e0e7ff,#c7d2fe)",
+      title: "Wrist drop",
+      caption:
+        "Radial nerve palsy after mid-shaft humerus fracture — inability to extend the wrist.",
+      tag: "Neuro",
+    },
+    {
+      id: 3,
+      title: "Cervical spinal cord cross-section",
+      caption: "Labeled cross-sectional anatomy for spinal cord levels.",
+      tag: "Neuro",
+    },
+    {
+      id: 4,
+      title: "Brainstem level: medulla vs pons",
+      caption: "Key landmarks distinguishing medullary from pontine sections.",
+      tag: "Neuro",
     },
   ],
   i2: [
     {
       id: 1,
-      subject: "Pathology",
-      caption: "Reed-Sternberg cells in Hodgkin lymphoma",
-      tag: "Exam Ready",
-      gradient: "linear-gradient(135deg,#fce7f3,#fbcfe8)",
+      title: "Erythema nodosum",
+      caption:
+        "Tender red nodules on the shins; think sarcoidosis, strep, IBD, or drugs.",
+      tag: "Derm",
     },
     {
       id: 2,
-      subject: "Pathology",
-      caption: "Bone marrow aspirate with blasts",
-      tag: "Exam Ready",
-      gradient: "linear-gradient(135deg,#fef3c7,#fde68a)",
+      title: "Reed-Sternberg cells",
+      caption: "Owl-eye cells in Hodgkin lymphoma biopsy.",
+      tag: "Path",
+    },
+    {
+      id: 3,
+      title: "Bone marrow aspirate with blasts",
+      caption: "Increased blasts suggest acute leukemia.",
+      tag: "Path",
+    },
+    {
+      id: 4,
+      title: "Diabetic retinopathy",
+      caption: "Microaneurysms and dot-blot hemorrhages on fundoscopy.",
+      tag: "Ophtho",
     },
   ],
 };
@@ -266,19 +305,19 @@ const FLASHCARDS_BY_SET: Record<string, FlashcardItem[]> = {
   f1: [
     {
       id: 1,
-      subject: "Pharmacology",
+      deck: "Drug Mechanisms Rapid Fire",
       front: "ACE inhibitor mechanism?",
       back: "Blocks conversion of angiotensin I → angiotensin II",
     },
     {
       id: 2,
-      subject: "Pharmacology",
+      deck: "Drug Mechanisms Rapid Fire",
       front: "Metformin primary action?",
       back: "↓ hepatic gluconeogenesis",
     },
     {
       id: 3,
-      subject: "Pharmacology",
+      deck: "Drug Mechanisms Rapid Fire",
       front: "Sulfonylurea mechanism?",
       back: "Closes K-ATP channels → insulin release",
     },
@@ -286,27 +325,34 @@ const FLASHCARDS_BY_SET: Record<string, FlashcardItem[]> = {
   f2: [
     {
       id: 1,
-      subject: "Anatomy",
-      front: "Muscle initiating shoulder abduction?",
-      back: "Supraspinatus (first 15°)",
+      deck: "Upper Limb Nerve Injuries",
+      front:
+        "A patient cannot extend the wrist after a mid-shaft humerus fracture. Which nerve is injured?",
+      back: "Radial nerve — it runs in the spiral groove of the humerus. Presents as wrist drop.",
     },
     {
       id: 2,
-      subject: "Anatomy",
-      front: "Nerve injured in carpal tunnel syndrome?",
-      back: "Median nerve",
+      deck: "Upper Limb Nerve Injuries",
+      front: "Which nerve is injured in a surgical neck fracture of the humerus?",
+      back: "Axillary nerve — deltoid weakness and loss of sensation over the lateral shoulder.",
+    },
+    {
+      id: 3,
+      deck: "Upper Limb Nerve Injuries",
+      front: "Claw hand with a fracture of the medial epicondyle points to which nerve?",
+      back: "Ulnar nerve — weak interossei and sensory loss over the 4th and 5th digits.",
     },
   ],
   f3: [
     {
       id: 1,
-      subject: "Pathology",
+      deck: "Coagulation Disorders",
       front: "PTT elevated, PT normal — think?",
       back: "Intrinsic pathway defect (hemophilia)",
     },
     {
       id: 2,
-      subject: "Pathology",
+      deck: "Coagulation Disorders",
       front: "DIC hallmark lab finding?",
       back: "↑ D-dimer with ↓ fibrinogen",
     },
@@ -368,9 +414,9 @@ export const QUESTION_SETS: StudySet[] = [
 export const SUMMARY_SETS: StudySet[] = [
   {
     id: "s1",
-    title: "Autonomic Pharmacology Notes",
+    title: "Endocrine & Diabetes HY Notes",
     subject: "Pharmacology",
-    about: "Adrenergic and cholinergic drugs with board-style bullet points.",
+    about: "Tweet-length high-yield facts on metformin, sulfonylureas, and diabetes management.",
     total: NOTES_BY_SET.s1!.length,
     done: 1,
     score: 88,
@@ -380,9 +426,9 @@ export const SUMMARY_SETS: StudySet[] = [
   },
   {
     id: "s2",
-    title: "Brachial Plexus & Upper Limb",
+    title: "Upper Limb Nerve Injuries",
     subject: "Anatomy",
-    about: "Roots, trunks, cords, and classic injury patterns.",
+    about: "Radial, axillary, and ulnar nerve patterns in tweet-sized HY notes.",
     total: NOTES_BY_SET.s2!.length,
     done: 2,
     score: 95,
@@ -407,9 +453,9 @@ export const SUMMARY_SETS: StudySet[] = [
 export const IMAGE_SETS: StudySet[] = [
   {
     id: "i1",
-    title: "Neuroanatomy Cross-Sections",
+    title: "Pulmonary & Neuro HY Images",
     subject: "Anatomy",
-    about: "Labeled cross-sectional anatomy for spinal cord and brainstem.",
+    about: "High-yield exam images: hilar lymphadenopathy, wrist drop, neuroanatomy.",
     total: IMAGES_BY_SET.i1!.length,
     done: 1,
     score: 78,
@@ -419,9 +465,9 @@ export const IMAGE_SETS: StudySet[] = [
   },
   {
     id: "i2",
-    title: "Hematopathology Slides",
+    title: "Derm & Path HY Images",
     subject: "Pathology",
-    about: "Microscopy sets for lymphoma patterns and marrow findings.",
+    about: "Erythema nodosum, Reed-Sternberg cells, marrow blasts, and fundoscopy.",
     total: IMAGES_BY_SET.i2!.length,
     done: 0,
     score: 50,
@@ -487,7 +533,7 @@ export const LIBRARY_SETS: StudySet[] = [
   },
   {
     id: "lib2",
-    title: "Autonomic Pharmacology Notes",
+    title: "Endocrine & Diabetes HY Notes",
     subject: "Pharmacology",
     about: "Saved note set",
     total: NOTES_BY_SET.s1!.length,
@@ -501,7 +547,7 @@ export const LIBRARY_SETS: StudySet[] = [
   },
   {
     id: "lib3",
-    title: "Neuroanatomy Cross-Sections",
+    title: "Pulmonary & Neuro HY Images",
     subject: "Anatomy",
     about: "Saved image set",
     total: IMAGES_BY_SET.i1!.length,
@@ -526,6 +572,88 @@ export const LIBRARY_SETS: StudySet[] = [
     comments: 0,
     sourceTab: "flashcards",
     sourceSetId: "f1",
+  },
+];
+
+export const LIBRARY_ARTICLES: LibraryArticle[] = [
+  {
+    id: "art1",
+    subject: "Pulmonology",
+    title: "Sarcoidosis",
+    readMinutes: 8,
+    updated: "Jun 2026",
+    sections: [
+      {
+        id: "overview",
+        heading: "Overview",
+        body: "Sarcoidosis is a multisystem inflammatory disease of unknown etiology characterized by noncaseating granulomas. It most commonly affects young adults and typically involves the lungs and intrathoracic lymph nodes, though almost any organ can be affected.",
+      },
+      {
+        id: "pathophysiology",
+        heading: "Pathophysiology",
+        body: "An exaggerated cell-mediated immune response leads to granuloma formation. Activated macrophages within granulomas express 1-alpha-hydroxylase, converting vitamin D to its active form and producing hypercalcemia in a subset of patients.",
+      },
+      {
+        id: "clinical-features",
+        heading: "Clinical features",
+        body: "",
+        bullets: [
+          "Dry cough, dyspnea, and chest discomfort",
+          "Erythema nodosum and lupus pernio (skin)",
+          "Anterior uveitis (eyes)",
+          "Loefgren syndrome: fever, arthritis, erythema nodosum, hilar adenopathy",
+        ],
+      },
+      {
+        id: "diagnosis",
+        heading: "Diagnosis",
+        body: "Bilateral hilar lymphadenopathy on chest imaging is the classic finding. Elevated ACE and hypercalcemia support the diagnosis. Biopsy showing noncaseating granulomas confirms when needed.",
+      },
+      {
+        id: "treatment",
+        heading: "Treatment",
+        body: "Many patients require no treatment. Indications for corticosteroids include significant pulmonary symptoms, hypercalcemia, cardiac involvement, or neurologic disease.",
+      },
+    ],
+    highYield:
+      "Bilateral hilar lymphadenopathy on chest X-ray in an asymptomatic young patient is the classic exam presentation. Look for elevated ACE and hypercalcemia in the stem.",
+  },
+  {
+    id: "art2",
+    subject: "Neurology",
+    title: "Radial Nerve Injury",
+    readMinutes: 5,
+    updated: "Jun 2026",
+    sections: [
+      {
+        id: "overview",
+        heading: "Overview",
+        body: "Radial nerve injury presents with wrist drop and inability to extend the fingers and thumb. The nerve runs in the spiral groove of the humerus and is vulnerable to mid-shaft fractures and compression (Saturday night palsy).",
+      },
+      {
+        id: "clinical-features",
+        heading: "Clinical features",
+        body: "",
+        bullets: [
+          "Wrist drop — inability to extend wrist and fingers",
+          "Sensory loss over the posterior forearm and dorsum of hand",
+          "Saturday night palsy from prolonged compression",
+          "Mid-shaft humerus fracture as classic association",
+        ],
+      },
+      {
+        id: "diagnosis",
+        heading: "Diagnosis",
+        body: "Clinical exam with weakness of wrist and finger extension. EMG/NCS can localize the lesion and assess severity.",
+      },
+      {
+        id: "treatment",
+        heading: "Treatment",
+        body: "Conservative management with splinting for neuropraxia. Surgical exploration if open injury or no recovery after 3–6 months.",
+      },
+    ],
+    highYield:
+      "Wrist drop after mid-shaft humerus fracture = radial nerve in the spiral groove. Saturday night palsy = compression at the axilla.",
   },
 ];
 
@@ -573,4 +701,30 @@ export function sessionItemCount(tab: string, setId: string): number {
 
 export function getSetById(tab: string, setId: string): StudySet | undefined {
   return (SETS_BY_TAB[tab] ?? []).find((set) => set.id === setId);
+}
+
+export function getLibraryArticleById(
+  articleId: string
+): LibraryArticle | undefined {
+  return LIBRARY_ARTICLES.find((a) => a.id === articleId);
+}
+
+export function filterLibraryArticles(
+  query: string,
+  subject?: string
+): LibraryArticle[] {
+  const q = query.trim().toLowerCase();
+  return LIBRARY_ARTICLES.filter((article) => {
+    if (subject && article.subject !== subject) return false;
+    if (!q) return true;
+    return (
+      article.title.toLowerCase().includes(q) ||
+      article.subject.toLowerCase().includes(q) ||
+      article.sections.some(
+        (s) =>
+          s.heading.toLowerCase().includes(q) ||
+          s.body.toLowerCase().includes(q)
+      )
+    );
+  });
 }

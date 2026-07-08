@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronRight, GraduationCap, Search } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
-import { PricingModal } from "@/components/PricingModal";
 import { UserAuthControls } from "@/components/UserAuthControls";
 import { EXAMS, type Exam } from "@/lib/exams";
 import { saveCurrentExamId } from "@/lib/current-exam";
-import { examPath } from "@/lib/routes";
+import { examPath, UPGRADE_PATH } from "@/lib/routes";
 import { getTileColors } from "@/lib/tile-colors";
 
-function ExamHomeHeader({ onPricing }: { onPricing: () => void }) {
+function ExamHomeHeader() {
+  const router = useRouter();
+
   return (
     <header className="flex items-center justify-between py-4">
       <Link href="/" className="flex min-w-0 items-center">
@@ -21,14 +23,7 @@ function ExamHomeHeader({ onPricing }: { onPricing: () => void }) {
       <nav className="flex items-center gap-2 sm:gap-4">
         <button
           type="button"
-          onClick={onPricing}
-          className="text-sm font-extrabold text-slate-400 transition-colors hover:text-slate-700"
-        >
-          Pricing
-        </button>
-        <button
-          type="button"
-          onClick={onPricing}
+          onClick={() => router.push(UPGRADE_PATH)}
           className="rounded-xl border-b-4 border-[#46A302] bg-[#58CC02] px-3 py-2 text-sm font-extrabold text-white transition-colors hover:bg-[#4db802] active:translate-y-0.5 active:border-b-2 sm:px-4"
         >
           Get Pro
@@ -133,7 +128,6 @@ function ExamCard({ exam }: { exam: Exam }) {
 
 export default function ExamHome() {
   const [query, setQuery] = useState("");
-  const [showPricing, setShowPricing] = useState(false);
 
   const filtered = EXAMS.filter((exam) =>
     exam.name.toLowerCase().includes(query.trim().toLowerCase())
@@ -141,7 +135,7 @@ export default function ExamHome() {
 
   return (
     <main className="mx-auto w-full max-w-4xl bg-white px-4 pb-14 sm:px-6">
-      <ExamHomeHeader onPricing={() => setShowPricing(true)} />
+      <ExamHomeHeader />
 
       <ExamHero query={query} onQuery={setQuery} />
 
@@ -160,7 +154,6 @@ export default function ExamHome() {
         </div>
       ) : null}
 
-      {showPricing ? <PricingModal onClose={() => setShowPricing(false)} /> : null}
     </main>
   );
 }

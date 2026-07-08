@@ -11,6 +11,7 @@ import {
   setPath,
   type ContentTab,
 } from "@/lib/routes";
+import { resolveSessionTab } from "@/lib/set-content";
 
 export function QuizSessionPage({
   examId,
@@ -46,12 +47,22 @@ export function QuizSessionPage({
     );
   }
 
+  const contentTab = resolveSessionTab(tab, set);
+  const immersiveTab =
+    contentTab === "summary" ||
+    contentTab === "images" ||
+    contentTab === "flashcards";
+
   return (
     <SetSessionView
       set={set}
       tab={tab}
       quizParams={quizParams}
-      onClose={() => router.push(setPath(examId, tab, setId))}
+      onClose={() =>
+        router.push(
+          immersiveTab ? examTabPath(examId, tab) : setPath(examId, tab, setId)
+        )
+      }
       onComplete={() => router.push(resultsPath(examId, tab, setId))}
     />
   );
