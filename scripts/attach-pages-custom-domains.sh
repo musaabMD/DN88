@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Point drnote.co at the dn88 Cloudflare Pages project (not the old OpenNext Worker).
-set -euo pipefail
+set -uo pipefail
 
 ACCOUNT_ID="${CLOUDFLARE_ACCOUNT_ID:?CLOUDFLARE_ACCOUNT_ID is required}"
 API_TOKEN="${CLOUDFLARE_API_TOKEN:?CLOUDFLARE_API_TOKEN is required}"
@@ -105,7 +105,7 @@ remove_origin_vercel_chain() {
   local zone_id="$1"
   echo "  Removing stale origin.drnote.co -> Vercel chain if present..."
   for fqdn in "origin.drnote.co" "drnote.co"; do
-    records="$(api GET "/zones/${zone_id}/dns_records?type=CNAME&name=${fqdn}" 2>/dev/null || true)"
+    records="$(api GET "/zones/${zone_id}/dns_records?type=CNAME&name=${fqdn}" 2>/dev/null || echo '{"success":false,"result":[]}')"
     echo "$records" | python3 -c "
 import json, sys
 data = json.load(sys.stdin)
@@ -117,7 +117,7 @@ for item in data.get('result') or []:
       [[ -z "$rid" ]] && continue
       api DELETE "/zones/${zone_id}/dns_records/${rid}" >/dev/null 2>&1 && \
         echo "    deleted stale record ${rid}" || true
-    done
+    done || true
   done
 }
 
