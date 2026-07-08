@@ -60,23 +60,26 @@ export function SetDetailClient({
 
   if (contentTab === "flashcards") {
     const cards = sessionItems as FlashcardItem[];
+
+    if (studying) {
+      return (
+        <FlashcardStudy
+          cards={studyCards}
+          onClose={() => setStudying(false)}
+        />
+      );
+    }
+
     return (
       <ContentShell examId={examId} title={set.title} onBack={backToBrowse}>
-        {studying ? (
-          <FlashcardStudy
-            cards={studyCards}
-            onClose={() => setStudying(false)}
-          />
-        ) : (
-          <FlashcardDeck
-            set={set}
-            cards={cards}
-            onStart={(_filter: CardReviewFilter, deckCards: FlashcardItem[]) => {
-              setStudyCards(deckCards);
-              setStudying(true);
-            }}
-          />
-        )}
+        <FlashcardDeck
+          set={set}
+          cards={cards}
+          onStart={(_filter: CardReviewFilter, deckCards: FlashcardItem[]) => {
+            setStudyCards(deckCards);
+            setStudying(true);
+          }}
+        />
       </ContentShell>
     );
   }

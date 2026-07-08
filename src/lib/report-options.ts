@@ -8,3 +8,11 @@ export const REPORT_OPTIONS = [
   "The clinical scenario is unrealistic or has an error.",
   "Outdated or conflicting guideline information.",
 ] as const;
+
+export const CONTENT_REPORT_OPTIONS = [
+  "Incorrect information",
+  "Unclear or typo",
+  "Outdated content",
+  "Missing context",
+  "Inappropriate",
+] as const;

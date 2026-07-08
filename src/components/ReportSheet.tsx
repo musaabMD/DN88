@@ -7,9 +7,11 @@ import { REPORT_OPTIONS } from "@/lib/report-options";
 export function ReportSheet({
   open,
   onClose,
+  options = REPORT_OPTIONS,
 }: {
   open: boolean;
   onClose: () => void;
+  options?: readonly string[];
 }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
@@ -53,7 +55,7 @@ export function ReportSheet({
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          {REPORT_OPTIONS.map((opt) => {
+          {options.map((opt) => {
             const active = selected.includes(opt);
             return (
               <button

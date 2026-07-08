@@ -36,84 +36,95 @@ export default function FlashcardStudy({
   };
 
   return (
-    <div className="pb-8">
-      <div className="mb-4 flex items-center justify-between">
+    <div
+      className="fixed inset-0 z-50 flex flex-col bg-white"
+      style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+    >
+      <div className="flex h-14 shrink-0 items-center justify-between px-4 sm:px-6">
         <button
           type="button"
           onClick={onClose}
-          className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-b-4 border-slate-200 text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700 active:translate-y-0.5 active:border-b-2"
+          className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
           aria-label="Back to deck"
         >
-          <X size={20} strokeWidth={3} />
+          <X size={22} strokeWidth={3} />
         </button>
         <p className="text-xs font-extrabold tabular-nums text-slate-400">
           {index + 1} / {cards.length} · {correctCount} correct
         </p>
+        <div className="w-10" aria-hidden />
       </div>
 
-      <div className="flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-sm font-extrabold text-slate-700">
+      <div className="shrink-0 px-4 sm:px-6">
+        <p className="flex items-center justify-center gap-1.5 text-sm font-extrabold text-slate-700">
           <Zap size={15} strokeWidth={3} className="text-green-500" />
           {card.deck}
         </p>
-      </div>
-      <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-slate-200">
-        <div
-          className="h-full rounded-full bg-green-500 transition-all duration-300"
-          style={{ width: `${((index + 1) / cards.length) * 100}%` }}
-        />
+        <div className="mx-auto mt-3 h-2 w-full max-w-lg overflow-hidden rounded-full bg-slate-200">
+          <div
+            className="h-full rounded-full bg-green-500 transition-all duration-300"
+            style={{ width: `${((index + 1) / cards.length) * 100}%` }}
+          />
+        </div>
       </div>
 
-      <div className="mt-5 flex min-h-64 flex-col justify-center rounded-3xl border-2 border-b-4 border-slate-200 bg-white p-6 text-center sm:p-10">
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-6 py-8 text-center sm:px-12">
         <p className="text-xs font-extrabold uppercase tracking-wide text-slate-300">
           {revealed ? "Answer" : "Question"}
         </p>
-        <p className="mt-3 text-lg font-extrabold leading-relaxed text-slate-700 sm:text-xl">
+        <p className="mt-4 max-w-2xl text-xl font-extrabold leading-relaxed text-slate-800 sm:text-2xl">
           {card.front}
         </p>
 
         {revealed && (
           <>
-            <div className="mx-auto mt-5 h-1 w-16 rounded-full bg-green-500" />
-            <p className="mt-5 text-base font-bold leading-relaxed text-green-700 sm:text-lg">
+            <div className="mx-auto mt-8 h-1 w-16 rounded-full bg-green-500" />
+            <p className="mt-8 max-w-2xl text-lg font-bold leading-relaxed text-green-700 sm:text-xl">
               {card.back}
             </p>
           </>
         )}
       </div>
 
-      {!revealed ? (
-        <button
-          type="button"
-          onClick={() => setRevealed(true)}
-          className="mt-5 w-full rounded-2xl border-b-4 border-green-600 bg-green-500 py-3.5 text-base font-extrabold text-white transition-colors hover:bg-green-400 active:translate-y-0.5 active:border-b-2"
-        >
-          Show answer
-        </button>
-      ) : (
-        <div className="mt-5 grid grid-cols-4 gap-2 sm:gap-3">
-          {GRADES.map((g) => (
-            <button
-              key={g.label}
-              type="button"
-              onClick={() => grade(g.result)}
-              className={`flex flex-col items-center rounded-2xl border-2 border-b-4 bg-white py-2.5 transition-colors active:translate-y-0.5 active:border-b-2 ${g.style}`}
-            >
-              <span className="text-sm font-extrabold">{g.label}</span>
-              <span className="text-xs font-bold opacity-60">{g.interval}</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      <button
-        type="button"
-        onClick={() => setRevealed(false)}
-        className="mx-auto mt-4 flex items-center gap-1.5 text-xs font-extrabold text-slate-300 transition-colors hover:text-slate-500"
+      <div
+        className="shrink-0 px-4 pb-6 sm:px-6"
+        style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
       >
-        <RotateCcw size={13} strokeWidth={3} />
-        Flip back
-      </button>
+        {!revealed ? (
+          <button
+            type="button"
+            onClick={() => setRevealed(true)}
+            className="mx-auto block w-full max-w-lg rounded-2xl border-b-4 border-green-600 bg-green-500 py-4 text-base font-extrabold text-white transition-colors hover:bg-green-400 active:translate-y-0.5 active:border-b-2"
+          >
+            Show answer
+          </button>
+        ) : (
+          <div className="mx-auto grid max-w-lg grid-cols-4 gap-2 sm:gap-3">
+            {GRADES.map((g) => (
+              <button
+                key={g.label}
+                type="button"
+                onClick={() => grade(g.result)}
+                className={`flex flex-col items-center rounded-2xl border-2 border-b-4 bg-white py-3 transition-colors active:translate-y-0.5 active:border-b-2 ${g.style}`}
+              >
+                <span className="text-sm font-extrabold">{g.label}</span>
+                <span className="text-xs font-bold opacity-60">{g.interval}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {revealed ? (
+          <button
+            type="button"
+            onClick={() => setRevealed(false)}
+            className="mx-auto mt-4 flex items-center gap-1.5 text-xs font-extrabold text-slate-300 transition-colors hover:text-slate-500"
+          >
+            <RotateCcw size={13} strokeWidth={3} />
+            Flip back
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }

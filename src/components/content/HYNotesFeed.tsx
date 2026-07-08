@@ -1,17 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Bookmark, Flag, Search, Share2, Zap } from "lucide-react";
-import { ReportSheet } from "@/components/ReportSheet";
+import { Bookmark, Search, Share2, Zap } from "lucide-react";
+import { ReportIconButton } from "@/components/ReportIconButton";
 import type { NoteItem } from "@/lib/set-content";
 
-function HYNote({
-  note,
-  onReport,
-}: {
-  note: NoteItem;
-  onReport: () => void;
-}) {
+function HYNote({ note }: { note: NoteItem }) {
   return (
     <article className="w-full rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4 sm:p-5">
       <div className="flex items-center gap-3">
@@ -42,24 +36,19 @@ function HYNote({
         {note.tag}
       </span>
 
-      <div className="mt-3 flex items-center gap-2 border-t-2 border-slate-100 pt-3">
+      <div className="mt-3 flex items-center gap-1 border-t-2 border-slate-100 pt-3">
+        <ReportIconButton />
         <button
           type="button"
-          onClick={onReport}
-          className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-extrabold text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500"
-        >
-          <Flag size={16} strokeWidth={2.5} />
-          Report
-        </button>
-        <button
-          type="button"
-          className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-extrabold text-slate-400 transition-colors hover:bg-green-50 hover:text-green-600"
+          className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-green-50 hover:text-green-600"
+          aria-label="Bookmark"
         >
           <Bookmark size={16} strokeWidth={2.5} />
         </button>
         <button
           type="button"
-          className="ml-auto flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-extrabold text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+          className="ml-auto flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+          aria-label="Share"
         >
           <Share2 size={16} strokeWidth={2.5} />
         </button>
@@ -71,7 +60,6 @@ function HYNote({
 export default function HYNotesFeed({ notes }: { notes: NoteItem[] }) {
   const [query, setQuery] = useState("");
   const [tagFilter, setTagFilter] = useState<string | null>(null);
-  const [reportOpen, setReportOpen] = useState(false);
 
   const tags = useMemo(() => [...new Set(notes.map((n) => n.tag))], [notes]);
 
@@ -101,7 +89,7 @@ export default function HYNotesFeed({ notes }: { notes: NoteItem[] }) {
         />
       </div>
 
-      <div className="mb-6 flex flex-wrap gap-2">
+      <div className="mb-6 flex flex-wrap justify-center gap-2">
         <button
           type="button"
           onClick={() => setTagFilter(null)}
@@ -131,11 +119,9 @@ export default function HYNotesFeed({ notes }: { notes: NoteItem[] }) {
 
       <div className="flex w-full flex-col gap-4">
         {filtered.map((n) => (
-          <HYNote key={n.id} note={n} onReport={() => setReportOpen(true)} />
+          <HYNote key={n.id} note={n} />
         ))}
       </div>
-
-      <ReportSheet open={reportOpen} onClose={() => setReportOpen(false)} />
     </div>
   );
 }

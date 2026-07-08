@@ -143,7 +143,7 @@ export default function HYImages({ images }: { images: ImageItem[] }) {
         />
       </div>
 
-      <div className="mb-6 flex flex-wrap gap-2">
+      <div className="mb-6 flex flex-wrap justify-center gap-2">
           <button
             type="button"
             onClick={() => setTagFilter(null)}
