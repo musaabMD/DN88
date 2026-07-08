@@ -2,7 +2,7 @@
 
 A mobile-friendly medical study app with Duolingo-inspired design. Browse question sets, summaries, images, and flashcards across subjects.
 
-**Live site:** https://dn88.pages.dev
+**Live site:** https://drnote.co (custom domain) · https://dn88.pages.dev (preview)
 
 ## Features
 
@@ -20,7 +20,7 @@ A mobile-friendly medical study app with Duolingo-inspired design. Browse questi
 - TypeScript
 - Tailwind CSS v4
 - lucide-react
-- Clerk (`@clerk/clerk-react`) for auth on `drnote.co` and `dn88.pages.dev`
+- Clerk (`@clerk/clerk-react`) for auth on `drnote.co` only (guest mode on `dn88.pages.dev`)
 - Cloudflare Pages (frontend) + Worker **DN88** (API backend)
 
 ## Auth (Clerk + drnote.co)
@@ -32,8 +32,22 @@ A mobile-friendly medical study app with Duolingo-inspired design. Browse questi
 3. In Clerk → **Configure** → **Domains**, add allowed origins:
    - `http://localhost:3000`
    - `https://drnote.co`
-   - `https://dn88.pages.dev`
-4. Point `drnote.co` at the Cloudflare Pages project (custom domain in dashboard)
+4. `drnote.co` must route to the **dn88** Cloudflare Pages project (not the legacy `drnote-app-v1` Worker)
+
+### drnote.co still shows the old site?
+
+The legacy OpenNext Worker **`drnote-app-v1`** still owns `drnote.co`. The new app is on Pages (`dn88`). Fix:
+
+1. [Cloudflare Dashboard](https://dash.cloudflare.com) → **Workers & Pages** → **drnote-app-v1**
+2. **Settings** → **Domains & Routes**
+3. **Remove** `drnote.co` and `www.drnote.co` from this Worker
+4. **Workers & Pages** → **dn88** → **Custom domains** → confirm `drnote.co` is **Active**
+
+CI runs `scripts/attach-pages-custom-domains.sh` on each deploy. For automatic Worker cleanup, give `CLOUDFLARE_API_TOKEN` these permissions:
+
+- Account → Cloudflare Pages → Edit
+- Account → Workers Scripts → Edit
+- Zone → DNS → Edit (for `drnote.co`)
 
 Without Clerk keys the app still builds and runs in guest mode.
 
@@ -79,7 +93,7 @@ Open [http://localhost:3000](http://localhost:3000).
 1. **Create a Cloudflare API token**
    - Open [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens)
    - Click **Create Token** → **Create Custom Token**
-   - Permissions: **Account → Cloudflare Pages → Edit**
+   - Permissions: **Account → Cloudflare Pages → Edit**, **Account → Workers Scripts → Edit**, **Zone → DNS → Edit**
    - Account: your account (ID `5000e0a4f0ca6dd90b08bde9dc11ccb9`)
    - Create and copy the token (shown once)
 
