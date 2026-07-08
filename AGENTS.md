@@ -9,5 +9,6 @@ This version has breaking changes — APIs, conventions, and file structure may 
 DrNote is a **static, client-only Next.js 16 (React 19, Tailwind v4) front-end**. No backend, database, or env vars are required for local dev/build/lint.
 
 - Commands: `npm run dev`, `npm run build`, `npm run lint`, `npm run deploy`
-- Cloudflare account ID is in `wrangler.jsonc`. Production deploy needs `CLOUDFLARE_API_TOKEN` (GitHub secret or local env var).
-- Authenticate the **Cloudflare Builds** MCP server in Cursor (Settings → MCP) for agent-side deploys via the Cloudflare plugin.
+- **Hosting:** Cloudflare Pages (`dn88.pages.dev`) — deploy with `npm run deploy`, not GitHub Actions
+- Deploy needs `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` (`5000e0a4f0ca6dd90b08bde9dc11ccb9`) in the agent environment
+- Authenticate the **Cloudflare Builds** MCP server in Cursor (Settings → MCP) for agent-side deploys
