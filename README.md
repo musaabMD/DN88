@@ -30,11 +30,28 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## Deploy
+## Deploy to Cloudflare Pages
 
-Push to `main` triggers Cloudflare Pages deploy when GitHub secrets are configured, or run:
+The site is hosted on **Cloudflare Pages** (`dn88.pages.dev`), not GitHub.
+
+### Direct deploy (recommended)
+
+Build and upload straight to Cloudflare with Wrangler:
 
 ```bash
-npm run build
-npx wrangler pages deploy out --project-name=dn88
+export CLOUDFLARE_API_TOKEN=your_token_here
+export CLOUDFLARE_ACCOUNT_ID=5000e0a4f0ca6dd90b08bde9dc11ccb9
+npm run deploy
 ```
+
+Create an API token at [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens) with **Account → Cloudflare Pages → Edit**.
+
+### Auto-deploy from Git (optional)
+
+If you want Cloudflare to build on every push, connect the repo in the [Cloudflare dashboard](https://dash.cloudflare.com/?to=/:account/workers-and-pages) — Cloudflare pulls from Git and deploys on their servers (no GitHub Actions needed):
+
+| Setting | Value |
+|---------|-------|
+| Build command | `npm run build` |
+| Build output | `out` |
+| Production branch | `main` |
