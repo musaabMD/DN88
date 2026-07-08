@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { AppHeader } from "@/components/AppHeader";
 import { SessionReportView } from "@/components/SessionReportView";
-import { getSetById } from "@/lib/mock-data";
-import { setPath, tabPath, type ContentTab } from "@/lib/routes";
+import { getSessionReportData, getSetById } from "@/lib/mock-data";
+import { quizPath, setPath, tabPath, type ContentTab } from "@/lib/routes";
 
 export function SetResultsPage({
   tab,
@@ -31,19 +32,36 @@ export function SetResultsPage({
     );
   }
 
-  const overallScore = set.score ?? 0;
-  const correct = Math.round((overallScore / 100) * set.total);
+  const report = getSessionReportData(set, tab);
+  const missedCount = report.subjects.reduce(
+    (sum, s) => sum + (s.total - s.correct),
+    0
+  );
+
+  const backToSet = () => router.push(setPath(tab, setId));
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="flex min-h-screen flex-col bg-slate-50">
+      <AppHeader showBack onBack={backToSet} title={set.title} />
       <SessionReportView
-        setTitle={set.title}
-        elapsedSeconds={720}
-        overallScore={overallScore}
-        subjectScores={{
-          [set.subject]: { correct, total: set.total },
-        }}
-        onClose={() => router.push(setPath(tab, setId))}
+        title={set.title}
+        durationSec={report.durationSec}
+        subjects={report.subjects}
+        missedCards={report.missedCards}
+        streakBest={report.streakBest}
+        onClose={backToSet}
+        onBackToSets={backToSet}
+        onRetryMissed={
+          missedCount > 0
+            ? () =>
+                router.push(
+                  quizPath(tab, setId, {
+                    mode: "incorrect",
+                    count: missedCount,
+                  })
+                )
+            : undefined
+        }
       />
     </div>
   );
