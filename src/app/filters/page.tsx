@@ -1,8 +1,8 @@
 "use client";
 
-import { AppHeader } from "@/components/AppHeader";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import { DEFAULT_TAB, tabPath } from "@/lib/routes";
 
 const SUBJECTS = [
@@ -52,11 +52,20 @@ export default function FiltersPage() {
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white">
-      <AppHeader
-        showBack
-        onBack={() => router.push(tabPath(DEFAULT_TAB))}
-        title="Filters"
-      />
+      <div className="bg-white" style={{ borderBottom: "3px solid #e2e8f0" }}>
+        <div className="mx-auto max-w-2xl h-16 flex items-center justify-between px-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push(tabPath(DEFAULT_TAB))}
+              className="w-9 h-9 rounded-xl flex items-center justify-center"
+              style={{ background: "#f1f5f9", border: "2px solid #e2e8f0" }}
+            >
+              <ArrowLeft size={17} strokeWidth={2.5} />
+            </button>
+            <h2 className="text-base font-black text-slate-900">Filters</h2>
+          </div>
+        </div>
+      </div>
       <div className="flex-1 overflow-y-auto px-4 py-6 max-w-2xl mx-auto w-full">
         <FilterSection
           label="Subject"

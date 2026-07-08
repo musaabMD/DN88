@@ -1,6 +1,5 @@
 "use client";
 
-import { UserAuthControls } from "@/components/UserAuthControls";
 import { useRouter } from "next/navigation";
 import { useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import {
@@ -1848,7 +1847,6 @@ function BrowseHeader({
                 </span>
               )}
             </button>
-            <UserAuthControls compact />
           </div>
         </div>
 
