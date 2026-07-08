@@ -112,6 +112,7 @@ export function BrowseHeader({
   onDailyOpen,
   onUpgradeOpen,
   onFilterOpen,
+  hideFilterButton = false,
 }: {
   search: string;
   setSearch: (value: string) => void;
@@ -124,6 +125,7 @@ export function BrowseHeader({
   onDailyOpen: () => void;
   onUpgradeOpen: () => void;
   onFilterOpen: () => void;
+  hideFilterButton?: boolean;
 }) {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white">
@@ -186,7 +188,7 @@ export function BrowseHeader({
 
         <div className="mt-3 flex items-center gap-2 md:hidden">
           <SearchField search={search} setSearch={setSearch} className="flex-1" />
-          {totalFilters === 0 ? (
+          {totalFilters === 0 && !hideFilterButton ? (
             <button
               type="button"
               onClick={onFilterOpen}

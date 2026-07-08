@@ -2,15 +2,27 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { BottomTabBar } from "@/components/BottomTabBar";
+import { BrowseHeader } from "@/components/BrowseHeader";
 import {
-  DEFAULT_TAB,
-  examTabPath,
-} from "@/lib/routes";
+  BROWSE_DAILY_LIMIT,
+  BROWSE_DAILY_USED,
+  BROWSE_STREAK,
+  DailyPopup,
+  StatsPopup,
+} from "@/components/BrowseGamificationPopups";
+import { saveCurrentExamId } from "@/lib/current-exam";
 import {
+  countBrowseFilters,
   loadBrowseFilters,
   saveBrowseFilters,
 } from "@/lib/browse-filters";
+import {
+  DEFAULT_TAB,
+  examTabPath,
+  UPGRADE_PATH,
+  type ContentTab,
+} from "@/lib/routes";
 
 const SUBJECTS = [
   "Anatomy",
@@ -41,11 +53,21 @@ const TAGS = [
   "Week 4",
 ];
 
+const PAGE_SHELL =
+  "w-full max-w-2xl mx-auto px-4 md:max-w-none md:mx-0 md:px-8 lg:px-12 xl:px-16";
+
 export function ExamFiltersClient({ examId }: { examId: string }) {
   const router = useRouter();
+  const [search, setSearch] = useState("");
+  const [statsOpen, setStatsOpen] = useState(false);
+  const [dailyOpen, setDailyOpen] = useState(false);
   const [subjects, setSubjects] = useState<Set<string>>(new Set());
   const [statuses, setStatuses] = useState<Set<string>>(new Set());
   const [tags, setTags] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    saveCurrentExamId(examId);
+  }, [examId]);
 
   useEffect(() => {
     const saved = loadBrowseFilters();
@@ -53,6 +75,14 @@ export function ExamFiltersClient({ examId }: { examId: string }) {
     setStatuses(new Set(saved.statuses));
     setTags(new Set(saved.tags));
   }, []);
+
+  const totalFilters = countBrowseFilters({
+    subjects: [...subjects],
+    statuses: [...statuses],
+    tags: [...tags],
+  });
+
+  const dailyRemaining = BROWSE_DAILY_LIMIT - BROWSE_DAILY_USED;
 
   const toggle = (
     setter: React.Dispatch<React.SetStateAction<Set<string>>>,
@@ -65,8 +95,6 @@ export function ExamFiltersClient({ examId }: { examId: string }) {
       return next;
     });
 
-  const totalActive = subjects.size + statuses.size + tags.size;
-
   const applyFilters = () => {
     saveBrowseFilters({
       subjects: [...subjects],
@@ -76,23 +104,30 @@ export function ExamFiltersClient({ examId }: { examId: string }) {
     router.push(examTabPath(examId, DEFAULT_TAB));
   };
 
+  const handleTabChange = (tab: ContentTab) => {
+    router.push(examTabPath(examId, tab));
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white">
-      <div className="bg-white" style={{ borderBottom: "3px solid #e2e8f0" }}>
-        <div className="mx-auto flex h-16 max-w-2xl items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.push(examTabPath(examId, DEFAULT_TAB))}
-              className="flex h-9 w-9 items-center justify-center rounded-xl"
-              style={{ background: "#f1f5f9", border: "2px solid #e2e8f0" }}
-            >
-              <ArrowLeft size={17} strokeWidth={2.5} />
-            </button>
-            <h2 className="text-base font-black text-slate-900">Filters</h2>
-          </div>
-        </div>
-      </div>
-      <div className="mx-auto w-full max-w-2xl flex-1 overflow-y-auto px-4 py-6">
+    <div className="min-h-screen bg-white font-sans pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:pb-8">
+      <BrowseHeader
+        search={search}
+        setSearch={setSearch}
+        activeTab={DEFAULT_TAB}
+        onTabChange={handleTabChange}
+        totalFilters={totalFilters}
+        streak={BROWSE_STREAK}
+        dailyRemaining={dailyRemaining}
+        onStatsOpen={() => setStatsOpen(true)}
+        onDailyOpen={() => setDailyOpen(true)}
+        onUpgradeOpen={() => router.push(UPGRADE_PATH)}
+        onFilterOpen={() => {}}
+        hideFilterButton
+      />
+
+      <main className={`${PAGE_SHELL} py-4`}>
+        <h1 className="mb-6 text-xl font-black text-slate-900">Filters</h1>
+
         <FilterSection
           label="Subject"
           options={SUBJECTS}
@@ -111,20 +146,36 @@ export function ExamFiltersClient({ examId }: { examId: string }) {
           selected={tags}
           onToggle={(v) => toggle(setTags, v)}
         />
-      </div>
-      <div className="border-t-2 border-slate-200 bg-white px-4 py-4">
+
         <button
           onClick={applyFilters}
-          className="mx-auto block w-full max-w-2xl rounded-2xl py-4 font-black text-white"
+          className="mt-2 w-full rounded-2xl py-4 font-black text-white"
           style={{
             background: "#58CC02",
             border: "2px solid #46A302",
             boxShadow: "0 4px 0 #46A302",
           }}
         >
-          {totalActive > 0 ? `Apply ${totalActive} filter(s)` : "Show all"}
+          {totalFilters > 0 ? `Apply ${totalFilters} filter(s)` : "Show all"}
         </button>
-      </div>
+      </main>
+
+      <BottomTabBar />
+
+      {statsOpen ? (
+        <StatsPopup streak={BROWSE_STREAK} onClose={() => setStatsOpen(false)} />
+      ) : null}
+      {dailyOpen ? (
+        <DailyPopup
+          used={BROWSE_DAILY_USED}
+          limit={BROWSE_DAILY_LIMIT}
+          onUpgrade={() => {
+            setDailyOpen(false);
+            router.push(UPGRADE_PATH);
+          }}
+          onClose={() => setDailyOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -151,6 +202,7 @@ function FilterSection({
           return (
             <button
               key={option}
+              type="button"
               onClick={() => onToggle(option)}
               className="rounded-2xl border-2 px-4 py-2 text-sm font-bold"
               style={

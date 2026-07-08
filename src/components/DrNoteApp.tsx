@@ -26,6 +26,7 @@ import {
   loadBrowseFilters,
   type BrowseFilters,
 } from "@/lib/browse-filters";
+import { saveCurrentExamId } from "@/lib/current-exam";
 import { getTileColors } from "@/lib/tile-colors";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -1745,6 +1746,10 @@ export default function DrNoteApp({
     statuses: [],
     tags: [],
   });
+
+  useEffect(() => {
+    saveCurrentExamId(examId);
+  }, [examId]);
 
   useEffect(() => {
     setBrowseFilters(loadBrowseFilters());

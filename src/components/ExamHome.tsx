@@ -7,6 +7,7 @@ import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { PricingModal } from "@/components/PricingModal";
 import { UserAuthControls } from "@/components/UserAuthControls";
 import { EXAMS, type Exam } from "@/lib/exams";
+import { saveCurrentExamId } from "@/lib/current-exam";
 import { examPath } from "@/lib/routes";
 import { getTileColors } from "@/lib/tile-colors";
 
@@ -66,19 +67,20 @@ function ExamHero({
         ?
       </span>
 
-      <div className="relative">
-        <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#46A302] px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
+      <div className="relative mx-auto max-w-2xl text-center">
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#46A302] px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
           <GraduationCap size={14} strokeWidth={2.5} />
-          Exam prep
+          Medical board prep
         </div>
 
         <h1 className="text-2xl font-black leading-tight tracking-tight text-white sm:text-4xl">
-          Which exam are you
-          <br />
-          studying for?
+          Choose your exam
         </h1>
+        <p className="mx-auto mt-2 max-w-sm text-sm font-bold text-green-100 sm:text-base">
+          Pick the test you&apos;re studying for and start practicing
+        </p>
 
-        <div className="mt-6 flex max-w-md items-center gap-3 rounded-2xl border-b-4 border-[#3a8200] bg-white px-4 py-3">
+        <div className="mx-auto mt-6 flex max-w-md items-center gap-3 rounded-2xl border-b-4 border-[#3a8200] bg-white px-4 py-3">
           <Search size={20} strokeWidth={2.5} className="shrink-0 text-slate-400" />
           <input
             value={query}
@@ -98,6 +100,7 @@ function ExamCard({ exam }: { exam: Exam }) {
   return (
     <Link
       href={examPath(exam.id)}
+      onClick={() => saveCurrentExamId(exam.id)}
       className="group flex w-full items-center gap-4 rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4 text-left transition-colors duration-150 hover:bg-slate-50 active:translate-y-0.5 active:border-b-2"
     >
       <div

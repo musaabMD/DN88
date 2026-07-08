@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   SignedIn,
   SignedOut,
@@ -8,7 +9,8 @@ import {
   UserButton,
 } from "@clerk/clerk-react";
 import { useClientMounted, useClerkEnabled } from "@/hooks/useClerkEnabled";
-import { HOME_PATH } from "@/lib/routes";
+import { getDashboardExamId } from "@/lib/current-exam";
+import { examPath } from "@/lib/routes";
 
 function GuestAuthControls({ compact = false }: { compact?: boolean }) {
   return (
@@ -19,12 +21,15 @@ function GuestAuthControls({ compact = false }: { compact?: boolean }) {
 }
 
 function ClerkUserAuthControls({ compact = false }: { compact?: boolean }) {
+  const pathname = usePathname();
+  const dashboardHref = examPath(getDashboardExamId(pathname));
+
   return (
     <>
       <SignedIn>
         {!compact && (
           <Link
-            href={HOME_PATH}
+            href={dashboardHref}
             className="hidden max-w-[120px] truncate text-sm font-bold text-[#4B4B4B] hover:text-[#58CC02] sm:inline"
           >
             Dashboard
