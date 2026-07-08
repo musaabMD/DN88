@@ -43,6 +43,8 @@ The legacy OpenNext Worker **`drnote-app-v1`** still owns `drnote.co`. The new a
 3. **Remove** `drnote.co` and `www.drnote.co` from this Worker
 4. **Workers & Pages** → **dn88** → **Custom domains** → confirm `drnote.co` is **Active**
 
+**Redirect loop** (`drnote.co` keeps reloading): also remove `drnote.co` from **`new-drnote-redirect`** (Settings → Domains & Routes), and check **Rules → Redirect Rules** for any rule on `drnote.co`.
+
 CI runs `scripts/attach-pages-custom-domains.sh` on each deploy. For automatic Worker cleanup, give `CLOUDFLARE_API_TOKEN` these permissions:
 
 - Account → Cloudflare Pages → Edit

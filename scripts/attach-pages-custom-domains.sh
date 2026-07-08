@@ -6,6 +6,7 @@ ACCOUNT_ID="${CLOUDFLARE_ACCOUNT_ID:?CLOUDFLARE_ACCOUNT_ID is required}"
 API_TOKEN="${CLOUDFLARE_API_TOKEN:?CLOUDFLARE_API_TOKEN is required}"
 PROJECT_NAME="${PAGES_PROJECT_NAME:-dn88}"
 LEGACY_WORKER="${LEGACY_WORKER_NAME:-drnote-app-v1}"
+LEGACY_WORKERS=("${LEGACY_WORKER}" "new-drnote-redirect")
 DOMAINS=("drnote.co" "www.drnote.co")
 
 api() {
@@ -36,22 +37,25 @@ json_field() {
   python3 -c "import json,sys; print(json.load(sys.stdin).get('result',{}).get('${field}',''))" 2>/dev/null
 }
 
-echo "Step 1: Detach drnote.co from legacy Worker (${LEGACY_WORKER})..."
+echo "Step 1: Detach drnote.co from legacy Workers (${LEGACY_WORKERS[*]})..."
 worker_domains_json="$(api GET "/accounts/${ACCOUNT_ID}/workers/domains" 2>/dev/null || echo '{"success":false,"result":[]}')"
 
 if [[ "$(echo "$worker_domains_json" | json_success)" != "True" ]]; then
   echo "  Could not list Worker domains (token may need Workers Scripts:Read)."
-  echo "  Trying to delete legacy worker script ${LEGACY_WORKER}..."
-  if api DELETE "/accounts/${ACCOUNT_ID}/workers/scripts/${LEGACY_WORKER}" >/dev/null 2>&1; then
-    echo "  Deleted legacy worker ${LEGACY_WORKER}."
-  else
+  echo "  Trying to delete legacy worker scripts..."
+  for worker in "${LEGACY_WORKERS[@]}"; do
+    if api DELETE "/accounts/${ACCOUNT_ID}/workers/scripts/${worker}" >/dev/null 2>&1; then
+      echo "  Deleted legacy worker ${worker}."
+    fi
+  done
   echo ""
   echo "  MANUAL FIX REQUIRED:"
-  echo "  1. Cloudflare Dashboard → Workers & Pages → ${LEGACY_WORKER}"
-  echo "  2. Settings → Domains & Routes → Remove drnote.co and www.drnote.co"
-  echo "  3. Or delete the ${LEGACY_WORKER} worker entirely"
+  for worker in "${LEGACY_WORKERS[@]}"; do
+    echo "  - Workers & Pages → ${worker} → Settings → Domains & Routes → Remove drnote.co"
+  done
+  echo "  - Workers & Pages → dn88 → Custom domains → drnote.co should be Active"
+  echo "  - If you see a redirect loop, check Rules → Redirect Rules for drnote.co"
   echo ""
-  fi
 else
   for domain in "${DOMAINS[@]}"; do
     domain_id="$(echo "$worker_domains_json" | python3 -c "
