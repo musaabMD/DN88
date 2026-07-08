@@ -33,6 +33,7 @@ jobs:
         run: npm run build
         env:
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_CLERK_DOMAIN: drnote.co
           NEXT_PUBLIC_DN88_API_URL: ${{ secrets.NEXT_PUBLIC_DN88_API_URL }}
 
       - name: Deploy to Cloudflare Pages

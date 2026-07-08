@@ -3,14 +3,15 @@
 import { ClerkProvider } from "@clerk/clerk-react";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { isClerkConfigured } from "@/lib/clerk";
+import { useClerkEnabled } from "@/hooks/useClerkEnabled";
 import { HOME_PATH } from "@/lib/routes";
 
 export function ClerkProviderWrapper({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const clerkEnabled = useClerkEnabled();
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
-  if (!isClerkConfigured() || !publishableKey) {
+  if (!clerkEnabled || !publishableKey) {
     return <>{children}</>;
   }
 

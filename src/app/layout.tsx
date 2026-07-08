@@ -13,6 +13,7 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://drnote.co"),
   title: "DrNote",
   description: "Study smarter with DrNote",
 };

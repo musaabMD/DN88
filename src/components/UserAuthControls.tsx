@@ -7,7 +7,7 @@ import {
   UserButton,
   useUser,
 } from "@clerk/clerk-react";
-import { isClerkConfigured } from "@/lib/clerk";
+import { useClientMounted, useClerkEnabled } from "@/hooks/useClerkEnabled";
 
 function GuestAuthControls({ compact = false }: { compact?: boolean }) {
   return (
@@ -55,7 +55,10 @@ function ClerkUserAuthControls({ compact = false }: { compact?: boolean }) {
 }
 
 export function UserAuthControls({ compact = false }: { compact?: boolean }) {
-  if (!isClerkConfigured()) {
+  const clerkEnabled = useClerkEnabled();
+  const mounted = useClientMounted();
+
+  if (!mounted || !clerkEnabled) {
     return <GuestAuthControls compact={compact} />;
   }
 
