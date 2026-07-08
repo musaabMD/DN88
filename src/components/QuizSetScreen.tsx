@@ -290,7 +290,9 @@ export function QuizSetScreen({
       <div className="mx-auto max-w-md px-5 py-6">
         <div className="rounded-2xl border-2 border-b-4 border-[#E5E5E5] bg-white p-4">
           <div className="flex items-center justify-between text-[13px] font-extrabold uppercase tracking-wide">
-            <span className="text-[#AFAFAF]">{data.items} questions</span>
+            <span className="text-[#AFAFAF]">
+              {data.items} {data.itemLabel}
+            </span>
             <span>
               <span style={{ color: progressColor }}>{data.progress}%</span>
               <span className="text-[#AFAFAF]"> · best </span>
@@ -307,7 +309,7 @@ export function QuizSetScreen({
 
         <div className="mt-6">
           <BigButton
-            label="Resume"
+            label={data.contentTab === "flashcards" ? "Study cards" : data.contentTab === "summary" ? "Read notes" : data.contentTab === "images" ? "View images" : "Resume"}
             icon={Play}
             color={C.green}
             edge={C.greenDark}
@@ -315,6 +317,7 @@ export function QuizSetScreen({
           />
         </div>
 
+        {data.contentTab === "questions" ? (
         <div className="mt-6 grid grid-cols-2 gap-3">
           <Tile
             icon={Zap}
@@ -367,6 +370,36 @@ export function QuizSetScreen({
             onClick={shareSet}
           />
         </div>
+        ) : (
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          {data.contentTab === "flashcards" && (
+            <Tile
+              icon={Zap}
+              color={C.yellow}
+              title="Quick 10"
+              onClick={() => goQuiz({ mode: "quick", count: Math.min(10, data.items) })}
+            />
+          )}
+          <Tile
+            icon={RotateCcw}
+            color={C.blue}
+            title="Start over"
+            onClick={() => goQuiz({ mode: "restart" })}
+          />
+          <Tile
+            icon={BarChart3}
+            color={C.green}
+            title="Results"
+            onClick={() => router.push(resultsPath(examId, tab, setId))}
+          />
+          <Tile
+            icon={Share2}
+            color={C.purple}
+            title="Share"
+            onClick={shareSet}
+          />
+        </div>
+        )}
 
         <button
           onClick={onReport}
@@ -377,6 +410,8 @@ export function QuizSetScreen({
         </button>
       </div>
 
+      {data.contentTab === "questions" && (
+      <>
       <Modal open={modal === "timed"} onClose={() => setModal(null)}>
         <ModalHeader
           icon={Timer}
@@ -482,6 +517,8 @@ export function QuizSetScreen({
           />
         </div>
       </Modal>
+      </>
+      )}
     </div>
   );
 }

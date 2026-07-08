@@ -9,14 +9,17 @@ import {
 import { ReportSheet } from "@/components/ReportSheet";
 import { SessionPauseModal } from "@/components/SessionPauseModal";
 import { CitationList } from "@/components/tool-ui/citation";
-import type { StudySet } from "@/lib/mock-data";
+import type { StudySet } from "@/lib/set-content";
 import {
-  SAMPLE_FLASHCARDS,
-  SAMPLE_IMAGES,
-  SAMPLE_QUESTIONS,
-  SAMPLE_SUMMARIES,
+  getSessionItems,
+  resolveSessionSetId,
+  resolveSessionTab,
   sessionItemCount,
-} from "@/lib/mock-data";
+  type FlashcardItem,
+  type ImageItem,
+  type NoteItem,
+  type QuestionItem,
+} from "@/lib/set-content";
 import type { QuizSearchParams } from "@/lib/routes";
 import {
   Bookmark,
@@ -95,7 +98,7 @@ function LessonQuestionView({
   q,
   onAnswer,
 }: {
-  q: (typeof SAMPLE_QUESTIONS)[0];
+  q: QuestionItem;
   onAnswer: (correct: boolean) => void;
 }) {
   const [selected, setSelected] = useState<number | null>(null);
@@ -202,7 +205,7 @@ function LessonQuestionView({
           <p className="text-base md:text-lg font-medium text-green-950 leading-relaxed">
             {q.explanation}
           </p>
-          {citations.length > 0 && (
+          {citations && citations.length > 0 && (
             <CitationList
               id={`citation-list-q${q.id}`}
               citations={citations}
@@ -215,7 +218,7 @@ function LessonQuestionView({
   );
 }
 
-function SummaryCard({ s }: { s: (typeof SAMPLE_SUMMARIES)[0] }) {
+function SummaryCard({ s }: { s: NoteItem }) {
   const [expanded, setExpanded] = useState(false);
   const preview = s.bullets.slice(0, 2);
   const rest = s.bullets.slice(2);
@@ -274,7 +277,7 @@ function SummaryCard({ s }: { s: (typeof SAMPLE_SUMMARIES)[0] }) {
   );
 }
 
-function ImageCard({ img }: { img: (typeof SAMPLE_IMAGES)[0] }) {
+function ImageCard({ img }: { img: ImageItem }) {
   return (
     <div
       className="bg-white rounded-3xl mb-3 overflow-hidden"
@@ -298,7 +301,7 @@ function ImageCard({ img }: { img: (typeof SAMPLE_IMAGES)[0] }) {
   );
 }
 
-function FlashCard({ card }: { card: (typeof SAMPLE_FLASHCARDS)[0] }) {
+function FlashCard({ card }: { card: FlashcardItem }) {
   const [flipped, setFlipped] = useState(false);
 
   return (
@@ -370,7 +373,10 @@ export function SetSessionView({
   onClose: () => void;
   onComplete: () => void;
 }) {
-  const total = sessionItemCount(tab);
+  const contentTab = resolveSessionTab(tab, set);
+  const contentSetId = resolveSessionSetId(tab, set);
+  const sessionItems = getSessionItems(contentTab, contentSetId);
+  const total = sessionItemCount(contentTab, contentSetId);
   const [page, setPage] = useState(() => initialPage(set, total, quizParams));
   const [answeredPage, setAnsweredPage] = useState<number | null>(null);
   const currentAnswered = answeredPage === page;
@@ -384,7 +390,9 @@ export function SetSessionView({
   const progressPct = total > 0 ? (page / total) * 100 : 0;
 
   const currentQuestion =
-    tab === "questions" ? SAMPLE_QUESTIONS[idx] : undefined;
+    contentTab === "questions"
+      ? (sessionItems[idx] as QuestionItem | undefined)
+      : undefined;
   const chatKey =
     currentQuestion !== undefined ? `${set.id}:${currentQuestion.id}` : "";
 
@@ -407,7 +415,7 @@ export function SetSessionView({
   };
 
   const goNext = () => {
-    if (tab === "questions" && !currentAnswered) return;
+    if (contentTab === "questions" && !currentAnswered) return;
     setChatOpen(false);
     if (page < total) {
       setPage(page + 1);
@@ -435,8 +443,8 @@ export function SetSessionView({
   };
 
   const renderSlide = () => {
-    if (tab === "questions") {
-      const q = SAMPLE_QUESTIONS[idx];
+    if (contentTab === "questions") {
+      const q = sessionItems[idx] as QuestionItem | undefined;
       if (!q) return null;
       return (
         <LessonQuestionView
@@ -448,18 +456,18 @@ export function SetSessionView({
         />
       );
     }
-    if (tab === "summary") {
-      const s = SAMPLE_SUMMARIES[idx];
+    if (contentTab === "summary") {
+      const s = sessionItems[idx] as NoteItem | undefined;
       if (!s) return null;
       return <SummaryCard s={s} />;
     }
-    if (tab === "images") {
-      const img = SAMPLE_IMAGES[idx];
+    if (contentTab === "images") {
+      const img = sessionItems[idx] as ImageItem | undefined;
       if (!img) return null;
       return <ImageCard img={img} />;
     }
-    if (tab === "flashcards") {
-      const card = SAMPLE_FLASHCARDS[idx];
+    if (contentTab === "flashcards") {
+      const card = sessionItems[idx] as FlashcardItem | undefined;
       if (!card) return null;
       return (
         <div className="flex items-center justify-center py-4">
@@ -531,7 +539,7 @@ export function SetSessionView({
             >
               <ChevronLeft size={20} strokeWidth={2.5} />
             </SessionNavButton>
-            {tab === "questions" && (
+            {contentTab === "questions" && (
               <SessionNavButton
                 onClick={() => setReportOpen(true)}
                 ariaLabel="Report issue"
@@ -554,7 +562,7 @@ export function SetSessionView({
             >
               <Pause size={16} strokeWidth={2.5} />
             </SessionNavButton>
-            {tab === "questions" && (
+            {contentTab === "questions" && (
               <SessionNavButton
                 onClick={openChat}
                 ariaLabel="Explain with AI"
@@ -565,8 +573,16 @@ export function SetSessionView({
             )}
             <SessionNavButton
               onClick={goNext}
-              disabled={tab === "questions" && !currentAnswered}
-              ariaLabel="Next question"
+              disabled={contentTab === "questions" && !currentAnswered}
+              ariaLabel={
+                contentTab === "flashcards"
+                  ? "Next card"
+                  : contentTab === "images"
+                    ? "Next image"
+                    : contentTab === "summary"
+                      ? "Next note"
+                      : "Next question"
+              }
               variant="primary"
             >
               <ChevronRight size={20} strokeWidth={2.5} />

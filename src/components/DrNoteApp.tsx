@@ -3,13 +3,19 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import {
-  SAMPLE_FLASHCARDS,
-  SAMPLE_IMAGES,
-  SAMPLE_QUESTIONS,
-  SAMPLE_SUMMARIES,
+  getSessionItems,
+  resolveSessionSetId,
+  resolveSessionTab,
+  sessionItemCount,
   SETS_BY_TAB,
+  TAB_ITEM_LABEL,
+  TAB_SET_LABEL,
+  type FlashcardItem,
+  type ImageItem,
+  type NoteItem,
+  type QuestionItem,
   type StudySet,
-} from "@/lib/mock-data";
+} from "@/lib/set-content";
 import {
   examTabPath,
   filtersPath,
@@ -95,22 +101,6 @@ const TAGS = [
 
 const DAILY_LIMIT = 20;
 const DAILY_USED = 13;
-
-const TAB_SET_LABEL: Record<string, string> = {
-  questions: "practice sets",
-  summary: "note sets",
-  images: "image sets",
-  flashcards: "card sets",
-  library: "sets",
-};
-
-const TAB_ITEM_LABEL: Record<string, string> = {
-  questions: "questions",
-  summary: "notes",
-  images: "images",
-  flashcards: "cards",
-  library: "items",
-};
 
 function filterSets(
   sets: StudySet[],
@@ -234,6 +224,11 @@ function SetCard({
   const mastery = setMastery(set);
   const started = mastery > 0;
 
+  const itemLabel =
+    tab === "library" && set.sourceTab
+      ? TAB_ITEM_LABEL[set.sourceTab]
+      : TAB_ITEM_LABEL[tab] ?? "items";
+
   return (
     <button
       type="button"
@@ -250,7 +245,7 @@ function SetCard({
           <p className="mt-1 flex items-center gap-1.5 text-sm font-bold text-slate-400">
             <Layers size={14} strokeWidth={2.5} />
             <span className="tabular-nums">
-              {set.upvotes.toLocaleString()} {TAB_ITEM_LABEL[tab] ?? "items"}
+              {set.total.toLocaleString()} {itemLabel}
             </span>
           </p>
         </div>
@@ -388,7 +383,7 @@ function QuestionCard({
   q,
   onSidebar,
 }: {
-  q: (typeof SAMPLE_QUESTIONS)[0];
+  q: QuestionItem;
   onSidebar: (m: SidebarMode) => void;
 }) {
   const [selected, setSelected] = useState<number | null>(null);
@@ -626,7 +621,7 @@ function LessonQuestionView({
   q,
   onAnswer,
 }: {
-  q: (typeof SAMPLE_QUESTIONS)[0];
+  q: QuestionItem;
   onAnswer: (correct: boolean) => void;
 }) {
   const [selected, setSelected] = useState<number | null>(null);
@@ -733,7 +728,7 @@ function LessonQuestionView({
           <p className="text-base md:text-lg font-medium text-green-950 leading-relaxed">
             {q.explanation}
           </p>
-          {citations.length > 0 && (
+          {citations && citations.length > 0 && (
             <CitationList
               id={`citation-list-q${q.id}`}
               citations={citations}
@@ -789,7 +784,7 @@ function SessionSlideShell({
   );
 }
 
-function SummaryCard({ s }: { s: (typeof SAMPLE_SUMMARIES)[0] }) {
+function SummaryCard({ s }: { s: NoteItem }) {
   const [expanded, setExpanded] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const preview = s.bullets.slice(0, 2);
@@ -889,7 +884,7 @@ function SummaryCard({ s }: { s: (typeof SAMPLE_SUMMARIES)[0] }) {
   );
 }
 
-function ImageCard({ img }: { img: (typeof SAMPLE_IMAGES)[0] }) {
+function ImageCard({ img }: { img: ImageItem }) {
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
 
@@ -955,7 +950,7 @@ function ImageCard({ img }: { img: (typeof SAMPLE_IMAGES)[0] }) {
   );
 }
 
-function FlashCard({ card }: { card: (typeof SAMPLE_FLASHCARDS)[0] }) {
+function FlashCard({ card }: { card: FlashcardItem }) {
   const [flipped, setFlipped] = useState(false);
 
   return (
@@ -1052,52 +1047,6 @@ function FlashCard({ card }: { card: (typeof SAMPLE_FLASHCARDS)[0] }) {
   );
 }
 
-function SetContent({
-  tab,
-  onSidebar,
-}: {
-  tab: string;
-  onSidebar: (m: SidebarMode, text?: string) => void;
-}) {
-  if (tab === "questions")
-    return (
-      <>
-        {SAMPLE_QUESTIONS.map((q) => (
-          <QuestionCard
-            key={q.id}
-            q={q}
-            onSidebar={(m) => onSidebar(m, q.text)}
-          />
-        ))}
-      </>
-    );
-  if (tab === "summary")
-    return (
-      <>
-        {SAMPLE_SUMMARIES.map((s) => (
-          <SummaryCard key={s.id} s={s} />
-        ))}
-      </>
-    );
-  if (tab === "images")
-    return (
-      <>
-        {SAMPLE_IMAGES.map((img) => (
-          <ImageCard key={img.id} img={img} />
-        ))}
-      </>
-    );
-  if (tab === "flashcards")
-    return (
-      <>
-        {SAMPLE_FLASHCARDS.map((c) => (
-          <FlashCard key={c.id} card={c} />
-        ))}
-      </>
-    );
-  return null;
-}
-
 function TabContent({
   tab,
   onOpenSet,
@@ -1110,18 +1059,18 @@ function TabContent({
   filters: BrowseFilters;
 }) {
   if (tab === "library") {
+    const sets = filterSets(SETS_BY_TAB.library ?? [], search, filters);
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center px-6">
-        <div className="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center mb-5">
-          <BookOpen size={28} className="text-slate-300" strokeWidth={1.5} />
+      <>
+        <p className="mb-3 px-1 text-xs font-black uppercase tracking-widest text-slate-400">
+          {sets.length} saved sets
+        </p>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {sets.map((set) => (
+            <SetCard key={set.id} set={set} tab={tab} onOpen={() => onOpenSet(set)} />
+          ))}
         </div>
-        <p className="text-base font-black text-slate-700 mb-1">
-          Library coming soon
-        </p>
-        <p className="text-sm text-slate-400 font-medium">
-          Your saved materials will appear here.
-        </p>
-      </div>
+      </>
     );
   }
 
