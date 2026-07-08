@@ -15,5 +15,5 @@ export function isClerkConfigured(): boolean {
   ];
   if (placeholders.some((p) => key.toLowerCase().includes(p))) return false;
 
-  return /^pk_(test|live)_[a-zA-Z0-9]+$/.test(key);
+  return /^pk_(test|live)_[a-zA-Z0-9_$]+$/.test(key) && key.length > 20;
 }
