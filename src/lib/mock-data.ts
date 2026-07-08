@@ -1,4 +1,5 @@
 import type { SerializableCitation } from "@/components/tool-ui/citation";
+import { EXAMS } from "@/lib/exams";
 
 export type StudySet = {
   id: string;
@@ -296,9 +297,15 @@ export function getSetById(tab: string, setId: string): StudySet | undefined {
   return (SETS_BY_TAB[tab] ?? []).find((set) => set.id === setId);
 }
 
-export function getAllSetStaticParams(): Array<{ tab: string; setId: string }> {
-  return Object.entries(SETS_BY_TAB).flatMap(([tab, sets]) =>
-    sets.map((set) => ({ tab, setId: set.id }))
+export function getAllSetStaticParams(): Array<{
+  examId: string;
+  tab: string;
+  setId: string;
+}> {
+  return EXAMS.flatMap((exam) =>
+    Object.entries(SETS_BY_TAB).flatMap(([tab, sets]) =>
+      sets.map((set) => ({ examId: exam.id, tab, setId: set.id }))
+    )
   );
 }
 

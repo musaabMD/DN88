@@ -2,23 +2,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { DEFAULT_EXAM_ID } from "@/lib/exams";
 import { NAV_TABS } from "@/lib/nav-tabs";
-import { HOME_PATH, tabPath, type ContentTab } from "@/lib/routes";
+import {
+  activeTabFromPathname,
+  examIdFromPathname,
+  examTabPath,
+  type ContentTab,
+} from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
-function tabHref(tab: ContentTab): string {
-  return tab === "questions" ? HOME_PATH : tabPath(tab);
-}
-
-function activeTabFromPath(pathname: string): ContentTab {
-  const segment = pathname.split("/").filter(Boolean)[0];
-  const match = NAV_TABS.find((tab) => tab.id === segment);
-  return match?.id ?? "questions";
+function tabHref(examId: string, tab: ContentTab): string {
+  return examTabPath(examId, tab);
 }
 
 export function BottomTabBar() {
   const pathname = usePathname();
-  const activeTab = activeTabFromPath(pathname);
+  const examId = examIdFromPathname(pathname) ?? DEFAULT_EXAM_ID;
+  const activeTab = activeTabFromPathname(pathname);
 
   return (
     <nav
@@ -33,7 +34,7 @@ export function BottomTabBar() {
           return (
             <Link
               key={tab.id}
-              href={tabHref(tab.id)}
+              href={tabHref(examId, tab.id)}
               className={cn(
                 "flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-1 py-2 transition-colors",
                 active ? "text-[#58CC02]" : "text-slate-400"

@@ -4,12 +4,14 @@ import { useRouter } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
 import { SessionReportView } from "@/components/SessionReportView";
 import { getSessionReportData, getSetById } from "@/lib/mock-data";
-import { quizPath, setPath, tabPath, type ContentTab } from "@/lib/routes";
+import { examTabPath, quizPath, setPath, type ContentTab } from "@/lib/routes";
 
 export function SetResultsPage({
+  examId,
   tab,
   setId,
 }: {
+  examId: string;
   tab: ContentTab;
   setId: string;
 }) {
@@ -22,7 +24,7 @@ export function SetResultsPage({
         <div>
           <p className="font-bold text-slate-800 mb-2">Set not found</p>
           <button
-            onClick={() => router.push(tabPath(tab))}
+            onClick={() => router.push(examTabPath(examId, tab))}
             className="text-sm font-semibold text-indigo-600"
           >
             Back to sets
@@ -38,7 +40,7 @@ export function SetResultsPage({
     0
   );
 
-  const backToSet = () => router.push(setPath(tab, setId));
+  const backToSet = () => router.push(setPath(examId, tab, setId));
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
@@ -55,7 +57,7 @@ export function SetResultsPage({
           missedCount > 0
             ? () =>
                 router.push(
-                  quizPath(tab, setId, {
+                  quizPath(examId, tab, setId, {
                     mode: "incorrect",
                     count: missedCount,
                   })

@@ -6,9 +6,11 @@ import { QuizSessionPage } from "@/components/QuizSessionPage";
 import type { ContentTab } from "@/lib/routes";
 
 export function QuizSessionClient({
+  examId,
   tab,
   setId,
 }: {
+  examId: string;
   tab: ContentTab;
   setId: string;
 }) {
@@ -22,5 +24,5 @@ export function QuizSessionClient({
     return record;
   }, [searchParams]);
 
-  return <QuizSessionPage tab={tab} setId={setId} searchParams={sp} />;
+  return <QuizSessionPage examId={examId} tab={tab} setId={setId} searchParams={sp} />;
 }

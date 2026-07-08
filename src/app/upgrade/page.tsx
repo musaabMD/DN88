@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Crown, X } from "lucide-react";
 import { useState } from "react";
-import { tabPath, DEFAULT_TAB } from "@/lib/routes";
+import { HOME_PATH } from "@/lib/routes";
 
 export default function UpgradePage() {
   const router = useRouter();
@@ -20,7 +20,7 @@ export default function UpgradePage() {
           <span className="font-black text-slate-900 text-base">Upgrade</span>
         </div>
         <button
-          onClick={() => router.push(tabPath(DEFAULT_TAB))}
+          onClick={() => router.push(HOME_PATH)}
           className="w-8 h-8 rounded-xl flex items-center justify-center"
           style={{ background: "#f1f5f9", border: "2px solid #e2e8f0" }}
         >

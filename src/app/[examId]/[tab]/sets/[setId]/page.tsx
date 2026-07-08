@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { SetDetailClient } from "@/components/SetDetailClient";
 import { getAllSetStaticParams, getSetById } from "@/lib/mock-data";
+import { isValidExamId } from "@/lib/exams";
 import { isValidTab } from "@/lib/routes";
 
 export function generateStaticParams() {
@@ -10,9 +11,15 @@ export function generateStaticParams() {
 export default async function SetDetailPage({
   params,
 }: {
-  params: Promise<{ tab: string; setId: string }>;
+  params: Promise<{ examId: string; tab: string; setId: string }>;
 }) {
-  const { tab, setId } = await params;
-  if (!isValidTab(tab) || !getSetById(tab, setId)) notFound();
-  return <SetDetailClient tab={tab} setId={setId} />;
+  const { examId, tab, setId } = await params;
+  if (
+    !isValidExamId(examId) ||
+    !isValidTab(tab) ||
+    !getSetById(tab, setId)
+  ) {
+    notFound();
+  }
+  return <SetDetailClient examId={examId} tab={tab} setId={setId} />;
 }

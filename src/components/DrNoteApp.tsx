@@ -11,10 +11,10 @@ import {
   type StudySet,
 } from "@/lib/mock-data";
 import {
-  FILTERS_PATH,
-  UPGRADE_PATH,
+  examTabPath,
+  filtersPath,
   setPath,
-  tabPath,
+  UPGRADE_PATH,
   type ContentTab,
 } from "@/lib/routes";
 import { CitationList } from "@/components/tool-ui/citation";
@@ -1728,7 +1728,13 @@ function PaginationBar({
   );
 }
 
-export default function DrNoteApp({ tab: activeTab }: { tab: ContentTab }) {
+export default function DrNoteApp({
+  examId,
+  tab: activeTab,
+}: {
+  examId: string;
+  tab: ContentTab;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const [statsOpen, setStatsOpen] = useState(false);
@@ -1755,14 +1761,14 @@ export default function DrNoteApp({ tab: activeTab }: { tab: ContentTab }) {
         search={search}
         setSearch={setSearch}
         activeTab={activeTab}
-        onTabChange={(tab) => router.push(tabPath(tab))}
+        onTabChange={(tab) => router.push(examTabPath(examId, tab))}
         totalFilters={totalFilters}
         streak={streak}
         dailyRemaining={dailyRemaining}
         onStatsOpen={() => setStatsOpen(true)}
         onDailyOpen={() => setDailyOpen(true)}
         onUpgradeOpen={() => router.push(UPGRADE_PATH)}
-        onFilterOpen={() => router.push(FILTERS_PATH)}
+        onFilterOpen={() => router.push(filtersPath(examId))}
       />
 
       <main className={`${PAGE_SHELL} py-4`}>
@@ -1770,13 +1776,13 @@ export default function DrNoteApp({ tab: activeTab }: { tab: ContentTab }) {
           tab={activeTab}
           search={search}
           filters={browseFilters}
-          onOpenSet={(s) => router.push(setPath(activeTab, s.id))}
+          onOpenSet={(s) => router.push(setPath(examId, activeTab, s.id))}
         />
       </main>
 
       <FilterFab
         hidden={totalFilters > 0}
-        onClick={() => router.push(FILTERS_PATH)}
+        onClick={() => router.push(filtersPath(examId))}
       />
 
       <BottomTabBar />

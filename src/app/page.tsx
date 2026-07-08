@@ -1,6 +1,5 @@
-import DrNoteApp from "@/components/DrNoteApp";
-import { DEFAULT_TAB } from "@/lib/routes";
+import ExamHome from "@/components/ExamHome";
 
 export default function HomePage() {
-  return <DrNoteApp tab={DEFAULT_TAB} />;
+  return <ExamHome />;
 }

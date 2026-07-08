@@ -6,17 +6,19 @@ import { SetSessionView } from "@/components/SetSessionView";
 import { getSetById } from "@/lib/mock-data";
 import {
   parseQuizSearchParams,
+  examTabPath,
   resultsPath,
   setPath,
-  tabPath,
   type ContentTab,
 } from "@/lib/routes";
 
 export function QuizSessionPage({
+  examId,
   tab,
   setId,
   searchParams,
 }: {
+  examId: string;
   tab: ContentTab;
   setId: string;
   searchParams: Record<string, string | string[] | undefined>;
@@ -34,7 +36,7 @@ export function QuizSessionPage({
         <div>
           <p className="font-bold text-slate-800 mb-2">Set not found</p>
           <button
-            onClick={() => router.push(tabPath(tab))}
+            onClick={() => router.push(examTabPath(examId, tab))}
             className="text-sm font-semibold text-indigo-600"
           >
             Back to sets
@@ -49,8 +51,8 @@ export function QuizSessionPage({
       set={set}
       tab={tab}
       quizParams={quizParams}
-      onClose={() => router.push(setPath(tab, setId))}
-      onComplete={() => router.push(resultsPath(tab, setId))}
+      onClose={() => router.push(setPath(examId, tab, setId))}
+      onComplete={() => router.push(resultsPath(examId, tab, setId))}
     />
   );
 }

@@ -3,7 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import { DEFAULT_TAB, tabPath } from "@/lib/routes";
+import {
+  DEFAULT_TAB,
+  examTabPath,
+} from "@/lib/routes";
 import {
   loadBrowseFilters,
   saveBrowseFilters,
@@ -38,7 +41,7 @@ const TAGS = [
   "Week 4",
 ];
 
-export default function FiltersPage() {
+export function ExamFiltersClient({ examId }: { examId: string }) {
   const router = useRouter();
   const [subjects, setSubjects] = useState<Set<string>>(new Set());
   const [statuses, setStatuses] = useState<Set<string>>(new Set());
@@ -51,7 +54,10 @@ export default function FiltersPage() {
     setTags(new Set(saved.tags));
   }, []);
 
-  const toggle = (setter: React.Dispatch<React.SetStateAction<Set<string>>>, val: string) =>
+  const toggle = (
+    setter: React.Dispatch<React.SetStateAction<Set<string>>>,
+    val: string
+  ) =>
     setter((prev) => {
       const next = new Set(prev);
       if (next.has(val)) next.delete(val);
@@ -67,17 +73,17 @@ export default function FiltersPage() {
       statuses: [...statuses],
       tags: [...tags],
     });
-    router.push(tabPath(DEFAULT_TAB));
+    router.push(examTabPath(examId, DEFAULT_TAB));
   };
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white">
       <div className="bg-white" style={{ borderBottom: "3px solid #e2e8f0" }}>
-        <div className="mx-auto max-w-2xl h-16 flex items-center justify-between px-4">
+        <div className="mx-auto flex h-16 max-w-2xl items-center justify-between px-4">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => router.push(tabPath(DEFAULT_TAB))}
-              className="w-9 h-9 rounded-xl flex items-center justify-center"
+              onClick={() => router.push(examTabPath(examId, DEFAULT_TAB))}
+              className="flex h-9 w-9 items-center justify-center rounded-xl"
               style={{ background: "#f1f5f9", border: "2px solid #e2e8f0" }}
             >
               <ArrowLeft size={17} strokeWidth={2.5} />
@@ -86,7 +92,7 @@ export default function FiltersPage() {
           </div>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto px-4 py-6 max-w-2xl mx-auto w-full">
+      <div className="mx-auto w-full max-w-2xl flex-1 overflow-y-auto px-4 py-6">
         <FilterSection
           label="Subject"
           options={SUBJECTS}
@@ -106,10 +112,10 @@ export default function FiltersPage() {
           onToggle={(v) => toggle(setTags, v)}
         />
       </div>
-      <div className="bg-white py-4 border-t-2 border-slate-200 px-4">
+      <div className="border-t-2 border-slate-200 bg-white px-4 py-4">
         <button
           onClick={applyFilters}
-          className="w-full max-w-2xl mx-auto block text-white font-black py-4 rounded-2xl"
+          className="mx-auto block w-full max-w-2xl rounded-2xl py-4 font-black text-white"
           style={{
             background: "#58CC02",
             border: "2px solid #46A302",
@@ -136,7 +142,7 @@ function FilterSection({
 }) {
   return (
     <div className="mb-7">
-      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">
+      <p className="mb-3 text-xs font-black uppercase tracking-widest text-slate-400">
         {label}
       </p>
       <div className="flex flex-wrap gap-2">
@@ -146,7 +152,7 @@ function FilterSection({
             <button
               key={option}
               onClick={() => onToggle(option)}
-              className="px-4 py-2 rounded-2xl text-sm font-bold border-2"
+              className="rounded-2xl border-2 px-4 py-2 text-sm font-bold"
               style={
                 active
                   ? {

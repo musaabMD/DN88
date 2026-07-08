@@ -18,9 +18,11 @@ import {
 import type { QuizSetScreenData } from "@/lib/mock-data";
 import { AppHeader } from "@/components/AppHeader";
 import {
+  examTabPath,
+  filtersPath,
   quizPath,
   resultsPath,
-  tabPath,
+  setPath,
   type ContentTab,
 } from "@/lib/routes";
 
@@ -239,13 +241,20 @@ function BigValue({ value, suffix }: { value: number; suffix: string }) {
 type ModalKind = null | "timed" | "incorrect" | "flagged" | "mock";
 
 export type QuizSetScreenProps = {
+  examId: string;
   tab: ContentTab;
   setId: string;
   data: QuizSetScreenData;
   onReport?: () => void;
 };
 
-export function QuizSetScreen({ tab, setId, data, onReport }: QuizSetScreenProps) {
+export function QuizSetScreen({
+  examId,
+  tab,
+  setId,
+  data,
+  onReport,
+}: QuizSetScreenProps) {
   const router = useRouter();
   const [modal, setModal] = useState<ModalKind>(null);
   const [timedMinutes, setTimedMinutes] = useState(5);
@@ -257,9 +266,9 @@ export function QuizSetScreen({ tab, setId, data, onReport }: QuizSetScreenProps
   );
   const [mockQuestions, setMockQuestions] = useState(20);
 
-  const goQuiz = (params?: Parameters<typeof quizPath>[2]) => {
+  const goQuiz = (params?: Parameters<typeof quizPath>[3]) => {
     setModal(null);
-    router.push(quizPath(tab, setId, params));
+    router.push(quizPath(examId, tab, setId, params));
   };
 
   const shareSet = () => {
@@ -275,7 +284,7 @@ export function QuizSetScreen({ tab, setId, data, onReport }: QuizSetScreenProps
     <div className="min-h-screen bg-white text-[#4B4B4B] antialiased">
       <AppHeader
         showBack
-        onBack={() => router.push(tabPath(tab))}
+        onBack={() => router.push(examTabPath(examId, tab))}
         title={data.title}
       />
       <div className="mx-auto max-w-md px-5 py-6">
@@ -349,7 +358,7 @@ export function QuizSetScreen({ tab, setId, data, onReport }: QuizSetScreenProps
             icon={BarChart3}
             color={C.green}
             title="Results"
-            onClick={() => router.push(resultsPath(tab, setId))}
+            onClick={() => router.push(resultsPath(examId, tab, setId))}
           />
           <Tile
             icon={Share2}

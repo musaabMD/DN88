@@ -7,9 +7,11 @@ import { getSetById, toQuizSetScreenData } from "@/lib/mock-data";
 import type { ContentTab } from "@/lib/routes";
 
 export function SetDetailClient({
+  examId,
   tab,
   setId,
 }: {
+  examId: string;
   tab: ContentTab;
   setId: string;
 }) {
@@ -19,6 +21,7 @@ export function SetDetailClient({
   return (
     <>
       <QuizSetScreen
+        examId={examId}
         tab={tab}
         setId={setId}
         data={toQuizSetScreenData(set, tab)}

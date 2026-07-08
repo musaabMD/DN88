@@ -1,22 +1,18 @@
 /**
  * URL routing rules for DrNote (frontend-only for now).
  *
- * RULE: Every user-facing screen must have a stable URL built from these helpers.
- * When the backend arrives, keep these paths and swap mock loaders for API calls
- * in page components — do not scatter path strings across the app.
- *
  * Path shape:
- *   /{tab}                          Browse sets for a content tab
- *   /{tab}/sets/{setId}             Set hub (QuizSetScreen)
- *   /{tab}/sets/{setId}/quiz        Active study session
- *   /{tab}/sets/{setId}/results     Session results / history
- *   /filters                        Filter panel (full page)
- *   /upgrade                        Upgrade modal as page
- *
- * Query params on /quiz (optional, preserved for backend session creation):
- *   mode=resume|quick|timed|incorrect|flagged|mock|restart
- *   count, minutes — mode-specific limits
+ *   /                               Exam picker home
+ *   /{examId}                       Browse sets (default questions tab)
+ *   /{examId}/{tab}                 Browse sets for a content tab
+ *   /{examId}/{tab}/sets/{setId}    Set hub
+ *   /{examId}/{tab}/sets/{setId}/quiz
+ *   /{examId}/{tab}/sets/{setId}/results
+ *   /{examId}/filters               Filter panel
+ *   /upgrade                        Upgrade page
  */
+
+import { DEFAULT_EXAM_ID, isValidExamId } from "@/lib/exams";
 
 export const VALID_TABS = [
   "questions",
@@ -30,7 +26,7 @@ export type ContentTab = (typeof VALID_TABS)[number];
 
 export const DEFAULT_TAB: ContentTab = "questions";
 
-/** Canonical home URL (questions browse). */
+/** Exam picker home. */
 export const HOME_PATH = "/";
 
 export type QuizMode =
@@ -52,20 +48,41 @@ export function isValidTab(tab: string): tab is ContentTab {
   return (VALID_TABS as readonly string[]).includes(tab);
 }
 
-export function tabPath(tab: ContentTab = DEFAULT_TAB): string {
-  return tab === DEFAULT_TAB ? HOME_PATH : `/${tab}`;
+export function examPath(examId: string = DEFAULT_EXAM_ID): string {
+  return `/${examId}`;
 }
 
-export function setPath(tab: ContentTab, setId: string): string {
-  return `/${tab}/sets/${setId}`;
+export function examTabPath(
+  examId: string,
+  tab: ContentTab = DEFAULT_TAB
+): string {
+  if (tab === DEFAULT_TAB) return examPath(examId);
+  return `/${examId}/${tab}`;
+}
+
+/** @deprecated Use examTabPath(examId, tab) */
+export function tabPath(
+  tab: ContentTab = DEFAULT_TAB,
+  examId: string = DEFAULT_EXAM_ID
+): string {
+  return examTabPath(examId, tab);
+}
+
+export function setPath(
+  examId: string,
+  tab: ContentTab,
+  setId: string
+): string {
+  return `/${examId}/${tab}/sets/${setId}`;
 }
 
 export function quizPath(
+  examId: string,
   tab: ContentTab,
   setId: string,
   params?: QuizSearchParams
 ): string {
-  const base = `/${tab}/sets/${setId}/quiz`;
+  const base = `/${examId}/${tab}/sets/${setId}/quiz`;
   if (!params) return base;
 
   const search = new URLSearchParams();
@@ -77,12 +94,22 @@ export function quizPath(
   return qs ? `${base}?${qs}` : base;
 }
 
-export function resultsPath(tab: ContentTab, setId: string): string {
-  return `/${tab}/sets/${setId}/results`;
+export function resultsPath(
+  examId: string,
+  tab: ContentTab,
+  setId: string
+): string {
+  return `/${examId}/${tab}/sets/${setId}/results`;
 }
 
-export const FILTERS_PATH = "/filters";
+export function filtersPath(examId: string = DEFAULT_EXAM_ID): string {
+  return `/${examId}/filters`;
+}
+
 export const UPGRADE_PATH = "/upgrade";
+
+/** @deprecated Use filtersPath(examId) */
+export const FILTERS_PATH = filtersPath(DEFAULT_EXAM_ID);
 
 export function parseQuizSearchParams(
   searchParams: Record<string, string | string[] | undefined>
@@ -121,7 +148,16 @@ export function parseQuizSearchParams(
   };
 }
 
-/** All static paths needed for `output: "export"` pre-rendering. */
-export function allStaticRouteParams(): Array<{ tab: string; setId?: string }> {
-  return VALID_TABS.flatMap((tab) => [{ tab }]);
+export function activeTabFromPathname(pathname: string): ContentTab {
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length >= 2 && isValidTab(segments[1]!)) {
+    return segments[1];
+  }
+  return DEFAULT_TAB;
+}
+
+export function examIdFromPathname(pathname: string): string | null {
+  const segment = pathname.split("/").filter(Boolean)[0];
+  if (!segment || !isValidExamId(segment)) return null;
+  return segment;
 }
