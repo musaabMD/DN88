@@ -27,7 +27,6 @@ import {
   Image,
   BookOpen,
   CreditCard,
-  SlidersHorizontal,
   X,
   Check,
   ArrowLeft,
