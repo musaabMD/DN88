@@ -71,7 +71,7 @@ function SearchField({
   return (
     <div
       className={cn(
-        "flex w-full min-w-0 items-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 transition-colors focus-within:border-[#58CC02] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#58CC02]/20",
+        "flex w-full min-w-0 items-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 transition-colors focus-within:border-slate-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-slate-200",
         className
       )}
     >
@@ -217,7 +217,7 @@ export function BrowseHeader({
                 className={cn(
                   "flex h-9 min-w-[5.5rem] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-sm font-bold transition-colors",
                   active
-                    ? "bg-[#58CC02] text-white"
+                    ? "bg-slate-800 text-white"
                     : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                 )}
               >

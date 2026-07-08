@@ -7,7 +7,7 @@ import type { FlashcardItem } from "@/lib/set-content";
 const GRADES = [
   { label: "Again", interval: "1m", style: "border-slate-200 text-slate-500 hover:bg-slate-50", result: "incorrect" as const },
   { label: "Hard", interval: "10m", style: "border-amber-200 text-amber-600 hover:bg-amber-50", result: "incorrect" as const },
-  { label: "Good", interval: "1d", style: "border-green-200 text-green-600 hover:bg-green-50", result: "correct" as const },
+  { label: "Good", interval: "1d", style: "border-slate-300 text-slate-700 hover:bg-slate-50", result: "correct" as const },
   { label: "Easy", interval: "4d", style: "border-sky-200 text-sky-600 hover:bg-sky-50", result: "correct" as const },
 ];
 
@@ -57,12 +57,12 @@ export default function FlashcardStudy({
 
       <div className="shrink-0 px-4 sm:px-6">
         <p className="flex items-center justify-center gap-1.5 text-sm font-extrabold text-slate-700">
-          <Zap size={15} strokeWidth={3} className="text-green-500" />
+          <Zap size={15} strokeWidth={3} className="text-amber-600" />
           {card.deck}
         </p>
         <div className="mx-auto mt-3 h-2 w-full max-w-lg overflow-hidden rounded-full bg-slate-200">
           <div
-            className="h-full rounded-full bg-green-500 transition-all duration-300"
+            className="h-full rounded-full bg-slate-600 transition-all duration-300"
             style={{ width: `${((index + 1) / cards.length) * 100}%` }}
           />
         </div>
@@ -78,8 +78,8 @@ export default function FlashcardStudy({
 
         {revealed && (
           <>
-            <div className="mx-auto mt-8 h-1 w-16 rounded-full bg-green-500" />
-            <p className="mt-8 max-w-2xl text-lg font-bold leading-relaxed text-green-700 sm:text-xl">
+            <div className="mx-auto mt-8 h-1 w-16 rounded-full bg-slate-300" />
+            <p className="mt-8 max-w-2xl text-lg font-bold leading-relaxed text-slate-600 sm:text-xl">
               {card.back}
             </p>
           </>
@@ -94,7 +94,7 @@ export default function FlashcardStudy({
           <button
             type="button"
             onClick={() => setRevealed(true)}
-            className="mx-auto block w-full max-w-lg rounded-2xl border-b-4 border-green-600 bg-green-500 py-4 text-base font-extrabold text-white transition-colors hover:bg-green-400 active:translate-y-0.5 active:border-b-2"
+            className="mx-auto block w-full max-w-lg rounded-2xl border-b-4 border-slate-900 bg-slate-800 py-4 text-base font-extrabold text-white transition-colors hover:bg-slate-700 active:translate-y-0.5 active:border-b-2"
           >
             Show answer
           </button>

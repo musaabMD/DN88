@@ -58,7 +58,7 @@ export default function PricingPage() {
         </p>
         <Link
           href={UPGRADE_PATH}
-          className="mt-6 inline-flex items-center gap-2 rounded-xl border-b-4 border-[#46A302] bg-[#58CC02] px-6 py-3 text-sm font-extrabold text-white transition-colors hover:bg-[#4db802] active:translate-y-0.5 active:border-b-2"
+          className="mt-6 inline-flex items-center gap-2 rounded-xl border-b-4 border-[#1e293b] bg-[#334155] px-6 py-3 text-sm font-extrabold text-white transition-colors hover:bg-[#475569] active:translate-y-0.5 active:border-b-2"
         >
           <Check size={16} strokeWidth={3} />
           Get Pro

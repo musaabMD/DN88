@@ -181,7 +181,7 @@ type SidebarMode = "explain" | "report" | "comments";
 
 function progressColor(pct: number) {
   if (pct >= 100) return "#22c55e";
-  if (pct >= 60) return "#58CC02";
+  if (pct >= 60) return "#334155";
   if (pct >= 30) return "#f97316";
   return "#94a3b8";
 }
@@ -254,7 +254,7 @@ function ArticleCard({
         <ChevronRight
           size={20}
           strokeWidth={3}
-          className="shrink-0 text-slate-300 transition-all duration-150 group-hover:translate-x-1 group-hover:text-[#58CC02]"
+          className="shrink-0 text-slate-300 transition-all duration-150 group-hover:translate-x-1 group-hover:text-[#334155]"
         />
       </div>
     </button>
@@ -301,7 +301,7 @@ function SetCard({
 
         <span
           className={`shrink-0 text-xl font-black tabular-nums ${
-            started ? "text-green-500" : "text-slate-300"
+            started ? "text-slate-600" : "text-slate-300"
           }`}
         >
           {mastery}
@@ -312,7 +312,7 @@ function SetCard({
       <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-200">
         {started && (
           <div
-            className="relative h-full rounded-full bg-green-500 transition-all duration-500"
+            className="relative h-full rounded-full bg-slate-500 transition-all duration-500"
             style={{ width: `${mastery}%` }}
           >
             <div className="absolute inset-x-2 top-0.5 h-0.5 rounded-full bg-white/35" />
@@ -634,10 +634,10 @@ function SessionNavButton({
       boxShadow: "0 2px 0 #e2e8f0",
     },
     primary: {
-      background: "#58CC02",
-      border: "2px solid #46A302",
+      background: "#334155",
+      border: "2px solid #1e293b",
       color: "#fff",
-      boxShadow: "0 3px 0 #46A302",
+      boxShadow: "0 3px 0 #1e293b",
     },
     danger: {
       background: "#fff",
@@ -771,10 +771,10 @@ function LessonQuestionView({
           className="rounded-2xl p-5 md:p-6 mb-4 space-y-4"
           style={{ background: "#f0fdf4", border: "2px solid #bbf7d0" }}
         >
-          <p className="text-sm font-black uppercase tracking-widest text-green-700">
+          <p className="text-sm font-black uppercase tracking-widest text-slate-700">
             Explanation
           </p>
-          <p className="text-base md:text-lg font-medium text-green-950 leading-relaxed">
+          <p className="text-base md:text-lg font-medium text-slate-800 leading-relaxed">
             {q.explanation}
           </p>
           {citations && citations.length > 0 && (
@@ -820,9 +820,9 @@ function SessionSlideShell({
             onClick={onContinue}
             className="px-10 py-3 rounded-2xl text-sm font-black uppercase tracking-wide text-white active:translate-y-0.5"
             style={{
-              background: "#58CC02",
-              border: "2px solid #46A302",
-              boxShadow: "0 4px 0 #46A302",
+              background: "#334155",
+              border: "2px solid #1e293b",
+              boxShadow: "0 4px 0 #1e293b",
             }}
           >
             {continueLabel}
@@ -990,9 +990,9 @@ function FlashCard({ card }: { card: FlashcardItem }) {
             >
               {card.deck}
             </span>
-            <span className="text-xs font-bold text-green-500">Answer</span>
+            <span className="text-xs font-bold text-slate-600">Answer</span>
           </div>
-          <p className="text-sm font-bold text-green-900 leading-relaxed mt-3">
+          <p className="text-sm font-bold text-slate-700 leading-relaxed mt-3">
             {card.back}
           </p>
           <div className="flex gap-2 mt-3">
@@ -1378,10 +1378,10 @@ function ChipGroup({
               style={
                 active
                   ? {
-                      background: "#58CC02",
-                      borderColor: "#46A302",
+                      background: "#334155",
+                      borderColor: "#1e293b",
                       color: "#fff",
-                      boxShadow: "0 3px 0 #46A302",
+                      boxShadow: "0 3px 0 #1e293b",
                     }
                   : {
                       background: "#fff",
@@ -1527,7 +1527,7 @@ function FilterPage({
               {totalActive > 0 && (
                 <p
                   className="text-xs font-bold -mt-0.5"
-                  style={{ color: "#58CC02" }}
+                  style={{ color: "#334155" }}
                 >
                   {totalActive} selected
                 </p>
@@ -1580,9 +1580,9 @@ function FilterPage({
             }}
             className="w-full text-white font-black py-4 rounded-2xl text-base"
             style={{
-              background: "#58CC02",
-              border: "2px solid #46A302",
-              boxShadow: "0 4px 0 #46A302",
+              background: "#334155",
+              border: "2px solid #1e293b",
+              boxShadow: "0 4px 0 #1e293b",
             }}
           >
             {totalActive > 0
@@ -1632,9 +1632,9 @@ function PaginationBar({
               style={
                 p === page
                   ? {
-                      background: "#58CC02",
-                      border: "2px solid #46A302",
-                      boxShadow: "0 3px 0 #46A302",
+                      background: "#334155",
+                      border: "2px solid #1e293b",
+                      boxShadow: "0 3px 0 #1e293b",
                       color: "#fff",
                     }
                   : {

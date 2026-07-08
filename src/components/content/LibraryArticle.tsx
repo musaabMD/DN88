@@ -20,7 +20,7 @@ export default function LibraryArticle({
       <div className="flex items-center justify-end">
         <button
           type="button"
-          className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-b-4 border-slate-200 bg-white text-slate-400 transition-colors hover:bg-green-50 hover:text-green-600 active:translate-y-0.5 active:border-b-2"
+          className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-b-4 border-slate-200 bg-white text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700 active:translate-y-0.5 active:border-b-2"
           aria-label="Save article"
         >
           <Bookmark size={16} strokeWidth={2.5} />
@@ -28,7 +28,7 @@ export default function LibraryArticle({
       </div>
 
         <header className="mt-6">
-          <span className="rounded-full bg-green-500 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
+          <span className="rounded-full bg-slate-500 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
             {article.subject}
           </span>
           <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight text-slate-800 sm:text-4xl">
@@ -52,8 +52,8 @@ export default function LibraryArticle({
               href={`#${s.toLowerCase().replace(/ /g, "-")}`}
               className={`rounded-full border-2 px-3 py-1 text-xs font-extrabold transition-colors ${
                 i === 0
-                  ? "border-green-500 bg-green-500 text-white"
-                  : "border-slate-200 text-slate-500 hover:border-green-500 hover:text-green-600"
+                  ? "border-slate-700 bg-slate-700 text-white"
+                  : "border-slate-200 text-slate-500 hover:border-slate-400 hover:text-slate-700"
               }`}
             >
               {s}
@@ -82,7 +82,7 @@ export default function LibraryArticle({
                       key={item}
                       className="flex items-start gap-2.5 text-base font-medium leading-relaxed text-slate-600"
                     >
-                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-green-500" />
+                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-slate-500" />
                       {item}
                     </li>
                   ))}
@@ -92,8 +92,8 @@ export default function LibraryArticle({
           ))}
 
           {article.highYield ? (
-            <aside className="rounded-2xl border-2 border-b-4 border-green-500 bg-green-50 p-4 sm:p-5">
-              <p className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wide text-green-600">
+            <aside className="rounded-2xl border-2 border-b-4 border-slate-700 bg-slate-50 p-4 sm:p-5">
+              <p className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wide text-slate-600">
                 <Zap size={14} strokeWidth={3} /> High yield
               </p>
               <p className="mt-2 text-sm font-bold leading-relaxed text-slate-700">

@@ -134,7 +134,7 @@ export function QuestionChatPanel({
                           variant={isUser ? "default" : "muted"}
                           className={cn(
                             isUser &&
-                              "*:data-[slot=bubble-content]:border-transparent *:data-[slot=bubble-content]:bg-[#58CC02] *:data-[slot=bubble-content]:text-white",
+                              "*:data-[slot=bubble-content]:border-transparent *:data-[slot=bubble-content]:bg-slate-700 *:data-[slot=bubble-content]:text-white",
                           )}
                         >
                           <BubbleContent className="whitespace-pre-wrap">
@@ -172,7 +172,7 @@ export function QuestionChatPanel({
           <Button
             type="submit"
             size="icon-lg"
-            className="shrink-0 rounded-2xl bg-[#58CC02] text-white hover:bg-[#4db802]"
+            className="shrink-0 rounded-2xl bg-slate-800 text-white hover:bg-slate-700"
             disabled={!draft.trim()}
           >
             <Send size={16} strokeWidth={2.5} />

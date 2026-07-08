@@ -46,7 +46,7 @@ function DashboardExamCard({ exam }: { exam: Exam }) {
       <ChevronRight
         size={20}
         strokeWidth={3}
-        className="shrink-0 text-slate-300 transition-all duration-150 group-hover:translate-x-1 group-hover:text-[#58CC02]"
+        className="shrink-0 text-slate-300 transition-all duration-150 group-hover:translate-x-1 group-hover:text-[#334155]"
       />
     </Link>
   );
@@ -86,7 +86,7 @@ export default function DashboardPage() {
       <button
         type="button"
         onClick={() => router.push(HOME_PATH)}
-        className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 py-4 text-sm font-extrabold text-slate-500 transition-colors hover:border-green-500 hover:bg-green-50 hover:text-green-600"
+        className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 py-4 text-sm font-extrabold text-slate-500 transition-colors hover:border-slate-700 hover:bg-slate-50 hover:text-slate-700"
       >
         <Plus size={18} strokeWidth={3} />
         Add exam from home

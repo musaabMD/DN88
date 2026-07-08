@@ -37,7 +37,7 @@ export function BottomTabBar() {
               href={tabHref(examId, tab.id)}
               className={cn(
                 "flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-1 py-2 transition-colors",
-                active ? "text-[#58CC02]" : "text-slate-400"
+                active ? "text-slate-800" : "text-slate-400"
               )}
             >
               <Icon
@@ -47,7 +47,7 @@ export function BottomTabBar() {
               <span
                 className={cn(
                   "max-w-full truncate text-[10px] font-bold leading-none",
-                  active ? "text-[#46A302]" : "text-slate-500"
+                  active ? "text-slate-800" : "text-slate-500"
                 )}
               >
                 {tab.shortLabel}

@@ -24,14 +24,14 @@ function ExamHomeHeader() {
       <nav className="flex items-center gap-2 sm:gap-4">
         <Link
           href={DASHBOARD_PATH}
-          className="hidden text-sm font-bold text-slate-600 hover:text-[#58CC02] sm:inline"
+          className="hidden text-sm font-bold text-slate-600 hover:text-[#334155] sm:inline"
         >
           Dashboard
         </Link>
         <button
           type="button"
           onClick={() => router.push(UPGRADE_PATH)}
-          className="rounded-xl border-b-4 border-[#46A302] bg-[#58CC02] px-3 py-2 text-sm font-extrabold text-white transition-colors hover:bg-[#4db802] active:translate-y-0.5 active:border-b-2 sm:px-4"
+          className="rounded-xl border-b-4 border-[#1e293b] bg-[#334155] px-3 py-2 text-sm font-extrabold text-white transition-colors hover:bg-[#475569] active:translate-y-0.5 active:border-b-2 sm:px-4"
         >
           Get Pro
         </button>
@@ -49,40 +49,40 @@ function ExamHero({
   onQuery: (value: string) => void;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-3xl border-b-4 border-[#46A302] bg-[#58CC02] px-6 py-8 sm:px-10 sm:py-10">
+    <div className="relative overflow-hidden rounded-3xl border-2 border-slate-200 bg-slate-50 px-6 py-8 sm:px-10 sm:py-10">
       <span
         aria-hidden="true"
-        className="absolute -top-6 right-8 select-none text-8xl font-black text-white opacity-10"
+        className="absolute -top-6 right-8 select-none text-8xl font-black text-slate-200"
       >
         A
       </span>
       <span
         aria-hidden="true"
-        className="absolute -bottom-10 right-32 hidden select-none text-9xl font-black text-white opacity-10 sm:block"
+        className="absolute -bottom-10 right-32 hidden select-none text-9xl font-black text-slate-200 sm:block"
       >
         Q
       </span>
       <span
         aria-hidden="true"
-        className="absolute -bottom-8 -left-4 select-none text-8xl font-black text-white opacity-10"
+        className="absolute -bottom-8 -left-4 select-none text-8xl font-black text-slate-200"
       >
         ?
       </span>
 
       <div className="relative mx-auto max-w-2xl text-center">
-        <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#46A302] px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-slate-600">
           <GraduationCap size={14} strokeWidth={2.5} />
           Medical board prep
         </div>
 
-        <h1 className="text-2xl font-black leading-tight tracking-tight text-white sm:text-4xl">
+        <h1 className="text-2xl font-black leading-tight tracking-tight text-slate-900 sm:text-4xl">
           Choose your exam
         </h1>
-        <p className="mx-auto mt-2 max-w-sm text-sm font-bold text-green-100 sm:text-base">
+        <p className="mx-auto mt-2 max-w-sm text-sm font-bold text-slate-500 sm:text-base">
           Pick the test you&apos;re studying for and start practicing
         </p>
 
-        <div className="mx-auto mt-6 flex max-w-md items-center gap-3 rounded-2xl border-b-4 border-[#3a8200] bg-white px-4 py-3">
+        <div className="mx-auto mt-6 flex max-w-md items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white px-4 py-3">
           <Search size={20} strokeWidth={2.5} className="shrink-0 text-slate-400" />
           <input
             value={query}
@@ -136,7 +136,7 @@ function ExamCard({
         <ChevronRight
           size={20}
           strokeWidth={3}
-          className="shrink-0 text-slate-300 transition-all duration-150 group-hover:translate-x-1 group-hover:text-[#58CC02]"
+          className="shrink-0 text-slate-300 transition-all duration-150 group-hover:translate-x-1 group-hover:text-[#334155]"
         />
       </Link>
 
@@ -149,8 +149,8 @@ function ExamCard({
         aria-label={added ? `${exam.name} added to dashboard` : `Add ${exam.name} to dashboard`}
         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-b-4 transition-colors active:translate-y-0.5 active:border-b-2 ${
           added
-            ? "border-green-500 bg-green-500 text-white"
-            : "border-slate-200 bg-white text-slate-400 hover:border-green-500 hover:text-green-600"
+            ? "border-slate-700 bg-slate-700 text-white"
+            : "border-slate-200 bg-white text-slate-400 hover:border-slate-400 hover:text-slate-700"
         }`}
       >
         {added ? <Check size={18} strokeWidth={3} /> : <Plus size={18} strokeWidth={3} />}

@@ -25,7 +25,7 @@ function ClerkUserAuthControls({ compact = false }: { compact?: boolean }) {
         {!compact && (
           <Link
             href={DASHBOARD_PATH}
-            className="hidden max-w-[120px] truncate text-sm font-bold text-[#4B4B4B] hover:text-[#58CC02] sm:inline"
+            className="hidden max-w-[120px] truncate text-sm font-bold text-[#4B4B4B] hover:text-[#334155] sm:inline"
           >
             Dashboard
           </Link>
@@ -44,8 +44,8 @@ function ClerkUserAuthControls({ compact = false }: { compact?: boolean }) {
             type="button"
             className={
               compact
-                ? "flex h-9 shrink-0 items-center rounded-lg bg-[#58CC02] px-3 text-xs font-extrabold text-white transition-colors hover:bg-[#46A302]"
-                : "rounded-lg bg-[#58CC02] px-4 py-2 text-sm font-extrabold text-white transition-colors hover:bg-[#46A302]"
+                ? "flex h-9 shrink-0 items-center rounded-lg bg-[#334155] px-3 text-xs font-extrabold text-white transition-colors hover:bg-[#1e293b]"
+                : "rounded-lg bg-[#334155] px-4 py-2 text-sm font-extrabold text-white transition-colors hover:bg-[#1e293b]"
             }
           >
             Get started

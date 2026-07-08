@@ -62,14 +62,14 @@ export function PricingModal({ onClose }: { onClose: () => void }) {
               </button>
             </div>
 
-            <div className="relative flex flex-col rounded-3xl border-b-4 border-[#46A302] bg-[#58CC02] p-6">
-              <span className="absolute -top-3 right-6 rounded-full bg-[#46A302] px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
+            <div className="relative flex flex-col rounded-3xl border-b-4 border-[#1e293b] bg-[#334155] p-6">
+              <span className="absolute -top-3 right-6 rounded-full bg-[#1e293b] px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
                 Most popular
               </span>
               <h3 className="text-lg font-black text-white">Pro</h3>
               <p className="mt-2 text-3xl font-black tabular-nums text-white">
                 $9
-                <span className="text-sm font-extrabold text-green-100"> / month</span>
+                <span className="text-sm font-extrabold text-slate-200"> / month</span>
               </p>
               <ul className="mt-5 flex-1 space-y-2.5">
                 {PRO_FEATURES.map((feature) => (
@@ -77,14 +77,14 @@ export function PricingModal({ onClose }: { onClose: () => void }) {
                     key={feature}
                     className="flex items-center gap-2 text-sm font-bold text-white"
                   >
-                    <Check size={16} strokeWidth={3} className="shrink-0 text-green-200" />
+                    <Check size={16} strokeWidth={3} className="shrink-0 text-slate-300" />
                     {feature}
                   </li>
                 ))}
               </ul>
               <button
                 type="button"
-                className="mt-6 w-full rounded-xl border-b-4 border-slate-200 bg-white py-2.5 text-sm font-extrabold text-[#46A302] transition-colors hover:bg-green-50 active:translate-y-0.5 active:border-b-2"
+                className="mt-6 w-full rounded-xl border-b-4 border-slate-200 bg-white py-2.5 text-sm font-extrabold text-[#1e293b] transition-colors hover:bg-slate-50 active:translate-y-0.5 active:border-b-2"
               >
                 Get Pro
               </button>

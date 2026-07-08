@@ -23,8 +23,8 @@ import {
 } from "@/lib/routes";
 
 const C = {
-  green: "#58CC02",
-  greenDark: "#46A302",
+  green: "#334155",
+  greenDark: "#1e293b",
   blue: "#1CB0F6",
   red: "#FF4B4B",
   yellow: "#FFC800",

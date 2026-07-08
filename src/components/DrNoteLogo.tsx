@@ -1,3 +1,5 @@
+import { BRAND } from "@/lib/brand";
+
 export function DrNoteLogo({
   size = "md",
   showWordmark = false,
@@ -16,8 +18,8 @@ export function DrNoteLogo({
       <div
         className={`flex ${box} shrink-0 items-center justify-center`}
         style={{
-          background: "linear-gradient(135deg,#58CC02,#46A302)",
-          boxShadow: "0 2px 0 #3a8200",
+          background: `linear-gradient(135deg,${BRAND.logoFrom},${BRAND.logoTo})`,
+          boxShadow: `0 2px 0 ${BRAND.logoShadow}`,
         }}
       >
         <span className={`${letter} font-black leading-none text-white`}>D</span>

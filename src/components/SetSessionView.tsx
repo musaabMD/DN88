@@ -55,10 +55,10 @@ function SessionNavButton({
       boxShadow: "0 2px 0 #e2e8f0",
     },
     primary: {
-      background: "#58CC02",
-      border: "2px solid #46A302",
+      background: "#334155",
+      border: "2px solid #1e293b",
       color: "#fff",
-      boxShadow: "0 3px 0 #46A302",
+      boxShadow: "0 3px 0 #1e293b",
     },
     danger: {
       background: "#fff",
@@ -198,10 +198,10 @@ function LessonQuestionView({
           className="rounded-2xl p-5 md:p-6 mb-4 space-y-4"
           style={{ background: "#f0fdf4", border: "2px solid #bbf7d0" }}
         >
-          <p className="text-sm font-black uppercase tracking-widest text-green-700">
+          <p className="text-sm font-black uppercase tracking-widest text-slate-700">
             Explanation
           </p>
-          <p className="text-base md:text-lg font-medium text-green-950 leading-relaxed">
+          <p className="text-base md:text-lg font-medium text-slate-800 leading-relaxed">
             {q.explanation}
           </p>
           {citations && citations.length > 0 && (
@@ -335,8 +335,8 @@ function QuestionsSession({
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center"
             style={{
-              background: "linear-gradient(135deg,#58CC02,#46A302)",
-              boxShadow: "0 2px 0 #3a8200",
+              background: "linear-gradient(135deg,#334155,#1e293b)",
+              boxShadow: "0 2px 0 #1e293b",
             }}
           >
             <span className="text-white font-black text-sm leading-none">D</span>
@@ -349,7 +349,7 @@ function QuestionsSession({
         >
           <div
             className="h-full rounded-full transition-all duration-300"
-            style={{ width: `${progressPct}%`, background: "#58CC02" }}
+            style={{ width: `${progressPct}%`, background: "#334155" }}
           />
         </div>
       </div>

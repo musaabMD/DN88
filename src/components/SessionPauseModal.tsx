@@ -38,9 +38,9 @@ export function SessionPauseModal({
             onClick={onSaveLater}
             className="w-full py-3 rounded-2xl font-black text-sm text-white"
             style={{
-              background: "#58CC02",
-              border: "2px solid #46A302",
-              boxShadow: "0 3px 0 #46A302",
+              background: "#334155",
+              border: "2px solid #1e293b",
+              boxShadow: "0 3px 0 #1e293b",
             }}
           >
             Save & resume later

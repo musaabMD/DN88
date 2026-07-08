@@ -56,7 +56,7 @@ function ImageCard({
       </div>
 
       <div className="mt-3 flex items-center gap-2">
-        <span className="inline-flex items-center gap-1 rounded-full bg-green-500 px-2 py-0.5 text-xs font-extrabold uppercase tracking-wide text-white">
+        <span className="inline-flex items-center gap-1 rounded-full bg-slate-500 px-2 py-0.5 text-xs font-extrabold uppercase tracking-wide text-white">
           <Zap size={11} strokeWidth={3} />
           HY
         </span>
@@ -83,7 +83,7 @@ function ImageViewer({
     <div className="fixed inset-0 z-[60] overflow-y-auto bg-white">
       <div className="mx-auto flex min-h-full w-full max-w-2xl flex-col px-4 py-6 sm:px-6">
         <div className="flex items-center justify-between">
-          <span className="inline-flex items-center gap-1 rounded-full bg-green-500 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
+          <span className="inline-flex items-center gap-1 rounded-full bg-slate-500 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
             <Zap size={12} strokeWidth={3} />
             HY image
           </span>
@@ -149,8 +149,8 @@ export default function HYImages({ images }: { images: ImageItem[] }) {
             onClick={() => setTagFilter(null)}
             className={`rounded-full border-2 px-3 py-1 text-xs font-extrabold transition-colors ${
               tagFilter === null
-                ? "border-green-500 bg-green-500 text-white"
-                : "border-slate-200 text-slate-500 hover:border-green-500 hover:text-green-600"
+                ? "border-slate-700 bg-slate-700 text-white"
+                : "border-slate-200 text-slate-500 hover:border-slate-400 hover:text-slate-700"
             }`}
           >
             All
@@ -162,8 +162,8 @@ export default function HYImages({ images }: { images: ImageItem[] }) {
               onClick={() => setTagFilter(tag)}
               className={`rounded-full border-2 px-3 py-1 text-xs font-extrabold transition-colors ${
                 tagFilter === tag
-                  ? "border-green-500 bg-green-500 text-white"
-                  : "border-slate-200 text-slate-500 hover:border-green-500 hover:text-green-600"
+                  ? "border-slate-700 bg-slate-700 text-white"
+                  : "border-slate-200 text-slate-500 hover:border-slate-400 hover:text-slate-700"
               }`}
             >
               {tag}

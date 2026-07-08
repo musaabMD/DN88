@@ -5,11 +5,16 @@ import { Bookmark, Search, Share2, Zap } from "lucide-react";
 import { ReportIconButton } from "@/components/ReportIconButton";
 import type { NoteItem } from "@/lib/set-content";
 
+const CHIP_ACTIVE =
+  "border-slate-700 bg-slate-700 text-white";
+const CHIP_IDLE =
+  "border-slate-200 text-slate-500 hover:border-slate-400 hover:text-slate-700";
+
 function HYNote({ note }: { note: NoteItem }) {
   return (
     <article className="w-full rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4 sm:p-5">
       <div className="flex items-center gap-3">
-        <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-b-4 border-green-600 bg-green-500">
+        <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-b-4 border-slate-700 bg-slate-600">
           <span className="text-lg font-black text-white">
             {note.author.charAt(4)}
           </span>
@@ -22,7 +27,7 @@ function HYNote({ note }: { note: NoteItem }) {
             {note.specialty}
           </p>
         </div>
-        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-green-500 px-2.5 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-extrabold uppercase tracking-wide text-amber-800">
           <Zap size={12} strokeWidth={3} />
           HY
         </span>
@@ -40,7 +45,7 @@ function HYNote({ note }: { note: NoteItem }) {
         <ReportIconButton />
         <button
           type="button"
-          className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-green-50 hover:text-green-600"
+          className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
           aria-label="Bookmark"
         >
           <Bookmark size={16} strokeWidth={2.5} />
@@ -94,9 +99,7 @@ export default function HYNotesFeed({ notes }: { notes: NoteItem[] }) {
           type="button"
           onClick={() => setTagFilter(null)}
           className={`rounded-full border-2 px-3 py-1 text-xs font-extrabold transition-colors ${
-            tagFilter === null
-              ? "border-green-500 bg-green-500 text-white"
-              : "border-slate-200 text-slate-500 hover:border-green-500 hover:text-green-600"
+            tagFilter === null ? CHIP_ACTIVE : CHIP_IDLE
           }`}
         >
           All
@@ -107,9 +110,7 @@ export default function HYNotesFeed({ notes }: { notes: NoteItem[] }) {
             type="button"
             onClick={() => setTagFilter(tag)}
             className={`rounded-full border-2 px-3 py-1 text-xs font-extrabold transition-colors ${
-              tagFilter === tag
-                ? "border-green-500 bg-green-500 text-white"
-                : "border-slate-200 text-slate-500 hover:border-green-500 hover:text-green-600"
+              tagFilter === tag ? CHIP_ACTIVE : CHIP_IDLE
             }`}
           >
             {tag}

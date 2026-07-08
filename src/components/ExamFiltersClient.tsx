@@ -151,9 +151,9 @@ export function ExamFiltersClient({ examId }: { examId: string }) {
           onClick={applyFilters}
           className="mt-2 w-full rounded-2xl py-4 font-black text-white"
           style={{
-            background: "#58CC02",
-            border: "2px solid #46A302",
-            boxShadow: "0 4px 0 #46A302",
+            background: "#334155",
+            border: "2px solid #1e293b",
+            boxShadow: "0 4px 0 #1e293b",
           }}
         >
           {totalFilters > 0 ? `Apply ${totalFilters} filter(s)` : "Show all"}
@@ -208,8 +208,8 @@ function FilterSection({
               style={
                 active
                   ? {
-                      background: "#58CC02",
-                      borderColor: "#46A302",
+                      background: "#334155",
+                      borderColor: "#1e293b",
                       color: "#fff",
                     }
                   : {

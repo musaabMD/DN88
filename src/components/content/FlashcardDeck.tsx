@@ -27,7 +27,7 @@ function filterCards(
 
 function StatusIcon({ status }: { status?: FlashcardItem["status"] }) {
   if (status === "correct") {
-    return <CheckCircle2 size={16} className="text-green-500" strokeWidth={2.5} />;
+    return <CheckCircle2 size={16} className="text-slate-600" strokeWidth={2.5} />;
   }
   if (status === "incorrect") {
     return <XCircle size={16} className="text-rose-500" strokeWidth={2.5} />;
@@ -68,7 +68,7 @@ export default function FlashcardDeck({
     <div className="relative mx-auto w-full max-w-3xl pb-24">
       <div className="rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4">
         <div className="flex items-center gap-2">
-          <Zap size={18} strokeWidth={3} className="text-green-500" />
+          <Zap size={18} strokeWidth={3} className="text-amber-600" />
           <h1 className="text-lg font-extrabold text-slate-800">{set.title}</h1>
         </div>
         <p className="mt-1 text-sm font-bold text-slate-400">{set.subject}</p>
@@ -80,11 +80,11 @@ export default function FlashcardDeck({
               Score
             </p>
           </div>
-          <div className="rounded-xl bg-green-50 px-3 py-2">
-            <p className="text-xl font-black tabular-nums text-green-600">
+          <div className="rounded-xl bg-slate-100 px-3 py-2">
+            <p className="text-xl font-black tabular-nums text-slate-700">
               {counts.correct}
             </p>
-            <p className="text-[10px] font-extrabold uppercase tracking-wide text-green-600">
+            <p className="text-[10px] font-extrabold uppercase tracking-wide text-slate-500">
               Correct
             </p>
           </div>
@@ -100,7 +100,7 @@ export default function FlashcardDeck({
 
         <div className="mt-4 h-3 w-full overflow-hidden rounded-full bg-slate-200">
           <div
-            className="h-full rounded-full bg-green-500 transition-all"
+            className="h-full rounded-full bg-slate-600 transition-all"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -117,8 +117,8 @@ export default function FlashcardDeck({
             onClick={() => setFilter(f.id)}
             className={`rounded-full border-2 px-3 py-1 text-xs font-extrabold transition-colors ${
               filter === f.id
-                ? "border-green-500 bg-green-500 text-white"
-                : "border-slate-200 text-slate-500 hover:border-green-500 hover:text-green-600"
+                ? "border-slate-700 bg-slate-700 text-white"
+                : "border-slate-200 text-slate-500 hover:border-slate-400 hover:text-slate-700"
             }`}
           >
             {f.label} ({f.count})
@@ -164,7 +164,7 @@ export default function FlashcardDeck({
         type="button"
         disabled={filtered.length === 0}
         onClick={() => onStart(filter, filtered)}
-        className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+1rem)] left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-2xl border-b-4 border-green-600 bg-green-500 px-8 py-3.5 text-base font-extrabold text-white shadow-lg transition-colors hover:bg-green-400 active:translate-y-0.5 active:border-b-2 disabled:opacity-40 md:bottom-8"
+        className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+1rem)] left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-2xl border-b-4 border-slate-900 bg-slate-800 px-8 py-3.5 text-base font-extrabold text-white shadow-lg transition-colors hover:bg-slate-700 active:translate-y-0.5 active:border-b-2 disabled:opacity-40 md:bottom-8"
       >
         <Play size={18} strokeWidth={3} fill="white" />
         Start

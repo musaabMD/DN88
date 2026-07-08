@@ -1,6 +1,6 @@
 /** Deterministic accent colors for set thumbnails (first-letter tiles). */
 const TILE_PALETTES = [
-  { bg: "#58CC02", border: "#46A302" },
+  { bg: "#6366f1", border: "#4f46e5" },
   { bg: "#1CB0F6", border: "#1899D6" },
   { bg: "#FF9600", border: "#E08600" },
   { bg: "#CE82FF", border: "#B86EEB" },
