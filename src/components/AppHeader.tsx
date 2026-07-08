@@ -39,7 +39,7 @@ export function AppHeader({ showBack, onBack, title }: AppHeaderProps) {
             </button>
           ) : null}
           <Link href={HOME_PATH} className="shrink-0">
-            <DrNoteLogo size="sm" showWordmark />
+            <DrNoteLogo size="sm" showWordmark forceWordmark />
           </Link>
         </div>
 

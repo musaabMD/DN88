@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronRight, GraduationCap, Search } from "lucide-react";
+import { Check, ChevronRight, GraduationCap, Plus, Search } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { UserAuthControls } from "@/components/UserAuthControls";
 import { EXAMS, type Exam } from "@/lib/exams";
 import { saveCurrentExamId } from "@/lib/current-exam";
-import { examPath, UPGRADE_PATH } from "@/lib/routes";
+import { DASHBOARD_PATH, examPath, UPGRADE_PATH } from "@/lib/routes";
 import { getTileColors } from "@/lib/tile-colors";
+import { addUserExam, getUserExamIds, isUserExam, removeUserExam } from "@/lib/user-exams";
 
 function ExamHomeHeader() {
   const router = useRouter();
@@ -17,10 +18,16 @@ function ExamHomeHeader() {
   return (
     <header className="flex items-center justify-between py-4">
       <Link href="/" className="flex min-w-0 items-center">
-        <DrNoteLogo showWordmark />
+        <DrNoteLogo showWordmark forceWordmark />
       </Link>
 
       <nav className="flex items-center gap-2 sm:gap-4">
+        <Link
+          href={DASHBOARD_PATH}
+          className="hidden text-sm font-bold text-slate-600 hover:text-[#58CC02] sm:inline"
+        >
+          Dashboard
+        </Link>
         <button
           type="button"
           onClick={() => router.push(UPGRADE_PATH)}
@@ -89,49 +96,89 @@ function ExamHero({
   );
 }
 
-function ExamCard({ exam }: { exam: Exam }) {
+function ExamCard({
+  exam,
+  added,
+  onToggleAdd,
+}: {
+  exam: Exam;
+  added: boolean;
+  onToggleAdd: () => void;
+}) {
   const { bg, border } = getTileColors(exam.name);
 
   return (
-    <Link
-      href={examPath(exam.id)}
-      onClick={() => saveCurrentExamId(exam.id)}
-      className="group flex w-full items-center gap-4 rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4 text-left transition-colors duration-150 hover:bg-slate-50 active:translate-y-0.5 active:border-b-2"
-    >
-      <div
-        className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-b-4"
-        style={{ background: bg, borderColor: border }}
+    <div className="group flex w-full items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4 text-left transition-colors duration-150 hover:bg-slate-50">
+      <Link
+        href={examPath(exam.id)}
+        onClick={() => saveCurrentExamId(exam.id)}
+        className="flex min-w-0 flex-1 items-center gap-4"
       >
-        <span
-          aria-hidden="true"
-          className="absolute -bottom-3 -right-1 select-none text-4xl font-black text-white opacity-20"
+        <div
+          className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-b-4"
+          style={{ background: bg, borderColor: border }}
         >
-          {exam.name.charAt(0)}
-        </span>
-        <span className="relative text-xl font-black text-white">
-          {exam.name.charAt(0)}
-        </span>
-      </div>
+          <span
+            aria-hidden="true"
+            className="absolute -bottom-3 -right-1 select-none text-4xl font-black text-white opacity-20"
+          >
+            {exam.name.charAt(0)}
+          </span>
+          <span className="relative text-xl font-black text-white">
+            {exam.name.charAt(0)}
+          </span>
+        </div>
 
-      <h3 className="min-w-0 flex-1 truncate text-base font-extrabold tracking-tight text-slate-700">
-        {exam.name}
-      </h3>
+        <h3 className="min-w-0 flex-1 truncate text-base font-extrabold tracking-tight text-slate-700">
+          {exam.name}
+        </h3>
 
-      <ChevronRight
-        size={20}
-        strokeWidth={3}
-        className="shrink-0 text-slate-300 transition-all duration-150 group-hover:translate-x-1 group-hover:text-[#58CC02]"
-      />
-    </Link>
+        <ChevronRight
+          size={20}
+          strokeWidth={3}
+          className="shrink-0 text-slate-300 transition-all duration-150 group-hover:translate-x-1 group-hover:text-[#58CC02]"
+        />
+      </Link>
+
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          onToggleAdd();
+        }}
+        aria-label={added ? `${exam.name} added to dashboard` : `Add ${exam.name} to dashboard`}
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-b-4 transition-colors active:translate-y-0.5 active:border-b-2 ${
+          added
+            ? "border-green-500 bg-green-500 text-white"
+            : "border-slate-200 bg-white text-slate-400 hover:border-green-500 hover:text-green-600"
+        }`}
+      >
+        {added ? <Check size={18} strokeWidth={3} /> : <Plus size={18} strokeWidth={3} />}
+      </button>
+    </div>
   );
 }
 
 export default function ExamHome() {
   const [query, setQuery] = useState("");
+  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    setPinnedIds(getUserExamIds());
+  }, []);
 
   const filtered = EXAMS.filter((exam) =>
     exam.name.toLowerCase().includes(query.trim().toLowerCase())
   );
+
+  const toggleExam = (examId: string) => {
+    if (isUserExam(examId)) {
+      removeUserExam(examId);
+    } else {
+      addUserExam(examId);
+    }
+    setPinnedIds(getUserExamIds());
+  };
 
   return (
     <main className="mx-auto w-full max-w-4xl bg-white px-4 pb-14 sm:px-6">
@@ -141,7 +188,12 @@ export default function ExamHome() {
 
       <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
         {filtered.map((exam) => (
-          <ExamCard key={exam.id} exam={exam} />
+          <ExamCard
+            key={exam.id}
+            exam={exam}
+            added={pinnedIds.includes(exam.id)}
+            onToggleAdd={() => toggleExam(exam.id)}
+          />
         ))}
       </div>
 

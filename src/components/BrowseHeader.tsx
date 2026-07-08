@@ -188,7 +188,7 @@ export function BrowseHeader({
 
         <div className="mt-3 flex items-center gap-2 md:hidden">
           <SearchField search={search} setSearch={setSearch} className="flex-1" />
-          {totalFilters === 0 && !hideFilterButton ? (
+          {!hideFilterButton ? (
             <button
               type="button"
               onClick={onFilterOpen}
@@ -197,12 +197,14 @@ export function BrowseHeader({
             >
               <SlidersHorizontal size={16} strokeWidth={2.5} />
             </button>
-          ) : null}
+          ) : (
+            <div className="h-10 w-10 shrink-0" aria-hidden />
+          )}
         </div>
 
         <nav
           aria-label="Browse sections"
-          className="mt-3 hidden justify-center gap-1 overflow-x-auto pb-0.5 scrollbar-hide md:flex"
+          className="mt-3 hidden h-10 items-center justify-center gap-1 overflow-x-auto scrollbar-hide md:flex"
         >
           {NAV_TABS.map((tab) => {
             const active = activeTab === tab.id;
@@ -213,13 +215,13 @@ export function BrowseHeader({
                 type="button"
                 onClick={() => onTabChange(tab.id)}
                 className={cn(
-                  "flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-bold transition-colors",
+                  "flex h-9 min-w-[5.5rem] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-sm font-bold transition-colors",
                   active
                     ? "bg-[#58CC02] text-white"
                     : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                 )}
               >
-                <Icon className="h-4 w-4" strokeWidth={2.5} />
+                <Icon className="h-4 w-4 shrink-0" strokeWidth={2.5} />
                 {tab.label}
               </button>
             );

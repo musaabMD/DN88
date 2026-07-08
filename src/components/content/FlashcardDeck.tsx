@@ -109,7 +109,7 @@ export default function FlashcardDeck({
         </p>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-wrap justify-center gap-2">
         {filters.map((f) => (
           <button
             key={f.id}

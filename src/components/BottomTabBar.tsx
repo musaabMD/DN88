@@ -42,7 +42,7 @@ export function BottomTabBar() {
             >
               <Icon
                 className="h-5 w-5 shrink-0"
-                strokeWidth={active ? 2.5 : 2}
+                strokeWidth={2.5}
               />
               <span
                 className={cn(

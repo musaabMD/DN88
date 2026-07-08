@@ -426,7 +426,7 @@ export const SUMMARY_SETS: StudySet[] = [
     title: "Endocrine & Diabetes HY Notes",
     subject: "Pharmacology",
     about: "Tweet-length high-yield facts on metformin, sulfonylureas, and diabetes management.",
-    total: NOTES_BY_SET.s1!.length,
+    total: NOTES_BY_SET.s1!.length * 6,
     done: 1,
     score: 88,
     tag: "HY Note",
@@ -504,7 +504,7 @@ export const FLASHCARD_SETS: StudySet[] = [
     title: "Muscles & Innervation",
     subject: "Anatomy",
     about: "SITS rotator cuff and peripheral nerve supply.",
-    total: FLASHCARDS_BY_SET.f2!.length,
+    total: FLASHCARDS_BY_SET.f2!.length * 6,
     done: 2,
     score: 96,
     tag: "Master",
@@ -688,18 +688,42 @@ export function resolveSessionSetId(tab: string, set: StudySet): string {
 }
 
 export function getSessionItems(tab: string, setId: string): SessionItem[] {
+  const loopPreviewSets: Record<string, number> = {
+    s1: 6,
+    f2: 6,
+  };
+
+  let items: SessionItem[];
   switch (tab) {
     case "questions":
-      return QUESTIONS_BY_SET[setId] ?? [];
+      items = QUESTIONS_BY_SET[setId] ?? [];
+      break;
     case "summary":
-      return NOTES_BY_SET[setId] ?? [];
+      items = NOTES_BY_SET[setId] ?? [];
+      break;
     case "images":
-      return IMAGES_BY_SET[setId] ?? [];
+      items = IMAGES_BY_SET[setId] ?? [];
+      break;
     case "flashcards":
-      return FLASHCARDS_BY_SET[setId] ?? [];
+      items = FLASHCARDS_BY_SET[setId] ?? [];
+      break;
     default:
-      return [];
+      items = [];
   }
+
+  const loops = loopPreviewSets[setId];
+  if (!loops || loops <= 1 || items.length === 0) return items;
+
+  const expanded: SessionItem[] = [];
+  for (let round = 0; round < loops; round++) {
+    for (const item of items) {
+      expanded.push({
+        ...item,
+        id: round * 100 + (item as { id: number }).id,
+      } as SessionItem);
+    }
+  }
+  return expanded;
 }
 
 export function sessionItemCount(tab: string, setId: string): number {

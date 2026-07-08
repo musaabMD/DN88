@@ -29,6 +29,9 @@ export const DEFAULT_TAB: ContentTab = "questions";
 /** Exam picker home. */
 export const HOME_PATH = "/";
 
+/** User dashboard with pinned exams. */
+export const DASHBOARD_PATH = "/dashboard";
+
 export type QuizMode =
   | "resume"
   | "restart"

@@ -47,6 +47,10 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   font-family: var(--font-nunito), system-ui, sans-serif;
   background: #ffffff;
