@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
+import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { NAV_TABS } from "@/lib/nav-tabs";
 import { HOME_PATH, type ContentTab } from "@/lib/routes";
 import { UserAuthControls } from "@/components/UserAuthControls";
@@ -128,26 +129,8 @@ export function BrowseHeader({
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white">
       <div className="mx-auto w-full max-w-6xl px-4 py-3 sm:px-6">
         <div className="flex items-center justify-between gap-3">
-          <Link
-            href={HOME_PATH}
-            className="flex min-w-0 shrink-0 items-center gap-2"
-          >
-            <div
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-              style={{
-                background: "linear-gradient(135deg,#58CC02,#46A302)",
-              }}
-            >
-              <span className="text-sm font-black leading-none text-white">
-                D
-              </span>
-            </div>
-            <span
-              className="truncate text-lg font-extrabold tracking-tight text-slate-900"
-              style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
-            >
-              Drnote
-            </span>
+          <Link href={HOME_PATH} className="flex min-w-0 shrink-0 items-center">
+            <DrNoteLogo showWordmark />
           </Link>
 
           <div className="hidden min-w-0 flex-1 px-4 md:block lg:px-8">
@@ -196,29 +179,6 @@ export function BrowseHeader({
                 icon: "#7c3aed",
               }}
             />
-            <button
-              type="button"
-              onClick={onFilterOpen}
-              aria-label={
-                totalFilters > 0
-                  ? `Filters (${totalFilters} active)`
-                  : "Filters"
-              }
-              className="relative flex h-9 min-w-9 shrink-0 items-center justify-center gap-1 rounded-xl px-2 transition-transform active:translate-y-0.5"
-              style={{
-                background: totalFilters > 0 ? "#ecfccb" : "#fff",
-                border: `2px solid ${totalFilters > 0 ? "#84cc16" : "#d1d5db"}`,
-                boxShadow: `0 2px 0 ${totalFilters > 0 ? "#65a30d" : "#d1d5db"}`,
-                color: totalFilters > 0 ? "#3f6212" : "#475569",
-              }}
-            >
-              <SlidersHorizontal size={15} strokeWidth={2.5} />
-              {totalFilters > 0 && (
-                <span className="text-[11px] font-black tabular-nums">
-                  {totalFilters}
-                </span>
-              )}
-            </button>
           </div>
 
           <UserAuthControls />
@@ -226,19 +186,21 @@ export function BrowseHeader({
 
         <div className="mt-3 flex items-center gap-2 md:hidden">
           <SearchField search={search} setSearch={setSearch} className="flex-1" />
-          <button
-            type="button"
-            onClick={onFilterOpen}
-            aria-label="Filters"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500"
-          >
-            <SlidersHorizontal size={16} strokeWidth={2.5} />
-          </button>
+          {totalFilters === 0 ? (
+            <button
+              type="button"
+              onClick={onFilterOpen}
+              aria-label="Filters"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500"
+            >
+              <SlidersHorizontal size={16} strokeWidth={2.5} />
+            </button>
+          ) : null}
         </div>
 
         <nav
           aria-label="Browse sections"
-          className="mt-3 hidden gap-1 overflow-x-auto pb-0.5 scrollbar-hide md:flex"
+          className="mt-3 hidden justify-center gap-1 overflow-x-auto pb-0.5 scrollbar-hide md:flex"
         >
           {NAV_TABS.map((tab) => {
             const active = activeTab === tab.id;

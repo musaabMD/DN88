@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, Send, Sparkles, X } from "lucide-react";
+import { Bot, Send, X } from "lucide-react";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import {
   Message,
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/message-scroller";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { cn } from "@/lib/utils";
 
 export type ChatMessage = {
@@ -81,15 +82,16 @@ export function QuestionChatPanel({
   return (
     <div className="fixed inset-0 z-[70] flex flex-col bg-background">
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
-        <div className="flex min-w-0 items-center gap-2">
-          <Sparkles
-            size={16}
-            className="shrink-0 text-violet-600"
-            strokeWidth={2.5}
-          />
-          <span className="truncate text-sm font-semibold text-foreground">
-            AI tutor
-          </span>
+        <div className="flex min-w-0 items-center gap-3">
+          <DrNoteLogo size="sm" />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-extrabold text-foreground">
+              AI tutor
+            </p>
+            <p className="truncate text-[11px] font-bold text-muted-foreground">
+              Ask about this question
+            </p>
+          </div>
         </div>
         <button
           type="button"

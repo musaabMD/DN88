@@ -1,9 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { DEFAULT_TAB, tabPath } from "@/lib/routes";
+import {
+  loadBrowseFilters,
+  saveBrowseFilters,
+} from "@/lib/browse-filters";
 
 const SUBJECTS = [
   "Anatomy",
@@ -40,6 +44,13 @@ export default function FiltersPage() {
   const [statuses, setStatuses] = useState<Set<string>>(new Set());
   const [tags, setTags] = useState<Set<string>>(new Set());
 
+  useEffect(() => {
+    const saved = loadBrowseFilters();
+    setSubjects(new Set(saved.subjects));
+    setStatuses(new Set(saved.statuses));
+    setTags(new Set(saved.tags));
+  }, []);
+
   const toggle = (setter: React.Dispatch<React.SetStateAction<Set<string>>>, val: string) =>
     setter((prev) => {
       const next = new Set(prev);
@@ -49,6 +60,15 @@ export default function FiltersPage() {
     });
 
   const totalActive = subjects.size + statuses.size + tags.size;
+
+  const applyFilters = () => {
+    saveBrowseFilters({
+      subjects: [...subjects],
+      statuses: [...statuses],
+      tags: [...tags],
+    });
+    router.push(tabPath(DEFAULT_TAB));
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white">
@@ -88,7 +108,7 @@ export default function FiltersPage() {
       </div>
       <div className="bg-white py-4 border-t-2 border-slate-200 px-4">
         <button
-          onClick={() => router.push(tabPath(DEFAULT_TAB))}
+          onClick={applyFilters}
           className="w-full max-w-2xl mx-auto block text-white font-black py-4 rounded-2xl"
           style={{
             background: "#58CC02",

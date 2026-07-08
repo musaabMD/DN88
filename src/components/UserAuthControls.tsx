@@ -1,13 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import {
   SignedIn,
   SignedOut,
   SignInButton,
   UserButton,
-  useUser,
 } from "@clerk/clerk-react";
 import { useClientMounted, useClerkEnabled } from "@/hooks/useClerkEnabled";
+import { HOME_PATH } from "@/lib/routes";
 
 function GuestAuthControls({ compact = false }: { compact?: boolean }) {
   return (
@@ -18,15 +19,16 @@ function GuestAuthControls({ compact = false }: { compact?: boolean }) {
 }
 
 function ClerkUserAuthControls({ compact = false }: { compact?: boolean }) {
-  const { user } = useUser();
-
   return (
     <>
       <SignedIn>
         {!compact && (
-          <span className="hidden max-w-[120px] truncate text-sm font-bold text-[#4B4B4B] sm:inline">
-            {user?.firstName ?? user?.username ?? "Account"}
-          </span>
+          <Link
+            href={HOME_PATH}
+            className="hidden max-w-[120px] truncate text-sm font-bold text-[#4B4B4B] hover:text-[#58CC02] sm:inline"
+          >
+            Dashboard
+          </Link>
         )}
         <UserButton
           appearance={{

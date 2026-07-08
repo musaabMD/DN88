@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import {
   SAMPLE_FLASHCARDS,
   SAMPLE_IMAGES,
@@ -20,6 +20,13 @@ import {
 import { CitationList } from "@/components/tool-ui/citation";
 import { BottomTabBar } from "@/components/BottomTabBar";
 import { BrowseHeader } from "@/components/BrowseHeader";
+import { FilterFab } from "@/components/FilterFab";
+import {
+  countBrowseFilters,
+  loadBrowseFilters,
+  type BrowseFilters,
+} from "@/lib/browse-filters";
+import { getTileColors } from "@/lib/tile-colors";
 import type { LucideIcon } from "lucide-react";
 import {
   FileQuestion,
@@ -88,10 +95,53 @@ const TAGS = [
 const DAILY_LIMIT = 20;
 const DAILY_USED = 13;
 
-function filterSets(sets: StudySet[], query: string): StudySet[] {
+const TAB_SET_LABEL: Record<string, string> = {
+  questions: "practice sets",
+  summary: "note sets",
+  images: "image sets",
+  flashcards: "card sets",
+  library: "sets",
+};
+
+const TAB_ITEM_LABEL: Record<string, string> = {
+  questions: "questions",
+  summary: "notes",
+  images: "images",
+  flashcards: "cards",
+  library: "items",
+};
+
+function filterSets(
+  sets: StudySet[],
+  query: string,
+  filters: BrowseFilters
+): StudySet[] {
+  let result = sets;
+
+  if (filters.subjects.length > 0) {
+    result = result.filter((set) => filters.subjects.includes(set.subject));
+  }
+  if (filters.tags.length > 0) {
+    result = result.filter((set) => filters.tags.includes(set.tag));
+  }
+  if (filters.statuses.length > 0) {
+    result = result.filter((set) => {
+      const used = set.done > 0;
+      const incorrect = set.score !== null && set.score < 70;
+      return filters.statuses.some((status) => {
+        if (status === "Used") return used;
+        if (status === "Unused") return !used;
+        if (status === "Incorrect") return incorrect;
+        if (status === "Bookmark") return set.tag.toLowerCase().includes("yield");
+        return false;
+      });
+    });
+  }
+
   const q = query.trim().toLowerCase();
-  if (!q) return sets;
-  return sets.filter(
+  if (!q) return result;
+
+  return result.filter(
     (set) =>
       set.title.toLowerCase().includes(q) ||
       set.subject.toLowerCase().includes(q) ||
@@ -154,8 +204,12 @@ function setMastery(set: StudySet): number {
 }
 
 function LetterTile({ title }: { title: string }) {
+  const { bg, border } = getTileColors(title);
   return (
-    <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-b-4 border-green-600 bg-green-500">
+    <div
+      className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-b-4"
+      style={{ background: bg, borderColor: border }}
+    >
       <span
         aria-hidden="true"
         className="absolute -bottom-3 -right-1 select-none text-5xl font-black text-white opacity-20"
@@ -167,7 +221,15 @@ function LetterTile({ title }: { title: string }) {
   );
 }
 
-function SetCard({ set, onOpen }: { set: StudySet; onOpen: () => void }) {
+function SetCard({
+  set,
+  tab,
+  onOpen,
+}: {
+  set: StudySet;
+  tab: string;
+  onOpen: () => void;
+}) {
   const mastery = setMastery(set);
   const started = mastery > 0;
 
@@ -186,7 +248,9 @@ function SetCard({ set, onOpen }: { set: StudySet; onOpen: () => void }) {
           </h3>
           <p className="mt-1 flex items-center gap-1.5 text-sm font-bold text-slate-400">
             <Layers size={14} strokeWidth={2.5} />
-            <span className="tabular-nums">{set.upvotes.toLocaleString()} cards</span>
+            <span className="tabular-nums">
+              {set.upvotes.toLocaleString()} {TAB_ITEM_LABEL[tab] ?? "items"}
+            </span>
           </p>
         </div>
 
@@ -1037,10 +1101,12 @@ function TabContent({
   tab,
   onOpenSet,
   search,
+  filters,
 }: {
   tab: string;
   onOpenSet: (s: StudySet) => void;
   search: string;
+  filters: BrowseFilters;
 }) {
   if (tab === "library") {
     return (
@@ -1058,11 +1124,12 @@ function TabContent({
     );
   }
 
-  const sets = filterSets(SETS_BY_TAB[tab] ?? [], search);
+  const sets = filterSets(SETS_BY_TAB[tab] ?? [], search, filters);
+  const sectionLabel = TAB_SET_LABEL[tab] ?? "sets";
   return (
     <>
       <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 px-1">
-        {sets.length} Set{sets.length !== 1 ? "s" : ""}
+        {sets.length} {sectionLabel}
         {search.trim() ? ` matching "${search.trim()}"` : ""}
       </p>
       {sets.length === 0 ? (
@@ -1075,7 +1142,7 @@ function TabContent({
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {sets.map((set) => (
-            <SetCard key={set.id} set={set} onOpen={() => onOpenSet(set)} />
+            <SetCard key={set.id} set={set} tab={tab} onOpen={() => onOpenSet(set)} />
           ))}
         </div>
       )}
@@ -1663,11 +1730,21 @@ function PaginationBar({
 
 export default function DrNoteApp({ tab: activeTab }: { tab: ContentTab }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [statsOpen, setStatsOpen] = useState(false);
   const [dailyOpen, setDailyOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [browseFilters, setBrowseFilters] = useState<BrowseFilters>({
+    subjects: [],
+    statuses: [],
+    tags: [],
+  });
 
-  const totalFilters = 0;
+  useEffect(() => {
+    setBrowseFilters(loadBrowseFilters());
+  }, [pathname]);
+
+  const totalFilters = countBrowseFilters(browseFilters);
 
   const streak = 14;
   const dailyRemaining = DAILY_LIMIT - DAILY_USED;
@@ -1692,9 +1769,15 @@ export default function DrNoteApp({ tab: activeTab }: { tab: ContentTab }) {
         <TabContent
           tab={activeTab}
           search={search}
+          filters={browseFilters}
           onOpenSet={(s) => router.push(setPath(activeTab, s.id))}
         />
       </main>
+
+      <FilterFab
+        hidden={totalFilters > 0}
+        onClick={() => router.push(FILTERS_PATH)}
+      />
 
       <BottomTabBar />
 
