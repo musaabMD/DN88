@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ListTree } from "lucide-react";
 
 function sectionSlug(heading: string): string {
   return heading.toLowerCase().replace(/ /g, "-");
@@ -46,30 +45,42 @@ export function ArticleTableOfContents({
       className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto"
       aria-label="Table of contents"
     >
-      <p className="mb-3 flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wide text-slate-400">
-        <ListTree size={14} strokeWidth={2.5} />
-        Contents
-      </p>
-      <ul className="space-y-1 border-l-2 border-slate-200 pl-3">
-        {headings.map((heading) => {
-          const id = sectionSlug(heading);
-          const isActive = (current ?? activeId) === id;
-          return (
-            <li key={heading}>
-              <a
-                href={`#${id}`}
-                className={`block rounded-lg py-1.5 pl-2 text-sm font-bold transition-colors ${
-                  isActive
-                    ? "border-l-2 border-slate-700 -ml-[calc(0.75rem+2px)] pl-[calc(0.5rem+2px)] text-slate-800"
-                    : "text-slate-500 hover:text-slate-700"
-                }`}
-              >
-                {heading}
-              </a>
-            </li>
-          );
-        })}
-      </ul>
+      <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-b from-slate-50 to-white p-3 shadow-sm">
+        <p className="mb-2 px-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400">
+          On this page
+        </p>
+        <ol className="space-y-0.5">
+          {headings.map((heading, index) => {
+            const id = sectionSlug(heading);
+            const isActive = (current ?? activeId) === id;
+            return (
+              <li key={heading}>
+                <a
+                  href={`#${id}`}
+                  className={`group flex items-start gap-2.5 rounded-xl px-2 py-2 transition-colors ${
+                    isActive
+                      ? "bg-[#191414] text-white"
+                      : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                  }`}
+                >
+                  <span
+                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-black tabular-nums ${
+                      isActive
+                        ? "bg-[#1DB954] text-[#191414]"
+                        : "bg-slate-200/80 text-slate-500 group-hover:bg-slate-300/80"
+                    }`}
+                  >
+                    {index + 1}
+                  </span>
+                  <span className="text-[13px] font-bold leading-snug">
+                    {heading}
+                  </span>
+                </a>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
     </nav>
   );
 }

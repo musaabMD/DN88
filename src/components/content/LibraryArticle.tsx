@@ -412,7 +412,7 @@ export default function LibraryArticle({
       className={`mx-auto flex w-full gap-8 ${presentation ? "max-w-3xl" : "max-w-5xl"}`}
     >
       {!fullPage && showArticleBody && primaryView !== "presentation" ? (
-        <aside className="hidden w-44 shrink-0 lg:block xl:w-52">
+        <aside className="hidden w-48 shrink-0 lg:block xl:w-56">
           <ArticleTableOfContents
             headings={sectionHeadings}
             activeId={sectionHeadings[0] ? sectionSlug(sectionHeadings[0]) : null}
@@ -520,15 +520,18 @@ export default function LibraryArticle({
 
         {showArticleBody && primaryView !== "presentation" ? (
           <nav
-            className="mt-4 flex gap-2 overflow-x-auto lg:hidden"
+            className="mt-4 flex gap-2 overflow-x-auto pb-1 lg:hidden"
             aria-label="Contents"
           >
-            {sectionHeadings.map((s) => (
+            {sectionHeadings.map((s, index) => (
               <a
                 key={s}
                 href={`#${sectionSlug(s)}`}
-                className="shrink-0 rounded-full border border-slate-200 px-3 py-1 text-xs font-extrabold text-slate-500"
+                className="flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-extrabold text-slate-600 transition-colors hover:border-[#1DB954]/40 hover:bg-[#E8F8EE]"
               >
+                <span className="flex h-4 w-4 items-center justify-center rounded-md bg-[#1DB954] text-[9px] font-black text-[#191414]">
+                  {index + 1}
+                </span>
                 {s}
               </a>
             ))}
