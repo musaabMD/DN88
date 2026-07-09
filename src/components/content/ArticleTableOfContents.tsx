@@ -45,7 +45,7 @@ export function ArticleTableOfContents({
       className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto"
       aria-label="Table of contents"
     >
-      <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-b from-slate-50 to-white p-3 shadow-sm">
+      <div className="rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-3">
         <p className="mb-2 px-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400">
           On this page
         </p>
@@ -59,15 +59,15 @@ export function ArticleTableOfContents({
                   href={`#${id}`}
                   className={`group flex items-start gap-2.5 rounded-xl px-2 py-2 transition-colors ${
                     isActive
-                      ? "bg-[#191414] text-white"
-                      : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                      ? "bg-slate-700 text-white"
+                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
                   }`}
                 >
                   <span
-                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-black tabular-nums ${
+                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-lg text-[10px] font-black tabular-nums ${
                       isActive
-                        ? "bg-[#1DB954] text-[#191414]"
-                        : "bg-slate-200/80 text-slate-500 group-hover:bg-slate-300/80"
+                        ? "bg-white text-slate-700"
+                        : "bg-slate-100 text-slate-500 group-hover:bg-slate-200"
                     }`}
                   >
                     {index + 1}

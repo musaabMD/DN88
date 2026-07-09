@@ -527,9 +527,9 @@ export default function LibraryArticle({
               <a
                 key={s}
                 href={`#${sectionSlug(s)}`}
-                className="flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-extrabold text-slate-600 transition-colors hover:border-[#1DB954]/40 hover:bg-[#E8F8EE]"
+                className="flex shrink-0 items-center gap-1.5 rounded-xl border-2 border-slate-200 bg-white px-2.5 py-1.5 text-xs font-extrabold text-slate-600 transition-colors hover:bg-slate-50"
               >
-                <span className="flex h-4 w-4 items-center justify-center rounded-md bg-[#1DB954] text-[9px] font-black text-[#191414]">
+                <span className="flex h-4 w-4 items-center justify-center rounded-md bg-slate-700 text-[9px] font-black text-white">
                   {index + 1}
                 </span>
                 {s}
