@@ -1,6 +1,7 @@
 export const MEDICAL_SPECIALTIES = [
   "Allergy and immunology",
   "Anaesthesiology",
+  "Biostatistics and epidemiology",
   "Cardiology",
   "Cardiothoracic surgery",
   "Critical care medicine",
@@ -220,6 +221,13 @@ const ANAESTHESIOLOGY_TOPICS = [
   "Unstable angina",
   "Volume depletion in adults",
   "Volume depletion in children",
+] as const;
+
+const BIOSTATISTICS_AND_EPIDEMIOLOGY_TOPICS = [
+  "Population health",
+  "Epidemiology",
+  "Statistical analysis of data",
+  "Interpreting medical evidence",
 ] as const;
 
 const CARDIOLOGY_TOPICS = [
@@ -4866,6 +4874,12 @@ export const SPECIALTY_TOPIC_GROUPS: Array<{
   {
     specialty: "Anaesthesiology",
     topics: topicsFor("Anaesthesiology", [...ANAESTHESIOLOGY_TOPICS]),
+  },
+  {
+    specialty: "Biostatistics and epidemiology",
+    topics: topicsFor("Biostatistics and epidemiology", [
+      ...BIOSTATISTICS_AND_EPIDEMIOLOGY_TOPICS,
+    ]),
   },
   {
     specialty: "Cardiology",
