@@ -80,7 +80,7 @@ export function ComingSoonPanel({
   );
 }
 
-export function LibraryBackLink({ href = "/library" }: { href?: string }) {
+export function LibraryBackLink({ href = "/library/" }: { href?: string }) {
   return (
     <Link
       href={href}
