@@ -1186,3 +1186,36 @@ export function specialtiesWithoutTopics(): MedicalSpecialty[] {
   );
   return MEDICAL_SPECIALTIES.filter((s) => !withTopics.has(s));
 }
+
+export function specialtySlug(specialty: string): string {
+  return specialty
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+export function getSpecialtyBySlug(
+  slug: string
+): MedicalSpecialty | undefined {
+  return MEDICAL_SPECIALTIES.find((s) => specialtySlug(s) === slug);
+}
+
+export function getTopicById(topicId: string): SpecialtyTopic | undefined {
+  return ALL_SPECIALTY_TOPICS.find((t) => t.id === topicId);
+}
+
+export function getTopicsForSpecialty(
+  specialty: MedicalSpecialty
+): SpecialtyTopic[] {
+  return (
+    SPECIALTY_TOPIC_GROUPS.find((g) => g.specialty === specialty)?.topics ?? []
+  );
+}
+
+export function getAllSpecialtyStaticParams(): Array<{ specialtySlug: string }> {
+  return MEDICAL_SPECIALTIES.map((s) => ({ specialtySlug: specialtySlug(s) }));
+}
+
+export function getAllTopicStaticParams(): Array<{ topicId: string }> {
+  return ALL_SPECIALTY_TOPICS.map((t) => ({ topicId: t.id }));
+}

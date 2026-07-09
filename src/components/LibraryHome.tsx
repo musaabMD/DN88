@@ -1,26 +1,44 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bookmark, ChevronRight, Clock3, Search } from "lucide-react";
+import { ChevronRight, Clock3, Search } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
+import { LibraryThumb } from "@/components/library/LibraryThumb";
+import {
+  BookmarkButton,
+  useBookmark,
+} from "@/components/library/LibraryUi";
 import { SuggestArticleModal } from "@/components/SuggestArticleModal";
 import { UserAuthControls } from "@/components/UserAuthControls";
 import {
   isArticleBookmarked,
   toggleArticleBookmark,
 } from "@/lib/article-bookmarks";
+import {
+  isSpecialtyBookmarked,
+  isTopicBookmarked,
+  toggleSpecialtyBookmark,
+  toggleTopicBookmark,
+} from "@/lib/library-bookmarks";
 import { filterLibraryArticles } from "@/lib/mock-data";
-import { DASHBOARD_PATH, HOME_PATH, UPGRADE_PATH, articlePath } from "@/lib/routes";
+import {
+  DASHBOARD_PATH,
+  HOME_PATH,
+  UPGRADE_PATH,
+  articlePath,
+  specialtyPath,
+  topicPath,
+} from "@/lib/routes";
 import {
   MEDICAL_SPECIALTIES,
   SPECIALTY_TOPIC_GROUPS,
   filterSpecialtyTopics,
+  specialtySlug,
   type MedicalSpecialty,
   type SpecialtyTopic,
 } from "@/lib/specialties";
-import { getTileColors } from "@/lib/tile-colors";
 
 type LibraryTab = "specialty" | "topic";
 
@@ -141,82 +159,51 @@ function LibraryHero({
   );
 }
 
-/** Specialty / article row — same visual language as ExamCard. */
-function LibraryRowCard({
-  title,
-  letter,
-  colorKey,
-  query,
-  href,
+function SpecialtyCard({
+  specialty,
   meta,
-  trailing,
+  query,
 }: {
-  title: string;
-  letter: string;
-  colorKey: string;
+  specialty: MedicalSpecialty;
+  meta: string;
   query: string;
-  href?: string;
-  meta?: string;
-  trailing?: React.ReactNode;
 }) {
-  const { bg, border } = getTileColors(colorKey);
-
-  const body = (
-    <>
-      <div
-        className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-b-4"
-        style={{ background: bg, borderColor: border }}
-      >
-        <span
-          aria-hidden="true"
-          className="absolute -bottom-3 -right-1 select-none text-4xl font-black text-white opacity-20"
-        >
-          {letter}
-        </span>
-        <span className="relative text-xl font-black text-white">{letter}</span>
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <h3 className="truncate text-base font-extrabold tracking-tight text-slate-700">
-          <HighlightText text={title} query={query} />
-        </h3>
-        {meta ? (
-          <p className="mt-1 flex items-center gap-1.5 text-sm font-bold text-slate-400">
-            {meta.includes("min") ? (
-              <Clock3 size={14} strokeWidth={2.5} className="shrink-0" />
-            ) : null}
-            <span>
-              <HighlightText text={meta} query={query} />
-            </span>
-          </p>
-        ) : null}
-      </div>
-
-      <ChevronRight
-        size={20}
-        strokeWidth={3}
-        className="shrink-0 text-slate-300 transition-all duration-150 group-hover:translate-x-1 group-hover:text-[#334155]"
-      />
-    </>
+  const { bookmarked, toggleBookmark } = useBookmark(
+    () => isSpecialtyBookmarked(specialty),
+    () => toggleSpecialtyBookmark(specialty),
+    [specialty]
   );
 
   return (
     <div className="group flex w-full items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4 text-left transition-colors duration-150 hover:bg-slate-50">
-      {href ? (
-        <Link href={href} className="flex min-w-0 flex-1 items-center gap-4">
-          {body}
-        </Link>
-      ) : (
-        <button type="button" className="flex min-w-0 flex-1 items-center gap-4">
-          {body}
-        </button>
-      )}
-      {trailing}
+      <Link
+        href={specialtyPath(specialtySlug(specialty))}
+        className="flex min-w-0 flex-1 items-center gap-3"
+      >
+        <LibraryThumb seed={specialty} />
+        <div className="min-w-0 flex-1 text-left">
+          <h3 className="text-base font-extrabold leading-snug tracking-tight text-slate-700">
+            <HighlightText text={specialty} query={query} />
+          </h3>
+          <p className="mt-1 text-left text-sm font-bold text-slate-400">
+            {meta}
+          </p>
+        </div>
+        <ChevronRight
+          size={20}
+          strokeWidth={3}
+          className="shrink-0 text-slate-300 transition-all duration-150 group-hover:translate-x-1 group-hover:text-[#334155]"
+        />
+      </Link>
+      <BookmarkButton
+        bookmarked={bookmarked}
+        onToggle={toggleBookmark}
+        label={bookmarked ? "Remove specialty bookmark" : "Bookmark specialty"}
+      />
     </div>
   );
 }
 
-/** Compact topic row — lighter than exam cards, still clean. */
 function TopicCard({
   topic,
   query,
@@ -224,40 +211,40 @@ function TopicCard({
   topic: SpecialtyTopic;
   query: string;
 }) {
-  const { bg, border } = getTileColors(topic.specialty);
-  const letter = topic.title.charAt(0).toUpperCase();
+  const { bookmarked, toggleBookmark } = useBookmark(
+    () => isTopicBookmarked(topic.id),
+    () => toggleTopicBookmark(topic.id),
+    [topic.id]
+  );
 
   return (
-    <button
-      type="button"
-      className="group flex w-full items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white px-4 py-3 text-left transition-colors duration-150 hover:bg-slate-50"
-    >
-      <div
-        className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border-b-4"
-        style={{ background: bg, borderColor: border }}
+    <div className="group flex w-full items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white px-4 py-3 text-left transition-colors duration-150 hover:bg-slate-50">
+      <Link
+        href={topicPath(topic.id)}
+        className="flex min-w-0 flex-1 items-center gap-3"
       >
-        <span
-          aria-hidden="true"
-          className="absolute -bottom-2 -right-1 select-none text-3xl font-black text-white opacity-20"
-        >
-          {letter}
-        </span>
-        <span className="relative text-base font-black text-white">{letter}</span>
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-extrabold leading-snug text-slate-700">
-          <HighlightText text={topic.title} query={query} />
-        </p>
-        <p className="mt-0.5 truncate text-xs font-bold text-slate-400">
-          <HighlightText text={topic.specialty} query={query} />
-        </p>
-      </div>
-      <ChevronRight
-        size={18}
-        strokeWidth={3}
-        className="shrink-0 text-slate-300 transition-all duration-150 group-hover:translate-x-1 group-hover:text-[#334155]"
+        <LibraryThumb seed={topic.title} size="sm" />
+        <div className="min-w-0 flex-1 text-left">
+          <p className="text-sm font-extrabold leading-snug text-slate-700">
+            <HighlightText text={topic.title} query={query} />
+          </p>
+          <p className="mt-0.5 text-left text-xs font-bold text-slate-400">
+            <HighlightText text={topic.specialty} query={query} />
+          </p>
+        </div>
+        <ChevronRight
+          size={18}
+          strokeWidth={3}
+          className="shrink-0 text-slate-300 transition-all duration-150 group-hover:translate-x-1 group-hover:text-[#334155]"
+        />
+      </Link>
+      <BookmarkButton
+        bookmarked={bookmarked}
+        onToggle={toggleBookmark}
+        label={bookmarked ? "Remove topic bookmark" : "Bookmark topic"}
+        size="sm"
       />
-    </button>
+    </div>
   );
 }
 
@@ -273,39 +260,43 @@ function ArticleCard({
   };
   query: string;
 }) {
-  const [bookmarked, setBookmarked] = useState(false);
-
-  useEffect(() => {
-    setBookmarked(isArticleBookmarked(article.id));
-  }, [article.id]);
+  const { bookmarked, toggleBookmark } = useBookmark(
+    () => isArticleBookmarked(article.id),
+    () => toggleArticleBookmark(article.id),
+    [article.id]
+  );
 
   return (
-    <LibraryRowCard
-      title={article.title}
-      letter={article.title.charAt(0).toUpperCase()}
-      colorKey={article.subject}
-      query={query}
-          href={articlePath(article.id)}
-      meta={`${article.readMinutes} min read · ${article.subject}`}
-      trailing={
-        <button
-          type="button"
-          onClick={() => setBookmarked(toggleArticleBookmark(article.id))}
-          aria-label={bookmarked ? "Remove bookmark" : "Bookmark article"}
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-b-4 transition-colors active:translate-y-0.5 active:border-b-2 ${
-            bookmarked
-              ? "border-slate-700 bg-slate-700 text-white"
-              : "border-slate-200 bg-white text-slate-400 hover:border-slate-400 hover:text-slate-700"
-          }`}
-        >
-          <Bookmark
-            size={18}
-            strokeWidth={2.5}
-            fill={bookmarked ? "currentColor" : "none"}
-          />
-        </button>
-      }
-    />
+    <div className="group flex w-full items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4 text-left transition-colors duration-150 hover:bg-slate-50">
+      <Link
+        href={articlePath(article.id)}
+        className="flex min-w-0 flex-1 items-center gap-3"
+      >
+        <LibraryThumb seed={article.subject} />
+        <div className="min-w-0 flex-1 text-left">
+          <h3 className="text-base font-extrabold leading-snug tracking-tight text-slate-700">
+            <HighlightText text={article.title} query={query} />
+          </h3>
+          <p className="mt-1 flex items-center gap-1.5 text-left text-sm font-bold text-slate-400">
+            <Clock3 size={14} strokeWidth={2.5} className="shrink-0" />
+            <span>
+              {article.readMinutes} min read ·{" "}
+              <HighlightText text={article.subject} query={query} />
+            </span>
+          </p>
+        </div>
+        <ChevronRight
+          size={20}
+          strokeWidth={3}
+          className="shrink-0 text-slate-300 transition-all duration-150 group-hover:translate-x-1 group-hover:text-[#334155]"
+        />
+      </Link>
+      <BookmarkButton
+        bookmarked={bookmarked}
+        onToggle={toggleBookmark}
+        label={bookmarked ? "Remove bookmark" : "Bookmark article"}
+      />
+    </div>
   );
 }
 
@@ -343,13 +334,11 @@ function SpecialtyTab({ query }: { query: string }) {
             ? `${count} topic${count === 1 ? "" : "s"}`
             : "Coming soon";
         return (
-          <LibraryRowCard
+          <SpecialtyCard
             key={specialty}
-            title={specialty}
-            letter={specialty.charAt(0).toUpperCase()}
-            colorKey={specialty}
-            query={query}
+            specialty={specialty}
             meta={meta}
+            query={query}
           />
         );
       })}

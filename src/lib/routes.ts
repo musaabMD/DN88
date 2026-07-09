@@ -11,6 +11,8 @@
  *   /qbank/{examId}/{tab}/sets/{setId}/results
  *   /qbank/{examId}/filters         Filter panel
  *   /library                        Article library product
+ *   /library/specialties/{slug}     Specialty hub (topics list / coming soon)
+ *   /library/topics/{topicId}       Topic page (article or coming soon)
  *   /library/articles/{articleId}   Article reader
  *   /upgrade                        Upgrade page
  */
@@ -125,6 +127,14 @@ export const PRICING_PATH = "/pricing";
 /** Library article reader — independent of qbank exams. */
 export function articlePath(articleId: string): string {
   return `/library/articles/${articleId}`;
+}
+
+export function specialtyPath(specialtySlug: string): string {
+  return `/library/specialties/${specialtySlug}`;
+}
+
+export function topicPath(topicId: string): string {
+  return `/library/topics/${topicId}`;
 }
 
 /** @deprecated Use filtersPath(examId) */
