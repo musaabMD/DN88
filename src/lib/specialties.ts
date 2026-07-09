@@ -33,6 +33,7 @@ export const MEDICAL_SPECIALTIES = [
   "Respiratory disorders",
   "Rheumatology",
   "Sleep medicine",
+  "Social sciences",
   "Surgery",
   "Urology",
   "Vascular surgery",
@@ -1712,6 +1713,12 @@ const SLEEP_MEDICINE_TOPICS = [
   "Periodic limb movement disorder",
   "Restless legs syndrome",
   "Snoring",
+] as const;
+
+const SOCIAL_SCIENCES_TOPICS = [
+  "Legal medicine, ethics, and professionalism",
+  "Communication and counseling",
+  "Public health and health care systems",
 ] as const;
 
 const RHEUMATOLOGY_TOPICS = [
@@ -4934,6 +4941,10 @@ export const SPECIALTY_TOPIC_GROUPS: Array<{
   {
     specialty: "Sleep medicine",
     topics: topicsFor("Sleep medicine", [...SLEEP_MEDICINE_TOPICS]),
+  },
+  {
+    specialty: "Social sciences",
+    topics: topicsFor("Social sciences", [...SOCIAL_SCIENCES_TOPICS]),
   },
   {
     specialty: "Rheumatology",
