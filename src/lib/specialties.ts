@@ -1193,6 +1193,28 @@ const WOMENS_HEALTH_TOPICS = [
   "Zika virus infection",
 ] as const;
 
+const VASCULAR_SURGERY_TOPICS = [
+  "Abdominal aortic aneurysm",
+  "Angiodysplasia of the colon and small intestine",
+  "Aortic coarctation",
+  "Aortic dissection",
+  "Buerger's disease",
+  "Chronic venous insufficiency",
+  "Deep vein thrombosis",
+  "Diabetes-related foot disease",
+  "Gangrene",
+  "Ischaemic bowel disease",
+  "Peripheral arterial disease",
+  "Pressure ulcer",
+  "Pulmonary embolism",
+  "Renal artery stenosis",
+  "Superficial vein thrombosis",
+  "Superior vena cava syndrome",
+  "Thoracic outlet syndrome",
+  "Varicose veins",
+  "Venous thromboembolism (VTE) prophylaxis",
+] as const;
+
 export const SPECIALTY_TOPIC_GROUPS: Array<{
   specialty: MedicalSpecialty;
   topics: SpecialtyTopic[];
@@ -1244,6 +1266,10 @@ export const SPECIALTY_TOPIC_GROUPS: Array<{
   {
     specialty: "Women's health",
     topics: topicsFor("Women's health", [...WOMENS_HEALTH_TOPICS]),
+  },
+  {
+    specialty: "Vascular surgery",
+    topics: topicsFor("Vascular surgery", [...VASCULAR_SURGERY_TOPICS]),
   },
 ];
 
