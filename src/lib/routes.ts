@@ -2,14 +2,16 @@
  * URL routing rules for DrNote (frontend-only for now).
  *
  * Path shape:
- *   /                               Exam picker home
- *   /library                        Global article library
- *   /{examId}                       Browse sets (default questions tab)
- *   /{examId}/{tab}                 Browse sets for a content tab
- *   /{examId}/{tab}/sets/{setId}    Set hub
- *   /{examId}/{tab}/sets/{setId}/quiz
- *   /{examId}/{tab}/sets/{setId}/results
- *   /{examId}/filters               Filter panel
+ *   /                               Product picker (Qbank | Library)
+ *   /qbank                          Exam picker
+ *   /qbank/{examId}                 Browse sets (default questions tab)
+ *   /qbank/{examId}/{tab}           Browse sets for a content tab
+ *   /qbank/{examId}/{tab}/sets/{setId}
+ *   /qbank/{examId}/{tab}/sets/{setId}/quiz
+ *   /qbank/{examId}/{tab}/sets/{setId}/results
+ *   /qbank/{examId}/filters         Filter panel
+ *   /library                        Article library product
+ *   /library/articles/{articleId}   Article reader
  *   /upgrade                        Upgrade page
  */
 
@@ -27,13 +29,16 @@ export type ContentTab = (typeof VALID_TABS)[number];
 
 export const DEFAULT_TAB: ContentTab = "questions";
 
-/** Exam picker home. */
+/** Product picker home. */
 export const HOME_PATH = "/";
+
+/** Qbank exam picker. */
+export const QBANK_PATH = "/qbank";
 
 /** User dashboard with pinned exams. */
 export const DASHBOARD_PATH = "/dashboard";
 
-/** Global article library. */
+/** Global article library product. */
 export const LIBRARY_PATH = "/library";
 
 export type QuizMode =
@@ -56,15 +61,16 @@ export function isValidTab(tab: string): tab is ContentTab {
 }
 
 export function examPath(examId: string = DEFAULT_EXAM_ID): string {
-  return `/${examId}`;
+  return `/qbank/${examId}`;
 }
 
 export function examTabPath(
   examId: string,
   tab: ContentTab = DEFAULT_TAB
 ): string {
+  if (tab === "library") return LIBRARY_PATH;
   if (tab === DEFAULT_TAB) return examPath(examId);
-  return `/${examId}/${tab}`;
+  return `/qbank/${examId}/${tab}`;
 }
 
 /** @deprecated Use examTabPath(examId, tab) */
@@ -80,7 +86,7 @@ export function setPath(
   tab: ContentTab,
   setId: string
 ): string {
-  return `/${examId}/${tab}/sets/${setId}`;
+  return `/qbank/${examId}/${tab}/sets/${setId}`;
 }
 
 export function quizPath(
@@ -89,7 +95,7 @@ export function quizPath(
   setId: string,
   params?: QuizSearchParams
 ): string {
-  const base = `/${examId}/${tab}/sets/${setId}/quiz`;
+  const base = `/qbank/${examId}/${tab}/sets/${setId}/quiz`;
   if (!params) return base;
 
   const search = new URLSearchParams();
@@ -106,18 +112,19 @@ export function resultsPath(
   tab: ContentTab,
   setId: string
 ): string {
-  return `/${examId}/${tab}/sets/${setId}/results`;
+  return `/qbank/${examId}/${tab}/sets/${setId}/results`;
 }
 
 export function filtersPath(examId: string = DEFAULT_EXAM_ID): string {
-  return `/${examId}/filters`;
+  return `/qbank/${examId}/filters`;
 }
 
 export const UPGRADE_PATH = "/upgrade";
 export const PRICING_PATH = "/pricing";
 
-export function articlePath(examId: string, articleId: string): string {
-  return `/${examId}/library/articles/${articleId}`;
+/** Library article reader — independent of qbank exams. */
+export function articlePath(articleId: string): string {
+  return `/library/articles/${articleId}`;
 }
 
 /** @deprecated Use filtersPath(examId) */
@@ -162,14 +169,23 @@ export function parseQuizSearchParams(
 
 export function activeTabFromPathname(pathname: string): ContentTab {
   const segments = pathname.split("/").filter(Boolean);
-  if (segments.length >= 2 && isValidTab(segments[1]!)) {
+  // /qbank/{examId}/{tab}/...
+  if (segments[0] === "qbank" && segments.length >= 3 && isValidTab(segments[2]!)) {
+    return segments[2];
+  }
+  // legacy /{examId}/{tab}
+  if (segments.length >= 2 && isValidExamId(segments[0]!) && isValidTab(segments[1]!)) {
     return segments[1];
   }
   return DEFAULT_TAB;
 }
 
 export function examIdFromPathname(pathname: string): string | null {
-  const segment = pathname.split("/").filter(Boolean)[0];
-  if (!segment || !isValidExamId(segment)) return null;
-  return segment;
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments[0] === "qbank" && segments[1] && isValidExamId(segments[1])) {
+    return segments[1];
+  }
+  // legacy /{examId}/...
+  if (segments[0] && isValidExamId(segments[0])) return segments[0];
+  return null;
 }

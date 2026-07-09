@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { LibraryArticleClient } from "@/components/LibraryArticleClient";
 import { getAllArticleStaticParams, getLibraryArticleById } from "@/lib/mock-data";
-import { isValidExamId } from "@/lib/exams";
 
 export function generateStaticParams() {
   return getAllArticleStaticParams();
@@ -10,11 +9,11 @@ export function generateStaticParams() {
 export default async function LibraryArticlePage({
   params,
 }: {
-  params: Promise<{ examId: string; articleId: string }>;
+  params: Promise<{ articleId: string }>;
 }) {
-  const { examId, articleId } = await params;
-  if (!isValidExamId(examId) || !getLibraryArticleById(articleId)) {
+  const { articleId } = await params;
+  if (!getLibraryArticleById(articleId)) {
     notFound();
   }
-  return <LibraryArticleClient examId={examId} articleId={articleId} />;
+  return <LibraryArticleClient articleId={articleId} />;
 }
