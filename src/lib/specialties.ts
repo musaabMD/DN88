@@ -1691,6 +1691,20 @@ const SURGERY_TOPICS = [
   "Zika virus infection",
 ] as const;
 
+const SLEEP_MEDICINE_TOPICS = [
+  "Assessment of fatigue",
+  "Central sleep apnoea",
+  "Dyssomnias in children",
+  "Insomnia",
+  "Jet lag and sleep phase disorders",
+  "Narcolepsy",
+  "Obstructive sleep apnoea in adults",
+  "Parasomnias in adults",
+  "Parasomnias in children",
+  "Periodic limb movement disorder",
+  "Restless legs syndrome",
+  "Snoring",
+] as const;
 
 export const SPECIALTY_TOPIC_GROUPS: Array<{
   specialty: MedicalSpecialty;
@@ -1755,6 +1769,10 @@ export const SPECIALTY_TOPIC_GROUPS: Array<{
   {
     specialty: "Surgery",
     topics: topicsFor("Surgery", [...SURGERY_TOPICS]),
+  },
+  {
+    specialty: "Sleep medicine",
+    topics: topicsFor("Sleep medicine", [...SLEEP_MEDICINE_TOPICS]),
   },
 ];
 
