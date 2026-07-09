@@ -42,6 +42,7 @@ import {
   toggleArticleBookmark,
 } from "@/lib/article-bookmarks";
 import type { LibraryArticle, LibraryArticleSection } from "@/lib/set-content";
+import { cn } from "@/lib/utils";
 
 function applyHighlights(
   text: string,
@@ -356,6 +357,7 @@ export default function LibraryArticle({
   const [studyMode, setStudyMode] = useState<StudyModeFilter | null>(null);
   const [isReading, setIsReading] = useState(false);
   const [slideIndex, setSlideIndex] = useState(0);
+  const [chatPanelOpen, setChatPanelOpen] = useState(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   const loadAnnotations = useCallback(() => {
@@ -508,7 +510,12 @@ export default function LibraryArticle({
   }, [presentation, slides.length]);
 
   const content = (
-    <div className="mx-auto flex w-full max-w-5xl gap-10 pb-36">
+    <div
+      className={cn(
+        "mx-auto flex w-full max-w-5xl gap-10 pb-36 transition-[padding,margin] duration-300",
+        chatPanelOpen && "lg:mr-[420px]"
+      )}
+    >
       <aside className="hidden w-44 shrink-0 lg:block xl:w-52">
         <ArticleTableOfContents
           headings={visibleSections.map((s) => s.heading)}
@@ -740,6 +747,7 @@ export default function LibraryArticle({
           article={article}
           activeMode={studyMode}
           onSelectMode={selectStudyMode}
+          onPanelOpenChange={setChatPanelOpen}
         />
       ) : null}
 
