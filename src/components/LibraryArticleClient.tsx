@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ContentShell } from "@/components/ContentShell";
 import LibraryArticle from "@/components/content/LibraryArticle";
@@ -15,11 +16,18 @@ export function LibraryArticleClient({
 }) {
   const router = useRouter();
   const article = getLibraryArticleById(articleId);
+  const [fullPage, setFullPage] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   const backToLibrary = () => router.push(examTabPath(examId, "library"));
 
   if (!article) {
     return (
-      <ContentShell examId={examId} title="Article not found" onBack={backToLibrary}>
+      <ContentShell
+        examId={examId}
+        title="Article not found"
+        onBack={backToLibrary}
+        showLibrary
+      >
         <div className="py-16 text-center">
           <p className="mb-2 font-bold text-slate-800">Article not found</p>
           <button
@@ -34,8 +42,22 @@ export function LibraryArticleClient({
   }
 
   return (
-    <ContentShell examId={examId} title={article.title} onBack={backToLibrary}>
-      <LibraryArticle article={article} />
+    <ContentShell
+      examId={examId}
+      title={article.title}
+      onBack={backToLibrary}
+      showLibrary
+      onSearchClick={() => setShowSearch(true)}
+      headerHidden={fullPage}
+    >
+      <LibraryArticle
+        article={article}
+        examId={examId}
+        fullPage={fullPage}
+        onToggleFullPage={() => setFullPage((v) => !v)}
+        showSearch={showSearch}
+        onCloseSearch={() => setShowSearch(false)}
+      />
     </ContentShell>
   );
 }

@@ -33,14 +33,12 @@ const TYPE_ICONS: Record<CitationType, LucideIcon> = {
 };
 
 const SITE_COLORS = [
-  "#1CB0F6",
-  "#58CC02",
-  "#FF9600",
-  "#FF4B4B",
-  "#CE82FF",
-  "#FFC800",
-  "#FF86D0",
-  "#00CD9C",
+  "#64748b",
+  "#475569",
+  "#334155",
+  "#94a3b8",
+  "#78716c",
+  "#57534e",
 ];
 
 function siteLabel(domain?: string, title?: string): string {
@@ -102,6 +100,7 @@ export interface CitationListProps {
   variant?: CitationVariant;
   maxVisible?: number;
   className?: string;
+  size?: "default" | "compact";
   onNavigate?: (href: string, citation: SerializableCitation) => void;
 }
 
@@ -112,6 +111,7 @@ export function CitationList(props: CitationListProps) {
     variant = "default",
     maxVisible,
     className,
+    size = "default",
     onNavigate,
   } = props;
 
@@ -135,6 +135,7 @@ export function CitationList(props: CitationListProps) {
         id={id}
         citations={citations}
         className={className}
+        size={size}
         onNavigate={onNavigate}
       />
     );
@@ -312,6 +313,7 @@ interface StackedCitationsProps {
   id: string;
   citations: SerializableCitation[];
   className?: string;
+  size?: "default" | "compact";
   onNavigate?: (href: string, citation: SerializableCitation) => void;
 }
 
@@ -319,6 +321,7 @@ function StackedCitations({
   id,
   citations,
   className,
+  size = "default",
   onNavigate,
 }: StackedCitationsProps) {
   const [open, setOpen] = React.useState(false);
@@ -340,14 +343,21 @@ function StackedCitations({
     }
   };
 
+  const compact = size === "compact";
+  const iconSize = compact ? "size-5" : "size-7";
+  const innerIcon = compact ? "size-4 text-[9px]" : "size-6 text-[11px]";
+  const badgeImg = compact ? "size-4" : "size-5.5";
+
   return (
     <div className="inline-flex">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger render={<button type="button" data-tool-ui-id={id} data-slot="citation-list" style={{ "--accent": accentColor } as React.CSSProperties} onClick={() => setOpen((prev) => !prev)} className={cn(
-                            "group isolate inline-flex cursor-pointer items-center gap-2 rounded-xl border-2 border-b-4 border-[#E5E5E5] bg-white px-3 py-2 outline-none",
-                            "transition-all hover:bg-[#F7F7F7] active:translate-y-[2px] active:border-b-2",
-                            "focus-visible:ring-2 focus-visible:ring-[#1CB0F6]",
-                            open && "border-[#1CB0F6] bg-[#F7F7F7]",
+                            "group isolate inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white outline-none",
+                            compact ? "px-2 py-1" : "gap-2 rounded-xl border-2 border-b-4 border-[#E5E5E5] px-3 py-2",
+                            "transition-all hover:bg-slate-50",
+                            !compact && "active:translate-y-[2px] active:border-b-2",
+                            "focus-visible:ring-2 focus-visible:ring-slate-300",
+                            open && "border-slate-300 bg-slate-50",
                             className,
                           )} />}><div className="flex items-center">
                             {visibleCitations.map((citation, index) => {
@@ -359,8 +369,9 @@ function StackedCitations({
                                 <div
                                   key={citation.id}
                                   className={cn(
-                                    "relative flex size-7 items-center justify-center rounded-full border-2 border-white bg-white shadow-sm transition-transform group-hover:scale-105",
-                                    index > 0 && "-ml-2.5",
+                                    "relative flex items-center justify-center rounded-full border border-white bg-white shadow-sm",
+                                    iconSize,
+                                    index > 0 && (compact ? "-ml-1.5" : "-ml-2.5"),
                                   )}
                                   style={{ zIndex: maxIcons - index }}
                                 >
@@ -369,13 +380,16 @@ function StackedCitations({
                                       src={citation.favicon}
                                       alt=""
                                       aria-hidden="true"
-                                      width={22}
-                                      height={22}
-                                      className="size-5.5 rounded-full object-cover"
+                                      width={compact ? 16 : 22}
+                                      height={compact ? 16 : 22}
+                                      className={cn("rounded-full object-cover", badgeImg)}
                                     />
                                   ) : (
                                     <span
-                                      className="flex size-6 items-center justify-center rounded-full text-[11px] font-extrabold text-white"
+                                      className={cn(
+                                        "flex items-center justify-center rounded-full font-bold text-white",
+                                        innerIcon,
+                                      )}
                                       style={{ backgroundColor: color }}
                                     >
                                       {siteLabel(citation.domain, citation.title)}
@@ -386,16 +400,23 @@ function StackedCitations({
                             })}
                             {remainingCount > 0 && (
                               <div
-                                className="relative -ml-2.5 flex size-7 items-center justify-center rounded-full border-2 border-white bg-[#E5E5E5] shadow-sm"
+                                className={cn(
+                                  "relative flex items-center justify-center rounded-full border border-white bg-slate-200",
+                                  iconSize,
+                                  compact ? "-ml-1.5" : "-ml-2.5",
+                                )}
                                 style={{ zIndex: 0 }}
                               >
-                                <span className="text-[9px] font-extrabold text-[#4B4B4B]">
+                                <span className="text-[8px] font-bold text-slate-600">
                                   +{remainingCount}
                                 </span>
                               </div>
                             )}
-                          </div><span className="text-sm font-extrabold tabular-nums text-[#AFAFAF] transition-colors group-hover:text-[var(--accent)]">
-                            {citations.length} source{citations.length !== 1 && "s"}
+                          </div><span className={cn(
+                            "font-bold tabular-nums text-slate-400 transition-colors group-hover:text-slate-600",
+                            compact ? "text-[10px]" : "text-sm font-extrabold",
+                          )}>
+                            {citations.length}
                           </span></PopoverTrigger>
         <PopoverContent
           side="bottom"
