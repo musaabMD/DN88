@@ -34,12 +34,15 @@ function QbankComingSoon({ defaultEmail }: { defaultEmail?: string }) {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-lg flex-col bg-white px-4 pb-14 sm:px-6">
-      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-100 bg-white py-4">
-        <Link href={HOME_PATH} className="flex min-w-0 items-center">
-          <DrNoteLogo showWordmark forceWordmark />
-        </Link>
-        <UserAuthControls compact />
+      <header className="fixed inset-x-0 top-0 z-40 border-b border-slate-100 bg-white/95 backdrop-blur-md">
+        <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-4 sm:px-6">
+          <Link href={HOME_PATH} className="flex min-w-0 items-center">
+            <DrNoteLogo showWordmark forceWordmark />
+          </Link>
+          <UserAuthControls compact />
+        </div>
       </header>
+      <div className="h-[4.5rem] shrink-0" aria-hidden />
 
       <div className="mt-10 flex flex-1 flex-col items-center text-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl border-b-4 border-slate-700 bg-slate-700 text-white">
