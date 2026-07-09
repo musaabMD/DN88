@@ -1,19 +1,29 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Search } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { UserAuthControls } from "@/components/UserAuthControls";
-import { HOME_PATH } from "@/lib/routes";
+import { HOME_PATH, LIBRARY_PATH } from "@/lib/routes";
 
 type AppHeaderProps = {
   showBack?: boolean;
   onBack?: () => void;
   title?: string;
+  showLibrary?: boolean;
+  onSearchClick?: () => void;
+  hidden?: boolean;
 };
 
-export function AppHeader({ showBack, onBack, title }: AppHeaderProps) {
+export function AppHeader({
+  showBack,
+  onBack,
+  title,
+  showLibrary,
+  onSearchClick,
+  hidden,
+}: AppHeaderProps) {
   const router = useRouter();
 
   const handleBack = () => {
@@ -24,8 +34,10 @@ export function AppHeader({ showBack, onBack, title }: AppHeaderProps) {
     router.back();
   };
 
+  if (hidden) return null;
+
   return (
-    <header className="sticky top-0 z-40 bg-white">
+    <header className="sticky top-0 z-40 border-b border-slate-100 bg-white">
       <div className="mx-auto grid h-14 max-w-6xl grid-cols-[auto_1fr_auto] items-center gap-2 px-4 sm:gap-3 sm:px-6">
         <div className="flex min-w-0 items-center gap-1 sm:gap-2">
           {showBack ? (
@@ -41,6 +53,14 @@ export function AppHeader({ showBack, onBack, title }: AppHeaderProps) {
           <Link href={HOME_PATH} className="shrink-0">
             <DrNoteLogo size="sm" showWordmark forceWordmark />
           </Link>
+          {showLibrary ? (
+            <Link
+              href={LIBRARY_PATH}
+              className="hidden rounded-lg px-2.5 py-1.5 text-xs font-extrabold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800 sm:inline"
+            >
+              Library
+            </Link>
+          ) : null}
         </div>
 
         {title ? (
@@ -54,7 +74,17 @@ export function AppHeader({ showBack, onBack, title }: AppHeaderProps) {
           <span />
         )}
 
-        <div className="flex shrink-0 items-center justify-end">
+        <div className="flex shrink-0 items-center justify-end gap-1">
+          {onSearchClick ? (
+            <button
+              type="button"
+              onClick={onSearchClick}
+              aria-label="Search article"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+            >
+              <Search className="h-5 w-5" strokeWidth={2.5} />
+            </button>
+          ) : null}
           <UserAuthControls compact />
         </div>
       </div>

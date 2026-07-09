@@ -12,11 +12,17 @@ export function ContentShell({
   title,
   onBack,
   children,
+  showLibrary,
+  onSearchClick,
+  headerHidden,
 }: {
   examId: string;
   title: string;
   onBack?: () => void;
   children: ReactNode;
+  showLibrary?: boolean;
+  onSearchClick?: () => void;
+  headerHidden?: boolean;
 }) {
   useEffect(() => {
     saveCurrentExamId(examId);
@@ -24,7 +30,14 @@ export function ContentShell({
 
   return (
     <div className="min-h-screen bg-white font-sans">
-      <AppHeader showBack onBack={onBack} title={title} />
+      <AppHeader
+        showBack
+        onBack={onBack}
+        title={title}
+        showLibrary={showLibrary}
+        onSearchClick={onSearchClick}
+        hidden={headerHidden}
+      />
       <main className={CONTENT_SHELL_MAIN}>{children}</main>
     </div>
   );

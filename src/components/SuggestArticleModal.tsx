@@ -30,7 +30,8 @@ export function SuggestArticleModal({ onClose }: { onClose: () => void }) {
               Suggest an article
             </h2>
             <p className="mt-1 text-sm font-medium text-slate-500">
-              Know something the world should know? Tell us what to write about.
+              Know a clinical topic we should cover? Suggest it for our medical
+              library.
             </p>
           </div>
           <button
@@ -58,7 +59,7 @@ export function SuggestArticleModal({ onClose }: { onClose: () => void }) {
               id="suggest-topic"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              placeholder="e.g., Quantum error correction, SpaceX Starship"
+              placeholder="e.g., Sarcoidosis, Radial nerve injury, AKI staging"
               className="mt-1.5 w-full rounded-xl border-2 border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-700 outline-none placeholder:text-slate-400 focus:border-slate-400"
             />
           </div>
@@ -77,7 +78,7 @@ export function SuggestArticleModal({ onClose }: { onClose: () => void }) {
               id="suggest-details"
               value={details}
               onChange={(e) => setDetails(e.target.value)}
-              placeholder="Why is this topic interesting? Any key points to cover?"
+              placeholder="Why is this clinically important? Key exam points, guidelines, or differentials to cover?"
               rows={4}
               className="mt-1.5 w-full resize-none rounded-xl border-2 border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-700 outline-none placeholder:text-slate-400 focus:border-slate-400"
             />
@@ -89,9 +90,9 @@ export function SuggestArticleModal({ onClose }: { onClose: () => void }) {
               What makes a great suggestion?
             </p>
             <ul className="mt-2 space-y-1 text-sm font-medium text-slate-600">
-              <li>• Specific beats broad — &apos;CRISPR&apos; over &apos;Biology&apos;</li>
-              <li>• People, events, and breakthroughs are ideal</li>
-              <li>• Search first to check if it already exists</li>
+              <li>• Specific beats broad — &apos;Sarcoidosis&apos; over &apos;Lung disease&apos;</li>
+              <li>• Conditions, syndromes, and procedures make ideal topics</li>
+              <li>• Search the library first to check if it already exists</li>
             </ul>
           </div>
         </div>
