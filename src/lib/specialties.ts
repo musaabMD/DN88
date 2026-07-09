@@ -2765,6 +2765,39 @@ const ORTHOPAEDICS_TOPICS = [
   "Wrist fractures",
 ] as const;
 
+const OPHTHALMOLOGY_TOPICS = [
+  "Acute conjunctivitis",
+  "Age-related macular degeneration",
+  "Amblyopia",
+  "Angle-closure glaucoma",
+  "Assessment of ptosis",
+  "Assessment of red eye",
+  "Assessment of vision loss",
+  "Astigmatism",
+  "Blepharitis",
+  "Cataracts",
+  "Corneal abrasions",
+  "Diabetic retinopathy",
+  "Dry eye disease",
+  "Eye trauma",
+  "Idiopathic intracranial hypertension",
+  "Keratitis",
+  "Night blindness",
+  "Open-angle glaucoma",
+  "Optic neuritis",
+  "Orbital fractures",
+  "Pterygium",
+  "Retinal detachment",
+  "Retinal vein occlusion",
+  "Retinitis pigmentosa",
+  "Retinoblastoma",
+  "Strabismus",
+  "Stye and chalazion",
+  "Trachoma",
+  "Uveitis",
+  "Xeroderma pigmentosum",
+] as const;
+
 export const SPECIALTY_TOPIC_GROUPS: Array<{
   specialty: MedicalSpecialty;
   topics: SpecialtyTopic[];
@@ -2862,6 +2895,10 @@ export const SPECIALTY_TOPIC_GROUPS: Array<{
   {
     specialty: "Orthopaedics",
     topics: topicsFor("Orthopaedics", [...ORTHOPAEDICS_TOPICS]),
+  },
+  {
+    specialty: "Ophthalmology",
+    topics: topicsFor("Ophthalmology", [...OPHTHALMOLOGY_TOPICS]),
   },
 ];
 
