@@ -46,11 +46,16 @@ export type SpecialtyTopic = {
   specialty: MedicalSpecialty;
 };
 
-function topicId(title: string): string {
-  return title
+function topicId(specialty: string, title: string): string {
+  const slug = title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
+  const prefix = specialty
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+  return `${prefix}-${slug}`;
 }
 
 function topicsFor(
@@ -58,7 +63,7 @@ function topicsFor(
   titles: string[]
 ): SpecialtyTopic[] {
   return titles.map((title) => ({
-    id: topicId(title),
+    id: topicId(specialty, title),
     title,
     specialty,
   }));
@@ -101,6 +106,122 @@ const ALLERGY_AND_IMMUNOLOGY_TOPICS = [
   "Wiskott-Aldrich syndrome",
 ] as const;
 
+const ANAESTHESIOLOGY_TOPICS = [
+  "Abdominal aortic aneurysm",
+  "Abdominal compartment syndrome",
+  "Accidental hypothermia",
+  "Acute aspiration",
+  "Acute asthma exacerbation in adults",
+  "Acute heart failure",
+  "Acute kidney injury",
+  "Acute liver failure",
+  "Acute pancreatitis",
+  "Acute respiratory distress syndrome (ARDS)",
+  "Acute respiratory failure",
+  "Alcohol withdrawal",
+  "Amfetamine overdose",
+  "Anaphylaxis",
+  "Aortic dissection",
+  "Aspiration pneumonia",
+  "Assessment of chest pain",
+  "Assessment of cyanosis in the newborn",
+  "Assessment of dyspnoea",
+  "Assessment of hypercalcaemia",
+  "Assessment of hyperkalaemia",
+  "Assessment of hypernatraemia",
+  "Assessment of hypocalcaemia",
+  "Assessment of hypokalaemia",
+  "Assessment of metabolic acidosis",
+  "Assessment of metabolic alkalosis",
+  "Assessment of nausea and vomiting, adults",
+  "Assessment of respiratory acidosis",
+  "Assessment of respiratory alkalosis",
+  "Assessment of shock",
+  "Assessment of traumatic brain injury, acute",
+  "Atrial flutter",
+  "Atrioventricular block",
+  "Atypical pneumonia",
+  "Bacterial meningitis in adults",
+  "Benzodiazepine overdose",
+  "Botulism",
+  "Bradycardia",
+  "Carbon monoxide poisoning",
+  "Cardiac arrest",
+  "Cardiac tamponade",
+  "Central airway obstruction",
+  "Chronic pain syndromes",
+  "Chronic pelvic pain in women",
+  "Cocaine toxicity",
+  "Common toxic plant ingestions",
+  "Complex regional pain syndrome",
+  "Cutaneous burns",
+  "Deep vein thrombosis",
+  "Diabetic ketoacidosis",
+  "Digoxin toxicity",
+  "Discogenic low back pain",
+  "Disseminated intravascular coagulation",
+  "Drowning",
+  "Dysbarism",
+  "Electrical injury",
+  "Encephalitis",
+  "Epiglottitis",
+  "Febrile neutropenia",
+  "Foreign body aspiration",
+  "Fungal meningitis",
+  "Heart failure with preserved ejection fraction",
+  "Heat stroke in adults",
+  "Heparin-induced thrombocytopenia",
+  "Hepatic encephalopathy",
+  "Hepatorenal syndrome",
+  "Herpes zoster infection",
+  "Hospital-acquired pneumonia (non COVID-19)",
+  "Hypercalcaemia of malignancy",
+  "Hyperosmolar hyperglycaemic state",
+  "Hypertensive emergencies",
+  "Ileus",
+  "Inhalation injury",
+  "Ischaemic stroke",
+  "Lead toxicity",
+  "Malignant hyperthermia",
+  "Mild traumatic brain injury",
+  "Musculoskeletal lower back pain",
+  "Neuroleptic malignant syndrome",
+  "New-onset atrial fibrillation",
+  "Non-diabetic hypoglycaemia",
+  "Non-ST-elevation myocardial infarction",
+  "Opioid overdose",
+  "Organising pneumonia",
+  "Organophosphate poisoning",
+  "Overview of acid-base and electrolyte disorders",
+  "Overview of dysrhythmias (cardiac)",
+  "Overview of meningitis",
+  "Overview of stroke",
+  "Overview of substance use disorders and overdose",
+  "Paracetamol overdose in adults",
+  "Perioperative cardiovascular risk assessment and management for non-cardiac surgery",
+  "Phaeochromocytoma",
+  "Pneumocystis jirovecii pneumonia",
+  "Pulmonary embolism",
+  "Rhabdomyolysis",
+  "Salicylate poisoning",
+  "Sepsis in adults",
+  "Sepsis in children",
+  "Serotonin syndrome",
+  "ST-elevation myocardial infarction",
+  "Status epilepticus",
+  "Stevens-Johnson syndrome and toxic epidermal necrolysis",
+  "Subarachnoid haemorrhage",
+  "Sustained ventricular tachycardias",
+  "Syndrome of inappropriate antidiuretic hormone",
+  "Toxic ingestions in children",
+  "Toxic shock syndrome",
+  "Transfusion reaction",
+  "Tricyclic antidepressant overdose",
+  "Unstable angina",
+  "Volume depletion in adults",
+  "Volume depletion in children",
+] as const;
+
 export const SPECIALTY_TOPIC_GROUPS: Array<{
   specialty: MedicalSpecialty;
   topics: SpecialtyTopic[];
@@ -110,6 +231,10 @@ export const SPECIALTY_TOPIC_GROUPS: Array<{
     topics: topicsFor("Allergy and immunology", [
       ...ALLERGY_AND_IMMUNOLOGY_TOPICS,
     ]),
+  },
+  {
+    specialty: "Anaesthesiology",
+    topics: topicsFor("Anaesthesiology", [...ANAESTHESIOLOGY_TOPICS]),
   },
 ];
 
