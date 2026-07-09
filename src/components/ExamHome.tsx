@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, ChevronRight, GraduationCap, Plus, Search } from "lucide-react";
+import { Check, ChevronRight, Plus, Search } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { UserAuthControls } from "@/components/UserAuthControls";
 import { EXAMS, type Exam } from "@/lib/exams";
@@ -70,11 +70,6 @@ function ExamHero({
       </span>
 
       <div className="relative mx-auto max-w-2xl text-center">
-        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-slate-600">
-          <GraduationCap size={14} strokeWidth={2.5} />
-          Medical board prep
-        </div>
-
         <h1 className="text-2xl font-black leading-tight tracking-tight text-slate-900 sm:text-4xl">
           Choose your exam
         </h1>
