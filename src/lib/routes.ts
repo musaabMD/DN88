@@ -126,15 +126,15 @@ export const PRICING_PATH = "/pricing";
 
 /** Library article reader — independent of qbank exams. */
 export function articlePath(articleId: string): string {
-  return `/library/articles/${articleId}`;
+  return `/library/articles/${articleId}/`;
 }
 
 export function specialtyPath(specialtySlug: string): string {
-  return `/library/specialties/${specialtySlug}`;
+  return `/library/specialties/${specialtySlug}/`;
 }
 
 export function topicPath(topicId: string): string {
-  return `/library/topics/${topicId}`;
+  return `/library/topics/${topicId}/`;
 }
 
 /** @deprecated Use filtersPath(examId) */
