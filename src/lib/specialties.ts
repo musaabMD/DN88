@@ -307,6 +307,46 @@ const CARDIOLOGY_TOPICS = [
   "Wolff-Parkinson-White syndrome",
 ] as const;
 
+const CARDIOTHORACIC_SURGERY_TOPICS = [
+  "Abdominal aortic aneurysm",
+  "Achalasia",
+  "Aortic coarctation",
+  "Aortic dissection",
+  "Aortic regurgitation",
+  "Aortic stenosis",
+  "Assessment of cyanosis in the newborn",
+  "Assessment of pericardial effusion",
+  "Atrial myxoma",
+  "Cardiac tamponade",
+  "Carotid artery stenosis",
+  "Congenital heart disease",
+  "Hyperhidrosis",
+  "Hypertrophic cardiomyopathy",
+  "Infective endocarditis",
+  "Interatrial communications (atrial septal defects)",
+  "Marfan syndrome",
+  "Mitral regurgitation",
+  "Mitral stenosis",
+  "Mitral valve prolapse",
+  "Myocarditis",
+  "Non-small cell lung cancer",
+  "Oesophageal atresia and tracheo-oesophageal fistula",
+  "Overview of acute coronary syndrome",
+  "Patent ductus arteriosus",
+  "Patent foramen ovale",
+  "Pleural effusion",
+  "Pneumothorax",
+  "Pulmonary regurgitation",
+  "Pulmonary stenosis",
+  "Superior vena cava syndrome",
+  "Tetralogy of Fallot",
+  "Thoracic outlet syndrome",
+  "Thymic tumour",
+  "Tricuspid regurgitation",
+  "Tricuspid stenosis",
+  "Ventricular septal defects",
+] as const;
+
 export const SPECIALTY_TOPIC_GROUPS: Array<{
   specialty: MedicalSpecialty;
   topics: SpecialtyTopic[];
@@ -324,6 +364,12 @@ export const SPECIALTY_TOPIC_GROUPS: Array<{
   {
     specialty: "Cardiology",
     topics: topicsFor("Cardiology", [...CARDIOLOGY_TOPICS]),
+  },
+  {
+    specialty: "Cardiothoracic surgery",
+    topics: topicsFor("Cardiothoracic surgery", [
+      ...CARDIOTHORACIC_SURGERY_TOPICS,
+    ]),
   },
 ];
 
