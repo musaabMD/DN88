@@ -3,11 +3,11 @@ const TILE_PALETTES = [
   { bg: "#6366f1", border: "#4f46e5" },
   { bg: "#1CB0F6", border: "#1899D6" },
   { bg: "#FF9600", border: "#E08600" },
-  { bg: "#CE82FF", border: "#B86EEB" },
+  { bg: "#475569", border: "#334155" },
   { bg: "#FF4B4B", border: "#E04343" },
   { bg: "#FFC800", border: "#E0B000" },
   { bg: "#2DD4BF", border: "#14B8A6" },
-  { bg: "#F472B6", border: "#DB2777" },
+  { bg: "#0ea5e9", border: "#0284c7" },
 ] as const;
 
 export function getTileColors(seed: string): { bg: string; border: string } {

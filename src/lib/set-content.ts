@@ -53,18 +53,21 @@ export type FlashcardItem = {
   status?: "correct" | "incorrect" | "new";
 };
 
+export type LibraryArticleSection = {
+  id: string;
+  heading: string;
+  body: string;
+  bullets?: string[];
+  citations?: SerializableCitation[];
+};
+
 export type LibraryArticle = {
   id: string;
   subject: string;
   title: string;
   readMinutes: number;
   updated: string;
-  sections: Array<{
-    id: string;
-    heading: string;
-    body: string;
-    bullets?: string[];
-  }>;
+  sections: LibraryArticleSection[];
   highYield?: string;
 };
 
@@ -596,11 +599,39 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
         id: "overview",
         heading: "Overview",
         body: "Sarcoidosis is a multisystem inflammatory disease of unknown etiology characterized by noncaseating granulomas. It most commonly affects young adults and typically involves the lungs and intrathoracic lymph nodes, though almost any organ can be affected.",
+        citations: [
+          {
+            id: "art1-overview-1",
+            href: "https://www.uptodate.com/contents/clinical-manifestations-and-diagnosis-of-pulmonary-sarcoidosis",
+            title: "Clinical manifestations and diagnosis of pulmonary sarcoidosis",
+            domain: "uptodate.com",
+            author: "UpToDate",
+            type: "article",
+          },
+          {
+            id: "art1-overview-2",
+            href: "https://pubmed.ncbi.nlm.nih.gov/30145904/",
+            title: "Sarcoidosis — a review",
+            domain: "pubmed.ncbi.nlm.nih.gov",
+            author: "Iannuzzi MC et al.",
+            type: "article",
+          },
+        ],
       },
       {
         id: "pathophysiology",
         heading: "Pathophysiology",
         body: "An exaggerated cell-mediated immune response leads to granuloma formation. Activated macrophages within granulomas express 1-alpha-hydroxylase, converting vitamin D to its active form and producing hypercalcemia in a subset of patients.",
+        citations: [
+          {
+            id: "art1-patho-1",
+            href: "https://pubmed.ncbi.nlm.nih.gov/28789989/",
+            title: "Pathogenesis of sarcoidosis",
+            domain: "pubmed.ncbi.nlm.nih.gov",
+            author: "Grunewald J",
+            type: "article",
+          },
+        ],
       },
       {
         id: "clinical-features",
@@ -612,16 +643,46 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
           "Anterior uveitis (eyes)",
           "Loefgren syndrome: fever, arthritis, erythema nodosum, hilar adenopathy",
         ],
+        citations: [
+          {
+            id: "art1-clinical-1",
+            href: "https://www.uptodate.com/contents/extrapulmonary-manifestations-of-sarcoidosis",
+            title: "Extrapulmonary manifestations of sarcoidosis",
+            domain: "uptodate.com",
+            author: "UpToDate",
+            type: "article",
+          },
+        ],
       },
       {
         id: "diagnosis",
         heading: "Diagnosis",
         body: "Bilateral hilar lymphadenopathy on chest imaging is the classic finding. Elevated ACE and hypercalcemia support the diagnosis. Biopsy showing noncaseating granulomas confirms when needed.",
+        citations: [
+          {
+            id: "art1-dx-1",
+            href: "https://pubmed.ncbi.nlm.nih.gov/31578133/",
+            title: "ATS/ERS/WASOG statement on sarcoidosis",
+            domain: "pubmed.ncbi.nlm.nih.gov",
+            author: "Judson MA et al.",
+            type: "article",
+          },
+        ],
       },
       {
         id: "treatment",
         heading: "Treatment",
         body: "Many patients require no treatment. Indications for corticosteroids include significant pulmonary symptoms, hypercalcemia, cardiac involvement, or neurologic disease.",
+        citations: [
+          {
+            id: "art1-tx-1",
+            href: "https://www.uptodate.com/contents/treatment-of-pulmonary-sarcoidosis",
+            title: "Treatment of pulmonary sarcoidosis",
+            domain: "uptodate.com",
+            author: "UpToDate",
+            type: "article",
+          },
+        ],
       },
     ],
     highYield:
@@ -638,6 +699,16 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
         id: "overview",
         heading: "Overview",
         body: "Radial nerve injury presents with wrist drop and inability to extend the fingers and thumb. The nerve runs in the spiral groove of the humerus and is vulnerable to mid-shaft fractures and compression (Saturday night palsy).",
+        citations: [
+          {
+            id: "art2-overview-1",
+            href: "https://www.uptodate.com/contents/overview-of-upper-extremity-peripheral-nerve-lesions",
+            title: "Overview of upper extremity peripheral nerve lesions",
+            domain: "uptodate.com",
+            author: "UpToDate",
+            type: "article",
+          },
+        ],
       },
       {
         id: "clinical-features",
@@ -649,16 +720,46 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
           "Saturday night palsy from prolonged compression",
           "Mid-shaft humerus fracture as classic association",
         ],
+        citations: [
+          {
+            id: "art2-clinical-1",
+            href: "https://pubmed.ncbi.nlm.nih.gov/28722823/",
+            title: "Radial nerve palsy",
+            domain: "pubmed.ncbi.nlm.nih.gov",
+            author: "Lowe JB III et al.",
+            type: "article",
+          },
+        ],
       },
       {
         id: "diagnosis",
         heading: "Diagnosis",
         body: "Clinical exam with weakness of wrist and finger extension. EMG/NCS can localize the lesion and assess severity.",
+        citations: [
+          {
+            id: "art2-dx-1",
+            href: "https://www.uptodate.com/contents/electrodiagnostic-assessment-of-the-upper-extremity",
+            title: "Electrodiagnostic assessment of the upper extremity",
+            domain: "uptodate.com",
+            author: "UpToDate",
+            type: "article",
+          },
+        ],
       },
       {
         id: "treatment",
         heading: "Treatment",
         body: "Conservative management with splinting for neuropraxia. Surgical exploration if open injury or no recovery after 3–6 months.",
+        citations: [
+          {
+            id: "art2-tx-1",
+            href: "https://pubmed.ncbi.nlm.nih.gov/25511309/",
+            title: "Management of radial nerve palsy",
+            domain: "pubmed.ncbi.nlm.nih.gov",
+            author: "Shao YC et al.",
+            type: "article",
+          },
+        ],
       },
     ],
     highYield:

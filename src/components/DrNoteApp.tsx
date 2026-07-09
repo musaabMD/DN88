@@ -27,6 +27,10 @@ import {
   type ContentTab,
 } from "@/lib/routes";
 import { CitationList } from "@/components/tool-ui/citation";
+import {
+  isArticleBookmarked,
+  toggleArticleBookmark,
+} from "@/lib/article-bookmarks";
 import { BottomTabBar } from "@/components/BottomTabBar";
 import { BrowseHeader } from "@/components/BrowseHeader";
 import { FilterFab } from "@/components/FilterFab";
@@ -163,9 +167,9 @@ const TAB_ACCENT: Record<
     icon: FileText,
   },
   images: {
-    color: "#db2777",
-    bg: "#fdf2f8",
-    border: "#fbcfe8",
+    color: "#0284c7",
+    bg: "#f0f9ff",
+    border: "#bae6fd",
     icon: Image,
   },
   flashcards: {
@@ -224,14 +228,19 @@ function ArticleCard({
   onOpen: () => void;
 }) {
   const { bg, border } = getTileColors(article.subject);
+  const [bookmarked, setBookmarked] = useState(false);
+
+  useEffect(() => {
+    setBookmarked(isArticleBookmarked(article.id));
+  }, [article.id]);
 
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="group w-full rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4 text-left transition-colors duration-150 hover:bg-slate-50 active:translate-y-0.5 active:border-b-2"
-    >
-      <div className="flex items-center gap-4">
+    <div className="group flex w-full items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4 text-left transition-colors duration-150 hover:bg-slate-50">
+      <button
+        type="button"
+        onClick={onOpen}
+        className="flex min-w-0 flex-1 items-center gap-4 text-left"
+      >
         <div
           className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-b-4"
           style={{ background: bg, borderColor: border }}
@@ -256,8 +265,25 @@ function ArticleCard({
           strokeWidth={3}
           className="shrink-0 text-slate-300 transition-all duration-150 group-hover:translate-x-1 group-hover:text-[#334155]"
         />
-      </div>
-    </button>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setBookmarked(toggleArticleBookmark(article.id))}
+        aria-label={bookmarked ? "Remove bookmark" : "Bookmark article"}
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-b-4 transition-colors active:translate-y-0.5 active:border-b-2 ${
+          bookmarked
+            ? "border-slate-700 bg-slate-700 text-white"
+            : "border-slate-200 bg-white text-slate-400 hover:border-slate-400 hover:text-slate-700"
+        }`}
+      >
+        <Bookmark
+          size={18}
+          strokeWidth={2.5}
+          fill={bookmarked ? "currentColor" : "none"}
+        />
+      </button>
+    </div>
   );
 }
 
