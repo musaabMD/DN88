@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Clock3 } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { LibraryThumb, LibraryThumbHero } from "@/components/library/LibraryThumb";
 import {
@@ -27,11 +27,13 @@ import {
 
 function PageHeader() {
   return (
-    <header className="flex items-center justify-between py-4">
-      <Link href={HOME_PATH} className="flex min-w-0 items-center">
-        <DrNoteLogo showWordmark forceWordmark />
-      </Link>
-      <UserAuthControls compact />
+    <header className="sticky top-0 z-40 -mx-4 border-b border-slate-100 bg-white/95 px-4 backdrop-blur-md sm:-mx-6 sm:px-6">
+      <div className="flex items-center justify-between py-4">
+        <Link href={HOME_PATH} className="flex min-w-0 items-center">
+          <DrNoteLogo showWordmark forceWordmark />
+        </Link>
+        <UserAuthControls compact />
+      </div>
     </header>
   );
 }
@@ -51,7 +53,9 @@ export function SpecialtyPageClient({
   return (
     <main className="mx-auto w-full max-w-4xl bg-white px-4 pb-14 sm:px-6">
       <PageHeader />
-      <LibraryBackLink />
+      <div className="pt-4">
+        <LibraryBackLink />
+      </div>
 
       <div className="mt-4 flex items-start gap-4">
         <LibraryThumbHero seed={specialty} />
@@ -76,7 +80,7 @@ export function SpecialtyPageClient({
       </div>
 
       {topics.length > 0 ? (
-        <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
           {topics.map((topic) => (
             <SpecialtyTopicRow key={topic.id} topic={topic} />
           ))}
@@ -99,26 +103,32 @@ function SpecialtyTopicRow({ topic }: { topic: SpecialtyTopic }) {
   );
 
   return (
-    <div className="group flex w-full items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white px-4 py-3 text-left transition-colors hover:bg-slate-50">
+    <div className="group flex w-full items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4 text-left transition-colors hover:bg-slate-50">
       <Link
         href={topicPath(topic.id)}
         className="flex min-w-0 flex-1 items-center gap-3"
       >
-        <LibraryThumb seed={topic.title} size="sm" />
-        <p className="min-w-0 flex-1 text-left text-sm font-extrabold leading-snug text-slate-700">
-          {topic.title}
-        </p>
+        <LibraryThumb seed={topic.specialty} />
+        <div className="min-w-0 flex-1 text-left">
+          <h3 className="text-base font-extrabold leading-snug tracking-tight text-slate-700">
+            {topic.title}
+          </h3>
+          <p className="mt-1 flex items-center gap-1.5 text-sm font-bold text-slate-400">
+            <Clock3 size={14} strokeWidth={2.5} className="shrink-0" />
+            <span>5 min read · {topic.specialty}</span>
+          </p>
+        </div>
         <ChevronRight
-          size={18}
+          size={20}
           strokeWidth={3}
-          className="shrink-0 text-slate-300 group-hover:translate-x-1 group-hover:text-[#334155]"
+          className="shrink-0 text-slate-300 opacity-0 transition-all duration-150 group-hover:translate-x-1 group-hover:opacity-100 group-hover:text-[#334155]"
         />
       </Link>
       <BookmarkButton
         bookmarked={bookmarked}
         onToggle={toggleBookmark}
         label={bookmarked ? "Remove topic bookmark" : "Bookmark topic"}
-        size="sm"
+        showOnHover
       />
     </div>
   );
@@ -134,7 +144,7 @@ export function TopicPageClient({ topic }: { topic: SpecialtyTopic }) {
   return (
     <main className="mx-auto w-full max-w-4xl bg-white px-4 pb-14 sm:px-6">
       <PageHeader />
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 pt-4">
         <LibraryBackLink />
         <span className="text-slate-300">/</span>
         <Link

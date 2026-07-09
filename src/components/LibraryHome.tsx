@@ -78,27 +78,29 @@ function LibraryHomeHeader() {
   const router = useRouter();
 
   return (
-    <header className="flex items-center justify-between py-4">
-      <Link href={HOME_PATH} className="flex min-w-0 items-center">
-        <DrNoteLogo showWordmark forceWordmark />
-      </Link>
-
-      <nav className="flex items-center gap-2 sm:gap-4">
-        <Link
-          href={DASHBOARD_PATH}
-          className="hidden text-sm font-bold text-slate-600 hover:text-[#334155] sm:inline"
-        >
-          Dashboard
+    <header className="sticky top-0 z-40 -mx-4 border-b border-slate-100 bg-white/95 px-4 backdrop-blur-md sm:-mx-6 sm:px-6">
+      <div className="flex items-center justify-between py-4">
+        <Link href={HOME_PATH} className="flex min-w-0 items-center">
+          <DrNoteLogo showWordmark forceWordmark />
         </Link>
-        <button
-          type="button"
-          onClick={() => router.push(UPGRADE_PATH)}
-          className="rounded-xl border-b-4 border-[#1e293b] bg-[#334155] px-3 py-2 text-sm font-extrabold text-white transition-colors hover:bg-[#475569] active:translate-y-0.5 active:border-b-2 sm:px-4"
-        >
-          Get Pro
-        </button>
-        <UserAuthControls compact />
-      </nav>
+
+        <nav className="flex items-center gap-2 sm:gap-4">
+          <Link
+            href={DASHBOARD_PATH}
+            className="hidden text-sm font-bold text-slate-600 hover:text-[#334155] sm:inline"
+          >
+            Dashboard
+          </Link>
+          <button
+            type="button"
+            onClick={() => router.push(UPGRADE_PATH)}
+            className="rounded-xl border-b-4 border-[#1e293b] bg-[#334155] px-3 py-2 text-sm font-extrabold text-white transition-colors hover:bg-[#475569] active:translate-y-0.5 active:border-b-2 sm:px-4"
+          >
+            Get Pro
+          </button>
+          <UserAuthControls compact />
+        </nav>
+      </div>
     </header>
   );
 }
@@ -179,7 +181,7 @@ function SpecialtyCard({
         <ChevronRight
           size={20}
           strokeWidth={3}
-          className="shrink-0 text-slate-300 transition-all duration-150 group-hover:translate-x-1 group-hover:text-[#334155]"
+          className="shrink-0 text-slate-300 opacity-0 transition-all duration-150 group-hover:translate-x-1 group-hover:opacity-100 group-hover:text-[#334155]"
         />
       </Link>
       <BookmarkButton
@@ -189,6 +191,7 @@ function SpecialtyCard({
           onBookmarkChange?.();
         }}
         label={bookmarked ? "Remove specialty bookmark" : "Bookmark specialty"}
+        showOnHover
       />
     </div>
   );
@@ -210,24 +213,28 @@ function TopicCard({
   );
 
   return (
-    <div className="group flex w-full items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white px-4 py-3 text-left transition-colors duration-150 hover:bg-slate-50">
+    <div className="group flex w-full items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4 text-left transition-colors duration-150 hover:bg-slate-50">
       <Link
         href={topicPath(topic.id)}
         className="flex min-w-0 flex-1 items-center gap-3"
       >
-        <LibraryThumb seed={topic.title} size="sm" />
+        <LibraryThumb seed={topic.specialty} />
         <div className="min-w-0 flex-1 text-left">
-          <p className="text-sm font-extrabold leading-snug text-slate-700">
+          <h3 className="text-base font-extrabold leading-snug tracking-tight text-slate-700">
             <HighlightText text={topic.title} query={query} />
-          </p>
-          <p className="mt-0.5 text-left text-xs font-bold text-slate-400">
-            <HighlightText text={topic.specialty} query={query} />
+          </h3>
+          <p className="mt-1 flex items-center gap-1.5 text-left text-sm font-bold text-slate-400">
+            <Clock3 size={14} strokeWidth={2.5} className="shrink-0" />
+            <span>
+              5 min read ·{" "}
+              <HighlightText text={topic.specialty} query={query} />
+            </span>
           </p>
         </div>
         <ChevronRight
-          size={18}
+          size={20}
           strokeWidth={3}
-          className="shrink-0 text-slate-300 transition-all duration-150 group-hover:translate-x-1 group-hover:text-[#334155]"
+          className="shrink-0 text-slate-300 opacity-0 transition-all duration-150 group-hover:translate-x-1 group-hover:opacity-100 group-hover:text-[#334155]"
         />
       </Link>
       <BookmarkButton
@@ -237,7 +244,7 @@ function TopicCard({
           onBookmarkChange?.();
         }}
         label={bookmarked ? "Remove topic bookmark" : "Bookmark topic"}
-        size="sm"
+        showOnHover
       />
     </div>
   );
@@ -285,7 +292,7 @@ function ArticleCard({
         <ChevronRight
           size={20}
           strokeWidth={3}
-          className="shrink-0 text-slate-300 transition-all duration-150 group-hover:translate-x-1 group-hover:text-[#334155]"
+          className="shrink-0 text-slate-300 opacity-0 transition-all duration-150 group-hover:translate-x-1 group-hover:opacity-100 group-hover:text-[#334155]"
         />
       </Link>
       <BookmarkButton
@@ -295,6 +302,7 @@ function ArticleCard({
           onBookmarkChange?.();
         }}
         label={bookmarked ? "Remove bookmark" : "Bookmark article"}
+        showOnHover
       />
     </div>
   );

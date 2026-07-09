@@ -598,13 +598,13 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
     id: "art1",
     subject: "Pulmonology",
     title: "Sarcoidosis",
-    readMinutes: 8,
+    readMinutes: 14,
     updated: "Jun 2026",
     sections: [
       {
         id: "overview",
         heading: "Overview",
-        body: "Sarcoidosis is a multisystem inflammatory disease of unknown etiology characterized by noncaseating granulomas. It most commonly affects young adults and typically involves the lungs and intrathoracic lymph nodes, though almost any organ can be affected.",
+        body: "Sarcoidosis is a multisystem inflammatory disease of unknown etiology characterized by noncaseating granulomas. It most commonly affects young adults between 20 and 40 years of age and shows a higher incidence in African American and Northern European populations. The lungs and intrathoracic lymph nodes are involved in more than 90% of cases, though almost any organ can be affected — including skin, eyes, heart, liver, and the nervous system. Disease course ranges from spontaneous remission to progressive fibrosis. About half of patients are asymptomatic at diagnosis and are identified incidentally on chest imaging.",
         citations: [
           {
             id: "art1-overview-1",
@@ -627,7 +627,7 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
       {
         id: "pathophysiology",
         heading: "Pathophysiology",
-        body: "An exaggerated cell-mediated immune response leads to granuloma formation. Activated macrophages within granulomas express 1-alpha-hydroxylase, converting vitamin D to its active form and producing hypercalcemia in a subset of patients.",
+        body: "An exaggerated cell-mediated immune response to an unidentified antigen leads to granuloma formation. CD4+ T-helper cells accumulate in affected tissues and secrete cytokines (IFN-γ, IL-2, TNF-α) that recruit and activate macrophages. Activated macrophages within granulomas express 1-alpha-hydroxylase, converting 25-hydroxyvitamin D to its active form (1,25-dihydroxyvitamin D) and producing hypercalcemia or hypercalciuria in a subset of patients. Over time, some granulomas resolve while others progress to fibrosis, particularly in the lungs. Genetic associations include HLA-DRB1 alleles and polymorphisms in BTNL2.",
         citations: [
           {
             id: "art1-patho-1",
@@ -642,12 +642,14 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
       {
         id: "clinical-features",
         heading: "Clinical features",
-        body: "",
+        body: "Pulmonary symptoms dominate, but extrapulmonary disease is common and may be the presenting feature. Loefgren syndrome (acute sarcoidosis) is highly specific and often self-limited.",
         bullets: [
-          "Dry cough, dyspnea, and chest discomfort",
-          "Erythema nodosum and lupus pernio (skin)",
-          "Anterior uveitis (eyes)",
-          "Loefgren syndrome: fever, arthritis, erythema nodosum, hilar adenopathy",
+          "Dry cough, dyspnea, and chest discomfort — most common pulmonary symptoms",
+          "Erythema nodosum and lupus pernio (violaceous plaques on the face/nose)",
+          "Anterior uveitis — the most frequent ocular manifestation; can threaten vision",
+          "Loefgren syndrome: fever, migratory polyarthritis, erythema nodosum, bilateral hilar adenopathy",
+          "Cardiac sarcoidosis: conduction block, ventricular arrhythmias, sudden death risk",
+          "Neurosarcoidosis: cranial neuropathies (especially CN VII), meningitis, hypothalamic involvement",
         ],
         citations: [
           {
@@ -663,7 +665,7 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
       {
         id: "diagnosis",
         heading: "Diagnosis",
-        body: "Bilateral hilar lymphadenopathy on chest imaging is the classic finding. Elevated ACE and hypercalcemia support the diagnosis. Biopsy showing noncaseating granulomas confirms when needed.",
+        body: "Bilateral hilar lymphadenopathy on chest imaging is the classic finding and may be staged with the Scadding system (stages 0–IV). Elevated serum ACE supports but does not confirm the diagnosis — it lacks sensitivity and specificity. Hypercalcemia or hypercalciuria further supports the diagnosis when present. Tissue biopsy showing noncaseating granulomas confirms sarcoidosis when clinical and radiographic findings are compatible and alternative causes (TB, fungal infection, malignancy) are excluded. In classic Loefgren syndrome, biopsy is often unnecessary.",
         citations: [
           {
             id: "art1-dx-1",
@@ -676,9 +678,21 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
         ],
       },
       {
+        id: "staging",
+        heading: "Radiographic staging",
+        body: "The Scadding chest X-ray stages help describe pulmonary involvement but do not always correlate with symptoms or need for therapy.",
+        bullets: [
+          "Stage 0 — normal chest radiograph",
+          "Stage I — bilateral hilar lymphadenopathy alone",
+          "Stage II — hilar adenopathy plus parenchymal infiltrates",
+          "Stage III — parenchymal infiltrates without adenopathy",
+          "Stage IV — pulmonary fibrosis (often upper-lobe volume loss)",
+        ],
+      },
+      {
         id: "treatment",
         heading: "Treatment",
-        body: "Many patients require no treatment. Indications for corticosteroids include significant pulmonary symptoms, hypercalcemia, cardiac involvement, or neurologic disease.",
+        body: "Many patients require no treatment and are observed, especially asymptomatic stage I disease. Systemic corticosteroids remain first-line when therapy is indicated. Typical starting doses are prednisone 20–40 mg daily with a slow taper over months. Steroid-sparing agents (methotrexate, azathioprine, mycophenolate) are used for refractory disease or steroid intolerance. TNF-α inhibitors (e.g., infliximab) may help severe extrapulmonary or progressive pulmonary disease. Indications for treatment include significant pulmonary symptoms or declining lung function, hypercalcemia, cardiac involvement, neurologic disease, and sight-threatening ocular disease.",
         citations: [
           {
             id: "art1-tx-1",
@@ -689,6 +703,11 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
             type: "article",
           },
         ],
+      },
+      {
+        id: "prognosis",
+        heading: "Prognosis and follow-up",
+        body: "Prognosis is generally favorable. Spontaneous remission occurs in a large proportion of stage I disease within 1–2 years. Stage IV fibrosis carries a worse outlook and may progress to chronic respiratory failure. Follow-up typically includes serial clinical assessment, spirometry, and chest imaging. Screen for cardiac and ocular involvement when symptoms suggest disease outside the lungs. Patients on long-term steroids need bone health, glucose, and infection-risk monitoring.",
       },
     ],
     highYield:

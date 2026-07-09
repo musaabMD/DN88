@@ -10,7 +10,6 @@ import { LIBRARY_PATH } from "@/lib/routes";
 export function LibraryArticleClient({ articleId }: { articleId: string }) {
   const router = useRouter();
   const article = getLibraryArticleById(articleId);
-  const [fullPage, setFullPage] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const backToLibrary = () => router.push(LIBRARY_PATH);
 
@@ -36,12 +35,9 @@ export function LibraryArticleClient({ articleId }: { articleId: string }) {
       onBack={backToLibrary}
       showLibrary
       onSearchClick={() => setShowSearch(true)}
-      headerHidden={fullPage}
     >
       <LibraryArticle
         article={article}
-        fullPage={fullPage}
-        onToggleFullPage={() => setFullPage((v) => !v)}
         showSearch={showSearch}
         onCloseSearch={() => setShowSearch(false)}
       />
