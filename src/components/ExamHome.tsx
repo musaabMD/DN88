@@ -200,7 +200,6 @@ export default function ExamHome() {
           </p>
         </div>
       ) : null}
-
     </main>
   );
 }
