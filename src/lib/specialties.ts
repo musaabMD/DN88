@@ -3185,6 +3185,52 @@ const NEUROLOGY_TOPICS = [
   "Zika virus infection",
 ] as const;
 
+const NEPHROLOGY_TOPICS = [
+  "Acute interstitial nephritis",
+  "Acute kidney injury",
+  "Acute pyelonephritis",
+  "Acute tubular necrosis",
+  "Alport syndrome",
+  "Amyloidosis",
+  "Anti-glomerular basement membrane (Goodpasture's) disease",
+  "Arginine vasopressin deficiency or resistance (Diabetes insipidus)",
+  "Assessment of elevated creatinine",
+  "Assessment of hyperkalaemia",
+  "Assessment of hypernatraemia",
+  "Assessment of hypertension",
+  "Assessment of hypokalaemia",
+  "Assessment of hyponatraemia",
+  "Assessment of metabolic acidosis",
+  "Assessment of metabolic alkalosis",
+  "Assessment of nephrotic syndrome",
+  "Assessment of non-visible haematuria",
+  "Assessment of proteinuria",
+  "Assessment of visible haematuria",
+  "Chronic kidney disease",
+  "Chronic pyelonephritis",
+  "Diabetic kidney disease",
+  "Focal segmental glomerulosclerosis",
+  "Glomerulonephritis",
+  "Haemolytic uraemic syndrome",
+  "Hepatorenal syndrome",
+  "Hyperkalaemia in adults",
+  "Hypernatraemia",
+  "IgA nephropathy",
+  "IgA vasculitis (Henoch-Schonlein purpura)",
+  "Medullary sponge kidney",
+  "Membranous nephropathy",
+  "Minimal change disease",
+  "Nephrolithiasis",
+  "Overview of acid-base and electrolyte disorders",
+  "Polycystic kidney disease",
+  "Renal artery stenosis",
+  "Renal cell carcinoma",
+  "Renal tubular acidosis",
+  "Secondary hyperparathyroidism",
+  "Systemic vasculitis",
+  "Wilms' tumour",
+] as const;
+
 export const SPECIALTY_TOPIC_GROUPS: Array<{
   specialty: MedicalSpecialty;
   topics: SpecialtyTopic[];
@@ -3308,6 +3354,10 @@ export const SPECIALTY_TOPIC_GROUPS: Array<{
   {
     specialty: "Neurology",
     topics: topicsFor("Neurology", [...NEUROLOGY_TOPICS]),
+  },
+  {
+    specialty: "Nephrology",
+    topics: topicsFor("Nephrology", [...NEPHROLOGY_TOPICS]),
   },
 ];
 
