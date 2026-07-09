@@ -16,7 +16,7 @@ export function ContentShell({
   onSearchClick,
   headerHidden,
 }: {
-  examId: string;
+  examId?: string;
   title: string;
   onBack?: () => void;
   children: ReactNode;
@@ -25,7 +25,7 @@ export function ContentShell({
   headerHidden?: boolean;
 }) {
   useEffect(() => {
-    saveCurrentExamId(examId);
+    if (examId) saveCurrentExamId(examId);
   }, [examId]);
 
   return (

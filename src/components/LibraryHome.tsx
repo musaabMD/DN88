@@ -11,7 +11,6 @@ import {
   isArticleBookmarked,
   toggleArticleBookmark,
 } from "@/lib/article-bookmarks";
-import { DEFAULT_EXAM_ID } from "@/lib/exams";
 import { filterLibraryArticles } from "@/lib/mock-data";
 import { DASHBOARD_PATH, HOME_PATH, UPGRADE_PATH, articlePath } from "@/lib/routes";
 import {
@@ -286,7 +285,7 @@ function ArticleCard({
       letter={article.title.charAt(0).toUpperCase()}
       colorKey={article.subject}
       query={query}
-      href={articlePath(DEFAULT_EXAM_ID, article.id)}
+          href={articlePath(article.id)}
       meta={`${article.readMinutes} min read · ${article.subject}`}
       trailing={
         <button
@@ -409,7 +408,7 @@ export default function LibraryHome() {
         onSuggestArticle={() => setShowSuggestModal(true)}
       />
 
-      <div className="mt-6 flex gap-2">
+      <div className="mt-6 flex justify-center gap-2">
         {(
           [
             { id: "specialty" as const, label: "Specialty" },

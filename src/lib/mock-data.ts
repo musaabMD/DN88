@@ -54,15 +54,11 @@ export function getAllSetStaticParams(): Array<{
 }
 
 export function getAllArticleStaticParams(): Array<{
-  examId: string;
   articleId: string;
 }> {
-  return EXAMS.flatMap((exam) =>
-    LIBRARY_ARTICLES.map((article) => ({
-      examId: exam.id,
-      articleId: article.id,
-    }))
-  );
+  return LIBRARY_ARTICLES.map((article) => ({
+    articleId: article.id,
+  }));
 }
 
 export type QuizSetScreenData = {

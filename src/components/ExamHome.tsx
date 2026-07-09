@@ -8,7 +8,7 @@ import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { UserAuthControls } from "@/components/UserAuthControls";
 import { EXAMS, type Exam } from "@/lib/exams";
 import { saveCurrentExamId } from "@/lib/current-exam";
-import { DASHBOARD_PATH, examPath, UPGRADE_PATH } from "@/lib/routes";
+import { DASHBOARD_PATH, HOME_PATH, examPath, UPGRADE_PATH } from "@/lib/routes";
 import { getTileColors } from "@/lib/tile-colors";
 import { addUserExam, getUserExamIds, isUserExam, removeUserExam } from "@/lib/user-exams";
 
@@ -17,7 +17,7 @@ function ExamHomeHeader() {
 
   return (
     <header className="flex items-center justify-between py-4">
-      <Link href="/" className="flex min-w-0 items-center">
+      <Link href={HOME_PATH} className="flex min-w-0 items-center">
         <DrNoteLogo showWordmark forceWordmark />
       </Link>
 
@@ -74,7 +74,7 @@ function ExamHero({
           Choose your exam
         </h1>
         <p className="mx-auto mt-2 max-w-sm text-sm font-bold text-slate-500 sm:text-base">
-          Pick the test you&apos;re studying for and start practicing
+          Qbank — pick the test you&apos;re studying for and start practicing
         </p>
 
         <div className="mx-auto mt-6 flex max-w-md items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white px-4 py-3">

@@ -1752,7 +1752,7 @@ export default function DrNoteApp({
           filters={browseFilters}
           onOpenSet={openSet}
           onOpenArticle={(article) =>
-            router.push(articlePath(examId, article.id))
+            router.push(articlePath(article.id))
           }
         />
       </main>

@@ -1,5 +1,5 @@
-import ExamHome from "@/components/ExamHome";
+import ProductHome from "@/components/ProductHome";
 
 export default function HomePage() {
-  return <ExamHome />;
+  return <ProductHome />;
 }

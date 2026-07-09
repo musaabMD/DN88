@@ -158,7 +158,6 @@ function SelectionToolbar({
 
 export default function LibraryArticle({
   article,
-  examId,
   fullPage,
   onToggleFullPage,
   showSearch,
@@ -166,7 +165,6 @@ export default function LibraryArticle({
   presentationMode,
 }: {
   article: LibraryArticle;
-  examId: string;
   fullPage?: boolean;
   onToggleFullPage?: () => void;
   showSearch?: boolean;

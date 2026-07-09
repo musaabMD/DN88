@@ -5,10 +5,12 @@ import { DEFAULT_TAB, isValidTab, VALID_TABS } from "@/lib/routes";
 
 export function generateStaticParams() {
   return getAllExamStaticParams().flatMap(({ examId }) =>
-    VALID_TABS.filter((tab) => tab !== DEFAULT_TAB).map((tab) => ({
-      examId,
-      tab,
-    }))
+    VALID_TABS.filter((tab) => tab !== DEFAULT_TAB && tab !== "library").map(
+      (tab) => ({
+        examId,
+        tab,
+      })
+    )
   );
 }
 

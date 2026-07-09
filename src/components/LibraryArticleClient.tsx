@@ -5,29 +5,18 @@ import { useRouter } from "next/navigation";
 import { ContentShell } from "@/components/ContentShell";
 import LibraryArticle from "@/components/content/LibraryArticle";
 import { getLibraryArticleById } from "@/lib/mock-data";
-import { examTabPath } from "@/lib/routes";
+import { LIBRARY_PATH } from "@/lib/routes";
 
-export function LibraryArticleClient({
-  examId,
-  articleId,
-}: {
-  examId: string;
-  articleId: string;
-}) {
+export function LibraryArticleClient({ articleId }: { articleId: string }) {
   const router = useRouter();
   const article = getLibraryArticleById(articleId);
   const [fullPage, setFullPage] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
-  const backToLibrary = () => router.push(examTabPath(examId, "library"));
+  const backToLibrary = () => router.push(LIBRARY_PATH);
 
   if (!article) {
     return (
-      <ContentShell
-        examId={examId}
-        title="Article not found"
-        onBack={backToLibrary}
-        showLibrary
-      >
+      <ContentShell title="Article not found" onBack={backToLibrary} showLibrary>
         <div className="py-16 text-center">
           <p className="mb-2 font-bold text-slate-800">Article not found</p>
           <button
@@ -43,7 +32,6 @@ export function LibraryArticleClient({
 
   return (
     <ContentShell
-      examId={examId}
       title={article.title}
       onBack={backToLibrary}
       showLibrary
@@ -52,7 +40,6 @@ export function LibraryArticleClient({
     >
       <LibraryArticle
         article={article}
-        examId={examId}
         fullPage={fullPage}
         onToggleFullPage={() => setFullPage((v) => !v)}
         showSearch={showSearch}
