@@ -14,7 +14,11 @@ import {
 import { DEFAULT_EXAM_ID } from "@/lib/exams";
 import { filterLibraryArticles, type LibraryArticle } from "@/lib/mock-data";
 import { DASHBOARD_PATH, HOME_PATH, UPGRADE_PATH, articlePath } from "@/lib/routes";
-import { MEDICAL_SPECIALTIES } from "@/lib/specialties";
+import {
+  filterSpecialtyTopics,
+  SPECIALTY_TOPIC_GROUPS,
+  specialtiesWithoutTopics,
+} from "@/lib/specialties";
 import { getTileColors } from "@/lib/tile-colors";
 
 function LibraryHomeHeader() {
@@ -164,7 +168,43 @@ function ArticleCard({ article }: { article: LibraryArticle }) {
   );
 }
 
-function SpecialtiesSection() {
+function TopicCard({ topic }: { topic: { id: string; title: string; specialty: string } }) {
+  return (
+    <button
+      type="button"
+      className="flex w-full items-start gap-3 rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-left transition-colors hover:border-teal-300 hover:bg-teal-50"
+    >
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-extrabold leading-snug text-slate-800">
+          {topic.title}
+        </p>
+        <p className="mt-1 text-xs font-bold text-teal-700">{topic.specialty}</p>
+      </div>
+      <ChevronRight
+        size={18}
+        strokeWidth={3}
+        className="mt-0.5 shrink-0 text-slate-300"
+      />
+    </button>
+  );
+}
+
+function SpecialtiesSection({ query }: { query: string }) {
+  const filteredTopics = filterSpecialtyTopics(query);
+  const otherSpecialties = specialtiesWithoutTopics();
+  const groups = SPECIALTY_TOPIC_GROUPS.map((group) => ({
+    ...group,
+    topics: group.topics.filter((topic) =>
+      filteredTopics.some((t) => t.id === topic.id)
+    ),
+  })).filter((group) => group.topics.length > 0);
+
+  const filteredOtherSpecialties = query.trim()
+    ? otherSpecialties.filter((s) =>
+        s.toLowerCase().includes(query.trim().toLowerCase())
+      )
+    : otherSpecialties;
+
   return (
     <section className="mt-10">
       <h2 className="text-xl font-black tracking-tight text-slate-800 sm:text-2xl">
@@ -175,17 +215,43 @@ function SpecialtiesSection() {
         make evidence-based clinical decisions.
       </p>
 
-      <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {MEDICAL_SPECIALTIES.map((specialty) => (
-          <button
-            key={specialty}
-            type="button"
-            className="rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-900"
-          >
-            {specialty}
-          </button>
-        ))}
-      </div>
+      {groups.map((group) => (
+        <div key={group.specialty} className="mt-8">
+          <h3 className="text-base font-black text-slate-800 sm:text-lg">
+            {group.specialty}
+          </h3>
+          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {group.topics.map((topic) => (
+              <TopicCard key={topic.id} topic={topic} />
+            ))}
+          </div>
+        </div>
+      ))}
+
+      {filteredOtherSpecialties.length > 0 ? (
+        <div className="mt-8">
+          <h3 className="text-sm font-extrabold uppercase tracking-wide text-slate-400">
+            More specialties
+          </h3>
+          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredOtherSpecialties.map((specialty) => (
+              <button
+                key={specialty}
+                type="button"
+                className="rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-900"
+              >
+                {specialty}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {groups.length === 0 && filteredOtherSpecialties.length === 0 && query.trim() ? (
+        <p className="mt-6 text-sm font-bold text-slate-400">
+          No specialty topics match your search
+        </p>
+      ) : null}
     </section>
   );
 }
@@ -220,7 +286,7 @@ export default function LibraryHome() {
         </div>
       ) : null}
 
-      <SpecialtiesSection />
+      <SpecialtiesSection query={query} />
 
       {showSuggestModal ? (
         <SuggestArticleModal onClose={() => setShowSuggestModal(false)} />
