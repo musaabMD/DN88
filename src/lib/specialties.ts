@@ -4469,6 +4469,20 @@ const HOSPITAL_MEDICINE_TOPICS = [
   "Wernicke's encephalopathy",
 ] as const;
 
+const HEALTH_MAINTENANCE_TOPICS = [
+  "Assessment of unintentional weight loss",
+  "Cervical cancer screening",
+  "Contraception",
+  "Dyssomnias in children",
+  "Insomnia",
+  "Jet lag and sleep phase disorders",
+  "Medication overuse headache",
+  "Obesity in adults",
+  "Obesity in children",
+  "Routine antenatal care",
+  "Smoking cessation",
+] as const;
+
 export const SPECIALTY_TOPIC_GROUPS: Array<{
   specialty: MedicalSpecialty;
   topics: SpecialtyTopic[];
@@ -4608,6 +4622,10 @@ export const SPECIALTY_TOPIC_GROUPS: Array<{
   {
     specialty: "Hospital medicine",
     topics: topicsFor("Hospital medicine", [...HOSPITAL_MEDICINE_TOPICS]),
+  },
+  {
+    specialty: "Health maintenance",
+    topics: topicsFor("Health maintenance", [...HEALTH_MAINTENANCE_TOPICS]),
   },
 ];
 
