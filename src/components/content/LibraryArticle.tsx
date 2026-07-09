@@ -13,11 +13,14 @@ import {
   VolumeX,
   Zap,
 } from "lucide-react";
+import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { CitationList } from "@/components/tool-ui/citation";
 import { SuggestEditModal } from "@/components/SuggestEditModal";
 import { ArticleSearchModal } from "@/components/content/ArticleSearchModal";
 import {
   ArticleStudyModes,
+  getPrimaryViewMode,
+  PRIMARY_VIEW_MODES,
   shouldShowSection,
   type StudyModeFilter,
 } from "@/components/content/ArticleStudyModes";
@@ -184,8 +187,6 @@ export default function LibraryArticle({
   const [isReading, setIsReading] = useState(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  const presentation = presentationMode || studyModes.has("presentation");
-
   const loadAnnotations = useCallback(() => {
     setHighlights(getArticleHighlights(article.id));
     const bookmarks = getParagraphBookmarks(article.id);
@@ -287,22 +288,131 @@ export default function LibraryArticle({
   const toggleStudyMode = (mode: StudyModeFilter) => {
     setStudyModes((prev) => {
       const next = new Set(prev);
-      if (next.has(mode)) next.delete(mode);
-      else next.add(mode);
+      if (next.has(mode)) {
+        next.delete(mode);
+        return next;
+      }
+      if (PRIMARY_VIEW_MODES.includes(mode)) {
+        for (const primary of PRIMARY_VIEW_MODES) next.delete(primary);
+      }
+      next.add(mode);
       return next;
     });
   };
+
+  const primaryView = getPrimaryViewMode(studyModes);
+  const presentation = presentationMode || primaryView === "presentation";
+  const showArticleBody =
+    !primaryView || primaryView === "presentation";
 
   const visibleSections = article.sections.filter((section) =>
     shouldShowSection(section.id, studyModes)
   );
 
+  const articleSummary =
+    article.summary ??
+    article.sections
+      .filter((s) => s.id === "overview")
+      .map((s) => s.body)
+      .join(" ");
+
+  const renderStudyView = () => {
+    if (primaryView === "summary") {
+      return (
+        <div className="mt-6 rounded-2xl border-2 border-slate-200 bg-slate-50 p-5 sm:p-6">
+          <p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">
+            Summary
+          </p>
+          <p className="mt-3 text-base font-medium leading-relaxed text-slate-700 sm:text-lg">
+            {articleSummary}
+          </p>
+          {article.highYield ? (
+            <aside className="mt-5 rounded-xl border-2 border-slate-700 bg-white p-4">
+              <p className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wide text-slate-600">
+                <Zap size={14} strokeWidth={3} /> High yield
+              </p>
+              <p className="mt-2 text-sm font-bold leading-relaxed text-slate-700">
+                {article.highYield}
+              </p>
+            </aside>
+          ) : null}
+        </div>
+      );
+    }
+
+    if (primaryView === "questions" && article.questions?.length) {
+      return (
+        <div className="mt-6 space-y-4">
+          <p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">
+            Questions from this article
+          </p>
+          {article.questions.map((q, idx) => (
+            <div
+              key={q.id}
+              className="rounded-2xl border-2 border-slate-200 bg-white p-4 sm:p-5"
+            >
+              <p className="text-xs font-bold text-slate-400">
+                Question {idx + 1} · {q.subject}
+              </p>
+              <p className="mt-2 text-base font-extrabold leading-snug text-slate-800">
+                {q.text}
+              </p>
+              <ul className="mt-3 space-y-2">
+                {q.options.map((opt, optIdx) => (
+                  <li
+                    key={opt}
+                    className={`rounded-xl border-2 px-3 py-2 text-sm font-bold ${
+                      optIdx === q.answer
+                        ? "border-emerald-300 bg-emerald-50 text-emerald-900"
+                        : "border-slate-200 bg-slate-50 text-slate-600"
+                    }`}
+                  >
+                    {String.fromCharCode(65 + optIdx)}. {opt}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-sm font-medium leading-relaxed text-slate-600">
+                {q.explanation}
+              </p>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (primaryView === "flashcards" && article.flashcards?.length) {
+      return (
+        <div className="mt-6 space-y-4">
+          <p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">
+            Flashcards from this article
+          </p>
+          {article.flashcards.map((card) => (
+            <div
+              key={card.id}
+              className="rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4 sm:p-5"
+            >
+              <p className="text-xs font-bold text-slate-400">{card.deck}</p>
+              <p className="mt-2 text-base font-extrabold text-slate-800">
+                {card.front}
+              </p>
+              <p className="mt-3 border-t border-slate-100 pt-3 text-sm font-medium leading-relaxed text-slate-600">
+                {card.back}
+              </p>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   const content = (
     <div
       className={`mx-auto flex w-full gap-8 ${presentation ? "max-w-3xl" : "max-w-5xl"}`}
     >
-      {!fullPage ? (
-        <aside className="hidden w-44 shrink-0 lg:block xl:w-52">
+      {!fullPage && showArticleBody && primaryView !== "presentation" ? (
+        <aside className="hidden w-48 shrink-0 lg:block xl:w-56">
           <ArticleTableOfContents
             headings={sectionHeadings}
             activeId={sectionHeadings[0] ? sectionSlug(sectionHeadings[0]) : null}
@@ -380,9 +490,18 @@ export default function LibraryArticle({
         )}
 
         <header className="mt-4">
-          <span className="rounded-full bg-slate-500 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
-            {article.subject}
-          </span>
+          {presentation ? (
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <DrNoteLogo showWordmark forceWordmark />
+              <span className="rounded-full bg-slate-500 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
+                {article.subject}
+              </span>
+            </div>
+          ) : (
+            <span className="rounded-full bg-slate-500 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
+              {article.subject}
+            </span>
+          )}
           <h1
             className={`mt-2 font-black leading-tight tracking-tight text-slate-800 ${
               presentation ? "text-4xl sm:text-5xl" : "text-3xl sm:text-4xl"
@@ -399,21 +518,29 @@ export default function LibraryArticle({
           </p>
         </header>
 
-        <nav
-          className="mt-4 flex gap-2 overflow-x-auto lg:hidden"
-          aria-label="Contents"
-        >
-          {sectionHeadings.map((s) => (
-            <a
-              key={s}
-              href={`#${sectionSlug(s)}`}
-              className="shrink-0 rounded-full border border-slate-200 px-3 py-1 text-xs font-extrabold text-slate-500"
-            >
-              {s}
-            </a>
-          ))}
-        </nav>
+        {showArticleBody && primaryView !== "presentation" ? (
+          <nav
+            className="mt-4 flex gap-2 overflow-x-auto pb-1 lg:hidden"
+            aria-label="Contents"
+          >
+            {sectionHeadings.map((s, index) => (
+              <a
+                key={s}
+                href={`#${sectionSlug(s)}`}
+                className="flex shrink-0 items-center gap-1.5 rounded-xl border-2 border-slate-200 bg-white px-2.5 py-1.5 text-xs font-extrabold text-slate-600 transition-colors hover:bg-slate-50"
+              >
+                <span className="flex h-4 w-4 items-center justify-center rounded-md bg-slate-700 text-[9px] font-black text-white">
+                  {index + 1}
+                </span>
+                {s}
+              </a>
+            ))}
+          </nav>
+        ) : null}
 
+        {primaryView && primaryView !== "presentation" ? renderStudyView() : null}
+
+        {showArticleBody ? (
         <div className={`mt-6 space-y-6 ${presentation ? "space-y-8" : ""}`}>
           {visibleSections.map((section) => {
             const slug = sectionSlug(section.heading);
@@ -489,6 +616,7 @@ export default function LibraryArticle({
             </aside>
           ) : null}
         </div>
+        ) : null}
       </article>
     </div>
   );
@@ -505,7 +633,6 @@ export default function LibraryArticle({
 
       {!fullPage ? (
         <ArticleStudyModes
-          examId={examId}
           activeModes={studyModes}
           onToggleMode={toggleStudyMode}
         />

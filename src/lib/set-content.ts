@@ -69,6 +69,12 @@ export type LibraryArticle = {
   updated: string;
   sections: LibraryArticleSection[];
   highYield?: string;
+  /** Condensed summary for library study mode (not exam sets). */
+  summary?: string;
+  /** Practice questions tied to this article. */
+  questions?: QuestionItem[];
+  /** Flashcards tied to this article. */
+  flashcards?: FlashcardItem[];
 };
 
 export type SessionItem =
@@ -687,6 +693,67 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
     ],
     highYield:
       "Bilateral hilar lymphadenopathy on chest X-ray in an asymptomatic young patient is the classic exam presentation. Look for elevated ACE and hypercalcemia in the stem.",
+    summary:
+      "Sarcoidosis is a multisystem granulomatous disease of unknown cause. Classic findings include bilateral hilar lymphadenopathy, noncaseating granulomas, elevated ACE, and hypercalcemia. Loefgren syndrome (fever, arthritis, erythema nodosum, hilar adenopathy) is pathognomonic. Many patients need no treatment; steroids are indicated for significant pulmonary, cardiac, neurologic, or hypercalcemic disease.",
+    questions: [
+      {
+        id: 1,
+        subject: "Pulmonology",
+        text: "A 32-year-old African American woman has bilateral hilar lymphadenopathy on chest X-ray. Biopsy shows noncaseating granulomas. Which finding is most consistent with this diagnosis?",
+        options: [
+          "Caseating granulomas",
+          "Elevated serum ACE",
+          "Positive PPD",
+          "Low calcium",
+        ],
+        answer: 1,
+        tag: "High Yield",
+        status: "unused",
+        explanation:
+          "Elevated ACE is common in sarcoidosis due to granuloma activity. Noncaseating granulomas distinguish sarcoidosis from tuberculosis.",
+        citations: [],
+      },
+      {
+        id: 2,
+        subject: "Pulmonology",
+        text: "Loefgren syndrome includes all of the following EXCEPT:",
+        options: [
+          "Erythema nodosum",
+          "Bilateral hilar adenopathy",
+          "Fever",
+          "Caseating granulomas",
+        ],
+        answer: 3,
+        tag: "High Yield",
+        status: "unused",
+        explanation:
+          "Loefgren syndrome features fever, arthritis, erythema nodosum, and hilar adenopathy — classic for sarcoidosis with noncaseating granulomas.",
+        citations: [],
+      },
+    ],
+    flashcards: [
+      {
+        id: 1,
+        deck: "Sarcoidosis",
+        front: "Classic chest X-ray finding in sarcoidosis?",
+        back: "Bilateral hilar lymphadenopathy",
+        status: "new",
+      },
+      {
+        id: 2,
+        deck: "Sarcoidosis",
+        front: "Granuloma type in sarcoidosis?",
+        back: "Noncaseating granulomas",
+        status: "new",
+      },
+      {
+        id: 3,
+        deck: "Sarcoidosis",
+        front: "Loefgren syndrome triad?",
+        back: "Fever, erythema nodosum, bilateral hilar adenopathy (± arthritis)",
+        status: "new",
+      },
+    ],
   },
   {
     id: "art2",
@@ -764,6 +831,57 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
     ],
     highYield:
       "Wrist drop after mid-shaft humerus fracture = radial nerve in the spiral groove. Saturday night palsy = compression at the axilla.",
+    summary:
+      "Radial nerve injury causes wrist drop and loss of finger/thumb extension. The nerve runs in the spiral groove of the humerus — vulnerable in mid-shaft fractures. Saturday night palsy results from axillary compression. Sensory loss affects the posterior forearm and dorsum of the hand. Most neuropraxias recover with splinting; surgery if no improvement after 3–6 months.",
+    questions: [
+      {
+        id: 1,
+        subject: "Neurology",
+        text: "A patient cannot extend the wrist or fingers after a mid-shaft humerus fracture. Which nerve is injured?",
+        options: ["Median nerve", "Ulnar nerve", "Radial nerve", "Musculocutaneous nerve"],
+        answer: 2,
+        tag: "High Yield",
+        status: "unused",
+        explanation:
+          "The radial nerve runs in the spiral groove of the humerus and is injured in mid-shaft fractures, causing wrist drop.",
+        citations: [],
+      },
+      {
+        id: 2,
+        subject: "Neurology",
+        text: "Saturday night palsy is caused by compression of which nerve?",
+        options: ["Median nerve at carpal tunnel", "Radial nerve at axilla", "Ulnar nerve at elbow", "Axillary nerve"],
+        answer: 1,
+        tag: "High Yield",
+        status: "unused",
+        explanation:
+          "Prolonged compression of the radial nerve at the axilla (e.g., arm over chair) causes Saturday night palsy with wrist drop.",
+        citations: [],
+      },
+    ],
+    flashcards: [
+      {
+        id: 1,
+        deck: "Radial nerve",
+        front: "Motor deficit in radial nerve injury?",
+        back: "Wrist drop — inability to extend wrist, fingers, and thumb",
+        status: "new",
+      },
+      {
+        id: 2,
+        deck: "Radial nerve",
+        front: "Saturday night palsy mechanism?",
+        back: "Radial nerve compression at the axilla",
+        status: "new",
+      },
+      {
+        id: 3,
+        deck: "Radial nerve",
+        front: "Humerus fracture location associated with radial nerve injury?",
+        back: "Mid-shaft humerus (spiral groove)",
+        status: "new",
+      },
+    ],
   },
 ];
 
