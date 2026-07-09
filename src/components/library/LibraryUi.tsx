@@ -9,11 +9,14 @@ export function BookmarkButton({
   onToggle,
   label,
   size = "md",
+  showOnHover = false,
 }: {
   bookmarked: boolean;
   onToggle: () => void;
   label: string;
   size?: "sm" | "md";
+  /** Hide until card hover unless already bookmarked. */
+  showOnHover?: boolean;
 }) {
   const box = size === "sm" ? "h-9 w-9" : "h-10 w-10";
   const icon = size === "sm" ? 16 : 18;
@@ -27,10 +30,14 @@ export function BookmarkButton({
         onToggle();
       }}
       aria-label={label}
-      className={`flex ${box} shrink-0 items-center justify-center rounded-xl border-2 border-b-4 transition-colors active:translate-y-0.5 active:border-b-2 ${
+      className={`flex ${box} shrink-0 items-center justify-center rounded-xl border-2 border-b-4 transition-all active:translate-y-0.5 active:border-b-2 ${
         bookmarked
           ? "border-slate-700 bg-slate-700 text-white"
           : "border-slate-200 bg-white text-slate-400 hover:border-slate-400 hover:text-slate-700"
+      } ${
+        showOnHover && !bookmarked
+          ? "pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100"
+          : ""
       }`}
     >
       <Bookmark

@@ -3,14 +3,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Bookmark,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
   Copy,
-  Maximize2,
-  Minimize2,
+  Monitor,
   Pencil,
   Underline,
   Volume2,
   VolumeX,
+  X,
   Zap,
 } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
@@ -158,15 +160,11 @@ function SelectionToolbar({
 
 export default function LibraryArticle({
   article,
-  fullPage,
-  onToggleFullPage,
   showSearch,
   onCloseSearch,
   presentationMode,
 }: {
   article: LibraryArticle;
-  fullPage?: boolean;
-  onToggleFullPage?: () => void;
   showSearch?: boolean;
   onCloseSearch?: () => void;
   presentationMode?: boolean;
@@ -183,6 +181,7 @@ export default function LibraryArticle({
   );
   const [studyModes, setStudyModes] = useState<Set<StudyModeFilter>>(new Set());
   const [isReading, setIsReading] = useState(false);
+  const [slideIndex, setSlideIndex] = useState(0);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   const loadAnnotations = useCallback(() => {
@@ -300,12 +299,55 @@ export default function LibraryArticle({
 
   const primaryView = getPrimaryViewMode(studyModes);
   const presentation = presentationMode || primaryView === "presentation";
-  const showArticleBody =
-    !primaryView || primaryView === "presentation";
+  const showArticleBody = !primaryView;
 
   const visibleSections = article.sections.filter((section) =>
     shouldShowSection(section.id, studyModes)
   );
+
+  const slides = useMemo(() => {
+    const items: Array<{ title: string; body?: string; bullets?: string[] }> = [
+      {
+        title: article.title,
+        body: `${article.subject} · ${article.readMinutes} min read`,
+      },
+      ...article.sections.map((s) => ({
+        title: s.heading,
+        body: s.body || undefined,
+        bullets: s.bullets,
+      })),
+    ];
+    if (article.highYield) {
+      items.push({ title: "High yield", body: article.highYield });
+    }
+    return items;
+  }, [article]);
+
+  useEffect(() => {
+    if (!presentation) return;
+    setSlideIndex(0);
+  }, [presentation, article.id]);
+
+  useEffect(() => {
+    if (!presentation) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight" || e.key === " ") {
+        e.preventDefault();
+        setSlideIndex((i) => Math.min(i + 1, slides.length - 1));
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        setSlideIndex((i) => Math.max(i - 1, 0));
+      } else if (e.key === "Escape") {
+        setStudyModes((prev) => {
+          const next = new Set(prev);
+          next.delete("presentation");
+          return next;
+        });
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [presentation, slides.length]);
 
   const articleSummary =
     article.summary ??
@@ -406,11 +448,9 @@ export default function LibraryArticle({
   };
 
   const content = (
-    <div
-      className={`mx-auto flex w-full gap-8 ${presentation ? "max-w-3xl" : "max-w-5xl"}`}
-    >
-      {!fullPage && showArticleBody && primaryView !== "presentation" ? (
-        <aside className="hidden w-48 shrink-0 lg:block xl:w-56">
+    <div className="mx-auto flex w-full max-w-5xl gap-10">
+      {showArticleBody ? (
+        <aside className="hidden w-44 shrink-0 lg:block xl:w-52">
           <ArticleTableOfContents
             headings={sectionHeadings}
             activeId={sectionHeadings[0] ? sectionSlug(sectionHeadings[0]) : null}
@@ -419,117 +459,91 @@ export default function LibraryArticle({
       ) : null}
 
       <article className="min-w-0 flex-1">
-        {!fullPage ? (
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={toggleReadAloud}
-                className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-extrabold transition-colors ${
-                  isReading
-                    ? "border-slate-700 bg-slate-700 text-white"
-                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                {isReading ? (
-                  <VolumeX size={14} strokeWidth={2.5} />
-                ) : (
-                  <Volume2 size={14} strokeWidth={2.5} />
-                )}
-                {isReading ? "Stop" : "Read article"}
-              </button>
-              <button
-                type="button"
-                onClick={onToggleFullPage}
-                className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-extrabold text-slate-600 transition-colors hover:bg-slate-50"
-              >
-                <Maximize2 size={14} strokeWidth={2.5} />
-                Full page
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => openSuggestEdit()}
-                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-extrabold text-slate-700 transition-colors hover:bg-slate-100"
-              >
-                Suggest Edit
-              </button>
-              <button
-                type="button"
-                onClick={() => setBookmarked(toggleArticleBookmark(article.id))}
-                className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-colors ${
-                  bookmarked
-                    ? "border-slate-700 bg-slate-700 text-white"
-                    : "border-slate-200 bg-white text-slate-400 hover:text-slate-700"
-                }`}
-                aria-label={bookmarked ? "Remove bookmark" : "Save article"}
-              >
-                <Bookmark
-                  size={15}
-                  strokeWidth={2.5}
-                  fill={bookmarked ? "currentColor" : "none"}
-                />
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="mb-4 flex justify-end">
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-3">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={onToggleFullPage}
-              className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-extrabold text-slate-600 hover:bg-slate-50"
+              onClick={toggleReadAloud}
+              aria-label={isReading ? "Stop reading" : "Read aloud"}
+              title={isReading ? "Stop" : "Read aloud"}
+              className={`flex h-9 w-9 items-center justify-center rounded-xl border-2 transition-colors ${
+                isReading
+                  ? "border-slate-700 bg-slate-700 text-white"
+                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+              }`}
             >
-              <Minimize2 size={14} strokeWidth={2.5} />
-              Exit full page
+              {isReading ? (
+                <VolumeX size={16} strokeWidth={2.5} />
+              ) : (
+                <Volume2 size={16} strokeWidth={2.5} />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => toggleStudyMode("presentation")}
+              aria-label="Present slides"
+              title="Present"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50"
+            >
+              <Monitor size={16} strokeWidth={2.5} />
             </button>
           </div>
-        )}
 
-        <header className="mt-4">
-          {presentation ? (
-            <div className="mb-4 flex items-center justify-between gap-4">
-              <DrNoteLogo showWordmark forceWordmark />
-              <span className="rounded-full bg-slate-500 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
-                {article.subject}
-              </span>
-            </div>
-          ) : (
-            <span className="rounded-full bg-slate-500 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
-              {article.subject}
-            </span>
-          )}
-          <h1
-            className={`mt-2 font-black leading-tight tracking-tight text-slate-800 ${
-              presentation ? "text-4xl sm:text-5xl" : "text-3xl sm:text-4xl"
-            }`}
-          >
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => openSuggestEdit()}
+              aria-label="Suggest edit"
+              title="Suggest edit"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50"
+            >
+              <Pencil size={16} strokeWidth={2.5} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setBookmarked(toggleArticleBookmark(article.id))}
+              className={`flex h-9 w-9 items-center justify-center rounded-xl border-2 transition-colors ${
+                bookmarked
+                  ? "border-slate-700 bg-slate-700 text-white"
+                  : "border-slate-200 bg-white text-slate-400 hover:text-slate-700"
+              }`}
+              aria-label={bookmarked ? "Remove bookmark" : "Save article"}
+              title={bookmarked ? "Remove bookmark" : "Bookmark"}
+            >
+              <Bookmark
+                size={16}
+                strokeWidth={2.5}
+                fill={bookmarked ? "currentColor" : "none"}
+              />
+            </button>
+          </div>
+        </div>
+
+        <header className="mt-2">
+          <h1 className="text-3xl font-black leading-tight tracking-tight text-slate-800 sm:text-4xl">
             {article.title}
           </h1>
-          <p className="mt-2 flex items-center gap-3 text-xs font-bold text-slate-400">
-            <span className="flex items-center gap-1">
-              <Clock3 size={13} strokeWidth={2.5} /> {article.readMinutes} min
-              read
+          <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-bold text-slate-400">
+            <span className="flex items-center gap-1.5">
+              <Clock3 size={14} strokeWidth={2.5} />
+              {article.readMinutes} min read · {article.subject}
             </span>
+            <span className="text-slate-300">·</span>
             <span>Updated {article.updated}</span>
           </p>
         </header>
 
-        {showArticleBody && primaryView !== "presentation" ? (
+        {showArticleBody ? (
           <nav
             className="mt-4 flex gap-2 overflow-x-auto pb-1 lg:hidden"
             aria-label="Contents"
           >
-            {sectionHeadings.map((s, index) => (
+            {sectionHeadings.map((s) => (
               <a
                 key={s}
                 href={`#${sectionSlug(s)}`}
-                className="flex shrink-0 items-center gap-1.5 rounded-xl border-2 border-slate-200 bg-white px-2.5 py-1.5 text-xs font-extrabold text-slate-600 transition-colors hover:bg-slate-50"
+                className="shrink-0 rounded-full border border-slate-200 px-3 py-1 text-xs font-extrabold text-slate-500"
               >
-                <span className="flex h-4 w-4 items-center justify-center rounded-md bg-slate-700 text-[9px] font-black text-white">
-                  {index + 1}
-                </span>
                 {s}
               </a>
             ))}
@@ -539,104 +553,173 @@ export default function LibraryArticle({
         {primaryView && primaryView !== "presentation" ? renderStudyView() : null}
 
         {showArticleBody ? (
-        <div className={`mt-6 space-y-6 ${presentation ? "space-y-8" : ""}`}>
-          {visibleSections.map((section) => {
-            const slug = sectionSlug(section.heading);
-            const paraBookmarked = paragraphBookmarks.has(section.id);
-            return (
-              <section
-                key={section.id}
-                id={slug}
-                data-section-id={section.id}
-              >
-                <div className="flex items-center gap-2">
-                  <h2
-                    className={`font-black tracking-tight text-slate-800 ${
-                      presentation ? "text-2xl" : "text-xl"
-                    }`}
-                  >
-                    {section.heading}
-                  </h2>
-                  {paraBookmarked ? (
-                    <Bookmark
-                      size={14}
-                      className="text-slate-500"
-                      fill="currentColor"
-                    />
-                  ) : null}
-                </div>
-                {section.body ? (
-                  <p
-                    className={`mt-2 font-medium leading-relaxed text-slate-600 ${
-                      presentation ? "text-lg sm:text-xl" : "text-base"
-                    }`}
-                  >
-                    {applyHighlights(section.body, highlights, section.id)}
-                  </p>
-                ) : null}
-                {section.bullets && section.bullets.length > 0 ? (
-                  <ul className="mt-3 space-y-2">
-                    {section.bullets.map((item) => (
-                      <li
-                        key={item}
-                        className={`flex items-start gap-2.5 font-medium leading-relaxed text-slate-600 ${
-                          presentation ? "text-lg" : "text-base"
-                        }`}
-                      >
-                        <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-slate-500" />
-                        {applyHighlights(item, highlights, section.id)}
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-                {section.citations && section.citations.length > 0 ? (
-                  <div className="mt-2">
-                    <CitationList
-                      id={`citation-list-${section.id}`}
-                      citations={section.citations}
-                      variant="stacked"
-                      size="compact"
-                    />
+          <div className="mt-8 space-y-12">
+            {visibleSections.map((section) => {
+              const slug = sectionSlug(section.heading);
+              const paraBookmarked = paragraphBookmarks.has(section.id);
+              return (
+                <section
+                  key={section.id}
+                  id={slug}
+                  data-section-id={section.id}
+                  className="scroll-mt-24"
+                >
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-black tracking-tight text-slate-800">
+                      {section.heading}
+                    </h2>
+                    {paraBookmarked ? (
+                      <Bookmark
+                        size={14}
+                        className="text-slate-500"
+                        fill="currentColor"
+                      />
+                    ) : null}
                   </div>
-                ) : null}
-              </section>
-            );
-          })}
+                  {section.body ? (
+                    <p className="mt-3 text-base font-medium leading-relaxed text-slate-600">
+                      {applyHighlights(section.body, highlights, section.id)}
+                    </p>
+                  ) : null}
+                  {section.bullets && section.bullets.length > 0 ? (
+                    <ul className="mt-4 space-y-2.5">
+                      {section.bullets.map((item) => (
+                        <li
+                          key={item}
+                          className="flex items-start gap-2.5 text-base font-medium leading-relaxed text-slate-600"
+                        >
+                          <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-slate-500" />
+                          {applyHighlights(item, highlights, section.id)}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {section.citations && section.citations.length > 0 ? (
+                    <div className="mt-3">
+                      <CitationList
+                        id={`citation-list-${section.id}`}
+                        citations={section.citations}
+                        variant="stacked"
+                        size="compact"
+                      />
+                    </div>
+                  ) : null}
+                </section>
+              );
+            })}
 
-          {article.highYield && (!studyModes.has("hy") || studyModes.size === 0 || studyModes.has("hy")) ? (
-            <aside className="rounded-2xl border-2 border-b-4 border-slate-700 bg-slate-50 p-4 sm:p-5">
-              <p className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wide text-slate-600">
-                <Zap size={14} strokeWidth={3} /> High yield
-              </p>
-              <p className="mt-2 text-sm font-bold leading-relaxed text-slate-700">
-                {article.highYield}
-              </p>
-            </aside>
-          ) : null}
-        </div>
+            {article.highYield &&
+            (!studyModes.has("hy") ||
+              studyModes.size === 0 ||
+              studyModes.has("hy")) ? (
+              <aside className="rounded-2xl border-2 border-b-4 border-slate-700 bg-slate-50 p-4 sm:p-5">
+                <p className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wide text-slate-600">
+                  <Zap size={14} strokeWidth={3} /> High yield
+                </p>
+                <p className="mt-2 text-sm font-bold leading-relaxed text-slate-700">
+                  {article.highYield}
+                </p>
+              </aside>
+            ) : null}
+          </div>
         ) : null}
       </article>
     </div>
   );
 
+  const currentSlide = slides[slideIndex];
+
+  const presentationDeck = presentation ? (
+    <div className="fixed inset-0 z-50 flex flex-col bg-slate-950 text-white">
+      <div className="flex items-center justify-between px-5 py-4">
+        <DrNoteLogo showWordmark forceWordmark />
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white/80">
+            {article.subject}
+          </span>
+          <button
+            type="button"
+            onClick={() =>
+              setStudyModes((prev) => {
+                const next = new Set(prev);
+                next.delete("presentation");
+                return next;
+              })
+            }
+            aria-label="Exit presentation"
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20"
+          >
+            <X size={18} strokeWidth={2.5} />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col items-center justify-center px-6 py-8 sm:px-16">
+        <p className="mb-4 text-xs font-extrabold uppercase tracking-[0.2em] text-white/40">
+          {slideIndex + 1} / {slides.length}
+        </p>
+        <h2 className="max-w-4xl text-center text-3xl font-black leading-tight tracking-tight sm:text-5xl">
+          {currentSlide?.title}
+        </h2>
+        {currentSlide?.body ? (
+          <p className="mt-6 max-w-3xl text-center text-lg font-medium leading-relaxed text-white/80 sm:text-2xl">
+            {currentSlide.body}
+          </p>
+        ) : null}
+        {currentSlide?.bullets && currentSlide.bullets.length > 0 ? (
+          <ul className="mt-8 max-w-2xl space-y-3 text-left">
+            {currentSlide.bullets.map((item) => (
+              <li
+                key={item}
+                className="flex items-start gap-3 text-base font-medium text-white/85 sm:text-xl"
+              >
+                <span className="mt-2.5 h-2 w-2 shrink-0 rounded-full bg-[#1DB954]" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+
+      <div className="flex items-center justify-center gap-4 px-5 py-5">
+        <button
+          type="button"
+          onClick={() => setSlideIndex((i) => Math.max(i - 1, 0))}
+          disabled={slideIndex === 0}
+          aria-label="Previous slide"
+          className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10 text-white disabled:opacity-30 hover:bg-white/20"
+        >
+          <ChevronLeft size={22} strokeWidth={2.5} />
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            setSlideIndex((i) => Math.min(i + 1, slides.length - 1))
+          }
+          disabled={slideIndex >= slides.length - 1}
+          aria-label="Next slide"
+          className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10 text-white disabled:opacity-30 hover:bg-white/20"
+        >
+          <ChevronRight size={22} strokeWidth={2.5} />
+        </button>
+      </div>
+    </div>
+  ) : null;
+
   return (
     <>
-      {fullPage ? (
-        <div className="fixed inset-0 z-30 overflow-y-auto bg-white px-6 py-8">
-          {content}
-        </div>
-      ) : (
-        content
-      )}
+      {presentationDeck}
 
-      {!fullPage ? (
+      {!presentation ? content : null}
+
+      {!presentation ? (
         <ArticleStudyModes
           activeModes={studyModes}
           onToggleMode={toggleStudyMode}
         />
       ) : null}
 
-      {selectionRect ? (
+      {selectionRect && !presentation ? (
         <SelectionToolbar
           rect={selectionRect}
           onCopy={handleCopy}

@@ -133,7 +133,7 @@ export function shouldShowSection(
   activeModes: Set<StudyModeFilter>
 ): boolean {
   const primary = getPrimaryViewMode(activeModes);
-  if (primary && primary !== "presentation") return false;
+  if (primary) return false;
 
   const sectionFilters = SECTION_FILTER_MODES.filter((m) => activeModes.has(m));
   if (sectionFilters.length === 0) return true;
