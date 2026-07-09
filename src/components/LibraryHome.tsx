@@ -15,11 +15,43 @@ import { DEFAULT_EXAM_ID } from "@/lib/exams";
 import { filterLibraryArticles, type LibraryArticle } from "@/lib/mock-data";
 import { DASHBOARD_PATH, HOME_PATH, UPGRADE_PATH, articlePath } from "@/lib/routes";
 import {
-  filterSpecialtyTopics,
+  MEDICAL_SPECIALTIES,
   SPECIALTY_TOPIC_GROUPS,
-  specialtiesWithoutTopics,
+  filterSpecialtyTopics,
+  type MedicalSpecialty,
+  type SpecialtyTopic,
 } from "@/lib/specialties";
 import { getTileColors } from "@/lib/tile-colors";
+
+type LibraryTab = "specialty" | "topic";
+
+function HighlightText({ text, query }: { text: string; query: string }) {
+  const q = query.trim();
+  if (!q) return <>{text}</>;
+
+  const lowerText = text.toLowerCase();
+  const lowerQuery = q.toLowerCase();
+  const parts: React.ReactNode[] = [];
+  let start = 0;
+  let index = lowerText.indexOf(lowerQuery);
+
+  while (index !== -1) {
+    if (index > start) parts.push(text.slice(start, index));
+    parts.push(
+      <mark
+        key={`${index}-${q}`}
+        className="rounded-sm bg-amber-200 px-0.5 text-inherit"
+      >
+        {text.slice(index, index + q.length)}
+      </mark>
+    );
+    start = index + q.length;
+    index = lowerText.indexOf(lowerQuery, start);
+  }
+
+  if (start < text.length) parts.push(text.slice(start));
+  return <>{parts}</>;
+}
 
 function LibraryHomeHeader() {
   const router = useRouter();
@@ -93,7 +125,7 @@ function LibraryHero({
           <input
             value={query}
             onChange={(e) => onQuery(e.target.value)}
-            placeholder="Search articles"
+            placeholder="Search specialties and topics"
             className="w-full bg-transparent text-base font-bold text-slate-700 outline-none placeholder:text-slate-400"
           />
         </div>
@@ -110,156 +142,169 @@ function LibraryHero({
   );
 }
 
-function ArticleCard({ article }: { article: LibraryArticle }) {
-  const { bg, border } = getTileColors(article.subject);
-  const href = articlePath(DEFAULT_EXAM_ID, article.id);
+function LibraryItemCard({
+  title,
+  meta,
+  colorKey,
+  query,
+  href,
+  bookmarkId,
+}: {
+  title: string;
+  meta: string;
+  colorKey: string;
+  query: string;
+  href?: string;
+  bookmarkId?: string;
+}) {
+  const { bg, border } = getTileColors(colorKey);
   const [bookmarked, setBookmarked] = useState(false);
 
   useEffect(() => {
-    setBookmarked(isArticleBookmarked(article.id));
-  }, [article.id]);
+    if (bookmarkId) setBookmarked(isArticleBookmarked(bookmarkId));
+  }, [bookmarkId]);
+
+  const inner = (
+    <>
+      <div
+        className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-b-4"
+        style={{ background: bg, borderColor: border }}
+      >
+        <BookOpen size={20} strokeWidth={2.5} className="text-white" />
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <h3 className="truncate text-base font-extrabold tracking-tight text-slate-700">
+          <HighlightText text={title} query={query} />
+        </h3>
+        <p className="mt-1 flex items-center gap-1.5 text-sm font-bold text-slate-400">
+          <Clock3 size={14} strokeWidth={2.5} />
+          <span>
+            <HighlightText text={meta} query={query} />
+          </span>
+        </p>
+      </div>
+
+      <ChevronRight
+        size={20}
+        strokeWidth={3}
+        className="shrink-0 text-slate-300 transition-all duration-150 group-hover:translate-x-1 group-hover:text-[#334155]"
+      />
+    </>
+  );
 
   return (
     <div className="group flex w-full items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4 text-left transition-colors duration-150 hover:bg-slate-50">
-      <Link href={href} className="flex min-w-0 flex-1 items-center gap-3">
-        <div
-          className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-b-4"
-          style={{ background: bg, borderColor: border }}
+      {href ? (
+        <Link href={href} className="flex min-w-0 flex-1 items-center gap-3">
+          {inner}
+        </Link>
+      ) : (
+        <div className="flex min-w-0 flex-1 items-center gap-3">{inner}</div>
+      )}
+
+      {bookmarkId ? (
+        <button
+          type="button"
+          onClick={() => setBookmarked(toggleArticleBookmark(bookmarkId))}
+          aria-label={bookmarked ? "Remove bookmark" : "Bookmark article"}
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-b-4 transition-colors active:translate-y-0.5 active:border-b-2 ${
+            bookmarked
+              ? "border-slate-700 bg-slate-700 text-white"
+              : "border-slate-200 bg-white text-slate-400 hover:border-slate-400 hover:text-slate-700"
+          }`}
         >
-          <BookOpen size={20} strokeWidth={2.5} className="text-white" />
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <h3 className="truncate text-base font-extrabold tracking-tight text-slate-700">
-            {article.title}
-          </h3>
-          <p className="mt-1 flex items-center gap-1.5 text-sm font-bold text-slate-400">
-            <Clock3 size={14} strokeWidth={2.5} />
-            <span>{article.readMinutes} min read</span>
-            <span>·</span>
-            <span>{article.subject}</span>
-          </p>
-        </div>
-
-        <ChevronRight
-          size={20}
-          strokeWidth={3}
-          className="shrink-0 text-slate-300 transition-all duration-150 group-hover:translate-x-1 group-hover:text-[#334155]"
-        />
-      </Link>
-
-      <button
-        type="button"
-        onClick={() => setBookmarked(toggleArticleBookmark(article.id))}
-        aria-label={bookmarked ? "Remove bookmark" : "Bookmark article"}
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-b-4 transition-colors active:translate-y-0.5 active:border-b-2 ${
-          bookmarked
-            ? "border-slate-700 bg-slate-700 text-white"
-            : "border-slate-200 bg-white text-slate-400 hover:border-slate-400 hover:text-slate-700"
-        }`}
-      >
-        <Bookmark
-          size={18}
-          strokeWidth={2.5}
-          fill={bookmarked ? "currentColor" : "none"}
-        />
-      </button>
+          <Bookmark
+            size={18}
+            strokeWidth={2.5}
+            fill={bookmarked ? "currentColor" : "none"}
+          />
+        </button>
+      ) : null}
     </div>
   );
 }
 
-function TopicCard({ topic }: { topic: { id: string; title: string; specialty: string } }) {
+function filterSpecialties(query: string): MedicalSpecialty[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [...MEDICAL_SPECIALTIES];
+  return MEDICAL_SPECIALTIES.filter((s) => s.toLowerCase().includes(q));
+}
+
+function topicCountForSpecialty(specialty: MedicalSpecialty): number {
+  const group = SPECIALTY_TOPIC_GROUPS.find((g) => g.specialty === specialty);
+  return group?.topics.length ?? 0;
+}
+
+function SpecialtyTab({ query }: { query: string }) {
+  const specialties = filterSpecialties(query);
+
   return (
-    <button
-      type="button"
-      className="flex w-full items-start gap-3 rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-left transition-colors hover:border-teal-300 hover:bg-teal-50"
-    >
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-extrabold leading-snug text-slate-800">
-          {topic.title}
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {specialties.map((specialty) => {
+        const count = topicCountForSpecialty(specialty);
+        const meta =
+          count > 0
+            ? `${count} topic${count === 1 ? "" : "s"}`
+            : "Coming soon";
+        return (
+          <LibraryItemCard
+            key={specialty}
+            title={specialty}
+            meta={meta}
+            colorKey={specialty}
+            query={query}
+          />
+        );
+      })}
+      {specialties.length === 0 ? (
+        <p className="col-span-full py-8 text-center text-sm font-bold text-slate-400">
+          No specialties match your search
         </p>
-        <p className="mt-1 text-xs font-bold text-teal-700">{topic.specialty}</p>
-      </div>
-      <ChevronRight
-        size={18}
-        strokeWidth={3}
-        className="mt-0.5 shrink-0 text-slate-300"
-      />
-    </button>
+      ) : null}
+    </div>
   );
 }
 
-function SpecialtiesSection({ query }: { query: string }) {
-  const filteredTopics = filterSpecialtyTopics(query);
-  const otherSpecialties = specialtiesWithoutTopics();
-  const groups = SPECIALTY_TOPIC_GROUPS.map((group) => ({
-    ...group,
-    topics: group.topics.filter((topic) =>
-      filteredTopics.some((t) => t.id === topic.id)
-    ),
-  })).filter((group) => group.topics.length > 0);
-
-  const filteredOtherSpecialties = query.trim()
-    ? otherSpecialties.filter((s) =>
-        s.toLowerCase().includes(query.trim().toLowerCase())
-      )
-    : otherSpecialties;
+function TopicTab({ query }: { query: string }) {
+  const topics = filterSpecialtyTopics(query);
+  const articles = filterLibraryArticles(query);
 
   return (
-    <section className="mt-10">
-      <h2 className="text-xl font-black tracking-tight text-slate-800 sm:text-2xl">
-        Specialties
-      </h2>
-      <p className="mt-2 max-w-2xl text-sm font-medium leading-relaxed text-slate-500 sm:text-base">
-        Browse the latest medical content in over 30 specialties to help you
-        make evidence-based clinical decisions.
-      </p>
-
-      {groups.map((group) => (
-        <div key={group.specialty} className="mt-8">
-          <h3 className="text-base font-black text-slate-800 sm:text-lg">
-            {group.specialty}
-          </h3>
-          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {group.topics.map((topic) => (
-              <TopicCard key={topic.id} topic={topic} />
-            ))}
-          </div>
-        </div>
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {articles.map((article) => (
+        <LibraryItemCard
+          key={article.id}
+          title={article.title}
+          meta={`${article.readMinutes} min read · ${article.subject}`}
+          colorKey={article.subject}
+          query={query}
+          href={articlePath(DEFAULT_EXAM_ID, article.id)}
+          bookmarkId={article.id}
+        />
       ))}
-
-      {filteredOtherSpecialties.length > 0 ? (
-        <div className="mt-8">
-          <h3 className="text-sm font-extrabold uppercase tracking-wide text-slate-400">
-            More specialties
-          </h3>
-          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredOtherSpecialties.map((specialty) => (
-              <button
-                key={specialty}
-                type="button"
-                className="rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-900"
-              >
-                {specialty}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      {groups.length === 0 && filteredOtherSpecialties.length === 0 && query.trim() ? (
-        <p className="mt-6 text-sm font-bold text-slate-400">
-          No specialty topics match your search
+      {topics.map((topic: SpecialtyTopic) => (
+        <LibraryItemCard
+          key={topic.id}
+          title={topic.title}
+          meta={topic.specialty}
+          colorKey={topic.specialty}
+          query={query}
+        />
+      ))}
+      {articles.length === 0 && topics.length === 0 ? (
+        <p className="col-span-full py-8 text-center text-sm font-bold text-slate-400">
+          No topics match your search
         </p>
       ) : null}
-    </section>
+    </div>
   );
 }
 
 export default function LibraryHome() {
   const [query, setQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<LibraryTab>("specialty");
   const [showSuggestModal, setShowSuggestModal] = useState(false);
-  const articles = filterLibraryArticles(query);
 
   return (
     <main className="mx-auto w-full max-w-4xl bg-white px-4 pb-14 sm:px-6">
@@ -271,22 +316,35 @@ export default function LibraryHome() {
         onSuggestArticle={() => setShowSuggestModal(true)}
       />
 
-      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-        {articles.map((article) => (
-          <ArticleCard key={article.id} article={article} />
+      <div className="mt-8 flex gap-2 border-b-2 border-slate-100">
+        {(
+          [
+            { id: "specialty" as const, label: "Specialty" },
+            { id: "topic" as const, label: "Topic" },
+          ] as const
+        ).map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={`border-b-4 px-4 py-2.5 text-sm font-extrabold transition-colors ${
+              activeTab === tab.id
+                ? "border-teal-500 text-teal-700"
+                : "border-transparent text-slate-400 hover:text-slate-600"
+            }`}
+          >
+            {tab.label}
+          </button>
         ))}
       </div>
 
-      {articles.length === 0 ? (
-        <div className="mt-6 rounded-2xl border-2 border-dashed border-slate-200 px-6 py-12 text-center">
-          <p className="text-lg font-extrabold text-slate-700">No articles found</p>
-          <p className="mt-1 text-sm font-bold text-slate-400">
-            Try a different search term
-          </p>
-        </div>
-      ) : null}
-
-      <SpecialtiesSection query={query} />
+      <div className="mt-6">
+        {activeTab === "specialty" ? (
+          <SpecialtyTab query={query} />
+        ) : (
+          <TopicTab query={query} />
+        )}
+      </div>
 
       {showSuggestModal ? (
         <SuggestArticleModal onClose={() => setShowSuggestModal(false)} />

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   BookOpen,
   CreditCard,
@@ -13,26 +12,35 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { examTabPath, type ContentTab } from "@/lib/routes";
 
 export type StudyModeFilter =
   | "summary"
   | "flashcards"
-  | "quiz"
+  | "questions"
   | "presentation"
   | "lastmin"
   | "er"
   | "hy";
 
+/** Modes that switch the article view (mutually exclusive). */
+export const PRIMARY_VIEW_MODES: StudyModeFilter[] = [
+  "summary",
+  "flashcards",
+  "questions",
+  "presentation",
+];
+
+/** Modes that filter which sections appear in article view. */
+export const SECTION_FILTER_MODES: StudyModeFilter[] = ["lastmin", "er", "hy"];
+
 const STUDY_MODES: Array<{
   id: StudyModeFilter;
   shortLabel: string;
   icon: typeof FileText;
-  tab?: ContentTab;
 }> = [
-  { id: "summary", shortLabel: "Summary", icon: FileText, tab: "summary" },
-  { id: "flashcards", shortLabel: "Cards", icon: CreditCard, tab: "flashcards" },
-  { id: "quiz", shortLabel: "Quiz", icon: BookOpen, tab: "questions" },
+  { id: "summary", shortLabel: "Summary", icon: FileText },
+  { id: "flashcards", shortLabel: "Cards", icon: CreditCard },
+  { id: "questions", shortLabel: "Questions", icon: BookOpen },
   { id: "presentation", shortLabel: "Present", icon: Monitor },
   { id: "lastmin", shortLabel: "Last Min", icon: Timer },
   { id: "er", shortLabel: "ER", icon: Stethoscope },
@@ -40,25 +48,13 @@ const STUDY_MODES: Array<{
 ];
 
 export function ArticleStudyModes({
-  examId,
   activeModes,
   onToggleMode,
 }: {
-  examId: string;
   activeModes: Set<StudyModeFilter>;
   onToggleMode: (mode: StudyModeFilter) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const router = useRouter();
-
-  const handleModeClick = (mode: (typeof STUDY_MODES)[number]) => {
-    if (mode.tab) {
-      router.push(examTabPath(examId, mode.tab));
-      setOpen(false);
-      return;
-    }
-    onToggleMode(mode.id);
-  };
 
   return (
     <>
@@ -99,7 +95,10 @@ export function ArticleStudyModes({
                 <button
                   key={mode.id}
                   type="button"
-                  onClick={() => handleModeClick(mode)}
+                  onClick={() => {
+                    onToggleMode(mode.id);
+                    setOpen(false);
+                  }}
                   className={`flex flex-col items-center gap-1 rounded-xl border-2 px-2 py-2.5 text-center transition-colors ${
                     active
                       ? "border-slate-700 bg-slate-700 text-white"
@@ -120,15 +119,28 @@ export function ArticleStudyModes({
   );
 }
 
+export function getPrimaryViewMode(
+  activeModes: Set<StudyModeFilter>
+): StudyModeFilter | null {
+  for (const mode of PRIMARY_VIEW_MODES) {
+    if (activeModes.has(mode)) return mode;
+  }
+  return null;
+}
+
 export function shouldShowSection(
   sectionId: string,
   activeModes: Set<StudyModeFilter>
 ): boolean {
-  if (activeModes.size === 0) return true;
+  const primary = getPrimaryViewMode(activeModes);
+  if (primary && primary !== "presentation") return false;
 
-  const onlyHy = activeModes.has("hy") && activeModes.size === 1;
-  const onlyEr = activeModes.has("er") && activeModes.size === 1;
-  const onlyLastMin = activeModes.has("lastmin") && activeModes.size === 1;
+  const sectionFilters = SECTION_FILTER_MODES.filter((m) => activeModes.has(m));
+  if (sectionFilters.length === 0) return true;
+
+  const onlyHy = activeModes.has("hy") && sectionFilters.length === 1;
+  const onlyEr = activeModes.has("er") && sectionFilters.length === 1;
+  const onlyLastMin = activeModes.has("lastmin") && sectionFilters.length === 1;
 
   if (onlyHy) {
     return (
