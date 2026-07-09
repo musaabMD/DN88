@@ -4469,6 +4469,44 @@ const HOSPITAL_MEDICINE_TOPICS = [
   "Wernicke's encephalopathy",
 ] as const;
 
+const GERIATRIC_MEDICINE_TOPICS = [
+  "Acute aspiration",
+  "Age-related macular degeneration",
+  "Alzheimer's disease",
+  "Assessment of aphasia",
+  "Assessment of dementia",
+  "Assessment of falls in the elderly",
+  "Assessment of hearing loss",
+  "Assessment of hypotension",
+  "Assessment of memory deficit",
+  "Assessment of tremor",
+  "Benign prostatic hyperplasia",
+  "Cataracts",
+  "Constipation",
+  "Dementia with Lewy bodies",
+  "Faecal incontinence in adults",
+  "Frailty",
+  "Frontotemporal dementia",
+  "Giant cell arteritis",
+  "Herpes zoster infection",
+  "Hip fracture",
+  "Hyponatraemia",
+  "Insomnia",
+  "Long bone fracture",
+  "Neglect and abuse of older adults",
+  "Orthostatic hypotension",
+  "Osteoarthritis",
+  "Palliative care",
+  "Parkinson's disease",
+  "Polymyalgia rheumatica",
+  "Pressure ulcer",
+  "Progressive supranuclear palsy",
+  "Sarcopenia",
+  "Vascular dementia",
+  "Vitamin D deficiency",
+  "Wrist fractures",
+] as const;
+
 const HAEMATOLOGY_TOPICS = [
   "Acute lymphoblastic leukaemia",
   "Acute myeloid leukaemia",
@@ -4689,6 +4727,10 @@ export const SPECIALTY_TOPIC_GROUPS: Array<{
   {
     specialty: "Haematology",
     topics: topicsFor("Haematology", [...HAEMATOLOGY_TOPICS]),
+  },
+  {
+    specialty: "Geriatric medicine",
+    topics: topicsFor("Geriatric medicine", [...GERIATRIC_MEDICINE_TOPICS]),
   },
 ];
 
