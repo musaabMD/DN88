@@ -27,14 +27,17 @@ import {
 
 function PageHeader() {
   return (
-    <header className="sticky top-0 z-40 -mx-4 border-b border-slate-100 bg-white/95 px-4 backdrop-blur-md sm:-mx-6 sm:px-6">
-      <div className="flex items-center justify-between py-4">
-        <Link href={HOME_PATH} className="flex min-w-0 items-center">
-          <DrNoteLogo showWordmark forceWordmark />
-        </Link>
-        <UserAuthControls compact />
-      </div>
-    </header>
+    <>
+      <header className="fixed inset-x-0 top-0 z-40 border-b border-slate-100 bg-white/95 backdrop-blur-md">
+        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
+          <Link href={HOME_PATH} className="flex min-w-0 items-center">
+            <DrNoteLogo showWordmark forceWordmark />
+          </Link>
+          <UserAuthControls compact />
+        </div>
+      </header>
+      <div className="h-[4.5rem] shrink-0" aria-hidden />
+    </>
   );
 }
 

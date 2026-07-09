@@ -26,30 +26,33 @@ function ProductHomeHeader() {
   const router = useRouter();
 
   return (
-    <header className="sticky top-0 z-40 -mx-4 border-b border-slate-100 bg-white/95 px-4 backdrop-blur-md sm:-mx-6 sm:px-6">
-      <div className="flex items-center justify-between py-4">
-        <Link href="/" className="flex min-w-0 items-center">
-          <DrNoteLogo showWordmark forceWordmark />
-        </Link>
-
-        <nav className="flex items-center gap-2 sm:gap-4">
-          <Link
-            href={DASHBOARD_PATH}
-            className="hidden text-sm font-bold text-slate-600 hover:text-[#334155] sm:inline"
-          >
-            Dashboard
+    <>
+      <header className="fixed inset-x-0 top-0 z-40 border-b border-slate-100 bg-white/95 backdrop-blur-md">
+        <div className="mx-auto flex max-w-xl items-center justify-between px-4 py-4 sm:px-6">
+          <Link href="/" className="flex min-w-0 items-center">
+            <DrNoteLogo showWordmark forceWordmark />
           </Link>
-          <button
-            type="button"
-            onClick={() => router.push(UPGRADE_PATH)}
-            className="rounded-xl border-b-4 border-[#1e293b] bg-[#334155] px-3 py-2 text-sm font-extrabold text-white transition-colors hover:bg-[#475569] active:translate-y-0.5 active:border-b-2 sm:px-4"
-          >
-            Get Pro
-          </button>
-          <UserAuthControls compact />
-        </nav>
-      </div>
-    </header>
+
+          <nav className="flex items-center gap-2 sm:gap-4">
+            <Link
+              href={DASHBOARD_PATH}
+              className="hidden text-sm font-bold text-slate-600 hover:text-[#334155] sm:inline"
+            >
+              Dashboard
+            </Link>
+            <button
+              type="button"
+              onClick={() => router.push(UPGRADE_PATH)}
+              className="rounded-xl border-b-4 border-[#1e293b] bg-[#334155] px-3 py-2 text-sm font-extrabold text-white transition-colors hover:bg-[#475569] active:translate-y-0.5 active:border-b-2 sm:px-4"
+            >
+              Get Pro
+            </button>
+            <UserAuthControls compact />
+          </nav>
+        </div>
+      </header>
+      <div className="h-[4.5rem] shrink-0" aria-hidden />
+    </>
   );
 }
 

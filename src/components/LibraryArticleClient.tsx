@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ContentShell } from "@/components/ContentShell";
 import LibraryArticle from "@/components/content/LibraryArticle";
@@ -10,7 +9,6 @@ import { LIBRARY_PATH } from "@/lib/routes";
 export function LibraryArticleClient({ articleId }: { articleId: string }) {
   const router = useRouter();
   const article = getLibraryArticleById(articleId);
-  const [showSearch, setShowSearch] = useState(false);
   const backToLibrary = () => router.push(LIBRARY_PATH);
 
   if (!article) {
@@ -30,17 +28,8 @@ export function LibraryArticleClient({ articleId }: { articleId: string }) {
   }
 
   return (
-    <ContentShell
-      title={article.title}
-      onBack={backToLibrary}
-      showLibrary
-      onSearchClick={() => setShowSearch(true)}
-    >
-      <LibraryArticle
-        article={article}
-        showSearch={showSearch}
-        onCloseSearch={() => setShowSearch(false)}
-      />
+    <ContentShell title={article.title} onBack={backToLibrary} showLibrary>
+      <LibraryArticle article={article} />
     </ContentShell>
   );
 }

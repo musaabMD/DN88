@@ -18,12 +18,12 @@ import {
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { CitationList } from "@/components/tool-ui/citation";
 import { SuggestEditModal } from "@/components/SuggestEditModal";
-import { ArticleSearchModal } from "@/components/content/ArticleSearchModal";
+import { ArticleAskBar } from "@/components/content/ArticleAskBar";
 import {
-  ArticleStudyModes,
-  getPrimaryViewMode,
-  PRIMARY_VIEW_MODES,
+  getInlineContentMode,
+  INLINE_CONTENT_MODES,
   shouldShowSection,
+  summarizeSectionText,
   type StudyModeFilter,
 } from "@/components/content/ArticleStudyModes";
 import {
@@ -43,7 +43,7 @@ import {
   isArticleBookmarked,
   toggleArticleBookmark,
 } from "@/lib/article-bookmarks";
-import type { LibraryArticle } from "@/lib/set-content";
+import type { LibraryArticle, LibraryArticleSection } from "@/lib/set-content";
 
 function applyHighlights(
   text: string,
@@ -136,15 +136,7 @@ function SelectionToolbar({
         className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-50"
         aria-label="Underline"
       >
-        <Underline size={13} strokeWidth={2.5} />
-      </button>
-      <button
-        type="button"
-        onClick={onBookmarkParagraph}
-        className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-50"
-        aria-label="Bookmark paragraph"
-      >
-        <Bookmark size={13} strokeWidth={2.5} />
+        <Underline size={14} strokeWidth={2.5} />
       </button>
       <button
         type="button"
@@ -154,22 +146,209 @@ function SelectionToolbar({
         <Pencil size={13} strokeWidth={2.5} />
         Edit
       </button>
+      <button
+        type="button"
+        onClick={onBookmarkParagraph}
+        className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-50"
+        aria-label="Bookmark paragraph"
+      >
+        <Bookmark size={14} strokeWidth={2.5} />
+      </button>
     </div>
+  );
+}
+
+function sectionQuestions(
+  article: LibraryArticle,
+  section: LibraryArticleSection
+) {
+  const questions = article.questions ?? [];
+  if (questions.length === 0) return [];
+  const heading = section.heading.toLowerCase();
+  const keyed = questions.filter(
+    (q) =>
+      q.text.toLowerCase().includes(heading.split(" ")[0] ?? "") ||
+      q.explanation?.toLowerCase().includes(section.id)
+  );
+  if (keyed.length > 0) return keyed;
+  // Distribute article questions across sections so each section has something.
+  const idx = article.sections.findIndex((s) => s.id === section.id);
+  return [questions[idx % questions.length]!].filter(Boolean);
+}
+
+function sectionFlashcards(
+  article: LibraryArticle,
+  section: LibraryArticleSection
+) {
+  const cards = article.flashcards ?? [];
+  if (cards.length === 0) return [];
+  const heading = section.heading.toLowerCase();
+  const keyed = cards.filter(
+    (c) =>
+      c.front.toLowerCase().includes(heading.split(" ")[0] ?? "") ||
+      c.back.toLowerCase().includes(heading.split(" ")[0] ?? "")
+  );
+  if (keyed.length > 0) return keyed;
+  const idx = article.sections.findIndex((s) => s.id === section.id);
+  return [cards[idx % cards.length]!].filter(Boolean);
+}
+
+function SectionBody({
+  article,
+  section,
+  contentMode,
+  highlights,
+  paraBookmarked,
+}: {
+  article: LibraryArticle;
+  section: LibraryArticleSection;
+  contentMode: StudyModeFilter | null;
+  highlights: TextHighlight[];
+  paraBookmarked: boolean;
+}) {
+  if (contentMode === "summary") {
+    const summary = summarizeSectionText(section.body, section.bullets);
+    return (
+      <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+        <p className="text-[10px] font-extrabold uppercase tracking-wide text-slate-400">
+          Summary · {section.heading}
+        </p>
+        <p className="mt-2 text-base font-medium leading-relaxed text-slate-700">
+          {summary}
+        </p>
+      </div>
+    );
+  }
+
+  if (contentMode === "questions") {
+    const qs = sectionQuestions(article, section);
+    if (qs.length === 0) {
+      return (
+        <p className="mt-3 text-sm font-bold text-slate-400">
+          No questions for this section yet.
+        </p>
+      );
+    }
+    return (
+      <div className="mt-3 space-y-3">
+        <p className="text-[10px] font-extrabold uppercase tracking-wide text-slate-400">
+          Questions · {section.heading}
+        </p>
+        {qs.map((q, idx) => (
+          <div
+            key={`${section.id}-q-${q.id}`}
+            className="rounded-2xl border border-slate-200 bg-white p-4"
+          >
+            <p className="text-xs font-bold text-slate-400">
+              Q{idx + 1} · {q.subject}
+            </p>
+            <p className="mt-2 text-sm font-extrabold leading-snug text-slate-800">
+              {q.text}
+            </p>
+            <ul className="mt-2.5 space-y-1.5">
+              {q.options.map((opt, optIdx) => (
+                <li
+                  key={opt}
+                  className={`rounded-xl border px-3 py-1.5 text-xs font-bold ${
+                    optIdx === q.answer
+                      ? "border-emerald-300 bg-emerald-50 text-emerald-900"
+                      : "border-slate-200 bg-slate-50 text-slate-600"
+                  }`}
+                >
+                  {String.fromCharCode(65 + optIdx)}. {opt}
+                </li>
+              ))}
+            </ul>
+            {q.explanation ? (
+              <p className="mt-2 text-xs font-medium leading-relaxed text-slate-600">
+                {q.explanation}
+              </p>
+            ) : null}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (contentMode === "flashcards") {
+    const cards = sectionFlashcards(article, section);
+    if (cards.length === 0) {
+      return (
+        <p className="mt-3 text-sm font-bold text-slate-400">
+          No cards for this section yet.
+        </p>
+      );
+    }
+    return (
+      <div className="mt-3 space-y-3">
+        <p className="text-[10px] font-extrabold uppercase tracking-wide text-slate-400">
+          Cards · {section.heading}
+        </p>
+        {cards.map((card) => (
+          <div
+            key={`${section.id}-fc-${card.id}`}
+            className="rounded-2xl border border-b-4 border-slate-200 bg-white p-4"
+          >
+            <p className="text-sm font-extrabold text-slate-800">{card.front}</p>
+            <p className="mt-2 border-t border-slate-100 pt-2 text-sm font-medium leading-relaxed text-slate-600">
+              {card.back}
+            </p>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="flex items-center gap-2">
+        {paraBookmarked ? (
+          <Bookmark
+            size={14}
+            className="text-slate-500"
+            fill="currentColor"
+          />
+        ) : null}
+      </div>
+      {section.body ? (
+        <p className="mt-3 text-base font-medium leading-relaxed text-slate-600">
+          {applyHighlights(section.body, highlights, section.id)}
+        </p>
+      ) : null}
+      {section.bullets && section.bullets.length > 0 ? (
+        <ul className="mt-4 space-y-2.5">
+          {section.bullets.map((item) => (
+            <li
+              key={item}
+              className="flex items-start gap-2.5 text-base font-medium leading-relaxed text-slate-600"
+            >
+              <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-slate-500" />
+              {applyHighlights(item, highlights, section.id)}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {section.citations && section.citations.length > 0 ? (
+        <div className="mt-3">
+          <CitationList
+            id={`citation-list-${section.id}`}
+            citations={section.citations}
+            variant="stacked"
+            size="compact"
+          />
+        </div>
+      ) : null}
+    </>
   );
 }
 
 export default function LibraryArticle({
   article,
-  showSearch,
-  onCloseSearch,
   presentationMode,
 }: {
   article: LibraryArticle;
-  showSearch?: boolean;
-  onCloseSearch?: () => void;
   presentationMode?: boolean;
 }) {
-  const sectionHeadings = article.sections.map((s) => s.heading);
   const [bookmarked, setBookmarked] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedText, setSelectedText] = useState<string | undefined>();
@@ -289,17 +468,22 @@ export default function LibraryArticle({
         next.delete(mode);
         return next;
       }
-      if (PRIMARY_VIEW_MODES.includes(mode)) {
-        for (const primary of PRIMARY_VIEW_MODES) next.delete(primary);
+      if (INLINE_CONTENT_MODES.includes(mode)) {
+        for (const inline of INLINE_CONTENT_MODES) next.delete(inline);
+      }
+      if (mode === "presentation") {
+        // Present is exclusive fullscreen.
+        next.clear();
+      } else {
+        next.delete("presentation");
       }
       next.add(mode);
       return next;
     });
   };
 
-  const primaryView = getPrimaryViewMode(studyModes);
-  const presentation = presentationMode || primaryView === "presentation";
-  const showArticleBody = !primaryView;
+  const contentMode = getInlineContentMode(studyModes);
+  const presentation = presentationMode || studyModes.has("presentation");
 
   const visibleSections = article.sections.filter((section) =>
     shouldShowSection(section.id, studyModes)
@@ -349,114 +533,18 @@ export default function LibraryArticle({
     return () => window.removeEventListener("keydown", onKey);
   }, [presentation, slides.length]);
 
-  const articleSummary =
-    article.summary ??
-    article.sections
-      .filter((s) => s.id === "overview")
-      .map((s) => s.body)
-      .join(" ");
-
-  const renderStudyView = () => {
-    if (primaryView === "summary") {
-      return (
-        <div className="mt-6 rounded-2xl border-2 border-slate-200 bg-slate-50 p-5 sm:p-6">
-          <p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">
-            Summary
-          </p>
-          <p className="mt-3 text-base font-medium leading-relaxed text-slate-700 sm:text-lg">
-            {articleSummary}
-          </p>
-          {article.highYield ? (
-            <aside className="mt-5 rounded-xl border-2 border-slate-700 bg-white p-4">
-              <p className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wide text-slate-600">
-                <Zap size={14} strokeWidth={3} /> High yield
-              </p>
-              <p className="mt-2 text-sm font-bold leading-relaxed text-slate-700">
-                {article.highYield}
-              </p>
-            </aside>
-          ) : null}
-        </div>
-      );
-    }
-
-    if (primaryView === "questions" && article.questions?.length) {
-      return (
-        <div className="mt-6 space-y-4">
-          <p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">
-            Questions from this article
-          </p>
-          {article.questions.map((q, idx) => (
-            <div
-              key={q.id}
-              className="rounded-2xl border-2 border-slate-200 bg-white p-4 sm:p-5"
-            >
-              <p className="text-xs font-bold text-slate-400">
-                Question {idx + 1} · {q.subject}
-              </p>
-              <p className="mt-2 text-base font-extrabold leading-snug text-slate-800">
-                {q.text}
-              </p>
-              <ul className="mt-3 space-y-2">
-                {q.options.map((opt, optIdx) => (
-                  <li
-                    key={opt}
-                    className={`rounded-xl border-2 px-3 py-2 text-sm font-bold ${
-                      optIdx === q.answer
-                        ? "border-emerald-300 bg-emerald-50 text-emerald-900"
-                        : "border-slate-200 bg-slate-50 text-slate-600"
-                    }`}
-                  >
-                    {String.fromCharCode(65 + optIdx)}. {opt}
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-3 text-sm font-medium leading-relaxed text-slate-600">
-                {q.explanation}
-              </p>
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    if (primaryView === "flashcards" && article.flashcards?.length) {
-      return (
-        <div className="mt-6 space-y-4">
-          <p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">
-            Flashcards from this article
-          </p>
-          {article.flashcards.map((card) => (
-            <div
-              key={card.id}
-              className="rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4 sm:p-5"
-            >
-              <p className="text-xs font-bold text-slate-400">{card.deck}</p>
-              <p className="mt-2 text-base font-extrabold text-slate-800">
-                {card.front}
-              </p>
-              <p className="mt-3 border-t border-slate-100 pt-3 text-sm font-medium leading-relaxed text-slate-600">
-                {card.back}
-              </p>
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    return null;
-  };
-
   const content = (
-    <div className="mx-auto flex w-full max-w-5xl gap-10">
-      {showArticleBody ? (
-        <aside className="hidden w-44 shrink-0 lg:block xl:w-52">
-          <ArticleTableOfContents
-            headings={sectionHeadings}
-            activeId={sectionHeadings[0] ? sectionSlug(sectionHeadings[0]) : null}
-          />
-        </aside>
-      ) : null}
+    <div className="mx-auto flex w-full max-w-5xl gap-10 pb-36">
+      <aside className="hidden w-44 shrink-0 lg:block xl:w-52">
+        <ArticleTableOfContents
+          headings={visibleSections.map((s) => s.heading)}
+          activeId={
+            visibleSections[0]
+              ? sectionSlug(visibleSections[0].heading)
+              : null
+          }
+        />
+      </aside>
 
       <article className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center justify-between gap-2 pb-3">
@@ -531,98 +619,68 @@ export default function LibraryArticle({
             <span className="text-slate-300">·</span>
             <span>Updated {article.updated}</span>
           </p>
+          {contentMode ? (
+            <p className="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-slate-500">
+              Viewing {contentMode} in each section
+            </p>
+          ) : null}
         </header>
 
-        {showArticleBody ? (
-          <nav
-            className="mt-4 flex gap-2 overflow-x-auto pb-1 lg:hidden"
-            aria-label="Contents"
-          >
-            {sectionHeadings.map((s) => (
-              <a
-                key={s}
-                href={`#${sectionSlug(s)}`}
-                className="shrink-0 rounded-full border border-slate-200 px-3 py-1 text-xs font-extrabold text-slate-500"
+        <nav
+          className="mt-4 flex gap-2 overflow-x-auto pb-1 lg:hidden"
+          aria-label="Contents"
+        >
+          {visibleSections.map((s) => (
+            <a
+              key={s.id}
+              href={`#${sectionSlug(s.heading)}`}
+              className="shrink-0 rounded-full border border-slate-200 px-3 py-1 text-xs font-extrabold text-slate-500"
+            >
+              {s.heading}
+            </a>
+          ))}
+        </nav>
+
+        <div className="mt-8 space-y-12">
+          {visibleSections.map((section) => {
+            const slug = sectionSlug(section.heading);
+            const paraBookmarked = paragraphBookmarks.has(section.id);
+            return (
+              <section
+                key={section.id}
+                id={slug}
+                data-section-id={section.id}
+                className="scroll-mt-24"
               >
-                {s}
-              </a>
-            ))}
-          </nav>
-        ) : null}
+                <h2 className="text-xl font-black tracking-tight text-slate-800">
+                  {section.heading}
+                </h2>
+                <SectionBody
+                  article={article}
+                  section={section}
+                  contentMode={contentMode}
+                  highlights={highlights}
+                  paraBookmarked={paraBookmarked}
+                />
+              </section>
+            );
+          })}
 
-        {primaryView && primaryView !== "presentation" ? renderStudyView() : null}
-
-        {showArticleBody ? (
-          <div className="mt-8 space-y-12">
-            {visibleSections.map((section) => {
-              const slug = sectionSlug(section.heading);
-              const paraBookmarked = paragraphBookmarks.has(section.id);
-              return (
-                <section
-                  key={section.id}
-                  id={slug}
-                  data-section-id={section.id}
-                  className="scroll-mt-24"
-                >
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-black tracking-tight text-slate-800">
-                      {section.heading}
-                    </h2>
-                    {paraBookmarked ? (
-                      <Bookmark
-                        size={14}
-                        className="text-slate-500"
-                        fill="currentColor"
-                      />
-                    ) : null}
-                  </div>
-                  {section.body ? (
-                    <p className="mt-3 text-base font-medium leading-relaxed text-slate-600">
-                      {applyHighlights(section.body, highlights, section.id)}
-                    </p>
-                  ) : null}
-                  {section.bullets && section.bullets.length > 0 ? (
-                    <ul className="mt-4 space-y-2.5">
-                      {section.bullets.map((item) => (
-                        <li
-                          key={item}
-                          className="flex items-start gap-2.5 text-base font-medium leading-relaxed text-slate-600"
-                        >
-                          <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-slate-500" />
-                          {applyHighlights(item, highlights, section.id)}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                  {section.citations && section.citations.length > 0 ? (
-                    <div className="mt-3">
-                      <CitationList
-                        id={`citation-list-${section.id}`}
-                        citations={section.citations}
-                        variant="stacked"
-                        size="compact"
-                      />
-                    </div>
-                  ) : null}
-                </section>
-              );
-            })}
-
-            {article.highYield &&
-            (!studyModes.has("hy") ||
-              studyModes.size === 0 ||
-              studyModes.has("hy")) ? (
-              <aside className="rounded-2xl border-2 border-b-4 border-slate-700 bg-slate-50 p-4 sm:p-5">
-                <p className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wide text-slate-600">
-                  <Zap size={14} strokeWidth={3} /> High yield
-                </p>
-                <p className="mt-2 text-sm font-bold leading-relaxed text-slate-700">
-                  {article.highYield}
-                </p>
-              </aside>
-            ) : null}
-          </div>
-        ) : null}
+          {article.highYield &&
+          (!studyModes.has("hy") ||
+            studyModes.size === 0 ||
+            studyModes.has("hy") ||
+            contentMode) ? (
+            <aside className="rounded-2xl border-2 border-b-4 border-slate-700 bg-slate-50 p-4 sm:p-5">
+              <p className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wide text-slate-600">
+                <Zap size={14} strokeWidth={3} /> High yield
+              </p>
+              <p className="mt-2 text-sm font-bold leading-relaxed text-slate-700">
+                {article.highYield}
+              </p>
+            </aside>
+          ) : null}
+        </div>
       </article>
     </div>
   );
@@ -713,7 +771,8 @@ export default function LibraryArticle({
       {!presentation ? content : null}
 
       {!presentation ? (
-        <ArticleStudyModes
+        <ArticleAskBar
+          article={article}
           activeModes={studyModes}
           onToggleMode={toggleStudyMode}
         />
@@ -728,10 +787,6 @@ export default function LibraryArticle({
           onUnderline={handleUnderline}
           onBookmarkParagraph={handleBookmarkParagraph}
         />
-      ) : null}
-
-      {showSearch ? (
-        <ArticleSearchModal article={article} onClose={() => onCloseSearch?.()} />
       ) : null}
 
       {showEditModal ? (
