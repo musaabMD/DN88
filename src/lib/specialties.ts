@@ -1215,6 +1215,62 @@ const VASCULAR_SURGERY_TOPICS = [
   "Venous thromboembolism (VTE) prophylaxis",
 ] as const;
 
+const UROLOGY_TOPICS = [
+  "Acute cystitis",
+  "Acute epididymitis",
+  "Acute kidney injury",
+  "Acute prostatitis",
+  "Acute pyelonephritis",
+  "Anatomical penile abnormalities",
+  "Assessment of dysuria",
+  "Assessment of elevated creatinine",
+  "Assessment of non-visible haematuria",
+  "Assessment of proteinuria",
+  "Assessment of visible haematuria",
+  "Balanoposthitis",
+  "Benign prostatic hyperplasia",
+  "Bladder cancer",
+  "Chancroid and cutaneous ulcers",
+  "Chronic kidney disease",
+  "Chronic pelvic pain in women",
+  "Chronic pyelonephritis",
+  "Cryptorchidism",
+  "Enuresis",
+  "Erectile dysfunction",
+  "Genital tract chlamydia infection",
+  "Genital warts",
+  "Gonorrhoea infection",
+  "Herpes simplex virus infection",
+  "Hydrocele",
+  "Hypogonadism in men",
+  "Inguinal hernia in adults",
+  "Interstitial cystitis (bladder pain syndrome)",
+  "Klinefelter syndrome",
+  "Lichen sclerosus",
+  "Lymphogranuloma venereum",
+  "Male factor infertility",
+  "Medullary sponge kidney",
+  "Mycoplasma pneumoniae infection",
+  "Nephrolithiasis",
+  "Obstructive uropathy",
+  "Overview of sexually transmitted infections",
+  "Paraphimosis",
+  "Polycystic kidney disease",
+  "Priapism",
+  "Primary prostate pain syndrome",
+  "Prostate cancer",
+  "Renal cell carcinoma",
+  "Testicular cancer",
+  "Testicular torsion",
+  "Urethritis",
+  "Urinary incontinence in women",
+  "Urinary tract infections in children",
+  "Urinary tract infections in men",
+  "Urinary tract infections in women",
+  "Varicocele",
+  "Wilms' tumour",
+] as const;
+
 export const SPECIALTY_TOPIC_GROUPS: Array<{
   specialty: MedicalSpecialty;
   topics: SpecialtyTopic[];
@@ -1270,6 +1326,10 @@ export const SPECIALTY_TOPIC_GROUPS: Array<{
   {
     specialty: "Vascular surgery",
     topics: topicsFor("Vascular surgery", [...VASCULAR_SURGERY_TOPICS]),
+  },
+  {
+    specialty: "Urology",
+    topics: topicsFor("Urology", [...UROLOGY_TOPICS]),
   },
 ];
 
