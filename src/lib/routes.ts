@@ -3,6 +3,7 @@
  *
  * Path shape:
  *   /                               Exam picker home
+ *   /library                        Global article library
  *   /{examId}                       Browse sets (default questions tab)
  *   /{examId}/{tab}                 Browse sets for a content tab
  *   /{examId}/{tab}/sets/{setId}    Set hub
@@ -31,6 +32,9 @@ export const HOME_PATH = "/";
 
 /** User dashboard with pinned exams. */
 export const DASHBOARD_PATH = "/dashboard";
+
+/** Global article library. */
+export const LIBRARY_PATH = "/library";
 
 export type QuizMode =
   | "resume"

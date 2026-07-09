@@ -4,11 +4,14 @@ export function DrNoteLogo({
   size = "md",
   showWordmark = false,
   forceWordmark = false,
+  lightWordmark = false,
 }: {
   size?: "sm" | "md";
   showWordmark?: boolean;
   /** Always show Drnote wordmark, including on small screens. */
   forceWordmark?: boolean;
+  /** White wordmark for dark header backgrounds. */
+  lightWordmark?: boolean;
 }) {
   const box = size === "sm" ? "h-8 w-8 rounded-lg" : "h-9 w-9 rounded-xl";
   const letter = size === "sm" ? "text-sm" : "text-base";
@@ -26,7 +29,7 @@ export function DrNoteLogo({
       </div>
       {showWordmark ? (
         <span
-          className={`truncate text-lg font-extrabold tracking-tight text-slate-900 ${forceWordmark ? "block" : "hidden sm:block"}`}
+          className={`truncate text-lg font-extrabold tracking-tight ${lightWordmark ? "text-white" : "text-slate-900"} ${forceWordmark ? "block" : "hidden sm:block"}`}
           style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
         >
           Drnote
