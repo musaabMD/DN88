@@ -2953,6 +2953,33 @@ const OBSTETRICS_AND_GYNAECOLOGY_TOPICS = [
   "Zika virus infection",
 ] as const;
 
+const NUTRITION_TOPICS = [
+  "Angular cheilitis",
+  "Anorexia nervosa",
+  "Assessment of food allergies and sensitivities",
+  "Assessment of magnesium deficiency",
+  "Assessment of olfactory loss",
+  "Assessment of taste disorders",
+  "Bariatric surgery sequelae",
+  "Bulimia nervosa",
+  "Disorders of infant feeding",
+  "Faltering growth",
+  "Folate deficiency",
+  "Food allergy",
+  "Kwashiorkor",
+  "Lactose intolerance and lactase deficiency",
+  "Night blindness",
+  "Obesity in adults",
+  "Obesity in children",
+  "Sarcopenia",
+  "Short bowel syndrome",
+  "Vitamin B1 deficiency",
+  "Vitamin B3 deficiency",
+  "Vitamin C deficiency",
+  "Vitamin D deficiency",
+  "Zinc deficiency",
+] as const;
+
 export const SPECIALTY_TOPIC_GROUPS: Array<{
   specialty: MedicalSpecialty;
   topics: SpecialtyTopic[];
@@ -3064,6 +3091,10 @@ export const SPECIALTY_TOPIC_GROUPS: Array<{
     topics: topicsFor("Obstetrics and gynaecology", [
       ...OBSTETRICS_AND_GYNAECOLOGY_TOPICS,
     ]),
+  },
+  {
+    specialty: "Nutrition",
+    topics: topicsFor("Nutrition", [...NUTRITION_TOPICS]),
   },
 ];
 
