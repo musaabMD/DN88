@@ -1085,6 +1085,7 @@ const ENDOCRINOLOGY_TOPICS = [
   "Osteoporotic spinal compression fractures",
   "Overview of acid-base and electrolyte disorders",
   "Overview of diabetes",
+  "Diabetes mellitus",
   "Overview of thyroid dysfunction",
   "Paget's disease of bone",
   "Painless lymphocytic thyroiditis",

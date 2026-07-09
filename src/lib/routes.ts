@@ -43,6 +43,9 @@ export const DASHBOARD_PATH = "/dashboard/";
 /** Global article library product. */
 export const LIBRARY_PATH = "/library/";
 
+/** Product features overview (Qbank + Library). */
+export const FEATURES_PATH = "/features/";
+
 export type QuizMode =
   | "resume"
   | "restart"
