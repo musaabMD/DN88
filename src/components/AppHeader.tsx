@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { UserAuthControls } from "@/components/UserAuthControls";
-import { HOME_PATH, LIBRARY_PATH } from "@/lib/routes";
+import { FEATURES_PATH, HOME_PATH, LIBRARY_PATH } from "@/lib/routes";
 
 type AppHeaderProps = {
   showBack?: boolean;
@@ -62,6 +62,12 @@ export function AppHeader({
                 Library
               </Link>
             ) : null}
+            <Link
+              href={FEATURES_PATH}
+              className="hidden rounded-lg px-2.5 py-1.5 text-xs font-extrabold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800 sm:inline"
+            >
+              Features
+            </Link>
           </div>
 
           {title ? (

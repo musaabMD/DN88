@@ -16,6 +16,7 @@ import {
 } from "@/lib/qbank-access";
 import {
   DASHBOARD_PATH,
+  FEATURES_PATH,
   LIBRARY_PATH,
   QBANK_PATH,
   UPGRADE_PATH,
@@ -39,6 +40,12 @@ function ProductHomeHeader() {
               className="hidden text-sm font-bold text-slate-600 hover:text-[#334155] sm:inline"
             >
               Dashboard
+            </Link>
+            <Link
+              href={FEATURES_PATH}
+              className="hidden text-sm font-bold text-slate-600 hover:text-[#334155] sm:inline"
+            >
+              Features
             </Link>
             <button
               type="button"

@@ -25,9 +25,10 @@ import {
   toggleSpecialtyBookmark,
   toggleTopicBookmark,
 } from "@/lib/library-bookmarks";
-import { filterLibraryArticles, LIBRARY_ARTICLES } from "@/lib/mock-data";
+import { filterLibraryArticles, getLibraryArticleById, LIBRARY_ARTICLES } from "@/lib/mock-data";
 import {
   DASHBOARD_PATH,
+  FEATURES_PATH,
   HOME_PATH,
   UPGRADE_PATH,
   articlePath,
@@ -86,19 +87,25 @@ function LibraryHomeHeader() {
           </Link>
 
           <nav className="flex items-center gap-2 sm:gap-4">
-            <Link
-              href={DASHBOARD_PATH}
-              className="hidden text-sm font-bold text-slate-600 hover:text-[#334155] sm:inline"
-            >
-              Dashboard
-            </Link>
-            <button
-              type="button"
-              onClick={() => router.push(UPGRADE_PATH)}
-              className="rounded-xl border-b-4 border-[#1e293b] bg-[#334155] px-3 py-2 text-sm font-extrabold text-white transition-colors hover:bg-[#475569] active:translate-y-0.5 active:border-b-2 sm:px-4"
-            >
-              Get Pro
-            </button>
+          <Link
+            href={DASHBOARD_PATH}
+            className="hidden text-sm font-bold text-slate-600 hover:text-[#334155] sm:inline"
+          >
+            Dashboard
+          </Link>
+          <Link
+            href={FEATURES_PATH}
+            className="hidden text-sm font-bold text-slate-600 hover:text-[#334155] sm:inline"
+          >
+            Features
+          </Link>
+          <button
+            type="button"
+            onClick={() => router.push(UPGRADE_PATH)}
+            className="rounded-xl border-b-4 border-[#1e293b] bg-[#334155] px-3 py-2 text-sm font-extrabold text-white transition-colors hover:bg-[#475569] active:translate-y-0.5 active:border-b-2 sm:px-4"
+          >
+            Get Pro
+          </button>
             <UserAuthControls compact />
           </nav>
         </div>
@@ -209,6 +216,8 @@ function TopicCard({
   query: string;
   onBookmarkChange?: () => void;
 }) {
+  const article = getLibraryArticleById(topic.id);
+  const href = article ? articlePath(article.id) : topicPath(topic.id);
   const { bookmarked, toggleBookmark } = useBookmark(
     () => isTopicBookmarked(topic.id),
     () => toggleTopicBookmark(topic.id),
@@ -217,10 +226,7 @@ function TopicCard({
 
   return (
     <div className="group flex w-full items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4 text-left transition-colors duration-150 hover:bg-slate-50">
-      <Link
-        href={topicPath(topic.id)}
-        className="flex min-w-0 flex-1 items-center gap-3"
-      >
+      <Link href={href} className="flex min-w-0 flex-1 items-center gap-3">
         <LibraryThumb seed={topic.specialty} />
         <div className="min-w-0 flex-1 text-left">
           <h3 className="text-base font-extrabold leading-snug tracking-tight text-slate-700">

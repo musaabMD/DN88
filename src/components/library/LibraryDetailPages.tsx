@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronRight } from "lucide-react";
@@ -17,7 +18,13 @@ import {
   toggleSpecialtyBookmark,
   toggleTopicBookmark,
 } from "@/lib/library-bookmarks";
-import { LIBRARY_PATH, specialtyPath, topicPath } from "@/lib/routes";
+import { getLibraryArticleById } from "@/lib/mock-data";
+import {
+  LIBRARY_PATH,
+  articlePath,
+  specialtyPath,
+  topicPath,
+} from "@/lib/routes";
 import {
   getTopicsForSpecialty,
   specialtySlug,
@@ -101,6 +108,8 @@ export function SpecialtyPageClient({
 }
 
 function SpecialtyTopicRow({ topic }: { topic: SpecialtyTopic }) {
+  const article = getLibraryArticleById(topic.id);
+  const href = article ? articlePath(article.id) : topicPath(topic.id);
   const { bookmarked, toggleBookmark } = useBookmark(
     () => isTopicBookmarked(topic.id),
     () => toggleTopicBookmark(topic.id),
@@ -109,10 +118,7 @@ function SpecialtyTopicRow({ topic }: { topic: SpecialtyTopic }) {
 
   return (
     <div className="group flex w-full items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4 text-left transition-colors hover:bg-slate-50">
-      <Link
-        href={topicPath(topic.id)}
-        className="flex min-w-0 flex-1 items-center gap-3"
-      >
+      <Link href={href} className="flex min-w-0 flex-1 items-center gap-3">
         <LibraryThumb seed={topic.specialty} />
         <div className="min-w-0 flex-1 text-left">
           <h3 className="text-base font-extrabold leading-snug tracking-tight text-slate-700">
@@ -136,11 +142,27 @@ function SpecialtyTopicRow({ topic }: { topic: SpecialtyTopic }) {
 }
 
 export function TopicPageClient({ topic }: { topic: SpecialtyTopic }) {
+  const router = useRouter();
+  const article = getLibraryArticleById(topic.id);
   const { bookmarked, toggleBookmark } = useBookmark(
     () => isTopicBookmarked(topic.id),
     () => toggleTopicBookmark(topic.id),
     [topic.id]
   );
+
+  useEffect(() => {
+    if (article) router.replace(articlePath(article.id));
+  }, [article, router]);
+
+  if (article) {
+    return (
+      <PostPageShell title={topic.title}>
+        <p className="pt-10 text-center text-sm font-bold text-slate-400">
+          Opening article…
+        </p>
+      </PostPageShell>
+    );
+  }
 
   return (
     <PostPageShell title={topic.title}>

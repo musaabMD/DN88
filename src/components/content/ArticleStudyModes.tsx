@@ -44,43 +44,54 @@ export const STUDY_MODE_OPTIONS: Array<{
   { id: "hy", shortLabel: "HY", icon: Zap, group: "filter" },
 ];
 
-export function getInlineContentMode(
-  activeModes: Set<StudyModeFilter>
+export function getActiveStudyMode(
+  activeMode: StudyModeFilter | null
 ): StudyModeFilter | null {
-  for (const mode of INLINE_CONTENT_MODES) {
-    if (activeModes.has(mode)) return mode;
-  }
-  return null;
+  return activeMode;
+}
+
+export function getInlineContentMode(
+  activeMode: StudyModeFilter | null
+): StudyModeFilter | null {
+  if (!activeMode) return null;
+  return INLINE_CONTENT_MODES.includes(activeMode) ? activeMode : null;
 }
 
 export function shouldShowSection(
   sectionId: string,
-  activeModes: Set<StudyModeFilter>
+  activeMode: StudyModeFilter | null
 ): boolean {
-  const sectionFilters = SECTION_FILTER_MODES.filter((m) => activeModes.has(m));
-  if (sectionFilters.length === 0) return true;
+  if (!activeMode || !SECTION_FILTER_MODES.includes(activeMode)) return true;
 
-  const onlyHy = activeModes.has("hy") && sectionFilters.length === 1;
-  const onlyEr = activeModes.has("er") && sectionFilters.length === 1;
-  const onlyLastMin = activeModes.has("lastmin") && sectionFilters.length === 1;
-
-  if (onlyHy) {
+  if (activeMode === "hy") {
     return (
       sectionId === "overview" ||
+      sectionId === "summary" ||
       sectionId === "diagnosis" ||
-      sectionId === "treatment" ||
-      sectionId === "clinical-features"
+      sectionId === "glycemic-treatment" ||
+      sectionId === "management" ||
+      sectionId === "clinical-features" ||
+      sectionId === "treatment"
     );
   }
-  if (onlyEr) {
+  if (activeMode === "er") {
     return (
       sectionId.includes("clinical") ||
       sectionId.includes("diagnosis") ||
-      sectionId.includes("treatment")
+      sectionId.includes("treatment") ||
+      sectionId.includes("complication") ||
+      sectionId === "management"
     );
   }
-  if (onlyLastMin) {
-    return sectionId === "overview" || sectionId === "treatment";
+  if (activeMode === "lastmin") {
+    return (
+      sectionId === "overview" ||
+      sectionId === "summary" ||
+      sectionId === "diagnosis" ||
+      sectionId === "glycemic-treatment" ||
+      sectionId === "treatment" ||
+      sectionId === "management"
+    );
   }
   return true;
 }

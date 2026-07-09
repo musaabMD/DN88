@@ -20,7 +20,6 @@ import { SuggestEditModal } from "@/components/SuggestEditModal";
 import { ArticleAskBar } from "@/components/content/ArticleAskBar";
 import {
   getInlineContentMode,
-  INLINE_CONTENT_MODES,
   shouldShowSection,
   summarizeSectionText,
   type StudyModeFilter,
@@ -354,7 +353,7 @@ export default function LibraryArticle({
   const [paragraphBookmarks, setParagraphBookmarks] = useState<Set<string>>(
     new Set()
   );
-  const [studyModes, setStudyModes] = useState<Set<StudyModeFilter>>(new Set());
+  const [studyMode, setStudyMode] = useState<StudyModeFilter | null>(null);
   const [isReading, setIsReading] = useState(false);
   const [slideIndex, setSlideIndex] = useState(0);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -457,32 +456,15 @@ export default function LibraryArticle({
     return () => window.speechSynthesis.cancel();
   }, []);
 
-  const toggleStudyMode = (mode: StudyModeFilter) => {
-    setStudyModes((prev) => {
-      const next = new Set(prev);
-      if (next.has(mode)) {
-        next.delete(mode);
-        return next;
-      }
-      if (INLINE_CONTENT_MODES.includes(mode)) {
-        for (const inline of INLINE_CONTENT_MODES) next.delete(inline);
-      }
-      if (mode === "presentation") {
-        // Present is exclusive fullscreen.
-        next.clear();
-      } else {
-        next.delete("presentation");
-      }
-      next.add(mode);
-      return next;
-    });
+  const selectStudyMode = (mode: StudyModeFilter | null) => {
+    setStudyMode(mode);
   };
 
-  const contentMode = getInlineContentMode(studyModes);
-  const presentation = presentationMode || studyModes.has("presentation");
+  const contentMode = getInlineContentMode(studyMode);
+  const presentation = presentationMode || studyMode === "presentation";
 
   const visibleSections = article.sections.filter((section) =>
-    shouldShowSection(section.id, studyModes)
+    shouldShowSection(section.id, studyMode)
   );
 
   const slides = useMemo(() => {
@@ -518,11 +500,7 @@ export default function LibraryArticle({
         e.preventDefault();
         setSlideIndex((i) => Math.max(i - 1, 0));
       } else if (e.key === "Escape") {
-        setStudyModes((prev) => {
-          const next = new Set(prev);
-          next.delete("presentation");
-          return next;
-        });
+        setStudyMode(null);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -564,7 +542,11 @@ export default function LibraryArticle({
             </button>
             <button
               type="button"
-              onClick={() => toggleStudyMode("presentation")}
+              onClick={() =>
+                selectStudyMode(
+                  studyMode === "presentation" ? null : "presentation"
+                )
+              }
               aria-label="Present slides"
               title="Present"
               className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50"
@@ -659,10 +641,7 @@ export default function LibraryArticle({
           })}
 
           {article.highYield &&
-          (!studyModes.has("hy") ||
-            studyModes.size === 0 ||
-            studyModes.has("hy") ||
-            contentMode) ? (
+          (!studyMode || studyMode === "hy" || contentMode) ? (
             <aside className="rounded-2xl border-2 border-b-4 border-slate-700 bg-slate-50 p-4 sm:p-5">
               <p className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wide text-slate-600">
                 <Zap size={14} strokeWidth={3} /> High yield
@@ -689,13 +668,7 @@ export default function LibraryArticle({
           </span>
           <button
             type="button"
-            onClick={() =>
-              setStudyModes((prev) => {
-                const next = new Set(prev);
-                next.delete("presentation");
-                return next;
-              })
-            }
+            onClick={() => setStudyMode(null)}
             aria-label="Exit presentation"
             className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20"
           >
@@ -765,8 +738,8 @@ export default function LibraryArticle({
       {!presentation ? (
         <ArticleAskBar
           article={article}
-          activeModes={studyModes}
-          onToggleMode={toggleStudyMode}
+          activeMode={studyMode}
+          onSelectMode={selectStudyMode}
         />
       ) : null}
 
