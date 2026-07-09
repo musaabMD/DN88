@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, Clock3 } from "lucide-react";
-import { DrNoteLogo } from "@/components/DrNoteLogo";
+import { useRouter } from "next/navigation";
+import { ChevronRight } from "lucide-react";
+import { AppHeader } from "@/components/AppHeader";
 import { LibraryThumb, LibraryThumbHero } from "@/components/library/LibraryThumb";
 import {
   BookmarkButton,
@@ -10,14 +11,13 @@ import {
   LibraryBackLink,
   useBookmark,
 } from "@/components/library/LibraryUi";
-import { UserAuthControls } from "@/components/UserAuthControls";
 import {
   isSpecialtyBookmarked,
   isTopicBookmarked,
   toggleSpecialtyBookmark,
   toggleTopicBookmark,
 } from "@/lib/library-bookmarks";
-import { HOME_PATH, specialtyPath, topicPath } from "@/lib/routes";
+import { LIBRARY_PATH, specialtyPath, topicPath } from "@/lib/routes";
 import {
   getTopicsForSpecialty,
   specialtySlug,
@@ -25,19 +25,24 @@ import {
   type SpecialtyTopic,
 } from "@/lib/specialties";
 
-function PageHeader() {
+function PostPageShell({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  const router = useRouter();
   return (
-    <>
-      <header className="fixed inset-x-0 top-0 z-40 border-b border-slate-100 bg-white/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href={HOME_PATH} className="flex min-w-0 items-center">
-            <DrNoteLogo showWordmark forceWordmark />
-          </Link>
-          <UserAuthControls compact />
-        </div>
-      </header>
-      <div className="h-[4.5rem] shrink-0" aria-hidden />
-    </>
+    <div className="min-h-screen bg-white font-sans">
+      <AppHeader
+        showBack
+        onBack={() => router.push(LIBRARY_PATH)}
+        title={title}
+        showLibrary
+      />
+      <main className="mx-auto w-full max-w-4xl px-4 pb-14 sm:px-6">{children}</main>
+    </div>
   );
 }
 
@@ -54,22 +59,18 @@ export function SpecialtyPageClient({
   );
 
   return (
-    <main className="mx-auto w-full max-w-4xl bg-white px-4 pb-14 sm:px-6">
-      <PageHeader />
+    <PostPageShell title={specialty}>
       <div className="pt-4">
         <LibraryBackLink />
       </div>
 
-      <div className="mt-4 flex items-start gap-4">
+      <div className="group mt-4 flex items-start gap-4">
         <LibraryThumbHero seed={specialty} />
         <div className="min-w-0 flex-1 text-left">
-          <p className="text-xs font-extrabold uppercase tracking-wide text-slate-400">
-            Specialty
-          </p>
-          <h1 className="mt-1 text-2xl font-black leading-tight tracking-tight text-slate-900 sm:text-3xl">
+          <h1 className="text-2xl font-black leading-tight tracking-tight text-slate-900 sm:text-3xl">
             {specialty}
           </h1>
-          <p className="mt-2 text-sm font-bold text-slate-500">
+          <p className="mt-1.5 text-sm font-bold text-slate-400">
             {topics.length > 0
               ? `${topics.length} topic${topics.length === 1 ? "" : "s"}`
               : "Content coming soon"}
@@ -79,11 +80,12 @@ export function SpecialtyPageClient({
           bookmarked={bookmarked}
           onToggle={toggleBookmark}
           label={bookmarked ? "Remove specialty bookmark" : "Bookmark specialty"}
+          showOnHover
         />
       </div>
 
       {topics.length > 0 ? (
-        <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="mt-8 grid grid-cols-1 gap-3 md:grid-cols-2">
           {topics.map((topic) => (
             <SpecialtyTopicRow key={topic.id} topic={topic} />
           ))}
@@ -94,7 +96,7 @@ export function SpecialtyPageClient({
           description="We're building guides for this specialty. Bookmark it to get notified when new topics land."
         />
       )}
-    </main>
+    </PostPageShell>
   );
 }
 
@@ -116,10 +118,6 @@ function SpecialtyTopicRow({ topic }: { topic: SpecialtyTopic }) {
           <h3 className="text-base font-extrabold leading-snug tracking-tight text-slate-700">
             {topic.title}
           </h3>
-          <p className="mt-1 flex items-center gap-1.5 text-sm font-bold text-slate-400">
-            <Clock3 size={14} strokeWidth={2.5} className="shrink-0" />
-            <span>5 min read · {topic.specialty}</span>
-          </p>
         </div>
         <ChevronRight
           size={20}
@@ -145,8 +143,7 @@ export function TopicPageClient({ topic }: { topic: SpecialtyTopic }) {
   );
 
   return (
-    <main className="mx-auto w-full max-w-4xl bg-white px-4 pb-14 sm:px-6">
-      <PageHeader />
+    <PostPageShell title={topic.title}>
       <div className="flex flex-wrap items-center gap-3 pt-4">
         <LibraryBackLink />
         <span className="text-slate-300">/</span>
@@ -158,23 +155,18 @@ export function TopicPageClient({ topic }: { topic: SpecialtyTopic }) {
         </Link>
       </div>
 
-      <div className="mt-4 flex items-start gap-4">
+      <div className="group mt-4 flex items-start gap-4">
         <LibraryThumbHero seed={topic.title} />
         <div className="min-w-0 flex-1 text-left">
-          <p className="text-xs font-extrabold uppercase tracking-wide text-slate-400">
-            Topic
-          </p>
-          <h1 className="mt-1 text-2xl font-black leading-tight tracking-tight text-slate-900 sm:text-3xl">
+          <h1 className="text-2xl font-black leading-tight tracking-tight text-slate-900 sm:text-3xl">
             {topic.title}
           </h1>
-          <p className="mt-2 text-sm font-bold text-slate-500">
-            {topic.specialty}
-          </p>
         </div>
         <BookmarkButton
           bookmarked={bookmarked}
           onToggle={toggleBookmark}
           label={bookmarked ? "Remove topic bookmark" : "Bookmark topic"}
+          showOnHover
         />
       </div>
 
@@ -189,6 +181,6 @@ export function TopicPageClient({ topic }: { topic: SpecialtyTopic }) {
           Browse {topic.specialty}
         </Link>
       </ComingSoonPanel>
-    </main>
+    </PostPageShell>
   );
 }

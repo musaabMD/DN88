@@ -5,7 +5,6 @@ import {
   Bookmark,
   ChevronLeft,
   ChevronRight,
-  Clock3,
   Copy,
   Monitor,
   Pencil,
@@ -209,14 +208,9 @@ function SectionBody({
   if (contentMode === "summary") {
     const summary = summarizeSectionText(section.body, section.bullets);
     return (
-      <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-        <p className="text-[10px] font-extrabold uppercase tracking-wide text-slate-400">
-          Summary · {section.heading}
-        </p>
-        <p className="mt-2 text-base font-medium leading-relaxed text-slate-700">
-          {summary}
-        </p>
-      </div>
+      <p className="mt-3 text-base font-medium leading-relaxed text-slate-700">
+        {summary}
+      </p>
     );
   }
 
@@ -230,37 +224,42 @@ function SectionBody({
       );
     }
     return (
-      <div className="mt-3 space-y-3">
-        <p className="text-[10px] font-extrabold uppercase tracking-wide text-slate-400">
-          Questions · {section.heading}
-        </p>
+      <div className="mt-4 space-y-5">
         {qs.map((q, idx) => (
-          <div
-            key={`${section.id}-q-${q.id}`}
-            className="rounded-2xl border border-slate-200 bg-white p-4"
-          >
-            <p className="text-xs font-bold text-slate-400">
-              Q{idx + 1} · {q.subject}
-            </p>
-            <p className="mt-2 text-sm font-extrabold leading-snug text-slate-800">
+          <div key={`${section.id}-q-${q.id}`} className="space-y-3">
+            <p className="text-base font-extrabold leading-snug text-slate-800">
+              <span className="mr-2 text-slate-400">{idx + 1}.</span>
               {q.text}
             </p>
-            <ul className="mt-2.5 space-y-1.5">
-              {q.options.map((opt, optIdx) => (
-                <li
-                  key={opt}
-                  className={`rounded-xl border px-3 py-1.5 text-xs font-bold ${
-                    optIdx === q.answer
-                      ? "border-emerald-300 bg-emerald-50 text-emerald-900"
-                      : "border-slate-200 bg-slate-50 text-slate-600"
-                  }`}
-                >
-                  {String.fromCharCode(65 + optIdx)}. {opt}
-                </li>
-              ))}
+            <ul className="space-y-2">
+              {q.options.map((opt, optIdx) => {
+                const letter = String.fromCharCode(65 + optIdx);
+                const correct = optIdx === q.answer;
+                return (
+                  <li
+                    key={opt}
+                    className={`flex items-start gap-3 rounded-xl px-3 py-2.5 text-sm font-bold ${
+                      correct
+                        ? "bg-emerald-50 text-emerald-900"
+                        : "bg-slate-50 text-slate-600"
+                    }`}
+                  >
+                    <span
+                      className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-black ${
+                        correct
+                          ? "bg-emerald-600 text-white"
+                          : "bg-white text-slate-400 ring-1 ring-slate-200"
+                      }`}
+                    >
+                      {letter}
+                    </span>
+                    <span className="leading-snug">{opt}</span>
+                  </li>
+                );
+              })}
             </ul>
             {q.explanation ? (
-              <p className="mt-2 text-xs font-medium leading-relaxed text-slate-600">
+              <p className="text-sm font-medium leading-relaxed text-slate-500">
                 {q.explanation}
               </p>
             ) : null}
@@ -280,17 +279,14 @@ function SectionBody({
       );
     }
     return (
-      <div className="mt-3 space-y-3">
-        <p className="text-[10px] font-extrabold uppercase tracking-wide text-slate-400">
-          Cards · {section.heading}
-        </p>
+      <div className="mt-4 space-y-3">
         {cards.map((card) => (
           <div
             key={`${section.id}-fc-${card.id}`}
-            className="rounded-2xl border border-b-4 border-slate-200 bg-white p-4"
+            className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
           >
             <p className="text-sm font-extrabold text-slate-800">{card.front}</p>
-            <p className="mt-2 border-t border-slate-100 pt-2 text-sm font-medium leading-relaxed text-slate-600">
+            <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
               {card.back}
             </p>
           </div>
@@ -611,17 +607,13 @@ export default function LibraryArticle({
           <h1 className="text-3xl font-black leading-tight tracking-tight text-slate-800 sm:text-4xl">
             {article.title}
           </h1>
-          <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-bold text-slate-400">
-            <span className="flex items-center gap-1.5">
-              <Clock3 size={14} strokeWidth={2.5} />
-              {article.readMinutes} min read · {article.subject}
-            </span>
-            <span className="text-slate-300">·</span>
-            <span>Updated {article.updated}</span>
-          </p>
           {contentMode ? (
-            <p className="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-slate-500">
-              Viewing {contentMode} in each section
+            <p className="mt-3 text-xs font-extrabold uppercase tracking-wide text-slate-400">
+              {contentMode === "summary"
+                ? "Summary view"
+                : contentMode === "questions"
+                  ? "Questions view"
+                  : "Cards view"}
             </p>
           ) : null}
         </header>

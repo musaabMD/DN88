@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bookmark, ChevronRight, Clock3, Search } from "lucide-react";
+import { Bookmark, ChevronRight, Search } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { LibraryThumb } from "@/components/library/LibraryThumb";
 import {
@@ -226,13 +226,6 @@ function TopicCard({
           <h3 className="text-base font-extrabold leading-snug tracking-tight text-slate-700">
             <HighlightText text={topic.title} query={query} />
           </h3>
-          <p className="mt-1 flex items-center gap-1.5 text-left text-sm font-bold text-slate-400">
-            <Clock3 size={14} strokeWidth={2.5} className="shrink-0" />
-            <span>
-              5 min read ·{" "}
-              <HighlightText text={topic.specialty} query={query} />
-            </span>
-          </p>
         </div>
         <ChevronRight
           size={20}
@@ -284,12 +277,8 @@ function ArticleCard({
           <h3 className="text-base font-extrabold leading-snug tracking-tight text-slate-700">
             <HighlightText text={article.title} query={query} />
           </h3>
-          <p className="mt-1 flex items-center gap-1.5 text-left text-sm font-bold text-slate-400">
-            <Clock3 size={14} strokeWidth={2.5} className="shrink-0" />
-            <span>
-              {article.readMinutes} min read ·{" "}
-              <HighlightText text={article.subject} query={query} />
-            </span>
+          <p className="mt-1 text-left text-sm font-bold text-slate-400">
+            <HighlightText text={article.subject} query={query} />
           </p>
         </div>
         <ChevronRight
