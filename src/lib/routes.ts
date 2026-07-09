@@ -35,13 +35,13 @@ export const DEFAULT_TAB: ContentTab = "questions";
 export const HOME_PATH = "/";
 
 /** Qbank exam picker. */
-export const QBANK_PATH = "/qbank";
+export const QBANK_PATH = "/qbank/";
 
 /** User dashboard with pinned exams. */
-export const DASHBOARD_PATH = "/dashboard";
+export const DASHBOARD_PATH = "/dashboard/";
 
 /** Global article library product. */
-export const LIBRARY_PATH = "/library";
+export const LIBRARY_PATH = "/library/";
 
 export type QuizMode =
   | "resume"
@@ -63,7 +63,7 @@ export function isValidTab(tab: string): tab is ContentTab {
 }
 
 export function examPath(examId: string = DEFAULT_EXAM_ID): string {
-  return `/qbank/${examId}`;
+  return `/qbank/${examId}/`;
 }
 
 export function examTabPath(
@@ -72,7 +72,7 @@ export function examTabPath(
 ): string {
   if (tab === "library") return LIBRARY_PATH;
   if (tab === DEFAULT_TAB) return examPath(examId);
-  return `/qbank/${examId}/${tab}`;
+  return `/qbank/${examId}/${tab}/`;
 }
 
 /** @deprecated Use examTabPath(examId, tab) */
@@ -88,7 +88,7 @@ export function setPath(
   tab: ContentTab,
   setId: string
 ): string {
-  return `/qbank/${examId}/${tab}/sets/${setId}`;
+  return `/qbank/${examId}/${tab}/sets/${setId}/`;
 }
 
 export function quizPath(
@@ -97,7 +97,7 @@ export function quizPath(
   setId: string,
   params?: QuizSearchParams
 ): string {
-  const base = `/qbank/${examId}/${tab}/sets/${setId}/quiz`;
+  const base = `/qbank/${examId}/${tab}/sets/${setId}/quiz/`;
   if (!params) return base;
 
   const search = new URLSearchParams();
@@ -114,15 +114,15 @@ export function resultsPath(
   tab: ContentTab,
   setId: string
 ): string {
-  return `/qbank/${examId}/${tab}/sets/${setId}/results`;
+  return `/qbank/${examId}/${tab}/sets/${setId}/results/`;
 }
 
 export function filtersPath(examId: string = DEFAULT_EXAM_ID): string {
-  return `/qbank/${examId}/filters`;
+  return `/qbank/${examId}/filters/`;
 }
 
-export const UPGRADE_PATH = "/upgrade";
-export const PRICING_PATH = "/pricing";
+export const UPGRADE_PATH = "/upgrade/";
+export const PRICING_PATH = "/pricing/";
 
 /** Library article reader — independent of qbank exams. */
 export function articlePath(articleId: string): string {
