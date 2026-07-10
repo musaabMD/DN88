@@ -269,12 +269,6 @@ function ProductHomeBody({
         />
       </div>
 
-      {!canOpenQbank ? (
-        <p className="mx-auto mt-4 max-w-xl text-center text-xs font-bold text-slate-400">
-          Qbank is in private preview. Join the waitlist to get notified.
-        </p>
-      ) : null}
-
       {showPreorder ? (
         <QbankPreorderPanel
           defaultEmail={userEmail}
