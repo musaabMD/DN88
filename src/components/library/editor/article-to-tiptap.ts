@@ -1,6 +1,11 @@
 import type { JSONContent } from "@tiptap/react";
 import type { LibraryArticle, LibraryArticleSection } from "@/lib/set-content";
 import { sectionSlug } from "@/components/content/ArticleTableOfContents";
+import {
+  bulletItemFromWikiText,
+  paragraphFromWikiText,
+  parseWikiLinksInText,
+} from "@/components/library/editor/wiki-link/parse-wiki-text";
 
 export function sectionToTiptapContent(
   section: LibraryArticleSection
@@ -8,24 +13,13 @@ export function sectionToTiptapContent(
   const content: JSONContent[] = [];
 
   if (section.body) {
-    content.push({
-      type: "paragraph",
-      content: [{ type: "text", text: section.body }],
-    });
+    content.push(paragraphFromWikiText(section.body));
   }
 
   if (section.bullets && section.bullets.length > 0) {
     content.push({
       type: "bulletList",
-      content: section.bullets.map((item) => ({
-        type: "listItem",
-        content: [
-          {
-            type: "paragraph",
-            content: [{ type: "text", text: item }],
-          },
-        ],
-      })),
+      content: section.bullets.map((item) => bulletItemFromWikiText(item)),
     });
   }
 
@@ -36,7 +30,7 @@ export function sectionToTiptapContent(
   return { type: "doc", content };
 }
 
-/** Full article as one Tiptap document (Agent editor — single page). */
+/** Full article as one Tiptap document with auto-parsed `[[wiki links]]`. */
 export function articleToTiptapContent(article: LibraryArticle): JSONContent {
   const content: JSONContent[] = [
     {
@@ -68,24 +62,13 @@ export function articleToTiptapContent(article: LibraryArticle): JSONContent {
     });
 
     if (section.body) {
-      content.push({
-        type: "paragraph",
-        content: [{ type: "text", text: section.body }],
-      });
+      content.push(paragraphFromWikiText(section.body));
     }
 
     if (section.bullets && section.bullets.length > 0) {
       content.push({
         type: "bulletList",
-        content: section.bullets.map((item) => ({
-          type: "listItem",
-          content: [
-            {
-              type: "paragraph",
-              content: [{ type: "text", text: item }],
-            },
-          ],
-        })),
+        content: section.bullets.map((item) => bulletItemFromWikiText(item)),
       });
     }
   }
@@ -96,11 +79,10 @@ export function articleToTiptapContent(article: LibraryArticle): JSONContent {
       attrs: { level: 2, id: "high-yield" },
       content: [{ type: "text", text: "High yield" }],
     });
-    content.push({
-      type: "paragraph",
-      content: [{ type: "text", text: article.highYield }],
-    });
+    content.push(paragraphFromWikiText(article.highYield));
   }
 
   return { type: "doc", content };
 }
+
+export { parseWikiLinksInText };

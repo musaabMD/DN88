@@ -11,6 +11,7 @@ import {
   Code,
   Copy,
   ImageIcon,
+  FileText,
   Italic,
   Link2,
   List,
@@ -24,7 +25,11 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useTiptap, useTiptapState } from "@tiptap/react";
+import type { PageSearchItem } from "@/lib/pages";
+import { buildInternalLinkAttrs } from "@/lib/pages";
 import { ColorHighlightPopover } from "@/components/library/editor/color-highlight-popover";
+import { WikiLinkPicker } from "@/components/library/editor/wiki-link/wiki-link-picker";
+import { setInternalLinkOnSelection } from "@/components/library/editor/wiki-link/wiki-link-commands";
 
 function ToolbarBtn({
   active,
@@ -58,6 +63,7 @@ export function SimpleEditorToolbar() {
   const { editor } = useTiptap();
   const [headingOpen, setHeadingOpen] = useState(false);
   const [tableOpen, setTableOpen] = useState(false);
+  const [wikiPickerOpen, setWikiPickerOpen] = useState(false);
 
   const state = useTiptapState(({ editor: ed }) => ({
     bold: ed.isActive("bold"),
@@ -102,13 +108,35 @@ export function SimpleEditorToolbar() {
 
   const setLink = () => {
     const prev = editor.getAttributes("link").href as string | undefined;
-    const url = window.prompt("Link URL", prev ?? "https://");
+    const linkType = editor.getAttributes("link").linkType as string | undefined;
+    if (linkType === "internal") {
+      setWikiPickerOpen(true);
+      return;
+    }
+    const url = window.prompt("External link URL", prev ?? "https://");
     if (url === null) return;
     if (url === "") {
       editor.chain().focus().extendMarkRange("link").unsetLink().run();
       return;
     }
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+  };
+
+  const linkToPage = (item: PageSearchItem) => {
+    const attrs = item.exists
+      ? buildInternalLinkAttrs({ pageId: item.id, pageTitle: item.title, exists: true })
+      : buildInternalLinkAttrs({
+          pageId: item.pendingId,
+          pageTitle: item.title,
+          exists: false,
+        });
+
+    const { empty } = editor.state.selection;
+    if (empty) {
+      window.alert("Select text first, or type [[Page Name]] in the editor.");
+      return;
+    }
+    setInternalLinkOnSelection(editor, attrs);
   };
 
   const insertImage = () => {
@@ -324,8 +352,21 @@ export function SimpleEditorToolbar() {
           <Underline size={16} strokeWidth={2.5} />
         </ToolbarBtn>
         <ColorHighlightPopover />
-        <ToolbarBtn title="Link" active={state.link} onClick={() => run(setLink)}>
+        <ToolbarBtn title="External link" active={state.link} onClick={() => run(setLink)}>
           <Link2 size={16} strokeWidth={2} />
+        </ToolbarBtn>
+        <ToolbarBtn
+          title="Link to page"
+          onClick={() => {
+            const { empty } = editor.state.selection;
+            if (empty) {
+              window.alert("Select text to link, or type [[Page Name]] while reading.");
+              return;
+            }
+            setWikiPickerOpen(true);
+          }}
+        >
+          <FileText size={16} strokeWidth={2} />
         </ToolbarBtn>
       </div>
 
@@ -367,6 +408,21 @@ export function SimpleEditorToolbar() {
       <ToolbarBtn title="Copy selection" onClick={() => void copySelection()}>
         <Copy size={16} strokeWidth={2} />
       </ToolbarBtn>
+
+      <WikiLinkPicker
+        open={wikiPickerOpen}
+        initialQuery={
+          editor.state.selection.empty
+            ? ""
+            : editor.state.doc.textBetween(
+                editor.state.selection.from,
+                editor.state.selection.to,
+                " "
+              )
+        }
+        onClose={() => setWikiPickerOpen(false)}
+        onSelect={(item) => run(() => linkToPage(item))}
+      />
     </div>
   );
 }

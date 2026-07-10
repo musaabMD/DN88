@@ -631,7 +631,7 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
       {
         id: "clinical-features",
         heading: "Presentation & screening",
-        body: "T1DM usually presents abruptly; DKA is the first manifestation in up to half of cases. T2DM develops insidiously and may present only when complications appear or during routine labs.",
+        body: "T1DM usually presents abruptly; [[Diabetic ketoacidosis]] is the first manifestation in up to half of cases. T2DM develops insidiously and may present only when complications appear or during routine labs.",
         bullets: [
           "Screen all adults \u226535 years; screen younger patients if overweight/obese plus \u22651 risk factor (FHx, HTN, dyslipidemia, PCOS, GDM history, inactivity, high-risk ethnicity)",
           "Repeat normal screens every 3 years; annually if prediabetes; every 1\u20133 years after gestational diabetes",
@@ -664,13 +664,13 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
       {
         id: "glycemic-treatment",
         heading: "Pharmacotherapy",
-        body: "T1DM requires insulin from diagnosis. T2DM starts with lifestyle plus pharmacotherapy at diagnosis \u2014 metformin first for most patients without compelling CV or kidney indications for another agent.",
+        body: "T1DM requires insulin from diagnosis. T2DM starts with lifestyle plus pharmacotherapy at diagnosis — [[Metformin]] first for most patients without compelling CV or kidney indications for another agent.",
         bullets: [
           "T1DM: MDI or pump; typical TDD 0.4\u20131.0 units/kg/day (roughly 50% basal / 50% bolus)",
-          "T2DM first-line: metformin; add SGLT2i and/or GLP-1 RA if ASCVD, high ASCVD risk, HF, or CKD",
+          "T2DM first-line: [[Metformin]]; add SGLT2i and/or GLP-1 RA if ASCVD, high ASCVD risk, HF, or CKD",
           "Step up therapy sequentially; consider insulin if HbA1c >10%, glucose \u2265300, catabolic symptoms, or targets unmet on oral agents",
           "Prefer GLP-1 RA before insulin when appropriate; do not combine DPP-4 inhibitors with GLP-1 RAs",
-          "Acute crises: DKA (T1DM >> T2DM) and HHS (often elderly T2DM) \u2014 see hyperglycemic crisis management",
+          "Acute crises: [[Diabetic ketoacidosis]] (T1DM >> T2DM) and [[Hyperglycemic crisis]] (often elderly T2DM)",
         ],
       },
       {
@@ -782,6 +782,50 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
         front: "When to start microvascular complication screening?",
         back: "At T2DM diagnosis; 5 years after T1DM onset \u2014 then annually",
         status: "new",
+      },
+    ],
+  },
+  {
+    id: "diabetic-ketoacidosis",
+    subject: "Endocrinology and metabolic disorders",
+    title: "Diabetic ketoacidosis",
+    readMinutes: 6,
+    updated: "Jul 2026",
+    sections: [
+      {
+        id: "summary",
+        heading: "Summary",
+        body: "[[Diabetic ketoacidosis]] (DKA) is an acute metabolic emergency defined by hyperglycemia, ketosis, and high-anion-gap metabolic acidosis. It most often occurs in [[Diabetes mellitus]] type 1 but can present in type 2 under severe stress.",
+      },
+      {
+        id: "diagnosis",
+        heading: "Diagnosis",
+        body: "Look for polyuria, polydipsia, abdominal pain, Kussmaul respirations, and altered mental status.",
+        bullets: [
+          "Glucose usually >250 mg/dL with pH <7.3 and bicarbonate <18 mEq/L",
+          "Positive serum/urine ketones with anion gap acidosis",
+          "Search for precipitant: infection, missed insulin, MI, new-onset diabetes",
+        ],
+      },
+    ],
+    highYield: "Fluid resuscitation + IV insulin + potassium replacement. Never stop insulin until anion gap closes.",
+  },
+  {
+    id: "metformin",
+    subject: "Pharmacology",
+    title: "Metformin",
+    readMinutes: 4,
+    updated: "Jul 2026",
+    sections: [
+      {
+        id: "summary",
+        heading: "Summary",
+        body: "[[Metformin]] is the first-line oral agent for type 2 [[Diabetes mellitus]]. It lowers hepatic glucose output and improves peripheral insulin sensitivity with a low hypoglycemia risk.",
+      },
+      {
+        id: "safety",
+        heading: "Safety",
+        body: "Hold before iodinated contrast and major surgery if eGFR is borderline. The main rare serious toxicity is lactic acidosis in renal failure.",
       },
     ],
   },
