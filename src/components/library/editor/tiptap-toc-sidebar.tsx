@@ -32,6 +32,7 @@ export function TiptapTocSidebar({
             }`}
             onClick={() => onNavigate(anchor.id, anchor.dom)}
           >
+            {anchor.itemIndex > 0 ? `${anchor.itemIndex}. ` : null}
             {anchor.textContent}
           </button>
         ))}

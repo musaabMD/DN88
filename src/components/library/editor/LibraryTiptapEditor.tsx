@@ -13,7 +13,11 @@ import {
   DetailsSummary,
 } from "@tiptap/extension-details";
 import Image from "@tiptap/extension-image";
-import { TableOfContents } from "@tiptap/extension-table-of-contents";
+import { TableKit } from "@tiptap/extension-table";
+import {
+  getHierarchicalIndexes,
+  TableOfContents,
+} from "@tiptap/extension-table-of-contents";
 import type { TableOfContentData } from "@tiptap/extension-table-of-contents";
 import { ArrowLeft, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -91,9 +95,16 @@ export function LibraryTiptapEditor({
           alwaysPreserveAspectRatio: true,
         },
       }),
+      TableKit.configure({
+        table: {
+          resizable: true,
+          HTMLAttributes: { class: "simple-editor-table" },
+        },
+      }),
       TableOfContents.configure({
         anchorTypes: ["heading"],
         getId: (content) => sectionSlug(content),
+        getIndex: getHierarchicalIndexes,
         onUpdate: (anchors) => setTocAnchors(anchors),
         scrollParent: () => scrollRef.current ?? window,
       }),

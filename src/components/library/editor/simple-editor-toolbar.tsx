@@ -18,6 +18,7 @@ import {
   Quote,
   Redo2,
   Strikethrough,
+  Table2,
   Underline,
   Undo2,
 } from "lucide-react";
@@ -56,6 +57,7 @@ function ToolbarBtn({
 export function SimpleEditorToolbar() {
   const { editor } = useTiptap();
   const [headingOpen, setHeadingOpen] = useState(false);
+  const [tableOpen, setTableOpen] = useState(false);
 
   const state = useTiptapState(({ editor: ed }) => ({
     bold: ed.isActive("bold"),
@@ -72,6 +74,7 @@ export function SimpleEditorToolbar() {
     alignRight: ed.isActive({ textAlign: "right" }),
     alignJustify: ed.isActive({ textAlign: "justify" }),
     details: ed.isActive("details"),
+    table: ed.isActive("table"),
     canUndo: ed.can().undo(),
     canRedo: ed.can().redo(),
     headingLabel: ed.isActive("heading", { level: 1 })
@@ -212,6 +215,74 @@ export function SimpleEditorToolbar() {
         <ToolbarBtn title="Image" onClick={() => run(insertImage)}>
           <ImageIcon size={16} strokeWidth={2} />
         </ToolbarBtn>
+      </div>
+
+      <span className="tiptap-toolbar-divider" aria-hidden />
+
+      <div className="relative">
+        <button
+          type="button"
+          className={`tiptap-heading-trigger ${state.table ? "is-active" : ""}`}
+          aria-expanded={tableOpen}
+          onClick={() => setTableOpen((v) => !v)}
+        >
+          <Table2 size={16} strokeWidth={2} />
+          <ChevronDown size={14} />
+        </button>
+        {tableOpen ? (
+          <div className="tiptap-heading-menu tiptap-table-menu">
+            {state.table ? (
+              <>
+                {(
+                  [
+                    ["Add row above", () => editor.chain().focus().addRowBefore().run()],
+                    ["Add row below", () => editor.chain().focus().addRowAfter().run()],
+                    ["Add column left", () => editor.chain().focus().addColumnBefore().run()],
+                    ["Add column right", () => editor.chain().focus().addColumnAfter().run()],
+                    ["Delete row", () => editor.chain().focus().deleteRow().run()],
+                    ["Delete column", () => editor.chain().focus().deleteColumn().run()],
+                    ["Delete table", () => editor.chain().focus().deleteTable().run()],
+                  ] as const
+                ).map(([label, action]) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => {
+                      run(action);
+                      if (label === "Delete table") setTableOpen(false);
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </>
+            ) : (
+              <>
+                {(
+                  [
+                    ["3 × 3 with header", () =>
+                      editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()],
+                    ["4 × 4", () =>
+                      editor.chain().focus().insertTable({ rows: 4, cols: 4, withHeaderRow: false }).run()],
+                    ["5 × 2 with header", () =>
+                      editor.chain().focus().insertTable({ rows: 5, cols: 2, withHeaderRow: true }).run()],
+                  ] as const
+                ).map(([label, action]) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => {
+                      run(action);
+                      setTableOpen(false);
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
+        ) : null}
       </div>
 
       <span className="tiptap-toolbar-divider" aria-hidden />
