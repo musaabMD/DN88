@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ContentShell } from "@/components/ContentShell";
 import LibraryArticle from "@/components/content/LibraryArticle";
 import { getLibraryArticleById } from "@/lib/mock-data";
 import { LIBRARY_PATH } from "@/lib/routes";
@@ -13,23 +12,20 @@ export function LibraryArticleClient({ articleId }: { articleId: string }) {
 
   if (!article) {
     return (
-      <ContentShell title="Article not found" onBack={backToLibrary} minimal>
-        <div className="py-16 text-center">
-          <p className="mb-2 font-bold text-slate-800">Article not found</p>
+      <div className="simple-editor-page flex min-h-dvh items-center justify-center">
+        <div className="text-center">
+          <p className="mb-2 font-semibold text-slate-800">Article not found</p>
           <button
+            type="button"
             onClick={backToLibrary}
-            className="text-sm font-semibold text-indigo-600"
+            className="text-sm font-medium text-slate-600 underline"
           >
             Back to library
           </button>
         </div>
-      </ContentShell>
+      </div>
     );
   }
 
-  return (
-    <ContentShell onBack={backToLibrary} minimal>
-      <LibraryArticle article={article} />
-    </ContentShell>
-  );
+  return <LibraryArticle article={article} onBack={backToLibrary} />;
 }
