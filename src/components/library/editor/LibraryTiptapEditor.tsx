@@ -23,7 +23,7 @@ import { FloatingToc } from "@/components/content/FloatingToc";
 import type { LibraryArticle } from "@/lib/set-content";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { ArticleHeaderNav } from "@/components/library/editor/ArticleHeaderNav";
-import { ArticlePresentationHero } from "@/components/library/editor/ArticlePresentationHero";
+import { DrNoteSlides } from "@/components/library/editor/DrNoteSlides";
 import { DecorationOnly } from "@/components/library/editor/decoration-only";
 import { SectionHeading } from "@/components/library/editor/section-heading";
 import { articleToTiptapContent } from "@/components/library/editor/article-to-tiptap";
@@ -51,6 +51,7 @@ import {
   ArticleQAView,
   ArticleRoundView,
 } from "@/components/library/editor/ArticleStudyViews";
+import { articleToSlideDeck } from "@/lib/article-to-slides";
 
 function getScrollParent(): HTMLElement | Window {
   return (
@@ -137,17 +138,19 @@ export function LibraryTiptapEditor({
     }
   }, [article, editor]);
 
-  useEffect(() => {
-    if (activeStudyMode !== "presentation") return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setActiveStudyMode(null);
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [activeStudyMode]);
+  const slideDeck = useMemo(() => articleToSlideDeck(article), [article]);
 
   const isPresentation = activeStudyMode === "presentation";
   const isReadMode = activeStudyMode === null;
+
+  if (isPresentation) {
+    return (
+      <DrNoteSlides
+        deck={slideDeck}
+        onExit={() => setActiveStudyMode(null)}
+      />
+    );
+  }
 
   if (!editor) return null;
 
@@ -165,17 +168,6 @@ export function LibraryTiptapEditor({
         return <ArticleRoundView article={article} />;
       case "qa":
         return <ArticleQAView article={article} />;
-      case "presentation":
-        return (
-          <>
-            <ArticlePresentationHero
-              title={article.title}
-              subject={article.subject}
-              readMinutes={article.readMinutes}
-            />
-            <Tiptap.Content />
-          </>
-        );
       default:
         return <Tiptap.Content />;
     }
@@ -184,7 +176,7 @@ export function LibraryTiptapEditor({
   return (
     <Tiptap editor={editor}>
       <div
-        className={`simple-editor-page${isPresentation ? " simple-editor-page--presentation" : ""}${!isReadMode && !isPresentation ? " simple-editor-page--study" : ""}`}
+        className={`simple-editor-page${!isReadMode ? " simple-editor-page--study" : ""}`}
       >
         <header className="simple-editor-header">
           <div className="simple-editor-header-start">

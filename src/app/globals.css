@@ -2292,3 +2292,24 @@ body {
   background: rgb(30 41 59);
   color: rgb(226 232 240);
 }
+
+@keyframes drnote-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.drnote-slide-in {
+  animation: drnote-slide-in 0.35s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drnote-slide-in {
+    animation: none;
+  }
+}
