@@ -13,14 +13,16 @@ export function ContentShell({
   onBack,
   children,
   showLibrary,
+  minimal,
   onSearchClick,
   headerHidden,
 }: {
   examId?: string;
-  title: string;
+  title?: string;
   onBack?: () => void;
   children: ReactNode;
   showLibrary?: boolean;
+  minimal?: boolean;
   onSearchClick?: () => void;
   headerHidden?: boolean;
 }) {
@@ -35,6 +37,7 @@ export function ContentShell({
         onBack={onBack}
         title={title}
         showLibrary={showLibrary}
+        minimal={minimal}
         onSearchClick={onSearchClick}
         hidden={headerHidden}
       />
