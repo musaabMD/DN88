@@ -1,6 +1,11 @@
 import { Extension } from "@tiptap/core";
 import { Plugin } from "@tiptap/pm/state";
 import { AddMarkStep, RemoveMarkStep } from "@tiptap/pm/transform";
+import { WIKI_LINK_META } from "@/components/library/editor/wiki-link/constants";
+import {
+  isWikiLinkEditingContext,
+  isWikiLinkTextInputAllowed,
+} from "@/components/library/editor/wiki-link/wiki-link-editing";
 
 function isStyleOnlyStep(step: unknown): boolean {
   if (step instanceof AddMarkStep || step instanceof RemoveMarkStep) {
@@ -24,6 +29,7 @@ export const DecorationOnly = Extension.create({
       new Plugin({
         filterTransaction: (transaction, state) => {
           if (!transaction.docChanged) return true;
+          if (transaction.getMeta(WIKI_LINK_META)) return true;
           if (transaction.steps.every(isStyleOnlyStep)) return true;
 
           const beforeText = state.doc.textContent;
@@ -36,11 +42,13 @@ export const DecorationOnly = Extension.create({
 
   addKeyboardShortcuts() {
     return {
-      Backspace: () => true,
-      Delete: () => true,
+      Backspace: ({ editor }) => (isWikiLinkEditingContext(editor.state) ? false : true),
+      Delete: ({ editor }) => (isWikiLinkEditingContext(editor.state) ? false : true),
       Enter: () => true,
-      "Mod-Backspace": () => true,
-      "Mod-Delete": () => true,
+      "Mod-Backspace": ({ editor }) =>
+        isWikiLinkEditingContext(editor.state) ? false : true,
+      "Mod-Delete": ({ editor }) =>
+        isWikiLinkEditingContext(editor.state) ? false : true,
       "Mod-x": () => true,
       "Mod-v": () => true,
       "Mod-z": () => true,
@@ -58,7 +66,10 @@ export const DecorationOnly = Extension.create({
   onCreate() {
     this.editor.setOptions({
       editorProps: {
-        handleTextInput: () => true,
+        handleTextInput: (view, from, to, text) => {
+          if (isWikiLinkTextInputAllowed(view.state, from, text)) return false;
+          return true;
+        },
         handlePaste: () => true,
         handleDrop: () => true,
       },

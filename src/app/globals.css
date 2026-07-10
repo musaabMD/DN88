@@ -800,6 +800,241 @@ body {
   color: rgb(67 56 202);
 }
 
+/* Internal wiki links */
+.tiptap a.wiki-link {
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.tiptap a.wiki-link-exists {
+  color: rgb(37 99 235);
+}
+
+.tiptap a.wiki-link-exists:hover {
+  color: rgb(29 78 216);
+}
+
+.tiptap a.wiki-link-missing {
+  color: rgb(220 38 38);
+  text-decoration-style: dashed;
+}
+
+.tiptap a.wiki-link-missing:hover {
+  color: rgb(185 28 28);
+}
+
+.wiki-link-autocomplete {
+  min-width: 14rem;
+  max-width: 20rem;
+  padding: 0.375rem;
+  border: 1px solid rgb(226 232 240);
+  border-radius: 0.5rem;
+  background: rgb(255 255 255);
+  box-shadow: 0 10px 30px rgb(15 23 42 / 0.12);
+  z-index: 50;
+  position: fixed;
+}
+
+.wiki-link-autocomplete-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.wiki-link-autocomplete-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.625rem;
+  border: none;
+  border-radius: 0.375rem;
+  background: transparent;
+  text-align: left;
+  font-size: 0.875rem;
+  color: rgb(30 41 59);
+  cursor: pointer;
+}
+
+.wiki-link-autocomplete-item.is-selected,
+.wiki-link-autocomplete-item:hover {
+  background: rgb(241 245 249);
+}
+
+.wiki-link-autocomplete-item.is-missing {
+  color: rgb(185 28 28);
+}
+
+.wiki-link-autocomplete-badge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgb(100 116 139);
+}
+
+.wiki-link-autocomplete-status,
+.wiki-link-autocomplete-error {
+  margin: 0.25rem 0.5rem;
+  font-size: 0.8125rem;
+  color: rgb(100 116 139);
+}
+
+.wiki-link-autocomplete-error {
+  color: rgb(220 38 38);
+}
+
+.wiki-link-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+  background: rgb(15 23 42 / 0.35);
+}
+
+.wiki-link-picker {
+  width: min(28rem, calc(100vw - 2rem));
+  border-radius: 0.75rem;
+  border: 1px solid rgb(226 232 240);
+  background: rgb(255 255 255);
+  box-shadow: 0 20px 50px rgb(15 23 42 / 0.18);
+  overflow: hidden;
+}
+
+.wiki-link-picker-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid rgb(241 245 249);
+  color: rgb(100 116 139);
+}
+
+.wiki-link-picker-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 0.9375rem;
+  color: rgb(30 41 59);
+  background: transparent;
+}
+
+.wiki-link-picker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.375rem;
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+.wiki-link-picker-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: transparent;
+  text-align: left;
+  font-size: 0.875rem;
+  color: rgb(30 41 59);
+  cursor: pointer;
+}
+
+.wiki-link-picker-item.is-selected,
+.wiki-link-picker-item:hover {
+  background: rgb(241 245 249);
+}
+
+.wiki-link-picker-item.is-missing {
+  color: rgb(185 28 28);
+}
+
+.wiki-link-picker-status,
+.wiki-link-picker-error {
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  color: rgb(100 116 139);
+}
+
+.wiki-link-picker-error {
+  color: rgb(220 38 38);
+}
+
+.wiki-link-picker-spinner {
+  display: inline-block;
+  animation: wiki-link-spin 0.8s linear infinite;
+}
+
+@keyframes wiki-link-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.wiki-link-create-dialog {
+  padding: 1.25rem;
+}
+
+.wiki-link-create-title {
+  margin: 0 0 0.375rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: rgb(15 23 42);
+}
+
+.wiki-link-create-copy {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  color: rgb(100 116 139);
+}
+
+.wiki-link-create-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: rgb(51 65 85);
+}
+
+.wiki-link-create-input {
+  width: 100%;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid rgb(226 232 240);
+  border-radius: 0.375rem;
+}
+
+.wiki-link-create-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.wiki-link-create-btn {
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.375rem;
+  border: 1px solid rgb(226 232 240);
+  background: rgb(255 255 255);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(51 65 85);
+  cursor: pointer;
+}
+
+.wiki-link-create-btn-primary {
+  border-color: rgb(37 99 235);
+  background: rgb(37 99 235);
+  color: rgb(255 255 255);
+}
+
 .ProseMirror-selectednode {
   outline: 2px solid rgb(199 210 254);
   border-radius: 0.25rem;

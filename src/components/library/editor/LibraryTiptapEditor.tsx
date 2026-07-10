@@ -6,7 +6,6 @@ import StarterKit from "@tiptap/starter-kit";
 import Highlight from "@tiptap/extension-highlight";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
-import Link from "@tiptap/extension-link";
 import {
   Details,
   DetailsContent,
@@ -41,6 +40,10 @@ import {
 import { TiptapTocSidebar } from "@/components/library/editor/tiptap-toc-sidebar";
 import { sectionSlug } from "@/components/content/ArticleTableOfContents";
 import { HIGHLIGHT_COLORS } from "@/components/library/editor/color-highlight-popover";
+import {
+  WikiLink,
+  WikiLinkEditorOverlay,
+} from "@/components/library/editor/wiki-link";
 
 export function LibraryTiptapEditor({
   article,
@@ -80,7 +83,7 @@ export function LibraryTiptapEditor({
       SectionHeading,
       Highlight.configure({ multicolor: true }),
       Underline,
-      Link.configure({ openOnClick: false }),
+      WikiLink,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Details.configure({ persist: true }),
       DetailsSummary,
@@ -236,6 +239,8 @@ export function LibraryTiptapEditor({
             Copy
           </button>
         </BubbleMenu>
+
+        <WikiLinkEditorOverlay editor={editor} />
       </Tiptap>
     </div>
   );
