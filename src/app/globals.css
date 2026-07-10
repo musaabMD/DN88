@@ -343,6 +343,7 @@ body {
 
 .simple-editor-settings-menu {
   min-width: 12.5rem;
+  overflow: hidden;
 }
 
 .simple-editor-settings-label {
@@ -498,7 +499,7 @@ body {
   box-shadow: 0 8px 24px rgb(15 23 42 / 0.08);
 }
 
-.tiptap-heading-menu button {
+.tiptap-heading-menu button:not(.simple-editor-switch):not(.tiptap-toolbar-btn) {
   display: block;
   width: 100%;
   border: none;
@@ -512,8 +513,14 @@ body {
   cursor: pointer;
 }
 
-.tiptap-heading-menu button:hover {
+.tiptap-heading-menu button:not(.simple-editor-switch):not(.tiptap-toolbar-btn):hover {
   background: rgb(241 245 249);
+}
+
+.tiptap-heading-menu .simple-editor-switch {
+  width: 2.25rem;
+  flex-shrink: 0;
+  padding: 0;
 }
 
 .tiptap-zoom-menu {
@@ -1810,6 +1817,8 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  min-width: 0;
+  flex: 1;
   font-size: 0.8125rem;
   font-weight: 500;
   color: rgb(51 65 85);
@@ -2154,7 +2163,7 @@ body {
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
 }
 
-.dark .tiptap-heading-menu button:hover {
+.dark .tiptap-heading-menu button:not(.simple-editor-switch):not(.tiptap-toolbar-btn):hover {
   background: rgb(51 65 85);
 }
 
