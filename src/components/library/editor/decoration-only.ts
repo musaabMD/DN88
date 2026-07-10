@@ -12,8 +12,9 @@ function isStyleOnlyStep(step: unknown): boolean {
 }
 
 /**
- * Blocks content changes (typing, deleting, pasting) while allowing mark toggles
- * and node styling such as headings and alignment.
+ * Blocks content changes (typing, deleting, pasting) while allowing mark toggles,
+ * node styling, and structural layout features (details, images) that do not
+ * alter document text.
  */
 export const DecorationOnly = Extension.create({
   name: "decorationOnly",
@@ -21,9 +22,13 @@ export const DecorationOnly = Extension.create({
   addProseMirrorPlugins() {
     return [
       new Plugin({
-        filterTransaction: (transaction) => {
+        filterTransaction: (transaction, state) => {
           if (!transaction.docChanged) return true;
-          return transaction.steps.every(isStyleOnlyStep);
+          if (transaction.steps.every(isStyleOnlyStep)) return true;
+
+          const beforeText = state.doc.textContent;
+          const afterText = transaction.doc.textContent;
+          return beforeText === afterText;
         },
       }),
     ];

@@ -7,8 +7,10 @@ import {
   AlignRight,
   Bold,
   ChevronDown,
+  ChevronRight,
   Code,
   Copy,
+  ImageIcon,
   Italic,
   Link2,
   List,
@@ -69,6 +71,7 @@ export function SimpleEditorToolbar() {
     alignCenter: ed.isActive({ textAlign: "center" }),
     alignRight: ed.isActive({ textAlign: "right" }),
     alignJustify: ed.isActive({ textAlign: "justify" }),
+    details: ed.isActive("details"),
     canUndo: ed.can().undo(),
     canRedo: ed.can().redo(),
     headingLabel: ed.isActive("heading", { level: 1 })
@@ -103,6 +106,20 @@ export function SimpleEditorToolbar() {
       return;
     }
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+  };
+
+  const insertImage = () => {
+    const url = window.prompt("Image URL", "https://");
+    if (!url?.trim()) return;
+    editor.chain().focus().setImage({ src: url.trim() }).run();
+  };
+
+  const toggleDetails = () => {
+    if (editor.isActive("details")) {
+      editor.chain().focus().unsetDetails().run();
+      return;
+    }
+    editor.chain().focus().setDetails().run();
   };
 
   return (
@@ -184,6 +201,16 @@ export function SimpleEditorToolbar() {
           onClick={() => run(() => editor.chain().focus().toggleBlockquote().run())}
         >
           <Quote size={16} strokeWidth={2} />
+        </ToolbarBtn>
+        <ToolbarBtn
+          title={state.details ? "Remove details" : "Details"}
+          active={state.details}
+          onClick={() => run(toggleDetails)}
+        >
+          <ChevronRight size={16} strokeWidth={2} />
+        </ToolbarBtn>
+        <ToolbarBtn title="Image" onClick={() => run(insertImage)}>
+          <ImageIcon size={16} strokeWidth={2} />
         </ToolbarBtn>
       </div>
 
