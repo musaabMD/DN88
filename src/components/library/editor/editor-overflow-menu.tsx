@@ -1,8 +1,16 @@
 "use client";
 
-import { ImageIcon, MoreHorizontal } from "lucide-react";
+import { ImageIcon, Maximize2, Minus, Plus, Settings } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/core";
+import {
+  clampZoom,
+  getNextPresetZoom,
+  ZOOM_MAX,
+  ZOOM_MIN,
+  ZOOM_PRESETS,
+  type ZoomLevel,
+} from "@/components/library/editor/zoom-dropdown-menu";
 
 function IconBtn({
   title,
@@ -29,8 +37,91 @@ function IconBtn({
   );
 }
 
-/** Secondary tools in the header overflow menu. */
-export function EditorOverflowMenu({ editor }: { editor: Editor }) {
+function SettingsZoomSection({
+  currentZoom,
+  onZoomChange,
+  onFitToPage,
+}: {
+  currentZoom: ZoomLevel;
+  onZoomChange: (zoom: ZoomLevel) => void;
+  onFitToPage?: () => void;
+}) {
+  const zoom = clampZoom(currentZoom, ZOOM_MIN, ZOOM_MAX);
+  const isMinZoom = zoom <= ZOOM_MIN;
+  const isMaxZoom = zoom >= ZOOM_MAX;
+
+  const setZoom = (value: number) => {
+    onZoomChange(clampZoom(value, ZOOM_MIN, ZOOM_MAX));
+  };
+
+  return (
+    <div className="simple-editor-settings-zoom">
+      <p className="simple-editor-settings-label">Zoom</p>
+      <div className="simple-editor-settings-zoom-controls">
+        <button
+          type="button"
+          className="tiptap-toolbar-btn"
+          title="Zoom out"
+          aria-label="Zoom out"
+          disabled={isMinZoom}
+          onClick={() =>
+            setZoom(getNextPresetZoom(zoom, "down", ZOOM_PRESETS, ZOOM_MIN, ZOOM_MAX))
+          }
+        >
+          <Minus size={16} strokeWidth={2} />
+        </button>
+        <span className="simple-editor-settings-zoom-value">{zoom}%</span>
+        <button
+          type="button"
+          className="tiptap-toolbar-btn"
+          title="Zoom in"
+          aria-label="Zoom in"
+          disabled={isMaxZoom}
+          onClick={() =>
+            setZoom(getNextPresetZoom(zoom, "up", ZOOM_PRESETS, ZOOM_MIN, ZOOM_MAX))
+          }
+        >
+          <Plus size={16} strokeWidth={2} />
+        </button>
+      </div>
+      <div className="tiptap-zoom-presets simple-editor-settings-zoom-presets">
+        {ZOOM_PRESETS.map((preset) => (
+          <button
+            key={preset}
+            type="button"
+            className={preset === zoom ? "is-active" : undefined}
+            onClick={() => setZoom(preset)}
+          >
+            {preset}%
+          </button>
+        ))}
+      </div>
+      {onFitToPage ? (
+        <button
+          type="button"
+          className="tiptap-zoom-fit"
+          onClick={onFitToPage}
+        >
+          <Maximize2 size={14} />
+          Fit to page
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+/** Editor settings menu — zoom, undo/redo, tables, and insert tools. */
+export function EditorOverflowMenu({
+  editor,
+  currentZoom,
+  onZoomChange,
+  onFitToPage,
+}: {
+  editor: Editor;
+  currentZoom: ZoomLevel;
+  onZoomChange: (zoom: ZoomLevel) => void;
+  onFitToPage?: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const [tableOpen, setTableOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -70,12 +161,18 @@ export function EditorOverflowMenu({ editor }: { editor: Editor }) {
 
   return (
     <div className="relative" ref={rootRef}>
-      <IconBtn title="More" onClick={() => setOpen((v) => !v)}>
-        <MoreHorizontal size={18} strokeWidth={2} />
+      <IconBtn title="Settings" onClick={() => setOpen((v) => !v)}>
+        <Settings size={18} strokeWidth={2} />
       </IconBtn>
 
       {open ? (
-        <div className="tiptap-heading-menu tiptap-more-menu simple-editor-overflow-menu">
+        <div className="tiptap-heading-menu tiptap-more-menu simple-editor-overflow-menu simple-editor-settings-menu">
+          <SettingsZoomSection
+            currentZoom={currentZoom}
+            onZoomChange={onZoomChange}
+            onFitToPage={onFitToPage}
+          />
+          <div className="simple-editor-settings-divider" />
           <button
             type="button"
             disabled={!editor.can().undo()}

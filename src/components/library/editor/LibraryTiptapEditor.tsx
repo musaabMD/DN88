@@ -31,7 +31,6 @@ import {
   saveArticleEditorContent,
 } from "@/lib/library-editor-preferences";
 import {
-  ZoomDropdownMenu,
   ZOOM_DEFAULT,
   type ZoomLevel,
 } from "@/components/library/editor/zoom-dropdown-menu";
@@ -147,8 +146,8 @@ export function LibraryTiptapEditor({
           </div>
 
           <div className="simple-editor-header-end">
-            <EditorOverflowMenu editor={editor} />
-            <ZoomDropdownMenu
+            <EditorOverflowMenu
+              editor={editor}
               currentZoom={zoom}
               onZoomChange={setZoom}
               onFitToPage={() => setZoom(ZOOM_DEFAULT)}
