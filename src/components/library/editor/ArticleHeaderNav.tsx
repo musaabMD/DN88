@@ -8,9 +8,9 @@ import {
   ClipboardList,
   CreditCard,
   FileText,
-  Glasses,
   Menu,
   MessageCircleQuestion,
+  Play,
   Zap,
 } from "lucide-react";
 import type { StudyModeFilter } from "@/components/content/ArticleStudyModes";
@@ -80,7 +80,7 @@ export function ArticleHeaderNav({
     setMenuOpen(false);
   };
 
-  const isDefaultReadMode = activeView === "read";
+  const isPresentationMode = activeStudyMode === "presentation";
 
   return (
     <div ref={rootRef} className="article-header-nav">
@@ -88,13 +88,16 @@ export function ArticleHeaderNav({
         type="button"
         className={cn(
           "article-header-nav-btn",
-          isDefaultReadMode && "is-active"
+          isPresentationMode && "is-active"
         )}
-        aria-label="Read mode"
-        title="Read"
-        onClick={() => onStudyModeChange(null)}
+        aria-label={isPresentationMode ? "Exit presentation" : "Presentation mode"}
+        aria-pressed={isPresentationMode}
+        title={isPresentationMode ? "Exit presentation" : "Presentation"}
+        onClick={() =>
+          onStudyModeChange(isPresentationMode ? null : "presentation")
+        }
       >
-        <Glasses size={18} strokeWidth={2} />
+        <Play size={18} strokeWidth={2} />
       </button>
 
       <div className="relative">
@@ -103,7 +106,7 @@ export function ArticleHeaderNav({
           className={cn(
             "article-header-nav-btn",
             menuOpen && "is-active",
-            !isDefaultReadMode && "has-selection"
+            !isPresentationMode && activeView !== "read" && "has-selection"
           )}
           aria-label="Change view"
           aria-expanded={menuOpen}

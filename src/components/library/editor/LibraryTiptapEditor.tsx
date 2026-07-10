@@ -23,6 +23,7 @@ import { FloatingToc } from "@/components/content/FloatingToc";
 import type { LibraryArticle } from "@/lib/set-content";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { ArticleHeaderNav } from "@/components/library/editor/ArticleHeaderNav";
+import { ArticlePresentationHero } from "@/components/library/editor/ArticlePresentationHero";
 import { DecorationOnly } from "@/components/library/editor/decoration-only";
 import { SectionHeading } from "@/components/library/editor/section-heading";
 import { articleToTiptapContent } from "@/components/library/editor/article-to-tiptap";
@@ -128,11 +129,24 @@ export function LibraryTiptapEditor({
     }
   }, [article, editor]);
 
+  useEffect(() => {
+    if (activeStudyMode !== "presentation") return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActiveStudyMode(null);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [activeStudyMode]);
+
+  const isPresentation = activeStudyMode === "presentation";
+
   if (!editor) return null;
 
   return (
     <Tiptap editor={editor}>
-      <div className="simple-editor-page">
+      <div
+        className={`simple-editor-page${isPresentation ? " simple-editor-page--presentation" : ""}`}
+      >
         <header className="simple-editor-header">
           <div className="simple-editor-header-start">
             <button
@@ -173,6 +187,13 @@ export function LibraryTiptapEditor({
                 transformOrigin: "top center",
               }}
             >
+              {isPresentation ? (
+                <ArticlePresentationHero
+                  title={article.title}
+                  subject={article.subject}
+                  readMinutes={article.readMinutes}
+                />
+              ) : null}
               <Tiptap.Content />
             </div>
           </div>
@@ -180,7 +201,9 @@ export function LibraryTiptapEditor({
 
         <SelectionBubbleMenu editor={editor} />
         <WikiLinkEditorOverlay editor={editor} />
-        <FloatingToc containerSelector=".simple-editor-scroll" />
+        {!isPresentation ? (
+          <FloatingToc containerSelector=".simple-editor-scroll" />
+        ) : null}
       </div>
     </Tiptap>
   );
