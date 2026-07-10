@@ -147,15 +147,15 @@ export function LibraryTiptapEditor({
           </div>
 
           <div className="simple-editor-header-end">
-            <ArticleHeaderNav
-              activeStudyMode={activeStudyMode}
-              onStudyModeChange={setActiveStudyMode}
-            />
             <EditorOverflowMenu editor={editor} />
             <ZoomDropdownMenu
               currentZoom={zoom}
               onZoomChange={setZoom}
               onFitToPage={() => setZoom(ZOOM_DEFAULT)}
+            />
+            <ArticleHeaderNav
+              activeStudyMode={activeStudyMode}
+              onStudyModeChange={setActiveStudyMode}
             />
           </div>
         </header>
