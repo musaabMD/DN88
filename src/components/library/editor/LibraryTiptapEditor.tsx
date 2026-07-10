@@ -18,10 +18,12 @@ import {
 } from "@tiptap/extension-table-of-contents";
 import { UniqueID } from "@tiptap/extension-unique-id";
 import { ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { StudyModeFilter } from "@/components/content/ArticleStudyModes";
 import { FloatingToc } from "@/components/content/FloatingToc";
 import type { LibraryArticle } from "@/lib/set-content";
+import { articlePath } from "@/lib/routes";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { ArticleHeaderNav } from "@/components/library/editor/ArticleHeaderNav";
 import { DrNoteSlides } from "@/components/library/editor/DrNoteSlides";
@@ -30,8 +32,19 @@ import { SectionHeading } from "@/components/library/editor/section-heading";
 import { articleToTiptapContent } from "@/components/library/editor/article-to-tiptap";
 import {
   getArticleEditorContent,
+  getGlossaryEnabled,
   saveArticleEditorContent,
+  setGlossaryEnabled as persistGlossaryEnabled,
 } from "@/lib/library-editor-preferences";
+import {
+  AutoGlossary,
+  setGlossaryDecorations,
+} from "@/components/library/editor/reader/auto-glossary";
+import { ArticleReaderFooter } from "@/components/library/editor/reader/ArticleReaderFooter";
+import { HighlightsPanel } from "@/components/library/editor/reader/HighlightsPanel";
+import { ImageLightbox } from "@/components/library/editor/reader/ImageLightbox";
+import { ReaderProgress } from "@/components/library/editor/reader/ReaderProgress";
+import { SectionDeepLink } from "@/components/library/editor/reader/SectionDeepLink";
 import {
   ZOOM_DEFAULT,
   type ZoomLevel,
@@ -69,10 +82,12 @@ export function LibraryTiptapEditor({
   article: LibraryArticle;
   onBack: () => void;
 }) {
+  const router = useRouter();
   const [zoom, setZoom] = useState<ZoomLevel>(ZOOM_DEFAULT);
   const [activeStudyMode, setActiveStudyMode] = useState<StudyModeFilter | null>(
     null
   );
+  const [glossaryOn, setGlossaryOn] = useState(() => getGlossaryEnabled());
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const initialContent = useMemo(() => {
@@ -122,6 +137,8 @@ export function LibraryTiptapEditor({
         attributeName: "data-block-id",
         types: ["heading", "paragraph", "blockquote", "listItem", "details"],
       }),
+      // Auto-link known topic names to their articles (with hover peek).
+      AutoGlossary.configure({ currentPageId: article.id, enabled: true }),
       DecorationOnly,
     ],
     content: initialContent,
@@ -145,6 +162,19 @@ export function LibraryTiptapEditor({
       editor.commands.setContent(articleToTiptapContent(article));
     }
   }, [article, editor]);
+
+  useEffect(() => {
+    if (!editor) return;
+    if (!getGlossaryEnabled()) setGlossaryDecorations(editor, false);
+  }, [editor]);
+
+  const handleGlossaryToggle = (enabled: boolean) => {
+    setGlossaryOn(enabled);
+    persistGlossaryEnabled(enabled);
+    if (editor) setGlossaryDecorations(editor, enabled);
+  };
+
+  const openArticle = (id: string) => router.push(articlePath(id));
 
   const slideDeck = useMemo(() => articleToSlideDeck(article), [article]);
 
@@ -177,7 +207,16 @@ export function LibraryTiptapEditor({
       case "qa":
         return <ArticleQAView article={article} />;
       default:
-        return <Tiptap.Content />;
+        return (
+          <>
+            <Tiptap.Content />
+            <ArticleReaderFooter
+              article={article}
+              onOpenArticle={openArticle}
+              onStudyModeChange={setActiveStudyMode}
+            />
+          </>
+        );
     }
   }
 
@@ -204,6 +243,8 @@ export function LibraryTiptapEditor({
               currentZoom={zoom}
               onZoomChange={setZoom}
               onFitToPage={() => setZoom(ZOOM_DEFAULT)}
+              glossaryEnabled={glossaryOn}
+              onGlossaryToggle={handleGlossaryToggle}
             />
             <ThemeToggle />
             <ArticleHeaderNav
@@ -212,6 +253,8 @@ export function LibraryTiptapEditor({
             />
           </div>
         </header>
+
+        {isReadMode ? <ReaderProgress articleId={article.id} /> : null}
 
         <div className="simple-editor-body">
           <div
@@ -235,6 +278,19 @@ export function LibraryTiptapEditor({
         {isReadMode ? <WikiLinkEditorOverlay editor={editor} /> : null}
         {isReadMode ? (
           <WikiLinkHoverPreview containerSelector=".simple-editor-scroll" />
+        ) : null}
+        {isReadMode ? (
+          <SectionDeepLink containerSelector=".simple-editor-scroll" />
+        ) : null}
+        {isReadMode ? (
+          <ImageLightbox containerSelector=".simple-editor-scroll" />
+        ) : null}
+        {isReadMode ? (
+          <HighlightsPanel
+            editor={editor}
+            articleTitle={article.title}
+            containerSelector=".simple-editor-scroll"
+          />
         ) : null}
         {isReadMode ? (
           <FloatingToc containerSelector=".simple-editor-scroll" />

@@ -64,7 +64,9 @@ export function WikiLinkHoverPreview({
 
     const handleOver = (event: Event) => {
       const target = event.target as HTMLElement | null;
-      const link = target?.closest<HTMLElement>("a.wiki-link[data-page-id]");
+      const link = target?.closest<HTMLElement>(
+        "a.wiki-link[data-page-id], .auto-glossary[data-page-id]"
+      );
       if (!link || link === activeLink.current) return;
 
       const pageId = link.getAttribute("data-page-id");
@@ -83,7 +85,11 @@ export function WikiLinkHoverPreview({
 
     const handleOut = (event: Event) => {
       const related = (event as MouseEvent).relatedTarget as HTMLElement | null;
-      if (related?.closest?.("a.wiki-link[data-page-id]") === activeLink.current) {
+      if (
+        related?.closest?.(
+          "a.wiki-link[data-page-id], .auto-glossary[data-page-id]"
+        ) === activeLink.current
+      ) {
         return;
       }
       if (related?.closest?.(".wiki-link-preview")) return;

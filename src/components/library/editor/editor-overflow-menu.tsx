@@ -1,6 +1,6 @@
 "use client";
 
-import { Maximize2, Minus, Plus, Settings } from "lucide-react";
+import { Link2, Maximize2, Minus, Plus, Settings } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   clampZoom,
@@ -33,15 +33,19 @@ function IconBtn({
   );
 }
 
-/** Reader settings menu — zoom controls only. */
+/** Reader settings menu — zoom + reading preferences. */
 export function EditorOverflowMenu({
   currentZoom,
   onZoomChange,
   onFitToPage,
+  glossaryEnabled,
+  onGlossaryToggle,
 }: {
   currentZoom: ZoomLevel;
   onZoomChange: (zoom: ZoomLevel) => void;
   onFitToPage?: () => void;
+  glossaryEnabled?: boolean;
+  onGlossaryToggle?: (enabled: boolean) => void;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -131,6 +135,24 @@ export function EditorOverflowMenu({
               </button>
             ) : null}
           </div>
+
+          {onGlossaryToggle ? (
+            <div className="simple-editor-settings-toggle">
+              <span className="simple-editor-settings-toggle-label">
+                <Link2 size={14} />
+                Auto-link medical terms
+              </span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={glossaryEnabled ? "true" : "false"}
+                className={`simple-editor-switch${glossaryEnabled ? " is-on" : ""}`}
+                onClick={() => onGlossaryToggle(!glossaryEnabled)}
+              >
+                <span className="simple-editor-switch-thumb" />
+              </button>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>
