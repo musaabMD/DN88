@@ -19,6 +19,7 @@ import { SuggestEditModal } from "@/components/SuggestEditModal";
 import { ArticleAskBar } from "@/components/content/ArticleAskBar";
 import {
   getInlineContentMode,
+  SECTION_FILTER_MODES,
   shouldShowSection,
   summarizeSectionText,
   type StudyModeFilter,
@@ -29,25 +30,15 @@ import {
 } from "@/components/content/ArticleTableOfContents";
 import {
   addTextHighlight,
-  getArticleHighlights,
-  getParagraphBookmarks,
   toggleParagraphBookmark,
   type HighlightColor,
-  type TextHighlight,
 } from "@/lib/article-annotations";
 import {
   isArticleBookmarked,
   toggleArticleBookmark,
 } from "@/lib/article-bookmarks";
 import type { LibraryArticle, LibraryArticleSection } from "@/lib/set-content";
-import { LibraryArticleEditor } from "@/components/library/editor/LibraryArticleEditor";
-import type { LibraryEditorMode } from "@/components/library/editor/types";
-import { LibraryEditorModeSwitcher } from "@/components/library/editor/LibraryEditorModeSwitcher";
-import {
-  getLibraryEditorMode,
-  setLibraryEditorMode,
-} from "@/lib/library-editor-preferences";
-import { AgentPanel } from "@/components/library/editor/AgentPanel";
+import { LibraryAgentEditor } from "@/components/library/editor/LibraryAgentEditor";
 
 function SelectionToolbar({
   rect,
@@ -145,7 +136,6 @@ function sectionQuestions(
       q.explanation?.toLowerCase().includes(section.id)
   );
   if (keyed.length > 0) return keyed;
-  // Distribute article questions across sections so each section has something.
   const idx = article.sections.findIndex((s) => s.id === section.id);
   return [questions[idx % questions.length]!].filter(Boolean);
 }
@@ -167,18 +157,33 @@ function sectionFlashcards(
   return [cards[idx % cards.length]!].filter(Boolean);
 }
 
+function PlainSectionContent({ section }: { section: LibraryArticleSection }) {
+  return (
+    <>
+      {section.body ? (
+        <p className="mt-3 text-base font-medium leading-relaxed text-slate-700">
+          {section.body}
+        </p>
+      ) : null}
+      {section.bullets && section.bullets.length > 0 ? (
+        <ul className="mt-3 list-disc space-y-2 pl-5 text-base font-medium leading-relaxed text-slate-700">
+          {section.bullets.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      ) : null}
+    </>
+  );
+}
+
 function SectionBody({
   article,
   section,
   contentMode,
-  paraBookmarked,
-  editorMode,
 }: {
   article: LibraryArticle;
   section: LibraryArticleSection;
   contentMode: StudyModeFilter | null;
-  paraBookmarked: boolean;
-  editorMode: LibraryEditorMode;
 }) {
   if (contentMode === "summary") {
     const summary = summarizeSectionText(section.body, section.bullets);
@@ -270,14 +275,7 @@ function SectionBody({
     );
   }
 
-  return (
-    <LibraryArticleEditor
-      article={article}
-      section={section}
-      mode={editorMode}
-      paraBookmarked={paraBookmarked}
-    />
-  );
+  return <PlainSectionContent section={section} />;
 }
 
 export default function LibraryArticle({
@@ -292,28 +290,14 @@ export default function LibraryArticle({
   const [selectedText, setSelectedText] = useState<string | undefined>();
   const [selectionRect, setSelectionRect] = useState<DOMRect | null>(null);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
-  const [highlights, setHighlights] = useState<TextHighlight[]>([]);
-  const [paragraphBookmarks, setParagraphBookmarks] = useState<Set<string>>(
-    new Set()
-  );
   const [studyMode, setStudyMode] = useState<StudyModeFilter | null>(null);
-  const [editorMode, setEditorMode] = useState<LibraryEditorMode>(() =>
-    typeof window === "undefined" ? "docx" : getLibraryEditorMode()
-  );
   const [isReading, setIsReading] = useState(false);
   const [slideIndex, setSlideIndex] = useState(0);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  const loadAnnotations = useCallback(() => {
-    setHighlights(getArticleHighlights(article.id));
-    const bookmarks = getParagraphBookmarks(article.id);
-    setParagraphBookmarks(new Set(bookmarks.map((b) => b.sectionId)));
-  }, [article.id]);
-
   useEffect(() => {
     setBookmarked(isArticleBookmarked(article.id));
-    loadAnnotations();
-  }, [article.id, loadAnnotations]);
+  }, [article.id]);
 
   const handleSelectionChange = useCallback(() => {
     const selection = window.getSelection();
@@ -363,7 +347,6 @@ export default function LibraryArticle({
   const handleHighlight = (color: HighlightColor) => {
     if (!selectedText || !activeSectionId) return;
     addTextHighlight(article.id, activeSectionId, selectedText, color);
-    loadAnnotations();
     clearSelection();
   };
 
@@ -372,7 +355,6 @@ export default function LibraryArticle({
   const handleBookmarkParagraph = () => {
     if (!activeSectionId) return;
     toggleParagraphBookmark(article.id, activeSectionId);
-    loadAnnotations();
     clearSelection();
   };
 
@@ -406,13 +388,11 @@ export default function LibraryArticle({
     setStudyMode(mode);
   };
 
-  const handleEditorModeChange = (mode: LibraryEditorMode) => {
-    setEditorMode(mode);
-    setLibraryEditorMode(mode);
-  };
-
   const contentMode = getInlineContentMode(studyMode);
   const presentation = presentationMode || studyMode === "presentation";
+  const useAgentEditor =
+    !contentMode &&
+    (!studyMode || !SECTION_FILTER_MODES.includes(studyMode));
 
   const visibleSections = article.sections.filter((section) =>
     shouldShowSection(section.id, studyMode)
@@ -536,31 +516,29 @@ export default function LibraryArticle({
           </div>
         </div>
 
-        <header className="mt-2">
-          <h1 className="text-3xl font-black leading-tight tracking-tight text-slate-800 sm:text-4xl">
-            {article.title}
-          </h1>
-          {contentMode ? (
-            <p className="mt-3 text-xs font-extrabold uppercase tracking-wide text-slate-400">
-              {contentMode === "summary"
-                ? "Summary view"
-                : contentMode === "questions"
-                  ? "Questions view"
-                  : "Cards view"}
-            </p>
-          ) : null}
-        </header>
-
-        {!contentMode ? (
-          <div className="mt-6">
-            <LibraryEditorModeSwitcher
-              mode={editorMode}
-              onChange={handleEditorModeChange}
-            />
-            <p className="mb-2 text-xs font-medium text-slate-400">
-              Customize appearance only — article text cannot be removed or edited.
-            </p>
-          </div>
+        {!useAgentEditor ? (
+          <header className="mt-2">
+            <h1 className="text-3xl font-black leading-tight tracking-tight text-slate-800 sm:text-4xl">
+              {article.title}
+            </h1>
+            {contentMode ? (
+              <p className="mt-3 text-xs font-extrabold uppercase tracking-wide text-slate-400">
+                {contentMode === "summary"
+                  ? "Summary view"
+                  : contentMode === "questions"
+                    ? "Questions view"
+                    : "Cards view"}
+              </p>
+            ) : studyMode ? (
+              <p className="mt-3 text-xs font-extrabold uppercase tracking-wide text-slate-400">
+                {studyMode === "hy"
+                  ? "High yield filter"
+                  : studyMode === "er"
+                    ? "ER filter"
+                    : "Last minute filter"}
+              </p>
+            ) : null}
+          </header>
         ) : null}
 
         <nav
@@ -578,17 +556,12 @@ export default function LibraryArticle({
           ))}
         </nav>
 
-        <div
-          className={`mt-8 ${
-            !contentMode && editorMode === "agent"
-              ? "grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]"
-              : ""
-          }`}
-        >
-          <div className="space-y-12">
+        {useAgentEditor ? (
+          <LibraryAgentEditor article={article} />
+        ) : (
+          <div className="mt-8 space-y-12">
             {visibleSections.map((section) => {
               const slug = sectionSlug(section.heading);
-              const paraBookmarked = paragraphBookmarks.has(section.id);
               return (
                 <section
                   key={section.id}
@@ -603,8 +576,6 @@ export default function LibraryArticle({
                     article={article}
                     section={section}
                     contentMode={contentMode}
-                    paraBookmarked={paraBookmarked}
-                    editorMode={editorMode}
                   />
                 </section>
               );
@@ -622,11 +593,7 @@ export default function LibraryArticle({
               </aside>
             ) : null}
           </div>
-
-          {!contentMode && editorMode === "agent" ? (
-            <AgentPanel articleTitle={article.title} />
-          ) : null}
-        </div>
+        )}
       </article>
     </div>
   );
