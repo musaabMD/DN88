@@ -674,6 +674,87 @@ body {
   outline: none;
 }
 
+.tiptap [data-type="details"],
+.tiptap details {
+  margin: 1.25rem 0;
+  border: 1px solid rgb(226 232 240);
+  border-radius: 0.5rem;
+  background: rgb(248 250 252);
+  overflow: hidden;
+}
+
+.tiptap [data-type="details"].is-open,
+.tiptap details[open] {
+  background: rgb(255 255 255);
+}
+
+.tiptap [data-type="details"] > button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  margin: 0.5rem 0 0 0.5rem;
+  padding: 0;
+  border: none;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: rgb(100 116 139);
+  cursor: pointer;
+}
+
+.tiptap [data-type="details"] > button:hover {
+  background: rgb(241 245 249);
+}
+
+.tiptap [data-type="details"] > button::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 6px solid currentColor;
+  transition: transform 0.15s ease;
+}
+
+.tiptap [data-type="details"].is-open > button::before {
+  transform: rotate(90deg);
+}
+
+.tiptap summary,
+.tiptap [data-type="detailsSummary"] {
+  display: block;
+  padding: 0.5rem 1rem 0.75rem 0.25rem;
+  font-weight: 600;
+  color: rgb(30 41 59);
+  outline: none;
+}
+
+.tiptap [data-type="detailsContent"],
+.tiptap details > div[data-type="detailsContent"] {
+  padding: 0 1rem 1rem 2.25rem;
+  border-top: 1px solid rgb(241 245 249);
+}
+
+.tiptap [data-type="detailsContent"][hidden] {
+  display: none;
+}
+
+.tiptap [data-type="detailsContent"] > :first-child,
+.tiptap details > div[data-type="detailsContent"] > :first-child {
+  margin-top: 0.75rem;
+}
+
+.tiptap img.simple-editor-image,
+.tiptap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1.25rem auto;
+  border-radius: 0.375rem;
+}
+
 .ProseMirror-selectednode {
   outline: 2px solid rgb(199 210 254);
   border-radius: 0.25rem;

@@ -7,6 +7,12 @@ import Highlight from "@tiptap/extension-highlight";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import Link from "@tiptap/extension-link";
+import {
+  Details,
+  DetailsContent,
+  DetailsSummary,
+} from "@tiptap/extension-details";
+import Image from "@tiptap/extension-image";
 import { TableOfContents } from "@tiptap/extension-table-of-contents";
 import type { TableOfContentData } from "@tiptap/extension-table-of-contents";
 import { ArrowLeft, PanelRightClose, PanelRightOpen } from "lucide-react";
@@ -72,6 +78,19 @@ export function LibraryTiptapEditor({
       Underline,
       Link.configure({ openOnClick: false }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
+      Details.configure({ persist: true }),
+      DetailsSummary,
+      DetailsContent,
+      Image.configure({
+        HTMLAttributes: { class: "simple-editor-image" },
+        resize: {
+          enabled: true,
+          directions: ["top", "bottom", "left", "right"],
+          minWidth: 50,
+          minHeight: 50,
+          alwaysPreserveAspectRatio: true,
+        },
+      }),
       TableOfContents.configure({
         anchorTypes: ["heading"],
         getId: (content) => sectionSlug(content),
