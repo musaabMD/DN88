@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { ListTree, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,48 +20,98 @@ interface FloatingTocProps {
   className?: string;
 }
 
+function collectHeadings(
+  root: ParentNode,
+  headingSelector: string
+): TocItem[] {
+  const headings = Array.from(
+    root.querySelectorAll<HTMLHeadingElement>(headingSelector)
+  );
+
+  return headings.map((el, i) => {
+    if (!el.id) {
+      el.id =
+        el.textContent
+          ?.trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, "")
+          .replace(/\s+/g, "-") || `section-${i}`;
+    }
+    return {
+      id: el.id,
+      text: el.textContent?.trim() ?? "",
+      level: Number(el.tagName.charAt(1)),
+    };
+  });
+}
+
 export function FloatingToc({
   containerSelector,
   headingSelector = "h2, h3",
   className,
 }: FloatingTocProps) {
+  const [mounted, setMounted] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const [items, setItems] = React.useState<TocItem[]>([]);
   const [activeId, setActiveId] = React.useState<string>("");
   const [pageTitle, setPageTitle] = React.useState<string>("");
   const [progress, setProgress] = React.useState(0);
   const panelRef = React.useRef<HTMLDivElement>(null);
+  const navRef = React.useRef<HTMLElement>(null);
+  const activeItemRef = React.useRef<HTMLLIElement>(null);
+
+  const getRoot = React.useCallback((): ParentNode => {
+    if (containerSelector) {
+      return document.querySelector(containerSelector) ?? document;
+    }
+    return document;
+  }, [containerSelector]);
+
+  const refreshItems = React.useCallback(() => {
+    const root = getRoot();
+    const h1 = root.querySelector("h1");
+    setPageTitle(h1?.textContent?.trim() || document.title || "Contents");
+    setItems(collectHeadings(root, headingSelector));
+  }, [getRoot, headingSelector]);
 
   React.useEffect(() => {
-    const root: ParentNode = containerSelector
-      ? (document.querySelector(containerSelector) ?? document)
-      : document;
+    setMounted(true);
+  }, []);
 
-    const h1 = document.querySelector("h1");
-    setPageTitle(h1?.textContent?.trim() || document.title || "Contents");
+  // Initial scan + watch for late-rendered TipTap headings on mobile.
+  React.useEffect(() => {
+    refreshItems();
 
-    const headings = Array.from(
-      root.querySelectorAll<HTMLHeadingElement>(headingSelector)
-    );
+    const root = containerSelector
+      ? document.querySelector(containerSelector)
+      : null;
 
-    const collected: TocItem[] = headings.map((el, i) => {
-      if (!el.id) {
-        el.id =
-          el.textContent
-            ?.trim()
-            .toLowerCase()
-            .replace(/[^a-z0-9\s-]/g, "")
-            .replace(/\s+/g, "-") || `section-${i}`;
-      }
-      return {
-        id: el.id,
-        text: el.textContent?.trim() ?? "",
-        level: Number(el.tagName.charAt(1)),
-      };
+    if (!(root instanceof Element)) return;
+
+    const observer = new MutationObserver(() => {
+      refreshItems();
     });
 
-    setItems(collected);
-  }, [containerSelector, headingSelector]);
+    observer.observe(root, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+
+    return () => observer.disconnect();
+  }, [containerSelector, refreshItems]);
+
+  // Re-scan when panel opens so mobile always has the full list.
+  React.useEffect(() => {
+    if (!open) return;
+    refreshItems();
+  }, [open, refreshItems]);
+
+  // Keep active section visible inside the scrollable nav on mobile.
+  React.useEffect(() => {
+    if (!open || !activeItemRef.current || !navRef.current) return;
+    activeItemRef.current.scrollIntoView({ block: "nearest" });
+  }, [open, activeId, items.length]);
 
   React.useEffect(() => {
     if (items.length === 0) return;
@@ -78,8 +129,8 @@ export function FloatingToc({
       },
       {
         root: scrollRoot instanceof Element ? scrollRoot : null,
-        rootMargin: "-80px 0px -70% 0px",
-        threshold: 0,
+        rootMargin: "-80px 0px -55% 0px",
+        threshold: [0, 0.1, 0.5, 1],
       }
     );
 
@@ -150,7 +201,7 @@ export function FloatingToc({
     setOpen(false);
   };
 
-  if (items.length === 0) return null;
+  if (!mounted || items.length === 0) return null;
 
   const R = 22;
   const CIRC = 2 * Math.PI * R;
@@ -161,17 +212,17 @@ export function FloatingToc({
     return { ...item, no: item.level === 2 ? sectionNo : null };
   });
 
-  return (
+  const ui = (
     <div
       ref={panelRef}
       className={cn(
-        "fixed bottom-6 right-6 z-50 flex flex-col items-end",
+        "fixed bottom-4 right-4 z-[60] flex max-h-[calc(100dvh-1rem)] flex-col items-end sm:bottom-6 sm:right-6",
         className
       )}
     >
       <div
         className={cn(
-          "mb-3 w-80 origin-bottom-right overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl transition-all duration-200",
+          "mb-3 flex max-h-[min(24rem,calc(100dvh-6.5rem))] w-[min(20rem,calc(100vw-2rem))] min-h-0 origin-bottom-right flex-col rounded-2xl border border-slate-200 bg-white shadow-xl transition-all duration-200 sm:w-80",
           open
             ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
             : "pointer-events-none translate-y-2 scale-95 opacity-0"
@@ -180,7 +231,7 @@ export function FloatingToc({
         aria-label="Table of contents"
         aria-hidden={!open}
       >
-        <div className="border-b border-slate-100 bg-slate-50/60 px-5 py-4">
+        <div className="shrink-0 border-b border-slate-100 bg-slate-50/60 px-5 py-4">
           <p className="text-[11px] font-medium uppercase tracking-widest text-indigo-500">
             On this page
           </p>
@@ -195,12 +246,19 @@ export function FloatingToc({
           </div>
         </div>
 
-        <nav className="max-h-80 overflow-y-auto py-3 pr-3">
+        <nav
+          ref={navRef}
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-3 pr-3 [-webkit-overflow-scrolling:touch]"
+        >
           <ul className="relative ml-5 border-l border-slate-200">
             {numbered.map((item) => {
               const isActive = item.id === activeId;
               return (
-                <li key={item.id} className="relative">
+                <li
+                  key={item.id}
+                  ref={isActive ? activeItemRef : undefined}
+                  className="relative"
+                >
                   <span
                     className={cn(
                       "absolute -left-[5px] top-1/2 h-[9px] w-[9px] -translate-y-1/2 rounded-full border-2 border-white transition-colors",
@@ -233,7 +291,7 @@ export function FloatingToc({
                     )}
                     <span
                       className={cn(
-                        "truncate text-sm",
+                        "text-sm leading-snug",
                         isActive ? "font-medium" : "",
                         item.level === 3 && "text-[13px]"
                       )}
@@ -253,7 +311,7 @@ export function FloatingToc({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-label={open ? "Close table of contents" : "Open table of contents"}
-        className="group relative inline-flex h-14 w-14 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-lg transition-all hover:scale-105 hover:text-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 active:scale-95"
+        className="group relative inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-lg transition-all hover:scale-105 hover:text-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 active:scale-95"
       >
         <svg
           className="absolute inset-0 h-full w-full -rotate-90"
@@ -292,4 +350,6 @@ export function FloatingToc({
       </button>
     </div>
   );
+
+  return createPortal(ui, document.body);
 }
