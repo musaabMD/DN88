@@ -215,7 +215,6 @@ export function LibraryTiptapEditor({
               className="simple-editor-canvas"
               style={{
                 transform: `scale(${zoom / 100})`,
-                transformOrigin: "top center",
               }}
             >
               {renderStudyContent()}

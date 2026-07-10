@@ -159,6 +159,8 @@ body {
   display: flex;
   flex-direction: column;
   height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
   background: rgb(255 255 255);
   color: rgb(15 23 42);
   font-family: var(--article-font-sans);
@@ -648,14 +650,18 @@ body {
 .simple-editor-body {
   display: flex;
   flex: 1;
+  flex-direction: column;
   min-height: 0;
   overflow: hidden;
 }
 
 .simple-editor-scroll {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   background: rgb(255 255 255);
 }
 
@@ -664,6 +670,7 @@ body {
   margin: 0 auto;
   padding: 2.5rem 1.25rem 5rem;
   transition: transform 0.15s ease;
+  transform-origin: top center;
 }
 
 @media (min-width: 768px) {
