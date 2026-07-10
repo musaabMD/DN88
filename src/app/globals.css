@@ -1318,3 +1318,149 @@ body {
   outline: 2px solid rgb(199 210 254);
   border-radius: 0.25rem;
 }
+
+/* Article reader — dark mode */
+.dark .simple-editor-page {
+  background: rgb(15 23 42);
+  color: rgb(248 250 252);
+}
+
+.dark .simple-editor-header {
+  background: rgb(15 23 42);
+  border-bottom-color: rgb(30 41 59);
+}
+
+.dark .simple-editor-scroll {
+  background: rgb(15 23 42);
+}
+
+.dark .simple-editor-back {
+  color: rgb(226 232 240);
+}
+
+.dark .simple-editor-back:hover {
+  background: rgb(30 41 59);
+}
+
+.dark .simple-editor-icon-btn {
+  color: rgb(203 213 225);
+}
+
+.dark .simple-editor-icon-btn:hover:not(:disabled) {
+  background: rgb(30 41 59);
+  color: rgb(248 250 252);
+}
+
+.dark .article-header-nav-btn {
+  background: rgb(30 41 59);
+  border-color: rgb(51 65 85);
+  color: rgb(248 250 252);
+}
+
+.dark .article-header-nav-btn:hover,
+.dark .article-header-nav-btn.is-active,
+.dark .article-header-nav-btn.has-selection {
+  background: rgb(51 65 85);
+  border-color: rgb(71 85 105);
+  color: rgb(248 250 252);
+}
+
+.dark .article-header-nav-menu {
+  border-color: rgb(51 65 85);
+  background: rgb(30 41 59);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.35);
+}
+
+.dark .article-header-nav-menu-item {
+  color: rgb(203 213 225);
+}
+
+.dark .article-header-nav-menu-item:hover,
+.dark .article-header-nav-menu-item.is-active {
+  background: rgb(51 65 85);
+  color: rgb(248 250 252);
+}
+
+.dark .tiptap-heading-menu {
+  border-color: rgb(51 65 85);
+  background: rgb(30 41 59);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+}
+
+.dark .tiptap-heading-menu button:hover {
+  background: rgb(51 65 85);
+}
+
+.dark .tiptap-toolbar-btn {
+  color: rgb(226 232 240);
+}
+
+.dark .tiptap-toolbar-btn:hover:not(:disabled) {
+  background: rgb(51 65 85);
+}
+
+.dark .simple-editor-settings-label {
+  color: rgb(148 163 184);
+}
+
+.dark .simple-editor-settings-zoom-value {
+  color: rgb(248 250 252);
+}
+
+.dark .simple-editor-settings-divider {
+  background: rgb(51 65 85);
+}
+
+.dark .tiptap-zoom-presets button {
+  background: rgb(51 65 85);
+  color: rgb(226 232 240);
+}
+
+.dark .tiptap-zoom-presets button.is-active {
+  background: rgb(71 85 105);
+}
+
+.dark .tiptap-zoom-fit {
+  border-top-color: rgb(51 65 85);
+  color: rgb(226 232 240);
+}
+
+.dark .tiptap.simple-editor-prose {
+  color: rgb(226 232 240);
+}
+
+.dark .tiptap h1,
+.dark .tiptap h2,
+.dark .tiptap h3 {
+  color: rgb(248 250 252);
+}
+
+.dark .tiptap blockquote {
+  border-left-color: rgb(51 65 85);
+  color: rgb(148 163 184);
+}
+
+.dark .tiptap-bubble-menu {
+  border-color: rgb(51 65 85);
+  background: rgb(30 41 59);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+}
+
+.dark .tiptap-bubble-btn {
+  color: rgb(226 232 240);
+}
+
+.dark .tiptap-bubble-btn:hover,
+.dark .tiptap-bubble-btn.is-active {
+  background: rgb(51 65 85);
+  color: rgb(248 250 252);
+}
+
+.dark .tiptap-bubble-divider {
+  background: rgb(51 65 85);
+}
+
+.dark .tiptap-bubble-copy {
+  background: rgb(51 65 85);
+  color: rgb(226 232 240);
+}

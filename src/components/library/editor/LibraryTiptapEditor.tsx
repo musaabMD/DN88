@@ -41,6 +41,7 @@ import {
 } from "@/components/library/editor/wiki-link";
 import { SelectionBubbleMenu } from "@/components/library/editor/selection-bubble-menu";
 import { EditorOverflowMenu } from "@/components/library/editor/editor-overflow-menu";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 function getScrollParent(): HTMLElement | Window {
   return (
@@ -151,6 +152,7 @@ export function LibraryTiptapEditor({
               onZoomChange={setZoom}
               onFitToPage={() => setZoom(ZOOM_DEFAULT)}
             />
+            <ThemeToggle />
             <ArticleHeaderNav
               activeStudyMode={activeStudyMode}
               onStudyModeChange={setActiveStudyMode}
