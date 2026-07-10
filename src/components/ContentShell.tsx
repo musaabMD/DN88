@@ -41,7 +41,15 @@ export function ContentShell({
         onSearchClick={onSearchClick}
         hidden={headerHidden}
       />
-      <main className={CONTENT_SHELL_MAIN}>{children}</main>
+      <main
+        className={
+          headerHidden
+            ? "h-dvh overflow-hidden"
+            : CONTENT_SHELL_MAIN
+        }
+      >
+        {children}
+      </main>
     </div>
   );
 }

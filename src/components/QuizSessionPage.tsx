@@ -8,6 +8,7 @@ import { getSetById } from "@/lib/mock-data";
 import {
   parseQuizSearchParams,
   examTabPath,
+  resultsPath,
   setPath,
   type ContentTab,
 } from "@/lib/routes";
@@ -61,6 +62,7 @@ export function QuizSessionPage({
     <ContentShell
       examId={examId}
       title={set.title}
+      headerHidden={!immersiveTab}
       onBack={() =>
         router.push(
           immersiveTab ? examTabPath(examId, tab) : setPath(examId, tab, setId)
@@ -76,7 +78,7 @@ export function QuizSessionPage({
             immersiveTab ? examTabPath(examId, tab) : setPath(examId, tab, setId)
           )
         }
-        onComplete={() => router.push(examTabPath(examId, tab))}
+        onComplete={() => router.push(resultsPath(examId, tab, setId))}
       />
     </ContentShell>
   );

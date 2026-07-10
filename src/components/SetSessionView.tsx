@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   createInitialChat,
   QuestionChatPanel,
@@ -96,21 +96,30 @@ function SessionNavButton({
 function LessonQuestionView({
   q,
   onAnswer,
+  pickOptionRef,
 }: {
   q: QuestionItem;
   onAnswer: (correct: boolean) => void;
+  pickOptionRef?: React.MutableRefObject<(index: number) => void>;
 }) {
   const [selected, setSelected] = useState<number | null>(null);
   const [answered, setAnswered] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const citations = "citations" in q ? q.citations : [];
 
-  const pickOption = (index: number) => {
-    if (answered) return;
-    setSelected(index);
-    setAnswered(true);
-    onAnswer(index === q.answer);
-  };
+  const pickOption = useCallback(
+    (index: number) => {
+      if (answered) return;
+      setSelected(index);
+      setAnswered(true);
+      onAnswer(index === q.answer);
+    },
+    [answered, onAnswer, q.answer]
+  );
+
+  useEffect(() => {
+    if (pickOptionRef) pickOptionRef.current = pickOption;
+  }, [pickOption, pickOptionRef]);
 
   return (
     <div className="flex-1 flex flex-col">
@@ -247,6 +256,7 @@ function QuestionsSession({
   const [chatOpen, setChatOpen] = useState(false);
   const [pauseOpen, setPauseOpen] = useState(false);
   const [questionChats, setQuestionChats] = useState<Record<string, ChatMessage[]>>({});
+  const pickOptionRef = useRef<(index: number) => void>(() => {});
 
   const idx = Math.min(page, total) - 1;
   const remaining = Math.max(total - page, 0);
@@ -302,6 +312,84 @@ function QuestionsSession({
     setChatOpen(true);
   };
 
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (pauseOpen || reportOpen || chatOpen) return;
+      const target = e.target;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement
+      ) {
+        return;
+      }
+
+      const q = sessionItems[idx];
+      if (!q) return;
+
+      const optionIndex = Number.parseInt(e.key, 10) - 1;
+      if (
+        e.key >= "1" &&
+        e.key <= String(q.options.length) &&
+        optionIndex >= 0 &&
+        optionIndex < q.options.length &&
+        !currentAnswered
+      ) {
+        e.preventDefault();
+        pickOptionRef.current(optionIndex);
+        return;
+      }
+
+      if (e.key === "Enter" && currentAnswered) {
+        e.preventDefault();
+        setChatOpen(false);
+        if (page < total) {
+          setPage(page + 1);
+          setAnsweredPage(null);
+        } else {
+          setPauseOpen(false);
+          onComplete();
+        }
+        return;
+      }
+
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        setChatOpen(false);
+        if (page > 1) {
+          setPage(page - 1);
+          setAnsweredPage(null);
+        }
+        return;
+      }
+
+      if (e.key === "ArrowRight" && currentAnswered) {
+        e.preventDefault();
+        setChatOpen(false);
+        if (page < total) {
+          setPage(page + 1);
+          setAnsweredPage(null);
+        } else {
+          setPauseOpen(false);
+          onComplete();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [
+    chatOpen,
+    currentAnswered,
+    idx,
+    onComplete,
+    page,
+    pauseOpen,
+    reportOpen,
+    sessionItems,
+    total,
+  ]);
+
   const renderSlide = () => {
     const q = sessionItems[idx];
     if (!q) return null;
@@ -309,6 +397,7 @@ function QuestionsSession({
       <LessonQuestionView
         key={`${q.id}-${page}`}
         q={q}
+        pickOptionRef={pickOptionRef}
         onAnswer={() => {
           setAnsweredPage(page);
         }}
@@ -317,50 +406,47 @@ function QuestionsSession({
   };
 
   return (
-    <div className="flex flex-col">
-      <div
-        className="flex items-center gap-3 px-4 h-14 flex-shrink-0 bg-white"
+    <div className="flex h-full flex-col bg-white">
+      <header
+        className="flex-shrink-0 bg-white"
         style={{ borderBottom: "2px solid #e2e8f0" }}
       >
-        <button
-          onClick={() => setPauseOpen(true)}
-          aria-label="Close session"
-          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ color: "#94a3b8" }}
-        >
-          <X size={22} strokeWidth={2.5} />
-        </button>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{
-              background: "linear-gradient(135deg,#334155,#1e293b)",
-              boxShadow: "0 2px 0 #1e293b",
-            }}
+        <div className="flex h-14 items-center gap-3 px-4">
+          <button
+            onClick={() => setPauseOpen(true)}
+            aria-label="Close session"
+            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-50"
           >
-            <span className="text-white font-black text-sm leading-none">D</span>
-          </div>
+            <X size={22} strokeWidth={2.5} />
+          </button>
+
+          <h1 className="min-w-0 flex-1 truncate text-sm font-bold text-slate-800 md:text-base">
+            {set.title}
+          </h1>
+
+          <span className="shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-extrabold tabular-nums text-slate-400">
+            {page} / {total}
+          </span>
         </div>
 
         <div
-          className="flex-1 h-3 rounded-full overflow-hidden min-w-0"
+          className="h-1.5 w-full overflow-hidden"
           style={{ background: "#e2e8f0" }}
         >
           <div
-            className="h-full rounded-full transition-all duration-300"
+            className="h-full transition-all duration-300"
             style={{ width: `${progressPct}%`, background: "#334155" }}
           />
         </div>
-      </div>
+      </header>
 
-      <div className="flex-1 overflow-y-auto flex flex-col min-h-0">
-        <div className="max-w-3xl mx-auto w-full px-4 py-6 min-h-full flex flex-col flex-1">
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col px-4 py-6">
           {renderSlide()}
         </div>
       </div>
 
-      <div
+      <footer
         className="flex-shrink-0 border-t border-slate-200 bg-white px-4 py-3"
         style={{ borderTopWidth: "2px" }}
       >
@@ -382,7 +468,7 @@ function QuestionsSession({
             </SessionNavButton>
           </div>
 
-          <span className="shrink-0 rounded-lg border border-[#E5E5E5] bg-[#F7F7F7] px-2.5 py-1 text-xs font-extrabold tabular-nums text-[#AFAFAF]">
+          <span className="sr-only">
             {page} / {total}
           </span>
 
@@ -404,14 +490,14 @@ function QuestionsSession({
             <SessionNavButton
               onClick={goNext}
               disabled={!currentAnswered}
-              ariaLabel="Next question"
+              ariaLabel={page >= total ? "Finish session" : "Next question"}
               variant="primary"
             >
               <ChevronRight size={20} strokeWidth={2.5} />
             </SessionNavButton>
           </div>
         </div>
-      </div>
+      </footer>
 
       <SessionPauseModal
         open={pauseOpen}
