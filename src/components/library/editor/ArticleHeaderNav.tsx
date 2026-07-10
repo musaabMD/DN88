@@ -34,7 +34,7 @@ const VIEW_MENU_ITEMS: Array<{
   { id: "read", label: "Read", icon: FileText, studyMode: null },
   { id: "practice", label: "Practice", icon: BookOpen, studyMode: "questions" },
   { id: "hy", label: "HY", icon: Zap, studyMode: "hy" },
-  { id: "exam", label: "Exam", icon: ClipboardList, studyMode: "presentation" },
+  { id: "exam", label: "Exam", icon: ClipboardList, studyMode: "exam" },
   { id: "flashcards", label: "Flashcards", icon: CreditCard, studyMode: "flashcards" },
   { id: "round", label: "Round", icon: CircleDot, studyMode: "round" },
   { id: "qa", label: "QA", icon: MessageCircleQuestion, studyMode: "qa" },

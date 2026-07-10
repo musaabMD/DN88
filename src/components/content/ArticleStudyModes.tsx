@@ -17,6 +17,7 @@ export type StudyModeFilter =
   | "flashcards"
   | "questions"
   | "presentation"
+  | "exam"
   | "lastmin"
   | "er"
   | "hy"

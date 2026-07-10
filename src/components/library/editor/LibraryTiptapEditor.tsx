@@ -43,6 +43,14 @@ import {
 import { SelectionBubbleMenu } from "@/components/library/editor/selection-bubble-menu";
 import { EditorOverflowMenu } from "@/components/library/editor/editor-overflow-menu";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import {
+  ArticleExamView,
+  ArticleFlashcardsView,
+  ArticleHYView,
+  ArticlePracticeView,
+  ArticleQAView,
+  ArticleRoundView,
+} from "@/components/library/editor/ArticleStudyViews";
 
 function getScrollParent(): HTMLElement | Window {
   return (
@@ -139,13 +147,44 @@ export function LibraryTiptapEditor({
   }, [activeStudyMode]);
 
   const isPresentation = activeStudyMode === "presentation";
+  const isReadMode = activeStudyMode === null;
 
   if (!editor) return null;
+
+  function renderStudyContent() {
+    switch (activeStudyMode) {
+      case "questions":
+        return <ArticlePracticeView article={article} />;
+      case "hy":
+        return <ArticleHYView article={article} />;
+      case "exam":
+        return <ArticleExamView article={article} />;
+      case "flashcards":
+        return <ArticleFlashcardsView article={article} />;
+      case "round":
+        return <ArticleRoundView article={article} />;
+      case "qa":
+        return <ArticleQAView article={article} />;
+      case "presentation":
+        return (
+          <>
+            <ArticlePresentationHero
+              title={article.title}
+              subject={article.subject}
+              readMinutes={article.readMinutes}
+            />
+            <Tiptap.Content />
+          </>
+        );
+      default:
+        return <Tiptap.Content />;
+    }
+  }
 
   return (
     <Tiptap editor={editor}>
       <div
-        className={`simple-editor-page${isPresentation ? " simple-editor-page--presentation" : ""}`}
+        className={`simple-editor-page${isPresentation ? " simple-editor-page--presentation" : ""}${!isReadMode && !isPresentation ? " simple-editor-page--study" : ""}`}
       >
         <header className="simple-editor-header">
           <div className="simple-editor-header-start">
@@ -187,21 +226,14 @@ export function LibraryTiptapEditor({
                 transformOrigin: "top center",
               }}
             >
-              {isPresentation ? (
-                <ArticlePresentationHero
-                  title={article.title}
-                  subject={article.subject}
-                  readMinutes={article.readMinutes}
-                />
-              ) : null}
-              <Tiptap.Content />
+              {renderStudyContent()}
             </div>
           </div>
         </div>
 
-        <SelectionBubbleMenu editor={editor} />
-        <WikiLinkEditorOverlay editor={editor} />
-        {!isPresentation ? (
+        {isReadMode ? <SelectionBubbleMenu editor={editor} /> : null}
+        {isReadMode ? <WikiLinkEditorOverlay editor={editor} /> : null}
+        {isReadMode ? (
           <FloatingToc containerSelector=".simple-editor-scroll" />
         ) : null}
       </div>
