@@ -22,7 +22,6 @@ import {
   LIBRARY_PATH,
   articlePath,
   specialtyPath,
-  topicPath,
 } from "@/lib/routes";
 import {
   getTopicsForSpecialty,
@@ -97,7 +96,9 @@ export function SpecialtyPageClient({
 
 function SpecialtyTopicRow({ topic }: { topic: SpecialtyTopic }) {
   const article = getLibraryArticleById(topic.id);
-  const href = article ? articlePath(article.id) : topicPath(topic.id);
+  const href = article
+    ? articlePath(article.id)
+    : specialtyPath(specialtySlug(topic.specialty));
   const { bookmarked, toggleBookmark } = useBookmark(
     () => isTopicBookmarked(topic.id),
     () => toggleTopicBookmark(topic.id),

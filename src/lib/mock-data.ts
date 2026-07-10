@@ -61,6 +61,11 @@ export function getAllArticleStaticParams(): Array<{
   }));
 }
 
+/** Only pre-render topic routes that have a published article (Cloudflare Pages file limit). */
+export function getPublishedTopicStaticParams(): Array<{ topicId: string }> {
+  return LIBRARY_ARTICLES.map((article) => ({ topicId: article.id }));
+}
+
 export type QuizSetScreenData = {
   title: string;
   category: string;
