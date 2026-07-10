@@ -1,6 +1,6 @@
 # Archived library editors
 
-Per-section Tiptap editors with Docx / Notion / Simple / Agent mode switcher.
-Replaced by a single-page `LibraryAgentEditor` (Tiptap Agent layout).
+Previous custom implementations (per-section editors, Agent sidebar, custom toolbars).
+Replaced by official Tiptap v3 pattern: `Tiptap` provider, fixed menu, `BubbleMenu`, `.tiptap` styling.
 
-Do not import from this folder in production code.
+See `LibraryTiptapEditor.tsx`.
