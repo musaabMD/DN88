@@ -70,8 +70,20 @@ jobs:
         run: |
           printf '%s' "$CLERK_SECRET_KEY" | npx wrangler secret put CLERK_SECRET_KEY -c workers/dn88/wrangler.jsonc
           printf '%s' "$CLERK_PUBLISHABLE_KEY" | npx wrangler secret put CLERK_PUBLISHABLE_KEY -c workers/dn88/wrangler.jsonc
+          if [ -n "$STRIPE_SECRET_KEY" ]; then
+            printf '%s' "$STRIPE_SECRET_KEY" | npx wrangler secret put STRIPE_SECRET_KEY -c workers/dn88/wrangler.jsonc
+          fi
+          if [ -n "$STRIPE_PRICE_MONTHLY" ]; then
+            printf '%s' "$STRIPE_PRICE_MONTHLY" | npx wrangler secret put STRIPE_PRICE_MONTHLY -c workers/dn88/wrangler.jsonc
+          fi
+          if [ -n "$STRIPE_PRICE_YEARLY" ]; then
+            printf '%s' "$STRIPE_PRICE_YEARLY" | npx wrangler secret put STRIPE_PRICE_YEARLY -c workers/dn88/wrangler.jsonc
+          fi
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_PRICE_MONTHLY: ${{ secrets.STRIPE_PRICE_MONTHLY }}
+          STRIPE_PRICE_YEARLY: ${{ secrets.STRIPE_PRICE_YEARLY }}
