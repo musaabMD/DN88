@@ -161,6 +161,26 @@ export function LibraryTiptapEditor({
   }, [article, editor]);
 
   useEffect(() => {
+    const root = scrollRef.current;
+    if (!root) return;
+
+    const resetScroll = () => {
+      root.scrollTop = 0;
+    };
+
+    resetScroll();
+    const afterPaint = window.requestAnimationFrame(resetScroll);
+    const afterContent = window.setTimeout(resetScroll, 150);
+
+    setActiveStudyMode(null);
+
+    return () => {
+      window.cancelAnimationFrame(afterPaint);
+      window.clearTimeout(afterContent);
+    };
+  }, [article.id]);
+
+  useEffect(() => {
     if (!editor) return;
     if (!getGlossaryEnabled()) setGlossaryDecorations(editor, false);
   }, [editor]);
@@ -245,7 +265,7 @@ export function LibraryTiptapEditor({
           </div>
         </header>
 
-        {isReadMode ? <ReaderProgress articleId={article.id} /> : null}
+        {isReadMode ? <ReaderProgress /> : null}
 
         <div className="simple-editor-body">
           <div
