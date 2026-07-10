@@ -13,7 +13,7 @@ export function LibraryArticleClient({ articleId }: { articleId: string }) {
 
   if (!article) {
     return (
-      <ContentShell title="Article not found" onBack={backToLibrary} showLibrary>
+      <ContentShell title="Article not found" onBack={backToLibrary} minimal>
         <div className="py-16 text-center">
           <p className="mb-2 font-bold text-slate-800">Article not found</p>
           <button
@@ -28,7 +28,7 @@ export function LibraryArticleClient({ articleId }: { articleId: string }) {
   }
 
   return (
-    <ContentShell title={article.title} onBack={backToLibrary} showLibrary>
+    <ContentShell onBack={backToLibrary} minimal>
       <LibraryArticle article={article} />
     </ContentShell>
   );
