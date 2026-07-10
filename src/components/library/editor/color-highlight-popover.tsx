@@ -1,22 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Highlighter } from "lucide-react";
 import { useTiptap, useTiptapState } from "@tiptap/react";
+import {
+  getHighlightColors,
+  HIGHLIGHT_COLORS,
+} from "@/components/library/editor/highlight-colors";
+import { readThemeFromDom } from "@/lib/theme";
 
-export const HIGHLIGHT_COLORS = [
-  { label: "Yellow", value: "#fef08a" },
-  { label: "Green", value: "#bbf7d0" },
-  { label: "Blue", value: "#bae6fd" },
-  { label: "Purple", value: "#e9d5ff" },
-  { label: "Pink", value: "#fbcfe8" },
-  { label: "Orange", value: "#fed7aa" },
-] as const;
+export { HIGHLIGHT_COLORS };
 
 /** Color highlight popover — https://tiptap.dev/docs/ui-components/components/color-highlight-popover */
 export function ColorHighlightPopover() {
   const { editor } = useTiptap();
   const [open, setOpen] = useState(false);
+  const [theme, setTheme] = useState(readThemeFromDom);
+
+  useEffect(() => {
+    setTheme(readThemeFromDom());
+    const observer = new MutationObserver(() => setTheme(readThemeFromDom()));
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  const swatches = getHighlightColors(theme);
 
   const activeColor = useTiptapState(({ editor: ed }) => {
     const attrs = ed.getAttributes("highlight");
@@ -51,7 +62,7 @@ export function ColorHighlightPopover() {
         <div className="tiptap-highlight-popover">
           <p className="tiptap-popover-label">Highlight</p>
           <div className="tiptap-highlight-swatches">
-            {HIGHLIGHT_COLORS.map((color) => (
+            {swatches.map((color) => (
               <button
                 key={color.value}
                 type="button"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Editor } from "@tiptap/core";
 import { BubbleMenu } from "@tiptap/react/menus";
 import {
@@ -11,9 +11,10 @@ import {
 } from "lucide-react";
 import type { PageSearchItem } from "@/lib/pages";
 import { buildInternalLinkAttrs } from "@/lib/pages";
-import { HIGHLIGHT_COLORS } from "@/components/library/editor/color-highlight-popover";
+import { getHighlightColors } from "@/components/library/editor/highlight-colors";
 import { WikiLinkPicker } from "@/components/library/editor/wiki-link/wiki-link-picker";
 import { setInternalLinkOnSelection } from "@/components/library/editor/wiki-link/wiki-link-commands";
+import { readThemeFromDom } from "@/lib/theme";
 
 function BubbleBtn({
   active,
@@ -42,6 +43,19 @@ function BubbleBtn({
 /** Formatting controls shown only when text is selected. */
 export function SelectionBubbleMenu({ editor }: { editor: Editor }) {
   const [wikiPickerOpen, setWikiPickerOpen] = useState(false);
+  const [theme, setTheme] = useState(readThemeFromDom);
+
+  useEffect(() => {
+    setTheme(readThemeFromDom());
+    const observer = new MutationObserver(() => setTheme(readThemeFromDom()));
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  const highlightColors = getHighlightColors(theme);
 
   const linkToPage = (item: PageSearchItem) => {
     const attrs = item.exists
@@ -85,7 +99,7 @@ export function SelectionBubbleMenu({ editor }: { editor: Editor }) {
 
         <span className="tiptap-bubble-divider" aria-hidden />
 
-        {HIGHLIGHT_COLORS.slice(0, 4).map((color) => (
+        {highlightColors.slice(0, 4).map((color) => (
           <button
             key={color.value}
             type="button"

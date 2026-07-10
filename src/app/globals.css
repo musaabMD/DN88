@@ -101,19 +101,19 @@ body {
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  --background: oklch(0 0 0);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
+  --card: oklch(0.12 0 0);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+  --popover: oklch(0.12 0 0);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
+  --primary-foreground: oklch(0.12 0 0);
+  --secondary: oklch(0.18 0 0);
   --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
+  --muted: oklch(0.18 0 0);
+  --muted-foreground: oklch(0.65 0 0);
+  --accent: oklch(0.18 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
@@ -124,11 +124,11 @@ body {
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
+  --sidebar: oklch(0.12 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-primary: oklch(0.85 0 0);
+  --sidebar-primary-foreground: oklch(0.12 0 0);
+  --sidebar-accent: oklch(0.18 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
@@ -660,6 +660,29 @@ body {
   cursor: pointer;
 }
 
+.dark .tiptap-highlight-popover {
+  border-color: rgb(255 255 255 / 0.12);
+  background: rgb(18 18 18);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.45);
+}
+
+.dark .tiptap-popover-label {
+  color: rgb(160 160 160);
+}
+
+.dark .tiptap-highlight-swatches button {
+  border-color: rgb(255 255 255 / 0.15);
+}
+
+.dark .tiptap-highlight-swatches button.is-active {
+  outline-color: rgb(220 220 220);
+}
+
+.dark .tiptap-highlight-remove {
+  background: rgb(32 32 32);
+  color: rgb(220 220 220);
+}
+
 .simple-editor-body {
   display: flex;
   flex: 1;
@@ -1017,6 +1040,8 @@ body {
 .tiptap mark {
   border-radius: 0.125rem;
   padding: 0.05em 0.125rem;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 .tiptap hr {
@@ -1079,6 +1104,15 @@ body {
 .tiptap [data-type="details"].is-open,
 .tiptap details[open] {
   background: rgb(255 255 255);
+}
+
+.dark .simple-editor-page .tiptap [data-type="details"].is-open,
+.dark .simple-editor-page .tiptap details[open] {
+  background: rgb(18 18 18);
+}
+
+.dark .simple-editor-page .tiptap [data-type="details"] > button:hover {
+  background: rgb(32 32 32);
 }
 
 .tiptap [data-type="details"] > button {
@@ -1288,9 +1322,9 @@ body {
 }
 
 .dark .wiki-link-preview {
-  background: rgb(30 41 59);
-  border-color: rgb(255 255 255 / 0.13);
-  box-shadow: 0 12px 28px rgb(0 0 0 / 0.45);
+  background: rgb(18 18 18);
+  border-color: rgb(255 255 255 / 0.12);
+  box-shadow: 0 12px 28px rgb(0 0 0 / 0.55);
 }
 
 /* ============================================================
@@ -1374,9 +1408,9 @@ body {
 }
 
 .dark .reader-anchor-btn {
-  background: rgb(30 41 59);
-  border-color: rgb(255 255 255 / 0.13);
-  color: rgb(148 163 184);
+  background: rgb(18 18 18);
+  border-color: rgb(255 255 255 / 0.12);
+  color: rgb(160 160 160);
 }
 
 /* Image lightbox */
@@ -1390,7 +1424,7 @@ body {
   justify-content: center;
   gap: 1rem;
   padding: 2rem;
-  background: rgb(15 23 42 / 0.82);
+  background: rgb(0 0 0 / 0.88);
   backdrop-filter: blur(4px);
   animation: simple-editor-fade-in 0.15s ease;
   cursor: zoom-out;
@@ -1627,14 +1661,14 @@ body {
 
 .dark .reader-highlights-fab,
 .dark .reader-highlights-panel {
-  background: rgb(30 41 59);
-  border-color: rgb(255 255 255 / 0.13);
-  color: rgb(226 232 240);
+  background: rgb(18 18 18);
+  border-color: rgb(255 255 255 / 0.12);
+  color: rgb(220 220 220);
 }
 
 .dark .reader-highlights-title,
 .dark .reader-highlights-text {
-  color: rgb(226 232 240);
+  color: rgb(220 220 220);
 }
 
 .dark .reader-highlights-quote {
@@ -1642,9 +1676,9 @@ body {
 }
 
 .dark .reader-highlights-copy {
-  background: rgb(30 41 59);
-  border-color: rgb(255 255 255 / 0.13);
-  color: rgb(148 163 184);
+  background: rgb(18 18 18);
+  border-color: rgb(255 255 255 / 0.12);
+  color: rgb(160 160 160);
 }
 
 /* End-of-article footer */
@@ -1790,9 +1824,9 @@ body {
 
 .dark .reader-study-btn,
 .dark .reader-related-chip {
-  background: rgb(30 41 59);
-  border-color: rgb(255 255 255 / 0.13);
-  color: rgb(226 232 240);
+  background: rgb(18 18 18);
+  border-color: rgb(255 255 255 / 0.12);
+  color: rgb(220 220 220);
 }
 
 /* Settings menu — glossary toggle */
@@ -1847,15 +1881,15 @@ body {
 }
 
 .dark .simple-editor-settings-toggle {
-  border-top-color: rgb(51 65 85);
+  border-top-color: rgb(255 255 255 / 0.12);
 }
 
 .dark .simple-editor-settings-toggle-label {
-  color: rgb(203 213 225);
+  color: rgb(190 190 190);
 }
 
 .dark .simple-editor-switch {
-  background: rgb(71 85 105);
+  background: rgb(64 64 64);
 }
 
 .dark .simple-editor-switch.is-on {
@@ -2078,158 +2112,190 @@ body {
   border-radius: 0.25rem;
 }
 
-/* Article reader — dark mode (Notion-style warm-neutral tokens) */
+/* Article reader — dark mode (true black, neutral grays) */
 .dark .simple-editor-page {
-  --article-text: rgb(235 235 235);
-  --article-text-muted: rgb(155 155 155);
-  --article-border: rgb(255 255 255 / 0.13);
-  --article-code-bg: rgb(255 255 255 / 0.09);
-  --article-code-text: rgb(255 138 128);
-  --article-pre-bg: rgb(255 255 255 / 0.055);
-  --article-link-underline: rgb(255 255 255 / 0.4);
+  --article-dark-bg: rgb(0 0 0);
+  --article-dark-surface: rgb(18 18 18);
+  --article-dark-surface-hover: rgb(32 32 32);
+  --article-dark-border: rgb(255 255 255 / 0.12);
+  --article-dark-text: rgb(235 235 235);
+  --article-dark-text-muted: rgb(155 155 155);
 
-  background: rgb(15 23 42);
+  --article-text: var(--article-dark-text);
+  --article-text-muted: var(--article-dark-text-muted);
+  --article-border: var(--article-dark-border);
+  --article-code-bg: rgb(255 255 255 / 0.08);
+  --article-code-text: rgb(255 138 128);
+  --article-pre-bg: rgb(255 255 255 / 0.05);
+  --article-link-underline: rgb(255 255 255 / 0.35);
+
+  background: var(--article-dark-bg);
   color: var(--article-text);
 }
 
 .dark .simple-editor-header {
-  background: rgb(15 23 42);
+  background: var(--article-dark-bg);
   border-bottom: none;
 }
 
 .dark .simple-editor-scroll {
-  background: rgb(15 23 42);
+  background: var(--article-dark-bg);
 }
 
 .dark .simple-editor-back {
-  color: rgb(226 232 240);
+  color: rgb(220 220 220);
 }
 
 .dark .simple-editor-back:hover {
-  background: rgb(30 41 59);
+  background: var(--article-dark-surface-hover);
 }
 
 .dark .simple-editor-icon-btn {
-  color: rgb(203 213 225);
+  color: rgb(190 190 190);
 }
 
 .dark .simple-editor-icon-btn:hover:not(:disabled) {
-  background: rgb(30 41 59);
-  color: rgb(248 250 252);
+  background: var(--article-dark-surface-hover);
+  color: rgb(245 245 245);
 }
 
 .dark .article-header-nav-btn {
-  background: rgb(30 41 59);
-  border-color: rgb(51 65 85);
-  color: rgb(248 250 252);
+  background: var(--article-dark-surface);
+  border-color: var(--article-dark-border);
+  color: rgb(245 245 245);
 }
 
 .dark .article-header-nav-btn:hover,
 .dark .article-header-nav-btn.is-active,
 .dark .article-header-nav-btn.has-selection {
-  background: rgb(51 65 85);
-  border-color: rgb(71 85 105);
-  color: rgb(248 250 252);
+  background: var(--article-dark-surface-hover);
+  border-color: rgb(255 255 255 / 0.2);
+  color: rgb(255 255 255);
 }
 
 .dark .article-header-nav-menu {
-  border-color: rgb(51 65 85);
-  background: rgb(30 41 59);
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.35);
+  border-color: var(--article-dark-border);
+  background: var(--article-dark-surface);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.55);
 }
 
 .dark .article-header-nav-menu-item {
-  color: rgb(203 213 225);
+  color: rgb(190 190 190);
 }
 
 .dark .article-header-nav-menu-item:hover,
 .dark .article-header-nav-menu-item.is-active {
-  background: rgb(51 65 85);
-  color: rgb(248 250 252);
+  background: var(--article-dark-surface-hover);
+  color: rgb(255 255 255);
 }
 
 .dark .tiptap-heading-menu {
-  border-color: rgb(51 65 85);
-  background: rgb(30 41 59);
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+  border-color: var(--article-dark-border);
+  background: var(--article-dark-surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.45);
 }
 
 .dark .tiptap-heading-menu button:hover {
-  background: rgb(51 65 85);
+  background: var(--article-dark-surface-hover);
 }
 
 .dark .tiptap-toolbar-btn {
-  color: rgb(226 232 240);
+  color: rgb(220 220 220);
 }
 
 .dark .tiptap-toolbar-btn:hover:not(:disabled) {
-  background: rgb(51 65 85);
+  background: var(--article-dark-surface-hover);
 }
 
 .dark .simple-editor-settings-label {
-  color: rgb(148 163 184);
+  color: rgb(160 160 160);
 }
 
 .dark .simple-editor-settings-zoom-value {
-  color: rgb(248 250 252);
+  color: rgb(245 245 245);
 }
 
 .dark .simple-editor-settings-divider {
-  background: rgb(51 65 85);
+  background: var(--article-dark-border);
 }
 
 .dark .tiptap-zoom-presets button {
-  background: rgb(51 65 85);
-  color: rgb(226 232 240);
+  background: var(--article-dark-surface-hover);
+  color: rgb(220 220 220);
 }
 
 .dark .tiptap-zoom-presets button.is-active {
-  background: rgb(71 85 105);
+  background: rgb(48 48 48);
 }
 
 .dark .tiptap-zoom-fit {
-  border-top-color: rgb(51 65 85);
-  color: rgb(226 232 240);
+  border-top-color: var(--article-dark-border);
+  color: rgb(220 220 220);
 }
 
 .dark .tiptap-bubble-menu {
-  border-color: rgb(51 65 85);
-  background: rgb(30 41 59);
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+  border-color: var(--article-dark-border);
+  background: var(--article-dark-surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.45);
 }
 
 .dark .tiptap-bubble-btn {
-  color: rgb(226 232 240);
+  color: rgb(220 220 220);
 }
 
 .dark .tiptap-bubble-btn:hover,
 .dark .tiptap-bubble-btn.is-active {
-  background: rgb(51 65 85);
-  color: rgb(248 250 252);
+  background: var(--article-dark-surface-hover);
+  color: rgb(255 255 255);
 }
 
 .dark .tiptap-bubble-divider {
-  background: rgb(51 65 85);
+  background: var(--article-dark-border);
 }
 
 .dark .tiptap-bubble-copy {
-  background: rgb(51 65 85);
-  color: rgb(226 232 240);
+  background: var(--article-dark-surface-hover);
+  color: rgb(220 220 220);
+}
+
+/* Highlights — readable on black background */
+.dark .simple-editor-page .tiptap mark {
+  color: rgb(17 17 17);
+}
+
+/* Legacy light-mode pastel highlights */
+.dark .simple-editor-page .tiptap mark[style*="#fef08a"],
+.dark .simple-editor-page .tiptap mark[style*="#bbf7d0"],
+.dark .simple-editor-page .tiptap mark[style*="#bae6fd"],
+.dark .simple-editor-page .tiptap mark[style*="#e9d5ff"],
+.dark .simple-editor-page .tiptap mark[style*="#fbcfe8"],
+.dark .simple-editor-page .tiptap mark[style*="#fed7aa"] {
+  color: rgb(17 17 17);
+}
+
+/* Dark-mode highlight colors (rich backgrounds, light text) */
+.dark .simple-editor-page .tiptap mark[style*="#854d0e"],
+.dark .simple-editor-page .tiptap mark[style*="#166534"],
+.dark .simple-editor-page .tiptap mark[style*="#1e3a8a"],
+.dark .simple-editor-page .tiptap mark[style*="#6b21a8"],
+.dark .simple-editor-page .tiptap mark[style*="#9d174d"],
+.dark .simple-editor-page .tiptap mark[style*="#9a3412"] {
+  color: rgb(255 252 245);
 }
 
 /* Presentation mode — Drnote title slide + deck-style content */
 .simple-editor-page--presentation .simple-editor-scroll {
-  background: rgb(15 23 42);
+  background: rgb(0 0 0);
 }
 
 .simple-editor-page--presentation .tiptap.simple-editor-prose {
-  color: rgb(226 232 240);
+  color: rgb(220 220 220);
 }
 
 .simple-editor-page--presentation .tiptap h1,
 .simple-editor-page--presentation .tiptap h2,
 .simple-editor-page--presentation .tiptap h3 {
-  color: rgb(248 250 252);
+  color: rgb(245 245 245);
 }
 
 .simple-editor-page--presentation .tiptap h1:first-of-type,
@@ -2275,16 +2341,16 @@ body {
 .simple-editor-page--presentation .tiptap h2 {
   font-size: 1.75rem;
   margin-top: 3.25rem;
-  border-top-color: rgb(51 65 85);
+  border-top-color: rgb(255 255 255 / 0.12);
 }
 
 .simple-editor-page--presentation .tiptap blockquote {
-  border-left-color: rgb(51 65 85);
-  color: rgb(148 163 184);
+  border-left-color: rgb(255 255 255 / 0.12);
+  color: rgb(160 160 160);
 }
 
 .dark .simple-editor-page--presentation .simple-editor-scroll {
-  background: rgb(15 23 42);
+  background: rgb(0 0 0);
 }
 
 /* Article study mode views */
@@ -2869,7 +2935,7 @@ body {
 .dark .article-study-flashcard-text,
 .dark .article-study-question-text,
 .dark .article-study-summary-score {
-  color: rgb(248 250 252);
+  color: rgb(245 245 245);
 }
 
 .dark .article-study-view-desc,
@@ -2878,7 +2944,7 @@ body {
 .dark .article-study-explanation,
 .dark .article-study-round-hint,
 .dark .article-study-empty {
-  color: rgb(148 163 184);
+  color: rgb(160 160 160);
 }
 
 .dark .article-study-hy-banner {
@@ -2888,42 +2954,42 @@ body {
 }
 
 .dark .article-study-section {
-  border-top-color: rgb(51 65 85);
+  border-top-color: rgb(255 255 255 / 0.12);
 }
 
 .dark .article-study-option,
 .dark .article-study-flashcard-face,
 .dark .article-study-qa {
-  border-color: rgb(51 65 85);
-  background: rgb(30 41 59);
-  color: rgb(226 232 240);
+  border-color: rgb(255 255 255 / 0.12);
+  background: rgb(18 18 18);
+  color: rgb(220 220 220);
 }
 
 .dark .article-study-option:hover:not(:disabled) {
-  background: rgb(51 65 85);
+  background: rgb(32 32 32);
 }
 
 .dark .article-study-exam-bar,
 .dark .article-study-qa-form {
-  background: rgb(15 23 42);
-  border-color: rgb(51 65 85);
+  background: rgb(0 0 0);
+  border-color: rgb(255 255 255 / 0.12);
 }
 
 .dark .article-study-qa-form input {
-  border-color: rgb(51 65 85);
-  background: rgb(30 41 59);
-  color: rgb(248 250 252);
+  border-color: rgb(255 255 255 / 0.12);
+  background: rgb(18 18 18);
+  color: rgb(245 245 245);
 }
 
 .dark .article-study-qa-message.is-assistant {
-  background: rgb(30 41 59);
-  color: rgb(226 232 240);
+  background: rgb(18 18 18);
+  color: rgb(220 220 220);
 }
 
 .dark .article-study-secondary-btn {
-  border-color: rgb(51 65 85);
-  background: rgb(30 41 59);
-  color: rgb(226 232 240);
+  border-color: rgb(255 255 255 / 0.12);
+  background: rgb(18 18 18);
+  color: rgb(220 220 220);
 }
 
 @keyframes drnote-slide-in {
