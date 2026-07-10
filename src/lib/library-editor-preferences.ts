@@ -74,20 +74,3 @@ export function getBgTheme(): EditorBgTheme {
 export function setBgTheme(theme: EditorBgTheme): void {
   localStorage.setItem(BG_THEME_KEY, theme);
 }
-
-const PUBLISHED_ARTICLES_KEY = "drnote-library-published-articles";
-
-export function getPublishedArticleIds(): string[] {
-  return readJson<string[]>(PUBLISHED_ARTICLES_KEY, []);
-}
-
-export function isArticlePublished(articleId: string): boolean {
-  return getPublishedArticleIds().includes(articleId);
-}
-
-export function publishArticle(articleId: string): void {
-  const ids = getPublishedArticleIds();
-  if (!ids.includes(articleId)) {
-    writeJson(PUBLISHED_ARTICLES_KEY, [...ids, articleId]);
-  }
-}

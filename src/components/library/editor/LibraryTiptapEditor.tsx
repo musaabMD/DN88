@@ -20,17 +20,14 @@ import {
 import type { TableOfContentData } from "@tiptap/extension-table-of-contents";
 import {
   ArrowLeft,
-  GitMerge,
   List,
   PanelBottom,
   PanelTop,
   Search,
-  Upload,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LibraryArticle } from "@/lib/set-content";
 import { getEditorBgTheme, type EditorBgTheme } from "@/lib/editor-bg-colors";
-import { mergeAnnotationsWithSource } from "@/lib/merge-article-annotations";
 import { DecorationOnly } from "@/components/library/editor/decoration-only";
 import { SectionHeading } from "@/components/library/editor/section-heading";
 import { articleToTiptapContent } from "@/components/library/editor/article-to-tiptap";
@@ -39,8 +36,6 @@ import {
   getBgTheme,
   getChromeVisible,
   getTocVisible,
-  isArticlePublished,
-  publishArticle,
   saveArticleEditorContent,
   setBgTheme,
   setChromeVisible,
@@ -70,8 +65,6 @@ export function LibraryTiptapEditor({
   const [toolbarVisible, setToolbarVisible] = useState(false);
   const [bgTheme, setBgThemeState] = useState<EditorBgTheme>("white");
   const [searchOpen, setSearchOpen] = useState(false);
-  const [published, setPublished] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const theme = getEditorBgTheme(bgTheme);
@@ -80,13 +73,7 @@ export function LibraryTiptapEditor({
     setTocOpen(getTocVisible());
     setToolbarVisible(getChromeVisible());
     setBgThemeState(getBgTheme());
-    setPublished(isArticlePublished(article.id));
   }, [article.id]);
-
-  const showToast = (message: string) => {
-    setToast(message);
-    window.setTimeout(() => setToast(null), 2800);
-  };
 
   const toggleToolbar = () => {
     setToolbarVisible((prev) => {
@@ -215,23 +202,6 @@ export function LibraryTiptapEditor({
     [editor]
   );
 
-  const handleMerge = () => {
-    if (!editor) return;
-    const saved = getArticleEditorContent(article.id);
-    const merged = mergeAnnotationsWithSource(article, saved);
-    editor.commands.setContent(merged);
-    saveArticleEditorContent(article.id, merged);
-    showToast("Merged your highlights with the latest article");
-  };
-
-  const handlePublish = () => {
-    if (!editor) return;
-    saveArticleEditorContent(article.id, editor.getJSON());
-    publishArticle(article.id);
-    setPublished(true);
-    showToast("Published your annotated copy");
-  };
-
   const hasToc = tocAnchors.some((a) => a.originalLevel === 2);
 
   if (!editor) return null;
@@ -287,26 +257,6 @@ export function LibraryTiptapEditor({
           ) : null}
 
           <EditorBgColorPicker theme={bgTheme} onChange={handleBgChange} />
-
-          <button
-            type="button"
-            className="simple-editor-action-btn"
-            onClick={handleMerge}
-            aria-label="Merge annotations"
-            title="Merge"
-          >
-            <GitMerge size={16} strokeWidth={2} />
-          </button>
-
-          <button
-            type="button"
-            className={`simple-editor-action-btn simple-editor-publish-btn ${published ? "is-published" : ""}`}
-            onClick={handlePublish}
-            aria-label="Publish"
-            title={published ? "Published" : "Publish"}
-          >
-            <Upload size={16} strokeWidth={2} />
-          </button>
         </div>
       </header>
 
@@ -391,8 +341,6 @@ export function LibraryTiptapEditor({
           onNavigate={navigateToHeading}
         />
       ) : null}
-
-      {toast ? <div className="simple-editor-toast">{toast}</div> : null}
     </div>
   );
 }
