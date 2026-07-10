@@ -164,7 +164,7 @@ export function LibraryTiptapEditor({
           <div
             ref={scrollRef}
             className="simple-editor-scroll"
-            data-study-mode={activeStudyMode ?? "view"}
+            data-study-mode={activeStudyMode ?? "read"}
           >
             <div
               className="simple-editor-canvas"

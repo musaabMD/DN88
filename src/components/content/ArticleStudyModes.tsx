@@ -2,8 +2,10 @@
 
 import {
   BookOpen,
+  CircleDot,
   CreditCard,
   FileText,
+  MessageCircleQuestion,
   Monitor,
   Stethoscope,
   Timer,
@@ -17,13 +19,17 @@ export type StudyModeFilter =
   | "presentation"
   | "lastmin"
   | "er"
-  | "hy";
+  | "hy"
+  | "round"
+  | "qa";
 
 /** Modes that transform section content in place (not a separate page). */
 export const INLINE_CONTENT_MODES: StudyModeFilter[] = [
   "summary",
   "flashcards",
   "questions",
+  "round",
+  "qa",
 ];
 
 /** Modes that filter which sections appear. */
@@ -42,6 +48,8 @@ export const STUDY_MODE_OPTIONS: Array<{
   { id: "lastmin", shortLabel: "Last Min", icon: Timer, group: "filter" },
   { id: "er", shortLabel: "ER", icon: Stethoscope, group: "filter" },
   { id: "hy", shortLabel: "HY", icon: Zap, group: "filter" },
+  { id: "round", shortLabel: "Round", icon: CircleDot, group: "content" },
+  { id: "qa", shortLabel: "QA", icon: MessageCircleQuestion, group: "content" },
 ];
 
 export function getActiveStudyMode(

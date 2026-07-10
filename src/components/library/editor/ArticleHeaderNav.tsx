@@ -1,49 +1,49 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   BookOpen,
   Check,
+  CircleDot,
   ClipboardList,
   CreditCard,
-  Eye,
+  FileText,
   Glasses,
-  Library,
   Menu,
+  MessageCircleQuestion,
   Zap,
 } from "lucide-react";
 import type { StudyModeFilter } from "@/components/content/ArticleStudyModes";
-import { LIBRARY_PATH } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
 export type ArticleViewMode =
-  | "view"
-  | "library"
-  | "questions"
+  | "read"
+  | "practice"
   | "hy"
   | "exam"
-  | "flashcards";
+  | "flashcards"
+  | "round"
+  | "qa";
 
 const VIEW_MENU_ITEMS: Array<{
   id: ArticleViewMode;
   label: string;
-  icon: typeof Eye;
+  icon: typeof FileText;
   studyMode: StudyModeFilter | null;
-  navigates?: boolean;
 }> = [
-  { id: "view", label: "View", icon: Eye, studyMode: null },
-  { id: "library", label: "Library", icon: Library, studyMode: null, navigates: true },
-  { id: "questions", label: "Questions", icon: BookOpen, studyMode: "questions" },
+  { id: "read", label: "Read", icon: FileText, studyMode: null },
+  { id: "practice", label: "Practice", icon: BookOpen, studyMode: "questions" },
   { id: "hy", label: "HY", icon: Zap, studyMode: "hy" },
   { id: "exam", label: "Exam", icon: ClipboardList, studyMode: "presentation" },
   { id: "flashcards", label: "Flashcards", icon: CreditCard, studyMode: "flashcards" },
+  { id: "round", label: "Round", icon: CircleDot, studyMode: "round" },
+  { id: "qa", label: "QA", icon: MessageCircleQuestion, studyMode: "qa" },
 ];
 
 function viewModeFromStudyMode(studyMode: StudyModeFilter | null): ArticleViewMode {
-  if (!studyMode) return "view";
+  if (!studyMode) return "read";
   const match = VIEW_MENU_ITEMS.find((item) => item.studyMode === studyMode);
-  return match?.id ?? "view";
+  return match?.id ?? "read";
 }
 
 export function ArticleHeaderNav({
@@ -53,7 +53,6 @@ export function ArticleHeaderNav({
   activeStudyMode: StudyModeFilter | null;
   onStudyModeChange: (mode: StudyModeFilter | null) => void;
 }) {
-  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const activeView = viewModeFromStudyMode(activeStudyMode);
@@ -77,14 +76,11 @@ export function ArticleHeaderNav({
   }, [menuOpen]);
 
   const selectView = (item: (typeof VIEW_MENU_ITEMS)[number]) => {
-    if (item.navigates) {
-      router.push(LIBRARY_PATH);
-      setMenuOpen(false);
-      return;
-    }
     onStudyModeChange(item.studyMode);
     setMenuOpen(false);
   };
+
+  const isDefaultReadMode = activeView === "read";
 
   return (
     <div ref={rootRef} className="article-header-nav">
@@ -92,10 +88,10 @@ export function ArticleHeaderNav({
         type="button"
         className={cn(
           "article-header-nav-btn",
-          activeView === "view" && "is-active"
+          isDefaultReadMode && "is-active"
         )}
-        aria-label="View mode"
-        title="View"
+        aria-label="Read mode"
+        title="Read"
         onClick={() => onStudyModeChange(null)}
       >
         <Glasses size={18} strokeWidth={2} />
@@ -107,7 +103,7 @@ export function ArticleHeaderNav({
           className={cn(
             "article-header-nav-btn",
             menuOpen && "is-active",
-            activeView !== "view" && activeView !== "library" && "has-selection"
+            !isDefaultReadMode && "has-selection"
           )}
           aria-label="Change view"
           aria-expanded={menuOpen}
