@@ -1652,9 +1652,6 @@ body {
   margin-top: 3rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--article-border, rgb(55 53 47 / 0.16));
-  display: flex;
-  flex-direction: column;
-  gap: 1.75rem;
   font-family: var(--article-font-sans);
 }
 

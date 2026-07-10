@@ -18,12 +18,10 @@ import {
 } from "@tiptap/extension-table-of-contents";
 import { UniqueID } from "@tiptap/extension-unique-id";
 import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { StudyModeFilter } from "@/components/content/ArticleStudyModes";
 import { FloatingToc } from "@/components/content/FloatingToc";
 import type { LibraryArticle } from "@/lib/set-content";
-import { articlePath } from "@/lib/routes";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { ArticleHeaderNav } from "@/components/library/editor/ArticleHeaderNav";
 import { DrNoteSlides } from "@/components/library/editor/DrNoteSlides";
@@ -82,7 +80,6 @@ export function LibraryTiptapEditor({
   article: LibraryArticle;
   onBack: () => void;
 }) {
-  const router = useRouter();
   const [zoom, setZoom] = useState<ZoomLevel>(ZOOM_DEFAULT);
   const [activeStudyMode, setActiveStudyMode] = useState<StudyModeFilter | null>(
     null
@@ -174,8 +171,6 @@ export function LibraryTiptapEditor({
     if (editor) setGlossaryDecorations(editor, enabled);
   };
 
-  const openArticle = (id: string) => router.push(articlePath(id));
-
   const slideDeck = useMemo(() => articleToSlideDeck(article), [article]);
 
   const isPresentation = activeStudyMode === "presentation";
@@ -210,11 +205,7 @@ export function LibraryTiptapEditor({
         return (
           <>
             <Tiptap.Content />
-            <ArticleReaderFooter
-              article={article}
-              onOpenArticle={openArticle}
-              onStudyModeChange={setActiveStudyMode}
-            />
+            <ArticleReaderFooter article={article} />
           </>
         );
     }
