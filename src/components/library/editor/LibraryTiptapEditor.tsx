@@ -1,7 +1,6 @@
 "use client";
 
 import { Tiptap, useEditor } from "@tiptap/react";
-import { BubbleMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
 import Highlight from "@tiptap/extension-highlight";
 import Underline from "@tiptap/extension-underline";
@@ -18,8 +17,8 @@ import {
   TableOfContents,
 } from "@tiptap/extension-table-of-contents";
 import type { TableOfContentData } from "@tiptap/extension-table-of-contents";
-import { ArrowLeft, PanelRightClose, PanelRightOpen } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, List } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { LibraryArticle } from "@/lib/set-content";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { DecorationOnly } from "@/components/library/editor/decoration-only";
@@ -31,19 +30,41 @@ import {
   saveArticleEditorContent,
   setTocVisible,
 } from "@/lib/library-editor-preferences";
-import { SimpleEditorToolbar } from "@/components/library/editor/simple-editor-toolbar";
 import {
   ZoomDropdownMenu,
   ZOOM_DEFAULT,
   type ZoomLevel,
 } from "@/components/library/editor/zoom-dropdown-menu";
-import { TiptapTocSidebar } from "@/components/library/editor/tiptap-toc-sidebar";
+import {
+  TiptapTocSidebar,
+  useHasTableOfContents,
+} from "@/components/library/editor/tiptap-toc-sidebar";
 import { sectionSlug } from "@/components/content/ArticleTableOfContents";
-import { HIGHLIGHT_COLORS } from "@/components/library/editor/color-highlight-popover";
 import {
   WikiLink,
   WikiLinkEditorOverlay,
 } from "@/components/library/editor/wiki-link";
+import { SelectionBubbleMenu } from "@/components/library/editor/selection-bubble-menu";
+import { EditorOverflowMenu } from "@/components/library/editor/editor-overflow-menu";
+
+function useMediaQuery(query: string): boolean {
+  return useSyncExternalStore(
+    (onStoreChange) => {
+      const mq = window.matchMedia(query);
+      mq.addEventListener("change", onStoreChange);
+      return () => mq.removeEventListener("change", onStoreChange);
+    },
+    () => window.matchMedia(query).matches,
+    () => false
+  );
+}
+
+function getScrollParent(): HTMLElement | Window {
+  return (
+    (document.querySelector(".simple-editor-scroll") as HTMLElement | null) ??
+    window
+  );
+}
 
 export function LibraryTiptapEditor({
   article,
@@ -54,12 +75,9 @@ export function LibraryTiptapEditor({
 }) {
   const [zoom, setZoom] = useState<ZoomLevel>(ZOOM_DEFAULT);
   const [tocAnchors, setTocAnchors] = useState<TableOfContentData>([]);
-  const [tocOpen, setTocOpen] = useState(true);
+  const [tocOpen, setTocOpen] = useState(() => getTocVisible());
+  const isMobile = useMediaQuery("(max-width: 1023px)");
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setTocOpen(getTocVisible());
-  }, []);
 
   const toggleToc = () => {
     setTocOpen((prev) => {
@@ -109,7 +127,7 @@ export function LibraryTiptapEditor({
         getId: (content) => sectionSlug(content),
         getIndex: getHierarchicalIndexes,
         onUpdate: (anchors) => setTocAnchors(anchors),
-        scrollParent: () => scrollRef.current ?? window,
+        scrollParent: getScrollParent,
       }),
       DecorationOnly,
     ],
@@ -136,64 +154,78 @@ export function LibraryTiptapEditor({
   }, [article, editor]);
 
   const navigateToHeading = useCallback(
-    (_id: string, element: HTMLElement) => {
-      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    (id: string, element?: HTMLElement) => {
+      const scrollEl = scrollRef.current;
+      const root = editor?.view.dom;
+      const target =
+        element ??
+        (root?.querySelector(`#${CSS.escape(id)}`) as HTMLElement | null) ??
+        (root?.querySelector(`[data-section-id="${id}"]`) as HTMLElement | null);
+
+      if (!target) return;
+
+      if (scrollEl) {
+        const offset =
+          target.getBoundingClientRect().top -
+          scrollEl.getBoundingClientRect().top +
+          scrollEl.scrollTop -
+          72;
+        scrollEl.scrollTo({ top: Math.max(0, offset), behavior: "smooth" });
+      } else {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      if (isMobile) setTocOpen(false);
       editor?.chain().focus().run();
     },
-    [editor]
+    [editor, isMobile]
   );
 
-  const hasToc = tocAnchors.some((a) => a.originalLevel === 2);
+  const hasToc = useHasTableOfContents(tocAnchors, article.sections);
+  const showDesktopToc = hasToc && tocOpen && !isMobile;
+  const showMobileToc = hasToc && tocOpen && isMobile;
 
   if (!editor) return null;
 
   return (
-    <div className="simple-editor-page">
-      <header className="simple-editor-header">
-        <div className="simple-editor-header-start">
-          <button
-            type="button"
-            className="simple-editor-back"
-            onClick={onBack}
-            aria-label="Back to library"
-          >
-            <ArrowLeft size={18} strokeWidth={2.5} />
-          </button>
-          <DrNoteLogo showWordmark forceWordmark />
-        </div>
-
-        <div className="simple-editor-header-end">
-          {hasToc ? (
+    <Tiptap editor={editor}>
+      <div className="simple-editor-page">
+        <header className="simple-editor-header">
+          <div className="simple-editor-header-start">
             <button
               type="button"
-              className={`simple-editor-toc-toggle ${tocOpen ? "is-active" : ""}`}
-              onClick={toggleToc}
-              aria-label={tocOpen ? "Hide table of contents" : "Show table of contents"}
-              title={tocOpen ? "Hide contents" : "Show contents"}
+              className="simple-editor-back"
+              onClick={onBack}
+              aria-label="Back to library"
             >
-              {tocOpen ? (
-                <PanelRightClose size={16} strokeWidth={2} />
-              ) : (
-                <PanelRightOpen size={16} strokeWidth={2} />
-              )}
-              <span className="hidden sm:inline">Contents</span>
+              <ArrowLeft size={18} strokeWidth={2.5} />
             </button>
-          ) : null}
-          <ZoomDropdownMenu
-            currentZoom={zoom}
-            onZoomChange={setZoom}
-            onFitToPage={() => setZoom(ZOOM_DEFAULT)}
-          />
-        </div>
-      </header>
+            <DrNoteLogo showWordmark />
+          </div>
 
-      <Tiptap editor={editor}>
-        <div className="simple-editor-toolbar-wrap">
-          <SimpleEditorToolbar />
-        </div>
+          <div className="simple-editor-header-end">
+            {hasToc ? (
+              <button
+                type="button"
+                className={`simple-editor-toc-toggle ${tocOpen ? "is-active" : ""}`}
+                onClick={toggleToc}
+                aria-label={tocOpen ? "Hide contents" : "Show contents"}
+                title="Contents"
+              >
+                <List size={16} strokeWidth={2} />
+              </button>
+            ) : null}
+            <EditorOverflowMenu editor={editor} />
+            <ZoomDropdownMenu
+              currentZoom={zoom}
+              onZoomChange={setZoom}
+              onFitToPage={() => setZoom(ZOOM_DEFAULT)}
+            />
+          </div>
+        </header>
 
         <div
-          className={`simple-editor-body ${tocOpen && hasToc ? "simple-editor-body--with-toc" : ""}`}
+          className={`simple-editor-body ${showDesktopToc ? "simple-editor-body--with-toc" : ""}`}
         >
           <div ref={scrollRef} className="simple-editor-scroll">
             <div
@@ -207,41 +239,30 @@ export function LibraryTiptapEditor({
             </div>
           </div>
 
-          <TiptapTocSidebar
-            anchors={tocAnchors}
-            visible={tocOpen}
-            onNavigate={navigateToHeading}
-          />
+          {showDesktopToc ? (
+            <TiptapTocSidebar
+              anchors={tocAnchors}
+              fallbackSections={article.sections}
+              visible
+              onNavigate={navigateToHeading}
+            />
+          ) : null}
         </div>
 
-        <BubbleMenu editor={editor} className="tiptap-bubble-menu">
-          {HIGHLIGHT_COLORS.slice(0, 4).map((color) => (
-            <button
-              key={color.value}
-              type="button"
-              title={color.label}
-              className="tiptap-bubble-swatch"
-              style={{ backgroundColor: color.value }}
-              onClick={() =>
-                editor.chain().focus().toggleHighlight({ color: color.value }).run()
-              }
-            />
-          ))}
-          <button
-            type="button"
-            className="tiptap-bubble-copy"
-            onClick={async () => {
-              const { from, to } = editor.state.selection;
-              const text = editor.state.doc.textBetween(from, to, "\n");
-              await navigator.clipboard.writeText(text);
-            }}
-          >
-            Copy
-          </button>
-        </BubbleMenu>
+        {showMobileToc ? (
+          <TiptapTocSidebar
+            anchors={tocAnchors}
+            fallbackSections={article.sections}
+            visible
+            mobile
+            onNavigate={navigateToHeading}
+            onClose={() => setTocOpen(false)}
+          />
+        ) : null}
 
+        <SelectionBubbleMenu editor={editor} />
         <WikiLinkEditorOverlay editor={editor} />
-      </Tiptap>
-    </div>
+      </div>
+    </Tiptap>
   );
 }
