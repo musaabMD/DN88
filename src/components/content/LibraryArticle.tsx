@@ -15,7 +15,6 @@ import {
   Zap,
 } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
-import { CitationList } from "@/components/tool-ui/citation";
 import { SuggestEditModal } from "@/components/SuggestEditModal";
 import { ArticleAskBar } from "@/components/content/ArticleAskBar";
 import {
@@ -32,7 +31,6 @@ import {
   addTextHighlight,
   getArticleHighlights,
   getParagraphBookmarks,
-  HIGHLIGHT_CLASSES,
   toggleParagraphBookmark,
   type HighlightColor,
   type TextHighlight,
@@ -42,36 +40,14 @@ import {
   toggleArticleBookmark,
 } from "@/lib/article-bookmarks";
 import type { LibraryArticle, LibraryArticleSection } from "@/lib/set-content";
-
-function applyHighlights(
-  text: string,
-  highlights: TextHighlight[],
-  sectionId: string
-): React.ReactNode[] {
-  const sectionHighlights = highlights.filter((h) => h.sectionId === sectionId);
-  if (sectionHighlights.length === 0) return [text];
-
-  const parts: React.ReactNode[] = [];
-  let remaining = text;
-
-  for (const highlight of sectionHighlights) {
-    const idx = remaining.indexOf(highlight.text);
-    if (idx === -1) continue;
-    if (idx > 0) parts.push(remaining.slice(0, idx));
-    parts.push(
-      <mark
-        key={highlight.id}
-        className={`rounded-sm px-0.5 ${HIGHLIGHT_CLASSES[highlight.style]}`}
-      >
-        {highlight.text}
-      </mark>
-    );
-    remaining = remaining.slice(idx + highlight.text.length);
-  }
-
-  if (remaining) parts.push(remaining);
-  return parts.length > 0 ? parts : [text];
-}
+import { LibraryArticleEditor } from "@/components/library/editor/LibraryArticleEditor";
+import type { LibraryEditorMode } from "@/components/library/editor/types";
+import { LibraryEditorModeSwitcher } from "@/components/library/editor/LibraryEditorModeSwitcher";
+import {
+  getLibraryEditorMode,
+  setLibraryEditorMode,
+} from "@/lib/library-editor-preferences";
+import { AgentPanel } from "@/components/library/editor/AgentPanel";
 
 function SelectionToolbar({
   rect,
@@ -195,14 +171,14 @@ function SectionBody({
   article,
   section,
   contentMode,
-  highlights,
   paraBookmarked,
+  editorMode,
 }: {
   article: LibraryArticle;
   section: LibraryArticleSection;
   contentMode: StudyModeFilter | null;
-  highlights: TextHighlight[];
   paraBookmarked: boolean;
+  editorMode: LibraryEditorMode;
 }) {
   if (contentMode === "summary") {
     const summary = summarizeSectionText(section.body, section.bullets);
@@ -295,45 +271,12 @@ function SectionBody({
   }
 
   return (
-    <>
-      <div className="flex items-center gap-2">
-        {paraBookmarked ? (
-          <Bookmark
-            size={14}
-            className="text-slate-500"
-            fill="currentColor"
-          />
-        ) : null}
-      </div>
-      {section.body ? (
-        <p className="mt-3 text-base font-medium leading-relaxed text-slate-600">
-          {applyHighlights(section.body, highlights, section.id)}
-        </p>
-      ) : null}
-      {section.bullets && section.bullets.length > 0 ? (
-        <ul className="mt-4 space-y-2.5">
-          {section.bullets.map((item) => (
-            <li
-              key={item}
-              className="flex items-start gap-2.5 text-base font-medium leading-relaxed text-slate-600"
-            >
-              <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-slate-500" />
-              {applyHighlights(item, highlights, section.id)}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      {section.citations && section.citations.length > 0 ? (
-        <div className="mt-3">
-          <CitationList
-            id={`citation-list-${section.id}`}
-            citations={section.citations}
-            variant="stacked"
-            size="compact"
-          />
-        </div>
-      ) : null}
-    </>
+    <LibraryArticleEditor
+      article={article}
+      section={section}
+      mode={editorMode}
+      paraBookmarked={paraBookmarked}
+    />
   );
 }
 
@@ -354,6 +297,9 @@ export default function LibraryArticle({
     new Set()
   );
   const [studyMode, setStudyMode] = useState<StudyModeFilter | null>(null);
+  const [editorMode, setEditorMode] = useState<LibraryEditorMode>(() =>
+    typeof window === "undefined" ? "docx" : getLibraryEditorMode()
+  );
   const [isReading, setIsReading] = useState(false);
   const [slideIndex, setSlideIndex] = useState(0);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -458,6 +404,11 @@ export default function LibraryArticle({
 
   const selectStudyMode = (mode: StudyModeFilter | null) => {
     setStudyMode(mode);
+  };
+
+  const handleEditorModeChange = (mode: LibraryEditorMode) => {
+    setEditorMode(mode);
+    setLibraryEditorMode(mode);
   };
 
   const contentMode = getInlineContentMode(studyMode);
@@ -600,6 +551,18 @@ export default function LibraryArticle({
           ) : null}
         </header>
 
+        {!contentMode ? (
+          <div className="mt-6">
+            <LibraryEditorModeSwitcher
+              mode={editorMode}
+              onChange={handleEditorModeChange}
+            />
+            <p className="mb-2 text-xs font-medium text-slate-400">
+              Customize appearance only — article text cannot be removed or edited.
+            </p>
+          </div>
+        ) : null}
+
         <nav
           className="mt-4 flex gap-2 overflow-x-auto pb-1 lg:hidden"
           aria-label="Contents"
@@ -615,41 +578,53 @@ export default function LibraryArticle({
           ))}
         </nav>
 
-        <div className="mt-8 space-y-12">
-          {visibleSections.map((section) => {
-            const slug = sectionSlug(section.heading);
-            const paraBookmarked = paragraphBookmarks.has(section.id);
-            return (
-              <section
-                key={section.id}
-                id={slug}
-                data-section-id={section.id}
-                className="scroll-mt-24"
-              >
-                <h2 className="text-xl font-black tracking-tight text-slate-800">
-                  {section.heading}
-                </h2>
-                <SectionBody
-                  article={article}
-                  section={section}
-                  contentMode={contentMode}
-                  highlights={highlights}
-                  paraBookmarked={paraBookmarked}
-                />
-              </section>
-            );
-          })}
+        <div
+          className={`mt-8 ${
+            !contentMode && editorMode === "agent"
+              ? "grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]"
+              : ""
+          }`}
+        >
+          <div className="space-y-12">
+            {visibleSections.map((section) => {
+              const slug = sectionSlug(section.heading);
+              const paraBookmarked = paragraphBookmarks.has(section.id);
+              return (
+                <section
+                  key={section.id}
+                  id={slug}
+                  data-section-id={section.id}
+                  className="scroll-mt-24"
+                >
+                  <h2 className="text-xl font-black tracking-tight text-slate-800">
+                    {section.heading}
+                  </h2>
+                  <SectionBody
+                    article={article}
+                    section={section}
+                    contentMode={contentMode}
+                    paraBookmarked={paraBookmarked}
+                    editorMode={editorMode}
+                  />
+                </section>
+              );
+            })}
 
-          {article.highYield &&
-          (!studyMode || studyMode === "hy" || contentMode) ? (
-            <aside className="rounded-2xl border-2 border-b-4 border-slate-700 bg-slate-50 p-4 sm:p-5">
-              <p className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wide text-slate-600">
-                <Zap size={14} strokeWidth={3} /> High yield
-              </p>
-              <p className="mt-2 text-sm font-bold leading-relaxed text-slate-700">
-                {article.highYield}
-              </p>
-            </aside>
+            {article.highYield &&
+            (!studyMode || studyMode === "hy" || contentMode) ? (
+              <aside className="rounded-2xl border-2 border-b-4 border-slate-700 bg-slate-50 p-4 sm:p-5">
+                <p className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wide text-slate-600">
+                  <Zap size={14} strokeWidth={3} /> High yield
+                </p>
+                <p className="mt-2 text-sm font-bold leading-relaxed text-slate-700">
+                  {article.highYield}
+                </p>
+              </aside>
+            ) : null}
+          </div>
+
+          {!contentMode && editorMode === "agent" ? (
+            <AgentPanel articleTitle={article.title} />
           ) : null}
         </div>
       </article>
@@ -743,7 +718,7 @@ export default function LibraryArticle({
         />
       ) : null}
 
-      {selectionRect && !presentation ? (
+      {selectionRect && !presentation && contentMode ? (
         <SelectionToolbar
           rect={selectionRect}
           onCopy={handleCopy}
