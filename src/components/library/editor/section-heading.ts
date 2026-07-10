@@ -1,3 +1,4 @@
+import { mergeAttributes } from "@tiptap/core";
 import Heading from "@tiptap/extension-heading";
 
 export const SectionHeading = Heading.extend({
@@ -19,5 +20,25 @@ export const SectionHeading = Heading.extend({
             : {},
       },
     };
+  },
+
+  renderHTML({ node, HTMLAttributes }) {
+    const level = Number(node.attrs.level);
+    const levelClass =
+      level === 1
+        ? "article-title"
+        : level === 2
+          ? "article-section-heading"
+          : level === 3
+            ? "article-subsection-heading"
+            : undefined;
+
+    return [
+      `h${level}`,
+      mergeAttributes(HTMLAttributes, {
+        class: levelClass,
+      }),
+      0,
+    ];
   },
 }).configure({ levels: [1, 2, 3] });

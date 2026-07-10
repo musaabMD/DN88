@@ -148,11 +148,24 @@ body {
 
 /* Tiptap Simple Editor — full-page library articles */
 .simple-editor-page {
+  --article-font-sans: "Segoe UI", "Segoe UI Variable Text", "Segoe UI Variable",
+    -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --article-font-serif: "Lyon Text", "Lyon-Text", "Lyon Display",
+    var(--font-article-serif-fallback), "Charter", "Iowan Old Style", Georgia,
+    "Times New Roman", serif;
+  --article-font-mono: "iA Writer Mono", "iA Writer Mono S", "iA Writer Quattro",
+    var(--font-article-mono-fallback), "SFMono-Regular", ui-monospace, monospace;
+
   display: flex;
   flex-direction: column;
   height: 100dvh;
   background: rgb(255 255 255);
   color: rgb(15 23 42);
+  font-family: var(--article-font-sans);
+  font-size: 1rem;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 .simple-editor-header {
@@ -647,9 +660,9 @@ body {
 }
 
 .simple-editor-canvas {
-  max-width: 42rem;
+  max-width: 44rem;
   margin: 0 auto;
-  padding: 2.75rem 1.25rem 5rem;
+  padding: 2.5rem 1.25rem 5rem;
   transition: transform 0.15s ease;
 }
 
@@ -865,75 +878,136 @@ body {
   padding: 0;
   outline: none;
   color: rgb(30 41 59);
+  font-family: var(--article-font-sans);
   font-size: 1.0625rem;
-  line-height: 1.85;
-  letter-spacing: 0.01em;
-  font-feature-settings: "kern" 1, "liga" 1;
+  line-height: 1.7;
+  letter-spacing: 0.005em;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+}
+
+.tiptap.simple-editor-prose > *:first-child {
+  margin-top: 0;
 }
 
 .tiptap p {
-  margin: 0 0 1.125rem;
+  margin: 0 0 0.875rem;
 }
 
-.tiptap h1,
-.tiptap h2,
-.tiptap h3 {
-  color: rgb(15 23 42);
-  font-weight: 700;
-  scroll-margin-top: 5.5rem;
-  letter-spacing: -0.02em;
+.tiptap p + p {
+  margin-top: 0;
 }
 
+.tiptap .article-title,
 .tiptap h1 {
-  font-size: 2rem;
-  line-height: 1.2;
-  margin: 0 0 0.5rem;
+  font-family: var(--article-font-serif);
+  color: rgb(15 23 42);
+  font-size: 2.375rem;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  margin: 0 0 0.375rem;
+  scroll-margin-top: 5.5rem;
 }
 
+.tiptap h1 + p {
+  margin-bottom: 2rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: rgb(100 116 139);
+  font-style: italic;
+}
+
+.tiptap .article-section-heading,
 .tiptap h2 {
-  font-size: 1.375rem;
-  line-height: 1.35;
-  margin: 2.5rem 0 0.875rem;
-  padding-top: 0.25rem;
+  font-family: var(--article-font-serif);
+  color: rgb(15 23 42);
+  font-size: 1.625rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+  scroll-margin-top: 5.5rem;
+  margin: 2.75rem 0 0.625rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid rgb(226 232 240);
 }
 
+.tiptap .article-section-heading + p,
+.tiptap h2 + p {
+  margin-top: 0.375rem;
+}
+
+.tiptap .article-section-heading + ul,
+.tiptap .article-section-heading + ol,
+.tiptap h2 + ul,
+.tiptap h2 + ol {
+  margin-top: 0.625rem;
+}
+
+.tiptap h1 + .article-section-heading,
+.tiptap h1 + h2,
+.tiptap .article-title + .article-section-heading,
+.tiptap .article-title + h2 {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.tiptap .article-subsection-heading,
 .tiptap h3 {
-  font-size: 1.125rem;
-  line-height: 1.4;
-  margin: 1.75rem 0 0.625rem;
+  font-family: var(--article-font-serif);
+  color: rgb(30 41 59);
+  font-size: 1.1875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+  scroll-margin-top: 5.5rem;
+  margin: 1.75rem 0 0.5rem;
 }
 
 .tiptap ul,
 .tiptap ol {
-  margin: 0 0 1.125rem;
-  padding-left: 1.375rem;
+  margin: 0 0 1rem;
+  padding-left: 1.5rem;
 }
 
 .tiptap li {
-  margin: 0.375rem 0;
+  margin: 0.3125rem 0;
+  padding-left: 0.25rem;
 }
 
 .tiptap li p {
   margin: 0;
 }
 
+.tiptap li::marker {
+  color: rgb(100 116 139);
+}
+
 .tiptap blockquote {
   margin: 1.25rem 0;
-  padding: 0 0 0 1rem;
-  border-left: 2px solid rgb(226 232 240);
+  padding: 0.125rem 0 0.125rem 1rem;
+  border-left: 3px solid rgb(203 213 225);
   color: rgb(71 85 105);
+  font-family: var(--article-font-serif);
+  font-size: 1.0625rem;
+  line-height: 1.65;
   font-style: normal;
 }
 
 .tiptap mark {
   border-radius: 0.125rem;
-  padding: 0 0.125rem;
+  padding: 0.05em 0.125rem;
 }
 
 .tiptap hr {
   border: none;
   border-top: 1px solid rgb(226 232 240);
-  margin: 1.5rem 0;
+  margin: 2rem 0;
+}
+
+.tiptap code,
+.tiptap pre {
+  font-family: var(--article-font-mono);
 }
 
 .tiptap code {
@@ -941,6 +1015,23 @@ body {
   border-radius: 0.25rem;
   font-size: 0.875em;
   padding: 0.125rem 0.375rem;
+}
+
+.tiptap pre {
+  margin: 1rem 0;
+  padding: 0.875rem 1rem;
+  border-radius: 0.5rem;
+  background: rgb(248 250 252);
+  border: 1px solid rgb(226 232 240);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+
+.tiptap pre code {
+  background: transparent;
+  padding: 0;
+  font-size: inherit;
 }
 
 .tiptap a {
@@ -1325,6 +1416,49 @@ body {
   color: rgb(248 250 252);
 }
 
+.dark .tiptap.simple-editor-prose {
+  color: rgb(226 232 240);
+}
+
+.dark .tiptap .article-title,
+.dark .tiptap h1 {
+  color: rgb(248 250 252);
+}
+
+.dark .tiptap h1 + p {
+  color: rgb(148 163 184);
+}
+
+.dark .tiptap .article-section-heading,
+.dark .tiptap h2 {
+  color: rgb(248 250 252);
+  border-top-color: rgb(51 65 85);
+}
+
+.dark .tiptap .article-subsection-heading,
+.dark .tiptap h3 {
+  color: rgb(226 232 240);
+}
+
+.dark .tiptap li::marker {
+  color: rgb(148 163 184);
+}
+
+.dark .tiptap blockquote {
+  border-left-color: rgb(71 85 105);
+  color: rgb(148 163 184);
+}
+
+.dark .tiptap code {
+  background: rgb(30 41 59);
+  color: rgb(226 232 240);
+}
+
+.dark .tiptap pre {
+  background: rgb(30 41 59);
+  border-color: rgb(51 65 85);
+}
+
 .dark .simple-editor-header {
   background: rgb(15 23 42);
   border-bottom-color: rgb(30 41 59);
@@ -1425,21 +1559,6 @@ body {
   color: rgb(226 232 240);
 }
 
-.dark .tiptap.simple-editor-prose {
-  color: rgb(226 232 240);
-}
-
-.dark .tiptap h1,
-.dark .tiptap h2,
-.dark .tiptap h3 {
-  color: rgb(248 250 252);
-}
-
-.dark .tiptap blockquote {
-  border-left-color: rgb(51 65 85);
-  color: rgb(148 163 184);
-}
-
 .dark .tiptap-bubble-menu {
   border-color: rgb(51 65 85);
   background: rgb(30 41 59);
@@ -1499,8 +1618,9 @@ body {
 .article-presentation-title {
   margin: 0;
   max-width: 20ch;
+  font-family: var(--article-font-serif);
   font-size: clamp(2rem, 6vw, 3rem);
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.15;
   letter-spacing: -0.03em;
   color: rgb(248 250 252);
@@ -1508,6 +1628,7 @@ body {
 
 .article-presentation-meta {
   margin: 0;
+  font-family: var(--article-font-sans);
   font-size: 0.9375rem;
   font-style: italic;
   color: rgb(148 163 184);
@@ -1517,9 +1638,11 @@ body {
   max-width: 48rem;
 }
 
+.simple-editor-page--presentation .tiptap .article-section-heading,
 .simple-editor-page--presentation .tiptap h2 {
-  font-size: 1.625rem;
-  margin-top: 3rem;
+  font-size: 1.75rem;
+  margin-top: 3.25rem;
+  border-top-color: rgb(51 65 85);
 }
 
 .simple-editor-page--presentation .tiptap blockquote {

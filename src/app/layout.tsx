@@ -1,15 +1,27 @@
 import type { Metadata, Viewport } from "next";
-import { Nunito, Geist } from "next/font/google";
+import { Geist, JetBrains_Mono, Nunito, Source_Serif_4 } from "next/font/google";
 import { ClerkProviderWrapper } from "@/components/providers/ClerkProviderWrapper";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 const nunito = Nunito({
   variable: "--font-nunito",
   subsets: ["latin"],
   weight: ["400", "600", "700", "800", "900"],
+});
+
+const articleSerif = Source_Serif_4({
+  subsets: ["latin"],
+  variable: "--font-article-serif-fallback",
+  display: "swap",
+});
+
+const articleMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-article-mono-fallback",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -31,7 +43,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn("h-full", nunito.variable, "font-sans", geist.variable)} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={cn(
+        "h-full",
+        nunito.variable,
+        "font-sans",
+        geist.variable,
+        articleSerif.variable,
+        articleMono.variable
+      )}
+      suppressHydrationWarning
+    >
       <head>
         <script
           dangerouslySetInnerHTML={{
