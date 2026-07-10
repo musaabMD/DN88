@@ -2,18 +2,10 @@
 
 import {
   Bold,
-  ChevronDown,
-  ChevronRight,
-  Copy,
   FileText,
-  ImageIcon,
   Italic,
-  Link2,
   MoreHorizontal,
-  Redo2,
-  Table2,
   Underline,
-  Undo2,
 } from "lucide-react";
 import { useState } from "react";
 import { useTiptap, useTiptapState } from "@tiptap/react";
@@ -50,7 +42,7 @@ function ToolbarBtn({
   );
 }
 
-/** Compact single-row toolbar for library reading / annotation. */
+/** Minimal annotation toolbar — advanced tools live in More menu. */
 export function SimpleEditorToolbar() {
   const { editor } = useTiptap();
   const [tableOpen, setTableOpen] = useState(false);
@@ -137,23 +129,6 @@ export function SimpleEditorToolbar() {
   return (
     <div className="simple-editor-toolbar" role="toolbar" aria-label="Editor">
       <ToolbarBtn
-        title="Undo"
-        disabled={!state.canUndo}
-        onClick={() => run(() => editor.chain().focus().undo().run())}
-      >
-        <Undo2 size={16} strokeWidth={2} />
-      </ToolbarBtn>
-      <ToolbarBtn
-        title="Redo"
-        disabled={!state.canRedo}
-        onClick={() => run(() => editor.chain().focus().redo().run())}
-      >
-        <Redo2 size={16} strokeWidth={2} />
-      </ToolbarBtn>
-
-      <span className="tiptap-toolbar-divider" aria-hidden />
-
-      <ToolbarBtn
         title="Bold"
         active={state.bold}
         onClick={() => run(() => editor.chain().focus().toggleBold().run())}
@@ -185,95 +160,6 @@ export function SimpleEditorToolbar() {
       <div className="relative">
         <button
           type="button"
-          className={`tiptap-heading-trigger tiptap-toolbar-compact-trigger ${state.table ? "is-active" : ""}`}
-          aria-expanded={tableOpen}
-          aria-label="Table"
-          title="Table"
-          onClick={() => {
-            setTableOpen((v) => !v);
-            setMoreOpen(false);
-          }}
-        >
-          <Table2 size={16} strokeWidth={2} />
-          <ChevronDown size={12} />
-        </button>
-        {tableOpen ? (
-          <div className="tiptap-heading-menu tiptap-table-menu">
-            {state.table ? (
-              <>
-                {(
-                  [
-                    ["Add row above", () => editor.chain().focus().addRowBefore().run()],
-                    ["Add row below", () => editor.chain().focus().addRowAfter().run()],
-                    ["Add column left", () => editor.chain().focus().addColumnBefore().run()],
-                    ["Add column right", () => editor.chain().focus().addColumnAfter().run()],
-                    ["Delete row", () => editor.chain().focus().deleteRow().run()],
-                    ["Delete column", () => editor.chain().focus().deleteColumn().run()],
-                    ["Delete table", () => editor.chain().focus().deleteTable().run()],
-                  ] as const
-                ).map(([label, action]) => (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => {
-                      run(action);
-                      if (label === "Delete table") setTableOpen(false);
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </>
-            ) : (
-              <>
-                {(
-                  [
-                    [
-                      "3 × 3 with header",
-                      () =>
-                        editor
-                          .chain()
-                          .focus()
-                          .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
-                          .run(),
-                    ],
-                    [
-                      "4 × 4",
-                      () =>
-                        editor
-                          .chain()
-                          .focus()
-                          .insertTable({ rows: 4, cols: 4, withHeaderRow: false })
-                          .run(),
-                    ],
-                  ] as const
-                ).map(([label, action]) => (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => {
-                      run(action);
-                      setTableOpen(false);
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </>
-            )}
-          </div>
-        ) : null}
-      </div>
-
-      <span className="tiptap-toolbar-divider" aria-hidden />
-
-      <ToolbarBtn title="Copy selection" onClick={() => void copySelection()}>
-        <Copy size={16} strokeWidth={2} />
-      </ToolbarBtn>
-
-      <div className="relative">
-        <button
-          type="button"
           className="tiptap-toolbar-btn"
           aria-expanded={moreOpen}
           aria-label="More tools"
@@ -287,6 +173,32 @@ export function SimpleEditorToolbar() {
         </button>
         {moreOpen ? (
           <div className="tiptap-heading-menu tiptap-more-menu">
+            <button
+              type="button"
+              disabled={!state.canUndo}
+              onClick={() => run(() => editor.chain().focus().undo().run())}
+            >
+              Undo
+            </button>
+            <button
+              type="button"
+              disabled={!state.canRedo}
+              onClick={() => run(() => editor.chain().focus().redo().run())}
+            >
+              Redo
+            </button>
+            <button type="button" onClick={() => run(() => void copySelection())}>
+              Copy selection
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMoreOpen(false);
+                setTableOpen(true);
+              }}
+            >
+              Table…
+            </button>
             <button type="button" onClick={() => run(toggleDetails)}>
               {state.details ? "Remove details" : "Details block"}
             </button>
@@ -299,6 +211,76 @@ export function SimpleEditorToolbar() {
           </div>
         ) : null}
       </div>
+
+      {tableOpen ? (
+        <div className="tiptap-heading-menu tiptap-table-menu tiptap-table-menu--overlay">
+          {state.table ? (
+            <>
+              {(
+                [
+                  ["Add row above", () => editor.chain().focus().addRowBefore().run()],
+                  ["Add row below", () => editor.chain().focus().addRowAfter().run()],
+                  ["Add column left", () => editor.chain().focus().addColumnBefore().run()],
+                  ["Add column right", () => editor.chain().focus().addColumnAfter().run()],
+                  ["Delete row", () => editor.chain().focus().deleteRow().run()],
+                  ["Delete column", () => editor.chain().focus().deleteColumn().run()],
+                  ["Delete table", () => editor.chain().focus().deleteTable().run()],
+                ] as const
+              ).map(([label, action]) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => {
+                    run(action);
+                    if (label === "Delete table") setTableOpen(false);
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </>
+          ) : (
+            <>
+              {(
+                [
+                  [
+                    "3 × 3 with header",
+                    () =>
+                      editor
+                        .chain()
+                        .focus()
+                        .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+                        .run(),
+                  ],
+                  [
+                    "4 × 4",
+                    () =>
+                      editor
+                        .chain()
+                        .focus()
+                        .insertTable({ rows: 4, cols: 4, withHeaderRow: false })
+                        .run(),
+                  ],
+                ] as const
+              ).map(([label, action]) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => {
+                    run(action);
+                    setTableOpen(false);
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </>
+          )}
+          <button type="button" className="tiptap-table-close" onClick={() => setTableOpen(false)}>
+            Close
+          </button>
+        </div>
+      ) : null}
 
       <WikiLinkPicker
         open={wikiPickerOpen}

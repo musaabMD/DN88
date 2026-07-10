@@ -1,4 +1,5 @@
 import type { JSONContent } from "@tiptap/react";
+import type { EditorBgTheme } from "@/lib/editor-bg-colors";
 
 const ARTICLE_CONTENT_KEY = "drnote-library-article-content";
 
@@ -45,4 +46,31 @@ export function getTocVisible(): boolean {
 
 export function setTocVisible(visible: boolean): void {
   localStorage.setItem(TOC_VISIBLE_KEY, visible ? "true" : "false");
+}
+
+const CHROME_VISIBLE_KEY = "drnote-library-toolbar-visible";
+
+/** Formatting toolbar visible (false = reading mode, header stays). */
+export function getChromeVisible(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(CHROME_VISIBLE_KEY) === "true";
+}
+
+export function setChromeVisible(visible: boolean): void {
+  localStorage.setItem(CHROME_VISIBLE_KEY, visible ? "true" : "false");
+}
+
+const BG_THEME_KEY = "drnote-library-bg-theme";
+
+export function getBgTheme(): EditorBgTheme {
+  if (typeof window === "undefined") return "white";
+  const stored = localStorage.getItem(BG_THEME_KEY);
+  if (stored === "sepia" || stored === "gray" || stored === "dark" || stored === "white") {
+    return stored;
+  }
+  return "white";
+}
+
+export function setBgTheme(theme: EditorBgTheme): void {
+  localStorage.setItem(BG_THEME_KEY, theme);
 }
