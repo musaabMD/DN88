@@ -56,7 +56,6 @@ import {
   Clock3,
   ChevronRight,
   Flame,
-  Crown,
   Star,
   Bookmark,
   Lightbulb,
@@ -1118,24 +1117,17 @@ function TabContent({
 
 function UpgradeModal({ onClose }: { onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-white">
-      <div className="flex items-center justify-between px-4 h-14 flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <Crown size={18} strokeWidth={2.5} style={{ color: "#a855f7" }} />
-          <span className="font-black text-slate-900 text-base">Upgrade</span>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="w-8 h-8 rounded-xl flex items-center justify-center"
-          style={{ background: "#f1f5f9", border: "2px solid #e2e8f0" }}
-          aria-label="Close upgrade"
-        >
-          <X size={15} strokeWidth={2.5} className="text-slate-500" />
-        </button>
-      </div>
+    <div className="fixed inset-0 z-[60] flex flex-col bg-slate-50">
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm ring-1 ring-slate-200 transition-colors hover:bg-slate-50 hover:text-slate-700"
+        aria-label="Close upgrade"
+      >
+        <X size={18} strokeWidth={2.5} />
+      </button>
       <div className="flex-1 overflow-y-auto">
-        <UpgradePanel showHero />
+        <UpgradePanel />
       </div>
     </div>
   );
