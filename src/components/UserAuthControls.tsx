@@ -9,6 +9,7 @@ import {
 } from "@clerk/clerk-react";
 import { useClientMounted, useClerkEnabled } from "@/hooks/useClerkEnabled";
 import { DASHBOARD_PATH } from "@/lib/routes";
+import { primaryNavButtonClass, primaryNavLinkClass } from "@/components/ProductSiteNav";
 
 function GuestAuthControls({ compact = false }: { compact?: boolean }) {
   return (
@@ -23,10 +24,7 @@ function ClerkUserAuthControls({ compact = false }: { compact?: boolean }) {
     <>
       <SignedIn>
         {!compact && (
-          <Link
-            href={DASHBOARD_PATH}
-            className="hidden max-w-[120px] truncate text-sm font-bold text-[#4B4B4B] hover:text-[#334155] sm:inline"
-          >
+          <Link href={DASHBOARD_PATH} className={primaryNavLinkClass}>
             Dashboard
           </Link>
         )}
@@ -40,14 +38,7 @@ function ClerkUserAuthControls({ compact = false }: { compact?: boolean }) {
       </SignedIn>
       <SignedOut>
         <SignInButton mode="modal">
-          <button
-            type="button"
-            className={
-              compact
-                ? "flex h-9 shrink-0 items-center rounded-lg bg-[#334155] px-3 text-xs font-extrabold text-white transition-colors hover:bg-[#1e293b]"
-                : "rounded-lg bg-[#334155] px-4 py-2 text-sm font-extrabold text-white transition-colors hover:bg-[#1e293b]"
-            }
-          >
+          <button type="button" className={primaryNavButtonClass}>
             Get started
           </button>
         </SignInButton>

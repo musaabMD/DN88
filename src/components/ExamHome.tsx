@@ -1,42 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Check, ChevronRight, Plus, Search } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
-import { UserAuthControls } from "@/components/UserAuthControls";
+import { ProductSiteNav } from "@/components/ProductSiteNav";
 import { EXAMS, type Exam } from "@/lib/exams";
 import { saveCurrentExamId } from "@/lib/current-exam";
-import { DASHBOARD_PATH, HOME_PATH, examPath, UPGRADE_PATH } from "@/lib/routes";
+import { HOME_PATH, examPath } from "@/lib/routes";
 import { getTileColors } from "@/lib/tile-colors";
 import { addUserExam, getUserExamIds, isUserExam, removeUserExam } from "@/lib/user-exams";
 
 function ExamHomeHeader() {
-  const router = useRouter();
-
   return (
     <header className="flex items-center justify-between py-4">
       <Link href={HOME_PATH} className="flex min-w-0 items-center">
         <DrNoteLogo showWordmark forceWordmark />
       </Link>
 
-      <nav className="flex items-center gap-2 sm:gap-4">
-        <Link
-          href={DASHBOARD_PATH}
-          className="hidden text-sm font-bold text-slate-600 hover:text-[#334155] sm:inline"
-        >
-          Dashboard
-        </Link>
-        <button
-          type="button"
-          onClick={() => router.push(UPGRADE_PATH)}
-          className="rounded-xl border-b-4 border-[#1e293b] bg-[#334155] px-3 py-2 text-sm font-extrabold text-white transition-colors hover:bg-[#475569] active:translate-y-0.5 active:border-b-2 sm:px-4"
-        >
-          Get Pro
-        </button>
-        <UserAuthControls compact />
-      </nav>
+      <ProductSiteNav showFeatures={false} />
     </header>
   );
 }
