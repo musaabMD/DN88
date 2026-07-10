@@ -147,7 +147,6 @@ export function LibraryTiptapEditor({
 
           <div className="simple-editor-header-end">
             <EditorOverflowMenu
-              editor={editor}
               currentZoom={zoom}
               onZoomChange={setZoom}
               onFitToPage={() => setZoom(ZOOM_DEFAULT)}
