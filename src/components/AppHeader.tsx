@@ -12,6 +12,8 @@ type AppHeaderProps = {
   onBack?: () => void;
   title?: string;
   showLibrary?: boolean;
+  /** Logo, back, and auth only — no nav links or centered title. */
+  minimal?: boolean;
   onSearchClick?: () => void;
   hidden?: boolean;
 };
@@ -21,6 +23,7 @@ export function AppHeader({
   onBack,
   title,
   showLibrary,
+  minimal,
   onSearchClick,
   hidden,
 }: AppHeaderProps) {
@@ -54,7 +57,7 @@ export function AppHeader({
             <Link href={HOME_PATH} className="shrink-0">
               <DrNoteLogo size="sm" showWordmark forceWordmark />
             </Link>
-            {showLibrary ? (
+            {showLibrary && !minimal ? (
               <Link
                 href={LIBRARY_PATH}
                 className="hidden rounded-lg px-2.5 py-1.5 text-xs font-extrabold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800 sm:inline"
@@ -62,15 +65,17 @@ export function AppHeader({
                 Library
               </Link>
             ) : null}
-            <Link
-              href={FEATURES_PATH}
-              className="hidden rounded-lg px-2.5 py-1.5 text-xs font-extrabold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800 sm:inline"
-            >
-              Features
-            </Link>
+            {!minimal ? (
+              <Link
+                href={FEATURES_PATH}
+                className="hidden rounded-lg px-2.5 py-1.5 text-xs font-extrabold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800 sm:inline"
+              >
+                Features
+              </Link>
+            ) : null}
           </div>
 
-          {title ? (
+          {title && !minimal ? (
             <p
               className="min-w-0 truncate text-center text-sm font-extrabold tracking-tight text-slate-900 sm:text-base"
               style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}

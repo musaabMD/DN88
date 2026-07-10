@@ -9,7 +9,6 @@ import { LibraryThumb, LibraryThumbHero } from "@/components/library/LibraryThum
 import {
   BookmarkButton,
   ComingSoonPanel,
-  LibraryBackLink,
   useBookmark,
 } from "@/components/library/LibraryUi";
 import {
@@ -32,21 +31,14 @@ import {
   type SpecialtyTopic,
 } from "@/lib/specialties";
 
-function PostPageShell({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function PostPageShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   return (
     <div className="min-h-screen bg-white font-sans">
       <AppHeader
         showBack
         onBack={() => router.push(LIBRARY_PATH)}
-        title={title}
-        showLibrary
+        minimal
       />
       <main className="mx-auto w-full max-w-4xl px-4 pb-14 sm:px-6">{children}</main>
     </div>
@@ -66,12 +58,8 @@ export function SpecialtyPageClient({
   );
 
   return (
-    <PostPageShell title={specialty}>
-      <div className="pt-4">
-        <LibraryBackLink />
-      </div>
-
-      <div className="group mt-4 flex items-start gap-4">
+    <PostPageShell>
+      <div className="group flex items-start gap-4 pt-4">
         <LibraryThumbHero seed={specialty} />
         <div className="min-w-0 flex-1 text-left">
           <h1 className="text-2xl font-black leading-tight tracking-tight text-slate-900 sm:text-3xl">
@@ -156,7 +144,7 @@ export function TopicPageClient({ topic }: { topic: SpecialtyTopic }) {
 
   if (article) {
     return (
-      <PostPageShell title={topic.title}>
+      <PostPageShell>
         <p className="pt-10 text-center text-sm font-bold text-slate-400">
           Opening article…
         </p>
@@ -165,10 +153,8 @@ export function TopicPageClient({ topic }: { topic: SpecialtyTopic }) {
   }
 
   return (
-    <PostPageShell title={topic.title}>
-      <div className="flex flex-wrap items-center gap-3 pt-4">
-        <LibraryBackLink />
-        <span className="text-slate-300">/</span>
+    <PostPageShell>
+      <div className="pt-4">
         <Link
           href={specialtyPath(specialtySlug(topic.specialty))}
           className="text-sm font-extrabold text-slate-500 transition-colors hover:text-slate-800"
