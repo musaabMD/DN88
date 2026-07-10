@@ -18,25 +18,35 @@ import {
   TableOfContents,
 } from "@tiptap/extension-table-of-contents";
 import type { TableOfContentData } from "@tiptap/extension-table-of-contents";
-import { ArrowLeft, PanelRightClose, PanelRightOpen } from "lucide-react";
+import {
+  ArrowLeft,
+  GitMerge,
+  List,
+  PanelBottom,
+  PanelTop,
+  Search,
+  Upload,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LibraryArticle } from "@/lib/set-content";
-import { DrNoteLogo } from "@/components/DrNoteLogo";
+import { getEditorBgTheme, type EditorBgTheme } from "@/lib/editor-bg-colors";
+import { mergeAnnotationsWithSource } from "@/lib/merge-article-annotations";
 import { DecorationOnly } from "@/components/library/editor/decoration-only";
 import { SectionHeading } from "@/components/library/editor/section-heading";
 import { articleToTiptapContent } from "@/components/library/editor/article-to-tiptap";
 import {
   getArticleEditorContent,
+  getBgTheme,
+  getChromeVisible,
   getTocVisible,
+  isArticlePublished,
+  publishArticle,
   saveArticleEditorContent,
+  setBgTheme,
+  setChromeVisible,
   setTocVisible,
 } from "@/lib/library-editor-preferences";
 import { SimpleEditorToolbar } from "@/components/library/editor/simple-editor-toolbar";
-import {
-  ZoomDropdownMenu,
-  ZOOM_DEFAULT,
-  type ZoomLevel,
-} from "@/components/library/editor/zoom-dropdown-menu";
 import { TiptapTocSidebar } from "@/components/library/editor/tiptap-toc-sidebar";
 import { sectionSlug } from "@/components/content/ArticleTableOfContents";
 import { HIGHLIGHT_COLORS } from "@/components/library/editor/color-highlight-popover";
@@ -44,6 +54,8 @@ import {
   WikiLink,
   WikiLinkEditorOverlay,
 } from "@/components/library/editor/wiki-link";
+import { EditorSearchModal } from "@/components/library/editor/editor-search-modal";
+import { EditorBgColorPicker } from "@/components/library/editor/editor-bg-color-picker";
 
 export function LibraryTiptapEditor({
   article,
@@ -52,21 +64,53 @@ export function LibraryTiptapEditor({
   article: LibraryArticle;
   onBack: () => void;
 }) {
-  const [zoom, setZoom] = useState<ZoomLevel>(ZOOM_DEFAULT);
   const [tocAnchors, setTocAnchors] = useState<TableOfContentData>([]);
   const [tocOpen, setTocOpen] = useState(true);
+  const [tocMobileOpen, setTocMobileOpen] = useState(false);
+  const [toolbarVisible, setToolbarVisible] = useState(false);
+  const [bgTheme, setBgThemeState] = useState<EditorBgTheme>("white");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [published, setPublished] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const theme = getEditorBgTheme(bgTheme);
 
   useEffect(() => {
     setTocOpen(getTocVisible());
-  }, []);
+    setToolbarVisible(getChromeVisible());
+    setBgThemeState(getBgTheme());
+    setPublished(isArticlePublished(article.id));
+  }, [article.id]);
+
+  const showToast = (message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast(null), 2800);
+  };
+
+  const toggleToolbar = () => {
+    setToolbarVisible((prev) => {
+      const next = !prev;
+      setChromeVisible(next);
+      return next;
+    });
+  };
 
   const toggleToc = () => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      setTocMobileOpen((v) => !v);
+      return;
+    }
     setTocOpen((prev) => {
       const next = !prev;
       setTocVisible(next);
       return next;
     });
+  };
+
+  const handleBgChange = (next: EditorBgTheme) => {
+    setBgThemeState(next);
+    setBgTheme(next);
   };
 
   const initialContent = useMemo(() => {
@@ -123,9 +167,23 @@ export function LibraryTiptapEditor({
       attributes: {
         class: "tiptap simple-editor-prose",
         spellcheck: "false",
+        style: `color: ${theme.prose}`,
       },
     },
   });
+
+  useEffect(() => {
+    if (!editor) return;
+    editor.setOptions({
+      editorProps: {
+        attributes: {
+          class: "tiptap simple-editor-prose",
+          spellcheck: "false",
+          style: `color: ${theme.prose}`,
+        },
+      },
+    });
+  }, [editor, theme.prose]);
 
   useEffect(() => {
     if (!editor) return;
@@ -136,6 +194,20 @@ export function LibraryTiptapEditor({
   }, [article, editor]);
 
   const navigateToHeading = useCallback(
+    (headingId: string) => {
+      const el =
+        headingId && scrollRef.current
+          ? (scrollRef.current.querySelector(`#${CSS.escape(headingId)}`) as HTMLElement | null)
+          : null;
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      editor?.chain().focus().run();
+    },
+    [editor]
+  );
+
+  const navigateToHeadingFromToc = useCallback(
     (_id: string, element: HTMLElement) => {
       element.scrollIntoView({ behavior: "smooth", block: "start" });
       editor?.chain().focus().run();
@@ -143,12 +215,39 @@ export function LibraryTiptapEditor({
     [editor]
   );
 
+  const handleMerge = () => {
+    if (!editor) return;
+    const saved = getArticleEditorContent(article.id);
+    const merged = mergeAnnotationsWithSource(article, saved);
+    editor.commands.setContent(merged);
+    saveArticleEditorContent(article.id, merged);
+    showToast("Merged your highlights with the latest article");
+  };
+
+  const handlePublish = () => {
+    if (!editor) return;
+    saveArticleEditorContent(article.id, editor.getJSON());
+    publishArticle(article.id);
+    setPublished(true);
+    showToast("Published your annotated copy");
+  };
+
   const hasToc = tocAnchors.some((a) => a.originalLevel === 2);
 
   if (!editor) return null;
 
+  const pageStyle = {
+    "--editor-bg": theme.page,
+    "--editor-fg": theme.prose,
+    background: theme.page,
+    color: theme.prose,
+  } as React.CSSProperties;
+
   return (
-    <div className="simple-editor-page">
+    <div
+      className={`simple-editor-page simple-editor-page--${bgTheme} ${toolbarVisible ? "simple-editor-page--toolbar" : "simple-editor-page--reading"}`}
+      style={pageStyle}
+    >
       <header className="simple-editor-header">
         <div className="simple-editor-header-start">
           <button
@@ -159,50 +258,76 @@ export function LibraryTiptapEditor({
           >
             <ArrowLeft size={18} strokeWidth={2.5} />
           </button>
-          <DrNoteLogo showWordmark forceWordmark />
+          <h1 className="simple-editor-title" title={article.title}>
+            {article.title}
+          </h1>
         </div>
 
         <div className="simple-editor-header-end">
+          <button
+            type="button"
+            className="simple-editor-action-btn"
+            onClick={() => setSearchOpen(true)}
+            aria-label="Search"
+            title="Search"
+          >
+            <Search size={16} strokeWidth={2} />
+          </button>
+
           {hasToc ? (
             <button
               type="button"
-              className={`simple-editor-toc-toggle ${tocOpen ? "is-active" : ""}`}
+              className={`simple-editor-action-btn ${tocOpen || tocMobileOpen ? "is-active" : ""}`}
               onClick={toggleToc}
-              aria-label={tocOpen ? "Hide table of contents" : "Show table of contents"}
-              title={tocOpen ? "Hide contents" : "Show contents"}
+              aria-label="Table of contents"
+              title="Contents"
             >
-              {tocOpen ? (
-                <PanelRightClose size={16} strokeWidth={2} />
-              ) : (
-                <PanelRightOpen size={16} strokeWidth={2} />
-              )}
-              <span className="hidden sm:inline">Contents</span>
+              <List size={16} strokeWidth={2} />
             </button>
           ) : null}
-          <ZoomDropdownMenu
-            currentZoom={zoom}
-            onZoomChange={setZoom}
-            onFitToPage={() => setZoom(ZOOM_DEFAULT)}
-          />
+
+          <EditorBgColorPicker theme={bgTheme} onChange={handleBgChange} />
+
+          <button
+            type="button"
+            className="simple-editor-action-btn"
+            onClick={handleMerge}
+            aria-label="Merge annotations"
+            title="Merge"
+          >
+            <GitMerge size={16} strokeWidth={2} />
+          </button>
+
+          <button
+            type="button"
+            className={`simple-editor-action-btn simple-editor-publish-btn ${published ? "is-published" : ""}`}
+            onClick={handlePublish}
+            aria-label="Publish"
+            title={published ? "Published" : "Publish"}
+          >
+            <Upload size={16} strokeWidth={2} />
+          </button>
         </div>
       </header>
 
       <Tiptap editor={editor}>
-        <div className="simple-editor-toolbar-wrap">
-          <SimpleEditorToolbar />
-        </div>
+        {toolbarVisible ? (
+          <div className="simple-editor-toolbar-wrap">
+            <SimpleEditorToolbar />
+          </div>
+        ) : null}
 
         <div
           className={`simple-editor-body ${tocOpen && hasToc ? "simple-editor-body--with-toc" : ""}`}
         >
           <div ref={scrollRef} className="simple-editor-scroll">
-            <div
-              className="simple-editor-canvas"
-              style={{
-                transform: `scale(${zoom / 100})`,
-                transformOrigin: "top center",
-              }}
-            >
+            <div className="simple-editor-canvas">
+              <div className="simple-editor-article-hero">
+                <h2 className="simple-editor-article-title">{article.title}</h2>
+                <p className="simple-editor-article-meta">
+                  {article.subject} · {article.readMinutes} min read
+                </p>
+              </div>
               <Tiptap.Content />
             </div>
           </div>
@@ -210,7 +335,9 @@ export function LibraryTiptapEditor({
           <TiptapTocSidebar
             anchors={tocAnchors}
             visible={tocOpen}
-            onNavigate={navigateToHeading}
+            mobileOpen={tocMobileOpen}
+            onCloseMobile={() => setTocMobileOpen(false)}
+            onNavigate={navigateToHeadingFromToc}
           />
         </div>
 
@@ -242,6 +369,30 @@ export function LibraryTiptapEditor({
 
         <WikiLinkEditorOverlay editor={editor} />
       </Tiptap>
+
+      <button
+        type="button"
+        className="simple-editor-chrome-fab"
+        onClick={toggleToolbar}
+        aria-label={toolbarVisible ? "Hide formatting tools" : "Show formatting tools"}
+        title={toolbarVisible ? "Hide tools" : "Annotate"}
+      >
+        {toolbarVisible ? (
+          <PanelBottom size={20} strokeWidth={2} />
+        ) : (
+          <PanelTop size={20} strokeWidth={2} />
+        )}
+      </button>
+
+      {searchOpen ? (
+        <EditorSearchModal
+          editor={editor}
+          onClose={() => setSearchOpen(false)}
+          onNavigate={navigateToHeading}
+        />
+      ) : null}
+
+      {toast ? <div className="simple-editor-toast">{toast}</div> : null}
     </div>
   );
 }
