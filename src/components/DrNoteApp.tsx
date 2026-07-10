@@ -1120,10 +1120,7 @@ function UpgradeModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-[60] flex flex-col bg-white">
-      <div
-        className="flex items-center justify-between px-4 h-14 flex-shrink-0"
-        style={{ borderBottom: "3px solid #e2e8f0" }}
-      >
+      <div className="flex items-center justify-between px-4 h-14 flex-shrink-0">
         <div className="flex items-center gap-2">
           <Crown size={18} strokeWidth={2.5} style={{ color: "#a855f7" }} />
           <span className="font-black text-slate-900 text-base">Upgrade</span>
