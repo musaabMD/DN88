@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, type FormEvent } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { BookOpen, ChevronRight, FileQuestion, Lock } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
-import { UserAuthControls } from "@/components/UserAuthControls";
+import { ProductSiteNav } from "@/components/ProductSiteNav";
 import { useClerkEnabled, useClientMounted } from "@/hooks/useClerkEnabled";
 import { EXAMS } from "@/lib/exams";
 import {
@@ -15,8 +14,6 @@ import {
   saveQbankPreorder,
 } from "@/lib/qbank-access";
 import {
-  DASHBOARD_PATH,
-  FEATURES_PATH,
   LIBRARY_PATH,
   QBANK_PATH,
   UPGRADE_PATH,
@@ -24,8 +21,6 @@ import {
 import { getTileColors } from "@/lib/tile-colors";
 
 function ProductHomeHeader() {
-  const router = useRouter();
-
   return (
     <>
       <header className="fixed inset-x-0 top-0 z-40 border-b border-slate-100 bg-white/95 backdrop-blur-md">
@@ -34,28 +29,7 @@ function ProductHomeHeader() {
             <DrNoteLogo showWordmark forceWordmark />
           </Link>
 
-          <nav className="flex items-center gap-2 sm:gap-4">
-            <Link
-              href={DASHBOARD_PATH}
-              className="hidden text-sm font-bold text-slate-600 hover:text-[#334155] sm:inline"
-            >
-              Dashboard
-            </Link>
-            <Link
-              href={FEATURES_PATH}
-              className="hidden text-sm font-bold text-slate-600 hover:text-[#334155] sm:inline"
-            >
-              Features
-            </Link>
-            <button
-              type="button"
-              onClick={() => router.push(UPGRADE_PATH)}
-              className="rounded-xl border-b-4 border-[#1e293b] bg-[#334155] px-3 py-2 text-sm font-extrabold text-white transition-colors hover:bg-[#475569] active:translate-y-0.5 active:border-b-2 sm:px-4"
-            >
-              Get Pro
-            </button>
-            <UserAuthControls compact />
-          </nav>
+          <ProductSiteNav />
         </div>
       </header>
       <div className="h-[4.5rem] shrink-0" aria-hidden />
