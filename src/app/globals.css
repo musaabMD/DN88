@@ -755,6 +755,51 @@ body {
   border-radius: 0.375rem;
 }
 
+.tiptap .tableWrapper {
+  overflow-x: auto;
+  margin: 1.25rem 0;
+}
+
+.tiptap table,
+.tiptap table.simple-editor-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.tiptap th,
+.tiptap td {
+  border: 1px solid rgb(226 232 240);
+  padding: 0.5rem 0.75rem;
+  vertical-align: top;
+  min-width: 4rem;
+}
+
+.tiptap th {
+  background: rgb(248 250 252);
+  color: rgb(30 41 59);
+  font-weight: 600;
+  text-align: left;
+}
+
+.tiptap td {
+  background: rgb(255 255 255);
+}
+
+.tiptap .selectedCell::after {
+  background: rgb(199 210 254 / 0.35);
+}
+
+.tiptap-table-menu {
+  min-width: 11rem;
+}
+
+.tiptap-heading-trigger.is-active {
+  background: rgb(238 242 255);
+  color: rgb(67 56 202);
+}
+
 .ProseMirror-selectednode {
   outline: 2px solid rgb(199 210 254);
   border-radius: 0.25rem;
