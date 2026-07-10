@@ -35,3 +35,14 @@ export function saveArticleEditorContent(
   const without = all.filter((entry) => entry.articleId !== articleId);
   writeJson(ARTICLE_CONTENT_KEY, [...without, { articleId, content }]);
 }
+
+const TOC_VISIBLE_KEY = "drnote-library-toc-visible";
+
+export function getTocVisible(): boolean {
+  if (typeof window === "undefined") return true;
+  return localStorage.getItem(TOC_VISIBLE_KEY) !== "false";
+}
+
+export function setTocVisible(visible: boolean): void {
+  localStorage.setItem(TOC_VISIBLE_KEY, visible ? "true" : "false");
+}

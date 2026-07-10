@@ -9,15 +9,18 @@ import TextAlign from "@tiptap/extension-text-align";
 import Link from "@tiptap/extension-link";
 import { TableOfContents } from "@tiptap/extension-table-of-contents";
 import type { TableOfContentData } from "@tiptap/extension-table-of-contents";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LibraryArticle } from "@/lib/set-content";
+import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { DecorationOnly } from "@/components/library/editor/decoration-only";
 import { SectionHeading } from "@/components/library/editor/section-heading";
 import { articleToTiptapContent } from "@/components/library/editor/article-to-tiptap";
 import {
   getArticleEditorContent,
+  getTocVisible,
   saveArticleEditorContent,
+  setTocVisible,
 } from "@/lib/library-editor-preferences";
 import { SimpleEditorToolbar } from "@/components/library/editor/simple-editor-toolbar";
 import {
@@ -29,10 +32,6 @@ import { TiptapTocSidebar } from "@/components/library/editor/tiptap-toc-sidebar
 import { sectionSlug } from "@/components/content/ArticleTableOfContents";
 import { HIGHLIGHT_COLORS } from "@/components/library/editor/color-highlight-popover";
 
-/**
- * Full-page Simple Editor for library articles.
- * @see https://tiptap.dev/docs/ui-components/templates/simple-editor
- */
 export function LibraryTiptapEditor({
   article,
   onBack,
@@ -42,7 +41,20 @@ export function LibraryTiptapEditor({
 }) {
   const [zoom, setZoom] = useState<ZoomLevel>(ZOOM_DEFAULT);
   const [tocAnchors, setTocAnchors] = useState<TableOfContentData>([]);
+  const [tocOpen, setTocOpen] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setTocOpen(getTocVisible());
+  }, []);
+
+  const toggleToc = () => {
+    setTocOpen((prev) => {
+      const next = !prev;
+      setTocVisible(next);
+      return next;
+    });
+  };
 
   const initialContent = useMemo(() => {
     const saved = getArticleEditorContent(article.id);
@@ -98,25 +110,48 @@ export function LibraryTiptapEditor({
     [editor]
   );
 
+  const hasToc = tocAnchors.some((a) => a.originalLevel === 2);
+
   if (!editor) return null;
 
   return (
     <div className="simple-editor-page">
       <header className="simple-editor-header">
-        <button
-          type="button"
-          className="simple-editor-back"
-          onClick={onBack}
-          aria-label="Back to library"
-        >
-          <ArrowLeft size={18} strokeWidth={2.5} />
-          <span>Library</span>
-        </button>
-        <ZoomDropdownMenu
-          currentZoom={zoom}
-          onZoomChange={setZoom}
-          onFitToPage={() => setZoom(ZOOM_DEFAULT)}
-        />
+        <div className="simple-editor-header-start">
+          <button
+            type="button"
+            className="simple-editor-back"
+            onClick={onBack}
+            aria-label="Back to library"
+          >
+            <ArrowLeft size={18} strokeWidth={2.5} />
+          </button>
+          <DrNoteLogo showWordmark forceWordmark />
+        </div>
+
+        <div className="simple-editor-header-end">
+          {hasToc ? (
+            <button
+              type="button"
+              className={`simple-editor-toc-toggle ${tocOpen ? "is-active" : ""}`}
+              onClick={toggleToc}
+              aria-label={tocOpen ? "Hide table of contents" : "Show table of contents"}
+              title={tocOpen ? "Hide contents" : "Show contents"}
+            >
+              {tocOpen ? (
+                <PanelRightClose size={16} strokeWidth={2} />
+              ) : (
+                <PanelRightOpen size={16} strokeWidth={2} />
+              )}
+              <span className="hidden sm:inline">Contents</span>
+            </button>
+          ) : null}
+          <ZoomDropdownMenu
+            currentZoom={zoom}
+            onZoomChange={setZoom}
+            onFitToPage={() => setZoom(ZOOM_DEFAULT)}
+          />
+        </div>
       </header>
 
       <Tiptap editor={editor}>
@@ -124,7 +159,9 @@ export function LibraryTiptapEditor({
           <SimpleEditorToolbar />
         </div>
 
-        <div className="simple-editor-body">
+        <div
+          className={`simple-editor-body ${tocOpen && hasToc ? "simple-editor-body--with-toc" : ""}`}
+        >
           <div ref={scrollRef} className="simple-editor-scroll">
             <div
               className="simple-editor-canvas"
@@ -137,7 +174,11 @@ export function LibraryTiptapEditor({
             </div>
           </div>
 
-          <TiptapTocSidebar anchors={tocAnchors} onNavigate={navigateToHeading} />
+          <TiptapTocSidebar
+            anchors={tocAnchors}
+            visible={tocOpen}
+            onNavigate={navigateToHeading}
+          />
         </div>
 
         <BubbleMenu editor={editor} className="tiptap-bubble-menu">
