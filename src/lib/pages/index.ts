@@ -37,3 +37,6 @@ export {
 } from "@/lib/pages/create-page-store";
 
 export { isPendingPageId, pageTitleToSlug, pendingPageId } from "@/lib/pages/page-slug";
+
+export { getWikiLinkPreview } from "@/lib/pages/page-preview";
+export type { WikiLinkPreview } from "@/lib/pages/page-preview";

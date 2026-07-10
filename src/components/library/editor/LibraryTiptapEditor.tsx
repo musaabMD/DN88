@@ -16,6 +16,7 @@ import {
   getHierarchicalIndexes,
   TableOfContents,
 } from "@tiptap/extension-table-of-contents";
+import { UniqueID } from "@tiptap/extension-unique-id";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { StudyModeFilter } from "@/components/content/ArticleStudyModes";
@@ -39,6 +40,7 @@ import { sectionSlug } from "@/components/content/ArticleTableOfContents";
 import {
   WikiLink,
   WikiLinkEditorOverlay,
+  WikiLinkHoverPreview,
 } from "@/components/library/editor/wiki-link";
 import { SelectionBubbleMenu } from "@/components/library/editor/selection-bubble-menu";
 import { EditorOverflowMenu } from "@/components/library/editor/editor-overflow-menu";
@@ -113,6 +115,12 @@ export function LibraryTiptapEditor({
         getId: (content) => sectionSlug(content),
         getIndex: getHierarchicalIndexes,
         scrollParent: getScrollParent,
+      }),
+      // Stable per-block anchors for deep links + future backlinks.
+      // Uses a dedicated attribute so it never clobbers heading slug ids.
+      UniqueID.configure({
+        attributeName: "data-block-id",
+        types: ["heading", "paragraph", "blockquote", "listItem", "details"],
       }),
       DecorationOnly,
     ],
@@ -225,6 +233,9 @@ export function LibraryTiptapEditor({
 
         {isReadMode ? <SelectionBubbleMenu editor={editor} /> : null}
         {isReadMode ? <WikiLinkEditorOverlay editor={editor} /> : null}
+        {isReadMode ? (
+          <WikiLinkHoverPreview containerSelector=".simple-editor-scroll" />
+        ) : null}
         {isReadMode ? (
           <FloatingToc containerSelector=".simple-editor-scroll" />
         ) : null}

@@ -15,6 +15,7 @@ export { WikiLinkAutocomplete } from "@/components/library/editor/wiki-link/wiki
 export { WikiLinkPicker } from "@/components/library/editor/wiki-link/wiki-link-picker";
 export { CreatePageDialog } from "@/components/library/editor/wiki-link/create-page-dialog";
 export { WikiLinkEditorOverlay } from "@/components/library/editor/wiki-link/wiki-link-editor-overlay";
+export { WikiLinkHoverPreview } from "@/components/library/editor/wiki-link/WikiLinkHoverPreview";
 export { WIKI_LINK_META } from "@/components/library/editor/wiki-link/constants";
 export {
   isInsideWikiLinkBrackets,
