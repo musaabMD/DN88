@@ -1,0 +1,295 @@
+"use client";
+
+import * as React from "react";
+import { ListTree, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface TocItem {
+  id: string;
+  text: string;
+  level: number;
+}
+
+interface FloatingTocProps {
+  /** CSS selector for the container holding the headings. */
+  containerSelector?: string;
+  /** Which heading tags to include. */
+  headingSelector?: string;
+  /** Extra classes for the floating wrapper. */
+  className?: string;
+}
+
+export function FloatingToc({
+  containerSelector,
+  headingSelector = "h2, h3",
+  className,
+}: FloatingTocProps) {
+  const [open, setOpen] = React.useState(false);
+  const [items, setItems] = React.useState<TocItem[]>([]);
+  const [activeId, setActiveId] = React.useState<string>("");
+  const [pageTitle, setPageTitle] = React.useState<string>("");
+  const [progress, setProgress] = React.useState(0);
+  const panelRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const root: ParentNode = containerSelector
+      ? (document.querySelector(containerSelector) ?? document)
+      : document;
+
+    const h1 = document.querySelector("h1");
+    setPageTitle(h1?.textContent?.trim() || document.title || "Contents");
+
+    const headings = Array.from(
+      root.querySelectorAll<HTMLHeadingElement>(headingSelector)
+    );
+
+    const collected: TocItem[] = headings.map((el, i) => {
+      if (!el.id) {
+        el.id =
+          el.textContent
+            ?.trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, "")
+            .replace(/\s+/g, "-") || `section-${i}`;
+      }
+      return {
+        id: el.id,
+        text: el.textContent?.trim() ?? "",
+        level: Number(el.tagName.charAt(1)),
+      };
+    });
+
+    setItems(collected);
+  }, [containerSelector, headingSelector]);
+
+  React.useEffect(() => {
+    if (items.length === 0) return;
+
+    const scrollRoot = containerSelector
+      ? document.querySelector(containerSelector)
+      : null;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible.length > 0) setActiveId(visible[0].target.id);
+      },
+      {
+        root: scrollRoot instanceof Element ? scrollRoot : null,
+        rootMargin: "-80px 0px -70% 0px",
+        threshold: 0,
+      }
+    );
+
+    items.forEach(({ id }) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    const onScroll = () => {
+      if (scrollRoot instanceof Element) {
+        const max = scrollRoot.scrollHeight - scrollRoot.clientHeight;
+        setProgress(max > 0 ? Math.min(1, scrollRoot.scrollTop / max) : 0);
+        return;
+      }
+      const doc = document.documentElement;
+      const max = doc.scrollHeight - doc.clientHeight;
+      setProgress(max > 0 ? Math.min(1, doc.scrollTop / max) : 0);
+    };
+
+    onScroll();
+    const target = scrollRoot ?? window;
+    target.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => {
+      observer.disconnect();
+      target.removeEventListener("scroll", onScroll);
+    };
+  }, [items, containerSelector]);
+
+  React.useEffect(() => {
+    if (!open) return;
+
+    const onClick = (e: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const scrollTo = (id: string) => {
+    const scrollRoot = containerSelector
+      ? document.querySelector(containerSelector)
+      : null;
+    const target = document.getElementById(id);
+
+    if (target && scrollRoot instanceof Element) {
+      const offset =
+        target.getBoundingClientRect().top -
+        scrollRoot.getBoundingClientRect().top +
+        scrollRoot.scrollTop -
+        72;
+      scrollRoot.scrollTo({ top: Math.max(0, offset), behavior: "smooth" });
+    } else {
+      target?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    setActiveId(id);
+    setOpen(false);
+  };
+
+  if (items.length === 0) return null;
+
+  const R = 22;
+  const CIRC = 2 * Math.PI * R;
+
+  let sectionNo = 0;
+  const numbered = items.map((item) => {
+    if (item.level === 2) sectionNo += 1;
+    return { ...item, no: item.level === 2 ? sectionNo : null };
+  });
+
+  return (
+    <div
+      ref={panelRef}
+      className={cn(
+        "fixed bottom-6 right-6 z-50 flex flex-col items-end",
+        className
+      )}
+    >
+      <div
+        className={cn(
+          "mb-3 w-80 origin-bottom-right overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl transition-all duration-200",
+          open
+            ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
+            : "pointer-events-none translate-y-2 scale-95 opacity-0"
+        )}
+        role="navigation"
+        aria-label="Table of contents"
+        aria-hidden={!open}
+      >
+        <div className="border-b border-slate-100 bg-slate-50/60 px-5 py-4">
+          <p className="text-[11px] font-medium uppercase tracking-widest text-indigo-500">
+            On this page
+          </p>
+          <p className="mt-0.5 truncate text-sm font-semibold text-slate-900">
+            {pageTitle}
+          </p>
+          <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-slate-200">
+            <div
+              className="h-full rounded-full bg-indigo-500 transition-[width] duration-150"
+              style={{ width: `${Math.round(progress * 100)}%` }}
+            />
+          </div>
+        </div>
+
+        <nav className="max-h-80 overflow-y-auto py-3 pr-3">
+          <ul className="relative ml-5 border-l border-slate-200">
+            {numbered.map((item) => {
+              const isActive = item.id === activeId;
+              return (
+                <li key={item.id} className="relative">
+                  <span
+                    className={cn(
+                      "absolute -left-[5px] top-1/2 h-[9px] w-[9px] -translate-y-1/2 rounded-full border-2 border-white transition-colors",
+                      isActive
+                        ? "bg-indigo-500 ring-2 ring-indigo-100"
+                        : "bg-slate-300"
+                    )}
+                    aria-hidden
+                  />
+                  <button
+                    type="button"
+                    onClick={() => scrollTo(item.id)}
+                    className={cn(
+                      "flex w-full items-baseline gap-2.5 rounded-r-lg py-2 pl-4 pr-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300",
+                      item.level === 3 && "pl-8",
+                      isActive
+                        ? "bg-indigo-50/70 text-indigo-700"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    )}
+                  >
+                    {item.no !== null && (
+                      <span
+                        className={cn(
+                          "shrink-0 font-mono text-[11px] tabular-nums",
+                          isActive ? "text-indigo-400" : "text-slate-400"
+                        )}
+                      >
+                        {String(item.no).padStart(2, "0")}
+                      </span>
+                    )}
+                    <span
+                      className={cn(
+                        "truncate text-sm",
+                        isActive ? "font-medium" : "",
+                        item.level === 3 && "text-[13px]"
+                      )}
+                    >
+                      {item.text}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-label={open ? "Close table of contents" : "Open table of contents"}
+        className="group relative inline-flex h-14 w-14 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-lg transition-all hover:scale-105 hover:text-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 active:scale-95"
+      >
+        <svg
+          className="absolute inset-0 h-full w-full -rotate-90"
+          viewBox="0 0 56 56"
+          aria-hidden
+        >
+          <circle
+            cx="28"
+            cy="28"
+            r={R}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            className="text-slate-100"
+          />
+          <circle
+            cx="28"
+            cy="28"
+            r={R}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeDasharray={CIRC}
+            strokeDashoffset={CIRC * (1 - progress)}
+            className="text-indigo-500 transition-[stroke-dashoffset] duration-150"
+          />
+        </svg>
+        <span className="relative">
+          {open ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <ListTree className="h-5 w-5" />
+          )}
+        </span>
+      </button>
+    </div>
+  );
+}
