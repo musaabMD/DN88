@@ -15,7 +15,11 @@ import {
   fetchPublicArticle,
   isCatalogApiEnabled,
 } from "@/lib/catalog/api";
-import { getEntity, resolveLibraryArticle } from "@/lib/entities";
+import {
+  ENTITY_PLACEHOLDER_SLUG,
+  getEntity,
+  resolveLibraryArticle,
+} from "@/lib/entities";
 import { getCreatedPageById } from "@/lib/pages/create-page-store";
 import type { LibraryArticle as LibraryArticleType } from "@/lib/set-content";
 import { LIBRARY_PATH } from "@/lib/routes";
@@ -45,13 +49,13 @@ function createdPageToArticle(page: {
 export function LibraryArticleClient({ articleId }: { articleId: string }) {
   const router = useRouter();
   const pathname = usePathname();
-  const resolvedId =
-    articleId === "_"
-      ? (pathname.match(/^\/library\/articles\/([^/]+)/)?.[1] ?? articleId)
+  const resolvedArticleId =
+    articleId === ENTITY_PLACEHOLDER_SLUG
+      ? (pathname.match(/^\/library\/articles\/([^/]+)/)?.[1] ?? "")
       : articleId;
 
-  const bundled = resolveLibraryArticle(resolvedId);
-  const created = !bundled ? getCreatedPageById(resolvedId) : undefined;
+  const bundled = resolveLibraryArticle(resolvedArticleId);
+  const created = !bundled ? getCreatedPageById(resolvedArticleId) : undefined;
 
   const [apiArticle, setApiArticle] = useState<LibraryArticleType | null>(null);
   const [loading, setLoading] = useState(isCatalogApiEnabled());
@@ -59,7 +63,7 @@ export function LibraryArticleClient({ articleId }: { articleId: string }) {
   useEffect(() => {
     if (!isCatalogApiEnabled()) return;
     let cancelled = false;
-    void fetchPublicArticle(resolvedId).then((detail) => {
+    void fetchPublicArticle(resolvedArticleId).then((detail) => {
       if (cancelled) return;
       setApiArticle(detail ? catalogArticleToLibraryArticle(detail) : null);
       setLoading(false);
@@ -67,7 +71,7 @@ export function LibraryArticleClient({ articleId }: { articleId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [resolvedId]);
+  }, [resolvedArticleId]);
 
   const resolved =
     isCatalogApiEnabled()
@@ -78,7 +82,7 @@ export function LibraryArticleClient({ articleId }: { articleId: string }) {
 
   if (loading) {
     return (
-      <LibraryBrowseShell showBack onBack={backToLibrary}>
+      <LibraryBrowseShell>
         <CatalogStateBanner />
         <p className="text-muted-foreground">Loading article…</p>
       </LibraryBrowseShell>
@@ -87,17 +91,17 @@ export function LibraryArticleClient({ articleId }: { articleId: string }) {
 
   if (!resolved) {
     const entity =
-      getEntity("conditions", resolvedId) ??
-      getEntity("medications", resolvedId) ??
-      getEntity("assessments", resolvedId) ??
-      getEntity("overviews", resolvedId);
+      getEntity("conditions", resolvedArticleId) ??
+      getEntity("medications", resolvedArticleId) ??
+      getEntity("assessments", resolvedArticleId) ??
+      getEntity("overviews", resolvedArticleId);
 
     const displayTitle =
       entity?.title ??
-      resolvedId.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      resolvedArticleId.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
     return (
-      <LibraryBrowseShell showBack onBack={backToLibrary}>
+      <LibraryBrowseShell>
         <CatalogStateBanner />
         <LibraryPageHeader
           seed={displayTitle}

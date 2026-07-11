@@ -5344,3 +5344,4 @@
 /assessments/* /assessments/_/ 200
 /overviews/* /overviews/_/ 200
 /library/topics/* /library/topics/_/ 200
+/library/articles/* /library/articles/_/ 200

@@ -38,6 +38,7 @@ for (const { from, to } of getEntitySplatRewrites()) {
 }
 
 lines.push(`/library/topics/* /library/topics/_/ 200`);
+lines.push(`/library/articles/* /library/articles/_/ 200`);
 
 mkdirSync(dirname(OUT_FILE), { recursive: true });
 writeFileSync(OUT_FILE, `${lines.join("\n")}\n`, "utf8");
