@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import LibraryArticle from "@/components/content/LibraryArticle";
 import { LibraryBrowseShell } from "@/components/library/LibraryBrowseShell";
 import { LibraryGrid, LibraryListCard } from "@/components/library/LibraryListCard";
@@ -13,7 +13,9 @@ import {
 } from "@/components/library/LibraryUi";
 import {
   classifyEntityKind,
+  ENTITY_PLACEHOLDER_SLUG,
   entityKindLabel,
+  entitySlugFromPathname,
   entitySlugFromTopicTitle,
   getEntity,
   resolveLibraryArticle,
@@ -30,15 +32,22 @@ type EntityPageClientProps = {
 
 export function EntityPageClient({ kind, slug }: EntityPageClientProps) {
   const router = useRouter();
-  const entity = getEntity(kind, slug);
-  const article = resolveLibraryArticle(slug) ?? (entity?.articleId ? resolveLibraryArticle(entity.articleId) : undefined);
+  const pathname = usePathname();
+  const resolvedSlug =
+    slug === ENTITY_PLACEHOLDER_SLUG
+      ? entitySlugFromPathname(pathname, kind)
+      : slug;
+  const entity = getEntity(kind, resolvedSlug);
+  const article =
+    resolveLibraryArticle(resolvedSlug) ??
+    (entity?.articleId ? resolveLibraryArticle(entity.articleId) : undefined);
 
   const displayTitle =
     article?.title ??
     entity?.title ??
-    slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    resolvedSlug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
-  const bookmarkKey = `${kind}-${slug}`;
+  const bookmarkKey = `${kind}-${resolvedSlug}`;
 
   const { bookmarked, toggleBookmark } = useBookmark(
     () => isTopicBookmarked(bookmarkKey),
@@ -119,12 +128,17 @@ export function TopicEntityPageClient({
   topicId: string;
 }) {
   const router = useRouter();
-  const topic = getTopicById(topicId);
+  const pathname = usePathname();
+  const resolvedTopicId =
+    topicId === ENTITY_PLACEHOLDER_SLUG
+      ? (pathname.match(/^\/library\/topics\/([^/]+)/)?.[1] ?? "")
+      : topicId;
+  const topic = getTopicById(resolvedTopicId);
 
   if (!topic) {
     return (
       <LibraryBrowseShell showBack onBack={() => router.push(LIBRARY_PATH)}>
-        <LibraryPageHeader seed={topicId} title="Topic not found" meta="" />
+        <LibraryPageHeader seed={resolvedTopicId} title="Topic not found" meta="" />
         <ComingSoonPanel
           title="Topic not found"
           description="This topic is not in our catalog yet."

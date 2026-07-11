@@ -21,6 +21,17 @@ export type EntityKind =
   | "assessments"
   | "overviews";
 
+/** Shared static shell; real slug is resolved client-side from the URL path. */
+export const ENTITY_PLACEHOLDER_SLUG = "_";
+
+const ENTITY_KINDS: EntityKind[] = [
+  "conditions",
+  "medications",
+  "procedures",
+  "assessments",
+  "overviews",
+];
+
 export type EntityNode = {
   slug: string;
   kind: EntityKind;
@@ -175,10 +186,40 @@ export function getAllEntities(kind?: EntityKind): EntityNode[] {
   return kind ? nodes.filter((n) => n.kind === kind) : nodes;
 }
 
+/** Slug segment from a canonical entity pathname, e.g. /conditions/dka/ → dka. */
+export function entitySlugFromPathname(
+  pathname: string,
+  kind: EntityKind
+): string {
+  const prefix = `/${kind}/`;
+  if (!pathname.startsWith(prefix)) return "";
+  const rest = pathname.slice(prefix.length).replace(/\/$/, "");
+  return rest.split("/")[0] ?? "";
+}
+
+export function getPublishedEntityStaticParams(
+  kind: EntityKind
+): Array<{ slug: string }> {
+  return getAllEntities(kind)
+    .filter((entity) => entity.articleId)
+    .map((entity) => ({ slug: entity.slug }));
+}
+
 export function getEntityStaticParams(
   kind: EntityKind
 ): Array<{ slug: string }> {
-  return getAllEntities(kind).map((entity) => ({ slug: entity.slug }));
+  const published = getPublishedEntityStaticParams(kind);
+  const slugs = new Set(published.map((entry) => entry.slug));
+  slugs.add(ENTITY_PLACEHOLDER_SLUG);
+  return [...slugs].map((slug) => ({ slug }));
+}
+
+/** Cloudflare Pages splat rewrites — serve placeholder shells for unpublished entities. */
+export function getEntitySplatRewrites(): Array<{ from: string; to: string }> {
+  return ENTITY_KINDS.map((kind) => ({
+    from: `/${kind}/*`,
+    to: `/${kind}/${ENTITY_PLACEHOLDER_SLUG}/`,
+  }));
 }
 
 /** Map legacy /library/topics/{topicId} to canonical entity path. */
@@ -202,15 +243,12 @@ export function getArticleRedirectMap(): Array<{ from: string; to: string }> {
   }));
 }
 
-/** All slugs that should pre-render as article/entity pages (content or coming soon). */
-export function getAllResolvableArticleSlugs(): string[] {
-  const slugs = new Set<string>();
+/** Legacy article ids that should pre-render at /library/articles/{id}. */
+export function getPublishedArticleStaticParams(): Array<{ articleId: string }> {
+  const ids = new Set<string>();
   for (const article of LIBRARY_ARTICLES) {
-    slugs.add(article.id);
-    slugs.add(entitySlugFromTopicTitle(article.title));
+    ids.add(article.id);
+    ids.add(entitySlugFromTopicTitle(article.title));
   }
-  for (const entity of ENTITY_REGISTRY.values()) {
-    slugs.add(entity.slug);
-  }
-  return [...slugs];
+  return [...ids].map((articleId) => ({ articleId }));
 }

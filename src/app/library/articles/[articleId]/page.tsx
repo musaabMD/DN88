@@ -1,8 +1,8 @@
 import { LibraryArticleClient } from "@/components/LibraryArticleClient";
-import { getAllResolvableArticleSlugs } from "@/lib/entities";
+import { getPublishedArticleStaticParams } from "@/lib/entities";
 
 export function generateStaticParams() {
-  return getAllResolvableArticleSlugs().map((articleId) => ({ articleId }));
+  return getPublishedArticleStaticParams();
 }
 
 export default async function LibraryArticlePage({
