@@ -47,20 +47,6 @@ export function setTocVisible(visible: boolean): void {
   localStorage.setItem(TOC_VISIBLE_KEY, visible ? "true" : "false");
 }
 
-const SCROLL_KEY = "drnote-library-scroll";
-
-/** Remember/resume the reader scroll position per article. */
-export function getArticleScroll(articleId: string): number {
-  const all = readJson<Record<string, number>>(SCROLL_KEY, {});
-  return all[articleId] ?? 0;
-}
-
-export function saveArticleScroll(articleId: string, top: number): void {
-  const all = readJson<Record<string, number>>(SCROLL_KEY, {});
-  all[articleId] = Math.max(0, Math.round(top));
-  writeJson(SCROLL_KEY, all);
-}
-
 const GLOSSARY_KEY = "drnote-library-glossary-enabled";
 
 export function getGlossaryEnabled(): boolean {
