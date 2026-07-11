@@ -29,6 +29,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Refresh catalog bundle
+        run: node scripts/refresh-catalog.mjs
+        env:
+          CATALOG_SYNC_ORIGIN: ${{ secrets.CATALOG_SYNC_ORIGIN }}
+          CATALOG_SYNC_ORIGIN_B64: ${{ secrets.CATALOG_SYNC_ORIGIN_B64 }}
+          CATALOG_SYNC_TOKEN: ${{ secrets.CATALOG_SYNC_TOKEN }}
+          CATALOG_SYNC_REF: ${{ secrets.CATALOG_SYNC_REF }}
+
       - name: Build
         run: npm run build
         env:

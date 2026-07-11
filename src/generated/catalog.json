@@ -1,0 +1,408 @@
+{
+  "version": 1,
+  "syncedAt": "2026-07-11T18:13:01.267Z",
+  "articles": [
+    {
+      "id": "endocrinology-and-metabolic-disorders-diabetes-mellitus",
+      "subject": "Endocrinology and metabolic disorders",
+      "title": "Diabetes mellitus",
+      "readMinutes": 12,
+      "updated": "Jun 2026",
+      "sections": [
+        {
+          "id": "summary",
+          "heading": "Summary",
+          "body": "Diabetes mellitus is chronic hyperglycemia from absolute (type 1) or relative (type 2) insulin deficiency. Type 1 is autoimmune β-cell destruction; type 2 is insulin resistance with progressive β-cell failure, usually linked to obesity. Diagnose with glucose or HbA1c criteria; treat glycemia while screening for and preventing micro- and macrovascular complications.",
+          "citations": [
+            {
+              "id": "cite-ada-standards-2024",
+              "href": "https://diabetesjournals.org/care/issue/47/Supplement_1",
+              "title": "Standards of Care in Diabetes—2024",
+              "domain": "diabetesjournals.org",
+              "type": "article",
+              "author": "American Diabetes Association"
+            },
+            {
+              "id": "cite-who-diabetes",
+              "href": "https://www.who.int/news-room/fact-sheets/detail/diabetes",
+              "title": "Diabetes fact sheet",
+              "domain": "who.int",
+              "type": "webpage",
+              "author": "World Health Organization"
+            }
+          ]
+        },
+        {
+          "id": "overview",
+          "heading": "Type 1 vs type 2",
+          "body": "T1DM accounts for ~5–10% of cases and often presents in childhood with acute symptoms or DKA. T2DM is far more common, frequently undiagnosed for years, and strongly associated with obesity and family history.",
+          "bullets": [
+            "T1DM: HLA-DR3/DR4, autoimmune β-cell loss, low/absent C-peptide, high DKA risk → insulin always",
+            "T2DM: insulin resistance + β-cell dysfunction, obesity-linked, low DKA risk → lifestyle, metformin, then add-ons",
+            "Classic triad: polyuria, polydipsia, polyphagia (± weight loss) — more prominent in T1DM",
+            "T2DM clues: acanthosis nigricans, skin tags, recurrent infections, often asymptomatic at diagnosis",
+            "Other types to know: gestational DM, LADA (late autoimmune T1), MODY (autosomal dominant, onset <25 y)"
+          ],
+          "citations": [
+            {
+              "id": "cite-endotext-t1dm",
+              "href": "https://www.ncbi.nlm.nih.gov/books/NBK278973/",
+              "title": "Type 1 Diabetes Mellitus",
+              "domain": "ncbi.nlm.nih.gov",
+              "type": "document",
+              "author": "Endotext"
+            },
+            {
+              "id": "cite-endotext-t2dm",
+              "href": "https://www.ncbi.nlm.nih.gov/books/NBK279093/",
+              "title": "Type 2 Diabetes Mellitus",
+              "domain": "ncbi.nlm.nih.gov",
+              "type": "document",
+              "author": "Endotext"
+            },
+            {
+              "id": "cite-cdc-diabetes",
+              "href": "https://www.cdc.gov/diabetes/about/index.html",
+              "title": "About diabetes",
+              "domain": "cdc.gov",
+              "type": "webpage",
+              "author": "Centers for Disease Control and Prevention"
+            }
+          ]
+        },
+        {
+          "id": "pathophysiology",
+          "heading": "Pathophysiology",
+          "body": "Insulin is the only hormone that directly lowers blood glucose. Proinsulin cleavage produces insulin and C-peptide — a useful marker when type is unclear.",
+          "bullets": [
+            "T1DM: environmental trigger in genetically susceptible host → autoantibodies (anti-GAD, anti-ICA) → β-cell destruction → absolute insulin deficiency",
+            "T2DM: central obesity → ↑ free fatty acids → impaired insulin signaling (IRS-1, GLUT4) → insulin resistance; amylin deposits worsen β-cell function over time",
+            "Early T2DM: compensatory hyperinsulinemia; later: postprandial then fasting hyperglycemia as secretion fails"
+          ],
+          "citations": [
+            {
+              "id": "cite-pubmed-insulin",
+              "href": "https://pubmed.ncbi.nlm.nih.gov/30239732/",
+              "title": "Insulin and glucagon: partners for life",
+              "domain": "pubmed.ncbi.nlm.nih.gov",
+              "type": "article"
+            },
+            {
+              "id": "cite-endotext-t2dm",
+              "href": "https://www.ncbi.nlm.nih.gov/books/NBK279093/",
+              "title": "Type 2 Diabetes Mellitus",
+              "domain": "ncbi.nlm.nih.gov",
+              "type": "document",
+              "author": "Endotext"
+            }
+          ]
+        },
+        {
+          "id": "clinical-features",
+          "heading": "Presentation & screening",
+          "body": "T1DM usually presents abruptly; [[Diabetic ketoacidosis]] is the first manifestation in up to half of cases. T2DM develops insidiously and may present only when complications appear or during routine labs.",
+          "bullets": [
+            "Screen all adults ≥35 years; screen younger patients if overweight/obese plus ≥1 risk factor (FHx, HTN, dyslipidemia, PCOS, GDM history, inactivity, high-risk ethnicity)",
+            "Repeat normal screens every 3 years; annually if prediabetes; every 1–3 years after gestational diabetes",
+            "Suspect DM with unexplained weight loss, blurred vision, fatigue, poor wound healing, or recurrent UTIs/candidiasis"
+          ],
+          "citations": [
+            {
+              "id": "cite-uspstf-screening",
+              "href": "https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/screening-for-prediabetes-and-type-2-diabetes",
+              "title": "Screening for prediabetes and type 2 diabetes",
+              "domain": "uspreventiveservicestaskforce.org",
+              "type": "webpage",
+              "author": "USPSTF"
+            },
+            {
+              "id": "cite-cdc-diabetes",
+              "href": "https://www.cdc.gov/diabetes/about/index.html",
+              "title": "About diabetes",
+              "domain": "cdc.gov",
+              "type": "webpage",
+              "author": "Centers for Disease Control and Prevention"
+            }
+          ]
+        },
+        {
+          "id": "diagnosis",
+          "heading": "Diagnosis",
+          "body": "Confirm diabetes with symptoms plus random glucose ≥200 mg/dL, or with two abnormal tests on separate days in asymptomatic patients.",
+          "bullets": [
+            "Initial workup: BMP, UACR, CBC, LFTs, lipid panel",
+            "Type unclear? Check C-peptide (low in T1DM) and islet autoantibodies (anti-GAD first; then IA-2, ZnT8)",
+            "[!warning] HbA1c can be unreliable with hemoglobinopathies, anemia, CKD, or pregnancy — use glucose testing when discordant"
+          ],
+          "callouts": [
+            {
+              "variant": "definition",
+              "bullets": [
+                "Diabetes: FPG ≥126, 2-h OGTT ≥200, or HbA1c ≥6.5%",
+                "Prediabetes: FPG 100–125, OGTT 140–199, or HbA1c 5.7–6.4%"
+              ]
+            }
+          ],
+          "citations": [
+            {
+              "id": "cite-ada-diagnosis",
+              "href": "https://diabetesjournals.org/care/article/47/Supplement_1/S20/153955/2-Diagnosis-and-Classification-of-Diabetes",
+              "title": "Diagnosis and Classification of Diabetes",
+              "domain": "diabetesjournals.org",
+              "type": "article",
+              "author": "American Diabetes Association"
+            }
+          ]
+        },
+        {
+          "id": "management",
+          "heading": "Management principles",
+          "body": "Goals are symptom relief, individualized glycemic targets, and comprehensive prevention of complications. Avoid hypoglycemia — it limits how aggressively you can treat.",
+          "bullets": [
+            "Typical adult targets: HbA1c <7%, preprandial glucose 80–130 mg/dL, postprandial <180 mg/dL (individualize)",
+            "Lifestyle: ≥150 min/week moderate activity, resistance training 2–3×/week, weight loss ≥3–7% in T2DM with obesity",
+            "ASCVD prevention: BP control, statin for age ≥40, ACEi/ARB if albuminuria, antiplatelet therapy when indicated",
+            "Check HbA1c every 3–6 months; screen microvascular complications at T2DM diagnosis or 5 years after T1DM onset, then yearly"
+          ],
+          "callouts": [
+            {
+              "variant": "pearl",
+              "body": "Avoid hypoglycemia — it limits how aggressively you can push glycemic targets, especially in elderly or CKD patients. Individualize: a frail 80-year-old does not need an HbA1c <7%."
+            }
+          ],
+          "citations": [
+            {
+              "id": "cite-ada-standards-2024",
+              "href": "https://diabetesjournals.org/care/issue/47/Supplement_1",
+              "title": "Standards of Care in Diabetes—2024",
+              "domain": "diabetesjournals.org",
+              "type": "article",
+              "author": "American Diabetes Association"
+            }
+          ]
+        },
+        {
+          "id": "glycemic-treatment",
+          "heading": "Pharmacotherapy",
+          "body": "T1DM requires insulin from diagnosis. T2DM starts with lifestyle plus pharmacotherapy at diagnosis — [[Metformin]] first for most patients without compelling CV or kidney indications for another agent.",
+          "bullets": [
+            "T1DM: MDI or pump; typical TDD 0.4–1.0 units/kg/day (roughly 50% basal / 50% bolus)",
+            "T2DM first-line: [[Metformin]]; add SGLT2i and/or GLP-1 RA if ASCVD, high ASCVD risk, HF, or CKD",
+            "Step up therapy sequentially; consider insulin if HbA1c >10%, glucose ≥300, catabolic symptoms, or targets unmet on oral agents",
+            "Prefer GLP-1 RA before insulin when appropriate; do not combine DPP-4 inhibitors with GLP-1 RAs",
+            "Acute crises: [[Diabetic ketoacidosis]] (T1DM >> T2DM) and [[Hyperglycemic crisis]] (often elderly T2DM)"
+          ],
+          "callouts": [
+            {
+              "variant": "mnemonic",
+              "body": "Agents that help weight & CV/renal outcomes — “the good G's”: GLP-1 RAs and the “gliflozins” (SGLT2i). Reach for these in ASCVD, HF, or CKD."
+            }
+          ],
+          "citations": [
+            {
+              "id": "cite-ada-pharm",
+              "href": "https://diabetesjournals.org/care/article/47/Supplement_1/S158/153953/9-Pharmacologic-Approaches-to-Glycemic-Treatment",
+              "title": "Pharmacologic Approaches to Glycemic Treatment",
+              "domain": "diabetesjournals.org",
+              "type": "article",
+              "author": "American Diabetes Association"
+            }
+          ]
+        },
+        {
+          "id": "complications",
+          "heading": "Complications",
+          "body": "Acute: DKA, hyperosmolar hyperglycemic state (HHS), and treatment-related hypoglycemia. Chronic hyperglycemia drives microvascular injury (nephropathy, retinopathy, neuropathy, foot disease) and macrovascular atherosclerosis (MI, stroke, PAD) — the leading causes of morbidity and death.",
+          "bullets": [
+            "Annual screening: UACR + eGFR, dilated eye exam, monofilament foot exam",
+            "Strict glycemic control best prevents microvascular disease; also manage BP and lipids aggressively",
+            "Prediabetes: ~10% annual progression to T2DM — lifestyle (≥7% weight loss) first; consider metformin in high-risk adults",
+            "Pediatrics: >90% T1DM; screen T2DM in obese children ≥10 y with risk factors; sulfonylureas, TZDs, DPP-4i, and SGLT2i have limited pediatric approval"
+          ],
+          "citations": [
+            {
+              "id": "cite-ada-complications",
+              "href": "https://diabetesjournals.org/care/article/47/Supplement_1/S231/153952/12-Retinopathy-Nephropathy-and-Neuropathy",
+              "title": "Retinopathy, Nephropathy, and Neuropathy",
+              "domain": "diabetesjournals.org",
+              "type": "article",
+              "author": "American Diabetes Association"
+            }
+          ]
+        }
+      ],
+      "highYield": "T1DM = autoimmune β-cell destruction (HLA-DR3/DR4), absolute insulin deficiency, high DKA risk — always insulin. T2DM = insulin resistance + β-cell failure, obesity-linked — metformin first; add SGLT2i/GLP-1 RA for ASCVD, HF, or CKD. Diagnose: FPG ≥126, OGTT ≥200, HbA1c ≥6.5%, or random ≥200 + symptoms.",
+      "summary": "Diabetes mellitus is chronic hyperglycemia from absolute (type 1) or relative (type 2) insulin deficiency. T1DM is autoimmune and insulin-dependent; T2DM is insulin resistance with progressive β-cell failure. Diagnose with standard glucose/HbA1c thresholds, treat glycemia while preventing micro- and macrovascular complications, and screen complications annually.",
+      "questions": [
+        {
+          "id": 1,
+          "subject": "Endocrinology",
+          "text": "A 14-year-old presents with polyuria, polydipsia, and weight loss. Labs show glucose 420 mg/dL and positive anti-GAD antibodies. Which is the most likely diagnosis?",
+          "options": [
+            "Type 2 diabetes mellitus",
+            "Type 1 diabetes mellitus",
+            "MODY II",
+            "Gestational diabetes"
+          ],
+          "answer": 1,
+          "tag": "High Yield",
+          "status": "unused",
+          "explanation": "Anti-GAD antibodies and acute classic symptoms in an adolescent support autoimmune T1DM.",
+          "citations": []
+        },
+        {
+          "id": 2,
+          "subject": "Endocrinology",
+          "text": "Which finding best distinguishes prediabetes from diabetes by HbA1c?",
+          "options": [
+            "HbA1c 5.0–5.6%",
+            "HbA1c 5.7–6.4%",
+            "HbA1c ≥6.5%",
+            "HbA1c <5.0%"
+          ],
+          "answer": 1,
+          "tag": "High Yield",
+          "status": "unused",
+          "explanation": "Prediabetes is HbA1c 5.7–6.4%; diabetes is ≥6.5%.",
+          "citations": []
+        },
+        {
+          "id": 3,
+          "subject": "Endocrinology",
+          "text": "A patient with T2DM, eGFR 45, and heart failure with reduced ejection fraction. Which drug class is preferred?",
+          "options": [
+            "Sulfonylurea",
+            "DPP-4 inhibitor alone",
+            "SGLT-2 inhibitor",
+            "Thiazolidinedione"
+          ],
+          "answer": 2,
+          "tag": "High Yield",
+          "status": "unused",
+          "explanation": "SGLT2 inhibitors are preferred in T2DM with HF and/or CKD.",
+          "citations": []
+        },
+        {
+          "id": 4,
+          "subject": "Endocrinology",
+          "text": "A thin 8-year-old presents in DKA. Which feature most strongly supports type 1 over type 2 diabetes?",
+          "options": [
+            "BMI at the 95th percentile",
+            "Acanthosis nigricans",
+            "Anti-GAD antibodies",
+            "Family history of T2DM in a parent"
+          ],
+          "answer": 2,
+          "tag": "High Yield",
+          "status": "unused",
+          "explanation": "Autoantibodies confirm autoimmune T1DM; obesity and acanthosis nigricans favor T2DM.",
+          "citations": []
+        }
+      ],
+      "flashcards": [
+        {
+          "id": 1,
+          "deck": "Diabetes mellitus",
+          "front": "Diagnostic thresholds for diabetes?",
+          "back": "FPG ≥126, 2-h OGTT ≥200, HbA1c ≥6.5%, or random ≥200 + symptoms",
+          "status": "new"
+        },
+        {
+          "id": 2,
+          "deck": "Diabetes mellitus",
+          "front": "HLA associations in T1DM?",
+          "back": "HLA-DR3 and HLA-DR4",
+          "status": "new"
+        },
+        {
+          "id": 3,
+          "deck": "Diabetes mellitus",
+          "front": "First-line pharmacologic therapy for most T2DM?",
+          "back": "Metformin (unless contraindicated or CV/CKD indication for alternative)",
+          "status": "new"
+        },
+        {
+          "id": 4,
+          "deck": "Diabetes mellitus",
+          "front": "Preferred agents in T2DM with ASCVD, HF, or CKD?",
+          "back": "SGLT2 inhibitors and/or GLP-1 receptor agonists",
+          "status": "new"
+        },
+        {
+          "id": 5,
+          "deck": "Diabetes mellitus",
+          "front": "Typical adult HbA1c target?",
+          "back": "<7% for most nonpregnant adults (individualize)",
+          "status": "new"
+        },
+        {
+          "id": 6,
+          "deck": "Diabetes mellitus",
+          "front": "When to start microvascular complication screening?",
+          "back": "At T2DM diagnosis; 5 years after T1DM onset — then annually",
+          "status": "new"
+        }
+      ]
+    },
+    {
+      "id": "diabetic-ketoacidosis",
+      "subject": "Endocrinology and metabolic disorders",
+      "title": "Diabetic ketoacidosis",
+      "readMinutes": 6,
+      "updated": "Jul 2026",
+      "sections": [
+        {
+          "id": "summary",
+          "heading": "Summary",
+          "body": "[[Diabetic ketoacidosis]] (DKA) is an acute metabolic emergency defined by hyperglycemia, ketosis, and high-anion-gap metabolic acidosis. It most often occurs in [[Diabetes mellitus]] type 1 but can present in type 2 under severe stress."
+        },
+        {
+          "id": "diagnosis",
+          "heading": "Diagnosis",
+          "body": "Look for polyuria, polydipsia, abdominal pain, Kussmaul respirations, and altered mental status.",
+          "bullets": [
+            "Glucose usually >250 mg/dL with pH <7.3 and bicarbonate <18 mEq/L",
+            "Positive serum/urine ketones with anion gap acidosis",
+            "Search for precipitant: infection, missed insulin, MI, new-onset diabetes"
+          ],
+          "callouts": [
+            {
+              "variant": "warning",
+              "body": "Give potassium before/with insulin once K⁺ <5.2 mEq/L and urine output is adequate — insulin drives K⁺ intracellularly and can precipitate fatal hypokalemia. Hold insulin if K⁺ <3.3 mEq/L."
+            }
+          ]
+        }
+      ],
+      "highYield": "Fluid resuscitation + IV insulin + potassium replacement. Never stop insulin until anion gap closes."
+    },
+    {
+      "id": "metformin",
+      "subject": "Pharmacology",
+      "title": "Metformin",
+      "readMinutes": 4,
+      "updated": "Jul 2026",
+      "sections": [
+        {
+          "id": "summary",
+          "heading": "Summary",
+          "body": "[[Metformin]] is the first-line oral agent for type 2 [[Diabetes mellitus]]. It lowers hepatic glucose output and improves peripheral insulin sensitivity with a low hypoglycemia risk."
+        },
+        {
+          "id": "safety",
+          "heading": "Safety",
+          "body": "Hold before iodinated contrast and major surgery if eGFR is borderline. The main rare serious toxicity is lactic acidosis in renal failure.",
+          "callouts": [
+            {
+              "variant": "warning",
+              "body": "Contraindicated when eGFR <30 mL/min/1.73m². Hold at the time of iodinated contrast in at-risk patients and around major surgery; restart once renal function is confirmed stable."
+            },
+            {
+              "variant": "pearl",
+              "body": "Metformin is weight-neutral to weight-favorable and does not cause hypoglycemia as monotherapy — a key reason it stays first-line."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
