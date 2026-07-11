@@ -30,6 +30,7 @@ const BUNDLE_PATHS = [
   "export/articles.json",
   "content/library-articles.json",
   "content/articles.json",
+  "content/export/library-articles.json",
   "data/library-articles.json",
   "dist/library-articles.json",
 ];
@@ -37,6 +38,7 @@ const BUNDLE_PATHS = [
 const ARTICLE_DIR_PATHS = [
   "export/articles",
   "content/articles",
+  "content/library",
   "articles",
   "data/articles",
 ];
@@ -104,29 +106,22 @@ function findBundleInTree(base) {
   return null;
 }
 
-function materializeFromOrigin(origin) {
-  mkdirSync(CACHE_DIR, { recursive: true });
+function isGitOrigin(origin) {
+  return (
+    origin.startsWith("git@") ||
+    origin.endsWith(".git") ||
+    /github\.com[:/][^/]+\/[^/]+/.test(origin)
+  );
+}
 
-  if (/^https?:\/\//i.test(origin)) {
-    const res = fetch(origin);
-    return res.then(async (response) => {
-      if (!response.ok) {
-        throw new Error(`Origin fetch failed (${response.status})`);
-      }
-      const raw = await response.json();
-      return normalizePayload(raw);
-    });
-  }
+function isJsonBundleUrl(origin) {
+  return (
+    origin.endsWith(".json") ||
+    origin.includes("raw.githubusercontent.com")
+  );
+}
 
-  if (origin.startsWith("file://") || origin.startsWith("/")) {
-    const localPath = origin.startsWith("file://")
-      ? fileURLToPath(origin)
-      : origin;
-    const articles = findBundleInTree(localPath);
-    if (!articles) throw new Error("No catalog bundle found at local origin");
-    return Promise.resolve(articles);
-  }
-
+function cloneFromGitOrigin(origin) {
   rmSync(CACHE_DIR, { recursive: true, force: true });
   mkdirSync(CACHE_DIR, { recursive: true });
 
@@ -147,7 +142,40 @@ function materializeFromOrigin(origin) {
 
   const articles = findBundleInTree(join(CACHE_DIR, "payload"));
   if (!articles) throw new Error("No catalog bundle found in remote tree");
-  return Promise.resolve(articles);
+  return articles;
+}
+
+function materializeFromOrigin(origin) {
+  mkdirSync(CACHE_DIR, { recursive: true });
+
+  if (origin.startsWith("file://") || origin.startsWith("/")) {
+    const localPath = origin.startsWith("file://")
+      ? fileURLToPath(origin)
+      : origin;
+    const articles = findBundleInTree(localPath);
+    if (!articles) throw new Error("No catalog bundle found at local origin");
+    return Promise.resolve(articles);
+  }
+
+  if (isGitOrigin(origin)) {
+    return Promise.resolve(cloneFromGitOrigin(origin));
+  }
+
+  if (/^https?:\/\//i.test(origin) && isJsonBundleUrl(origin)) {
+    return fetch(origin).then(async (response) => {
+      if (!response.ok) {
+        throw new Error(`Origin fetch failed (${response.status})`);
+      }
+      const raw = await response.json();
+      return normalizePayload(raw);
+    });
+  }
+
+  if (/^https?:\/\//i.test(origin)) {
+    return Promise.resolve(cloneFromGitOrigin(origin));
+  }
+
+  return Promise.resolve(cloneFromGitOrigin(origin));
 }
 
 function writeBundle(articles) {
