@@ -87,6 +87,92 @@ function loadArticlesFromDir(dir) {
   return files.map((name) => readJson(join(dir, name)));
 }
 
+function isSingleArticle(value) {
+  return (
+    value &&
+    typeof value === "object" &&
+    typeof value.id === "string" &&
+    typeof value.title === "string" &&
+    Array.isArray(value.sections)
+  );
+}
+
+function dedupeArticles(articles) {
+  const byId = new Map();
+  for (const article of articles) {
+    if (isSingleArticle(article)) byId.set(article.id, article);
+  }
+  return [...byId.values()];
+}
+
+function extractArticlesFromJson(raw) {
+  if (isSingleArticle(raw)) return [raw];
+  if (isArticleArray(raw)) return raw;
+  if (raw && isArticleArray(raw.articles)) return raw.articles;
+  if (raw && isArticleArray(raw.libraryArticles)) return raw.libraryArticles;
+  if (raw && isArticleArray(raw.items)) return raw.items;
+  return [];
+}
+
+function collectArticlesRecursively(dir, depth = 0) {
+  if (!existsSync(dir) || depth > 8) return [];
+
+  const skipDirs = new Set([
+    ".git",
+    "node_modules",
+    ".github",
+    "prompts",
+    "scripts",
+  ]);
+  const skipFiles = new Set([
+    "package.json",
+    "package-lock.json",
+    "tsconfig.json",
+    "manifest.json",
+  ]);
+
+  const found = [];
+  for (const name of readdirSync(dir)) {
+    if (skipDirs.has(name)) continue;
+    const full = join(dir, name);
+    let st;
+    try {
+      st = statSync(full);
+    } catch {
+      continue;
+    }
+
+    if (st.isDirectory()) {
+      found.push(...collectArticlesRecursively(full, depth + 1));
+      continue;
+    }
+
+    if (!name.endsWith(".json") || skipFiles.has(name)) continue;
+    try {
+      found.push(...extractArticlesFromJson(readJson(full)));
+    } catch {
+      // ignore invalid json payloads
+    }
+  }
+
+  return found;
+}
+
+function describeTree(base) {
+  if (!existsSync(base)) return "(missing)";
+  return readdirSync(base)
+    .slice(0, 12)
+    .map((name) => {
+      const full = join(base, name);
+      try {
+        return statSync(full).isDirectory() ? `${name}/` : name;
+      } catch {
+        return name;
+      }
+    })
+    .join(", ");
+}
+
 function findBundleInTree(base) {
   for (const rel of BUNDLE_PATHS) {
     const full = join(base, rel);
@@ -101,6 +187,14 @@ function findBundleInTree(base) {
       const articles = loadArticlesFromDir(full);
       if (articles) return articles;
     }
+  }
+
+  const recursiveRoots = ["content", "export", "data", "dist", "."];
+  for (const rel of recursiveRoots) {
+    const full = rel === "." ? base : join(base, rel);
+    if (!existsSync(full)) continue;
+    const collected = dedupeArticles(collectArticlesRecursively(full));
+    if (collected.length > 0) return collected;
   }
 
   return null;
@@ -140,8 +234,13 @@ function cloneFromGitOrigin(origin) {
     { stdio: "pipe" }
   );
 
-  const articles = findBundleInTree(join(CACHE_DIR, "payload"));
-  if (!articles) throw new Error("No catalog bundle found in remote tree");
+  const payloadRoot = join(CACHE_DIR, "payload");
+  const articles = findBundleInTree(payloadRoot);
+  if (!articles) {
+    throw new Error(
+      `No catalog bundle found in remote tree (top-level: ${describeTree(payloadRoot)})`
+    );
+  }
   return articles;
 }
 
