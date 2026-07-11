@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import LibraryArticle from "@/components/content/LibraryArticle";
 import { LibraryBrowseShell } from "@/components/library/LibraryBrowseShell";
 import { LibraryPageHeader } from "@/components/library/LibraryPageHeader";
@@ -8,7 +8,11 @@ import {
   ComingSoonPanel,
   LibraryCtaButton,
 } from "@/components/library/LibraryUi";
-import { getEntity, resolveLibraryArticle } from "@/lib/entities";
+import {
+  ENTITY_PLACEHOLDER_SLUG,
+  getEntity,
+  resolveLibraryArticle,
+} from "@/lib/entities";
 import { getCreatedPageById } from "@/lib/pages/create-page-store";
 import type { LibraryArticle as LibraryArticleType } from "@/lib/set-content";
 import { LIBRARY_PATH } from "@/lib/routes";
@@ -37,21 +41,26 @@ function createdPageToArticle(page: {
 
 export function LibraryArticleClient({ articleId }: { articleId: string }) {
   const router = useRouter();
-  const article = resolveLibraryArticle(articleId);
-  const created = !article ? getCreatedPageById(articleId) : undefined;
+  const pathname = usePathname();
+  const resolvedArticleId =
+    articleId === ENTITY_PLACEHOLDER_SLUG
+      ? (pathname.match(/^\/library\/articles\/([^/]+)/)?.[1] ?? "")
+      : articleId;
+  const article = resolveLibraryArticle(resolvedArticleId);
+  const created = !article ? getCreatedPageById(resolvedArticleId) : undefined;
   const resolved = article ?? (created ? createdPageToArticle(created) : undefined);
   const backToLibrary = () => router.push(LIBRARY_PATH);
 
   if (!resolved) {
     const entity =
-      getEntity("conditions", articleId) ??
-      getEntity("medications", articleId) ??
-      getEntity("assessments", articleId) ??
-      getEntity("overviews", articleId);
+      getEntity("conditions", resolvedArticleId) ??
+      getEntity("medications", resolvedArticleId) ??
+      getEntity("assessments", resolvedArticleId) ??
+      getEntity("overviews", resolvedArticleId);
 
     const displayTitle =
       entity?.title ??
-      articleId.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      resolvedArticleId.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
     return (
       <LibraryBrowseShell showBack onBack={backToLibrary}>
