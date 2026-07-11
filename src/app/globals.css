@@ -335,6 +335,21 @@ body {
   cursor: not-allowed;
 }
 
+.simple-editor-icon-btn.is-active {
+  background: rgb(224 231 255 / 0.6);
+  color: rgb(79 70 229);
+}
+
+.simple-editor-icon-btn.is-active:hover:not(:disabled) {
+  background: rgb(224 231 255 / 0.85);
+  color: rgb(67 56 202);
+}
+
+.dark .simple-editor-icon-btn.is-active {
+  background: rgb(49 46 129 / 0.5);
+  color: rgb(165 180 252);
+}
+
 .simple-editor-overflow-menu {
   right: 0;
   left: auto;
@@ -1178,6 +1193,119 @@ body {
 .tiptap [data-type="detailsContent"] > :first-child,
 .tiptap details > div[data-type="detailsContent"] > :first-child {
   margin-top: 0.75rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Semantic callouts
+   Neutral by default; the reader "colorful view" toggle (.is-colorful on the
+   page root) turns on per-variant tint + accent so color carries meaning.
+   --------------------------------------------------------------------------- */
+.tiptap .article-callout {
+  --callout-accent: var(--article-text-muted);
+  --callout-tint: var(--article-pre-bg);
+  margin: 1.25rem 0;
+  padding: 0.75rem 1rem 0.75rem 1.1rem;
+  border: 1px solid var(--article-border);
+  border-left: 3px solid var(--article-border);
+  border-radius: 0.5rem;
+  background: transparent;
+}
+
+.tiptap .article-callout-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+  font-family: var(--article-font-sans);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--article-text-muted);
+}
+
+.tiptap .article-callout-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: var(--callout-accent);
+  flex-shrink: 0;
+}
+
+.tiptap .article-callout-body > :first-child {
+  margin-top: 0;
+}
+
+.tiptap .article-callout-body > :last-child {
+  margin-bottom: 0;
+}
+
+/* Per-variant accent + tint values (applied only in colorful view). */
+.simple-editor-page .tiptap .article-callout[data-callout="hy"] {
+  --callout-accent: rgb(217 119 6);
+  --callout-tint: rgb(254 243 199 / 0.5);
+}
+.simple-editor-page .tiptap .article-callout[data-callout="warning"] {
+  --callout-accent: rgb(220 38 38);
+  --callout-tint: rgb(254 226 226 / 0.55);
+}
+.simple-editor-page .tiptap .article-callout[data-callout="pearl"] {
+  --callout-accent: rgb(13 148 136);
+  --callout-tint: rgb(204 251 241 / 0.45);
+}
+.simple-editor-page .tiptap .article-callout[data-callout="mnemonic"] {
+  --callout-accent: rgb(147 51 234);
+  --callout-tint: rgb(243 232 255 / 0.5);
+}
+.simple-editor-page .tiptap .article-callout[data-callout="definition"] {
+  --callout-accent: rgb(37 99 235);
+  --callout-tint: rgb(219 234 254 / 0.5);
+}
+.simple-editor-page .tiptap .article-callout[data-callout="note"] {
+  --callout-accent: rgb(79 70 229);
+  --callout-tint: rgb(224 231 255 / 0.45);
+}
+
+/* Colorful view ON: light up boxes with tint + accent border + label color. */
+.simple-editor-page.is-colorful .tiptap .article-callout {
+  background: var(--callout-tint);
+  border-color: color-mix(in srgb, var(--callout-accent) 28%, transparent);
+  border-left-color: var(--callout-accent);
+}
+
+.simple-editor-page.is-colorful .tiptap .article-callout-label {
+  color: var(--callout-accent);
+}
+
+/* Dark-mode tints (colorful view). Keep prose readable, tint stays subtle. */
+.dark .simple-editor-page .tiptap .article-callout[data-callout="hy"] {
+  --callout-accent: rgb(251 191 36);
+  --callout-tint: rgb(120 53 15 / 0.25);
+}
+.dark .simple-editor-page .tiptap .article-callout[data-callout="warning"] {
+  --callout-accent: rgb(248 113 113);
+  --callout-tint: rgb(127 29 29 / 0.25);
+}
+.dark .simple-editor-page .tiptap .article-callout[data-callout="pearl"] {
+  --callout-accent: rgb(45 212 191);
+  --callout-tint: rgb(19 78 74 / 0.28);
+}
+.dark .simple-editor-page .tiptap .article-callout[data-callout="mnemonic"] {
+  --callout-accent: rgb(192 132 252);
+  --callout-tint: rgb(88 28 135 / 0.28);
+}
+.dark .simple-editor-page .tiptap .article-callout[data-callout="definition"] {
+  --callout-accent: rgb(96 165 250);
+  --callout-tint: rgb(30 58 138 / 0.28);
+}
+.dark .simple-editor-page .tiptap .article-callout[data-callout="note"] {
+  --callout-accent: rgb(129 140 248);
+  --callout-tint: rgb(49 46 129 / 0.3);
+}
+
+.dark .simple-editor-page .tiptap .article-callout {
+  border-color: var(--article-border);
+  border-left-color: var(--article-border);
 }
 
 .tiptap img.simple-editor-image,

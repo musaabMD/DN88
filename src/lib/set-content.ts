@@ -53,11 +53,28 @@ export type FlashcardItem = {
   status?: "correct" | "incorrect" | "new";
 };
 
+/** Color-coded callout box variants (see components/library/editor/callout.ts). */
+export type LibraryCalloutVariant =
+  | "hy"
+  | "warning"
+  | "pearl"
+  | "mnemonic"
+  | "definition"
+  | "note";
+
+export type LibraryArticleCallout = {
+  variant: LibraryCalloutVariant;
+  body?: string;
+  bullets?: string[];
+};
+
 export type LibraryArticleSection = {
   id: string;
   heading: string;
   body: string;
   bullets?: string[];
+  /** Semantic color-coded boxes rendered after this section's content. */
+  callouts?: LibraryArticleCallout[];
   citations?: SerializableCitation[];
 };
 
@@ -643,11 +660,18 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
         heading: "Diagnosis",
         body: "Confirm diabetes with symptoms plus random glucose \u2265200 mg/dL, or with two abnormal tests on separate days in asymptomatic patients.",
         bullets: [
-          "Diabetes: FPG \u2265126, 2-h OGTT \u2265200, or HbA1c \u22656.5%",
-          "Prediabetes: FPG 100\u2013125, OGTT 140\u2013199, or HbA1c 5.7\u20136.4%",
           "Initial workup: BMP, UACR, CBC, LFTs, lipid panel",
           "Type unclear? Check C-peptide (low in T1DM) and islet autoantibodies (anti-GAD first; then IA-2, ZnT8)",
-          "HbA1c can be unreliable with hemoglobinopathies, anemia, CKD, or pregnancy \u2014 use glucose testing when discordant",
+          "[!warning] HbA1c can be unreliable with hemoglobinopathies, anemia, CKD, or pregnancy \u2014 use glucose testing when discordant",
+        ],
+        callouts: [
+          {
+            variant: "definition",
+            bullets: [
+              "Diabetes: FPG \u2265126, 2-h OGTT \u2265200, or HbA1c \u22656.5%",
+              "Prediabetes: FPG 100\u2013125, OGTT 140\u2013199, or HbA1c 5.7\u20136.4%",
+            ],
+          },
         ],
       },
       {
@@ -660,6 +684,12 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
           "ASCVD prevention: BP control, statin for age \u226540, ACEi/ARB if albuminuria, antiplatelet therapy when indicated",
           "Check HbA1c every 3\u20136 months; screen microvascular complications at T2DM diagnosis or 5 years after T1DM onset, then yearly",
         ],
+        callouts: [
+          {
+            variant: "pearl",
+            body: "Avoid hypoglycemia \u2014 it limits how aggressively you can push glycemic targets, especially in elderly or CKD patients. Individualize: a frail 80-year-old does not need an HbA1c <7%.",
+          },
+        ],
       },
       {
         id: "glycemic-treatment",
@@ -671,6 +701,12 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
           "Step up therapy sequentially; consider insulin if HbA1c >10%, glucose \u2265300, catabolic symptoms, or targets unmet on oral agents",
           "Prefer GLP-1 RA before insulin when appropriate; do not combine DPP-4 inhibitors with GLP-1 RAs",
           "Acute crises: [[Diabetic ketoacidosis]] (T1DM >> T2DM) and [[Hyperglycemic crisis]] (often elderly T2DM)",
+        ],
+        callouts: [
+          {
+            variant: "mnemonic",
+            body: "Agents that help weight & CV/renal outcomes \u2014 \u201cthe good G's\u201d: GLP-1 RAs and the \u201cgliflozins\u201d (SGLT2i). Reach for these in ASCVD, HF, or CKD.",
+          },
         ],
       },
       {
@@ -806,6 +842,12 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
           "Positive serum/urine ketones with anion gap acidosis",
           "Search for precipitant: infection, missed insulin, MI, new-onset diabetes",
         ],
+        callouts: [
+          {
+            variant: "warning",
+            body: "Give potassium before/with insulin once K\u207a <5.2 mEq/L and urine output is adequate \u2014 insulin drives K\u207a intracellularly and can precipitate fatal hypokalemia. Hold insulin if K\u207a <3.3 mEq/L.",
+          },
+        ],
       },
     ],
     highYield: "Fluid resuscitation + IV insulin + potassium replacement. Never stop insulin until anion gap closes.",
@@ -826,6 +868,16 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
         id: "safety",
         heading: "Safety",
         body: "Hold before iodinated contrast and major surgery if eGFR is borderline. The main rare serious toxicity is lactic acidosis in renal failure.",
+        callouts: [
+          {
+            variant: "warning",
+            body: "Contraindicated when eGFR <30 mL/min/1.73m\u00b2. Hold at the time of iodinated contrast in at-risk patients and around major surgery; restart once renal function is confirmed stable.",
+          },
+          {
+            variant: "pearl",
+            body: "Metformin is weight-neutral to weight-favorable and does not cause hypoglycemia as monotherapy \u2014 a key reason it stays first-line.",
+          },
+        ],
       },
     ],
   },
