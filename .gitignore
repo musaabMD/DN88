@@ -42,3 +42,7 @@ yarn-error.log*
 next-env.d.ts
 .wrangler/
 .catalog-sync/
+.catalog-staging/
+packages/catalog/dist/
+workers/dn88/.dev.vars
+packages/catalog/node_modules/

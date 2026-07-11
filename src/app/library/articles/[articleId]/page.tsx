@@ -1,8 +1,9 @@
 import { LibraryArticleClient } from "@/components/LibraryArticleClient";
-import { getPublishedArticleStaticParams } from "@/lib/entities";
+import { ENTITY_PLACEHOLDER_SLUG } from "@/lib/entities";
 
+/** Static export shell — articles load from Worker API at runtime. */
 export function generateStaticParams() {
-  return getPublishedArticleStaticParams();
+  return [{ articleId: ENTITY_PLACEHOLDER_SLUG }];
 }
 
 export default async function LibraryArticlePage({

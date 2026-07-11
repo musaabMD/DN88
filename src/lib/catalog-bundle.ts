@@ -9,6 +9,13 @@ type CatalogPayload = {
 
 const payload = catalogPayload as CatalogPayload;
 
-export const LIBRARY_ARTICLES: LibraryArticle[] = payload.articles;
+const DEMO_MODE = process.env.DEMO_MODE === "true";
+const CATALOG_API_ENABLED =
+  process.env.NEXT_PUBLIC_CATALOG_API_ENABLED !== "false";
 
-export const CATALOG_SYNCED_AT = payload.syncedAt;
+/** Demo bundle only — production uses Worker catalog API. */
+export const LIBRARY_ARTICLES: LibraryArticle[] =
+  !DEMO_MODE && CATALOG_API_ENABLED ? [] : payload.articles;
+
+export const CATALOG_SYNCED_AT: string | null =
+  !DEMO_MODE && CATALOG_API_ENABLED ? null : payload.syncedAt;

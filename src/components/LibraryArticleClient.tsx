@@ -1,13 +1,20 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import LibraryArticle from "@/components/content/LibraryArticle";
 import { LibraryBrowseShell } from "@/components/library/LibraryBrowseShell";
 import { LibraryPageHeader } from "@/components/library/LibraryPageHeader";
+import { CatalogStateBanner } from "@/components/library/CatalogStateBanner";
 import {
   ComingSoonPanel,
   LibraryCtaButton,
 } from "@/components/library/LibraryUi";
+import {
+  catalogArticleToLibraryArticle,
+  fetchPublicArticle,
+  isCatalogApiEnabled,
+} from "@/lib/catalog/api";
 import {
   ENTITY_PLACEHOLDER_SLUG,
   getEntity,
@@ -46,10 +53,41 @@ export function LibraryArticleClient({ articleId }: { articleId: string }) {
     articleId === ENTITY_PLACEHOLDER_SLUG
       ? (pathname.match(/^\/library\/articles\/([^/]+)/)?.[1] ?? "")
       : articleId;
-  const article = resolveLibraryArticle(resolvedArticleId);
-  const created = !article ? getCreatedPageById(resolvedArticleId) : undefined;
-  const resolved = article ?? (created ? createdPageToArticle(created) : undefined);
+
+  const bundled = resolveLibraryArticle(resolvedArticleId);
+  const created = !bundled ? getCreatedPageById(resolvedArticleId) : undefined;
+
+  const [apiArticle, setApiArticle] = useState<LibraryArticleType | null>(null);
+  const [loading, setLoading] = useState(isCatalogApiEnabled());
+
+  useEffect(() => {
+    if (!isCatalogApiEnabled()) return;
+    let cancelled = false;
+    void fetchPublicArticle(resolvedArticleId).then((detail) => {
+      if (cancelled) return;
+      setApiArticle(detail ? catalogArticleToLibraryArticle(detail) : null);
+      setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [resolvedArticleId]);
+
+  const resolved =
+    isCatalogApiEnabled()
+      ? apiArticle ?? undefined
+      : bundled ?? (created ? createdPageToArticle(created) : undefined);
+
   const backToLibrary = () => router.push(LIBRARY_PATH);
+
+  if (loading) {
+    return (
+      <LibraryBrowseShell>
+        <CatalogStateBanner />
+        <p className="text-muted-foreground">Loading article…</p>
+      </LibraryBrowseShell>
+    );
+  }
 
   if (!resolved) {
     const entity =
@@ -64,14 +102,23 @@ export function LibraryArticleClient({ articleId }: { articleId: string }) {
 
     return (
       <LibraryBrowseShell>
+        <CatalogStateBanner />
         <LibraryPageHeader
           seed={displayTitle}
           title={displayTitle}
-          meta="Updating soon"
+          meta={isCatalogApiEnabled() ? "Not yet published" : "Updating soon"}
         />
         <ComingSoonPanel
-          title="Content updating soon"
-          description="Full clinical notes, summaries, questions, and flashcards for this topic are being published. Check back soon."
+          title={
+            isCatalogApiEnabled()
+              ? "Not yet published"
+              : "Content updating soon"
+          }
+          description={
+            isCatalogApiEnabled()
+              ? "This article has not been approved for public publication yet."
+              : "Full clinical notes, summaries, questions, and flashcards for this topic are being published. Check back soon."
+          }
         >
           <LibraryCtaButton href={LIBRARY_PATH}>Back to Library</LibraryCtaButton>
         </ComingSoonPanel>
@@ -79,5 +126,10 @@ export function LibraryArticleClient({ articleId }: { articleId: string }) {
     );
   }
 
-  return <LibraryArticle article={resolved} onBack={backToLibrary} />;
+  return (
+    <>
+      <CatalogStateBanner />
+      <LibraryArticle article={resolved} onBack={backToLibrary} />
+    </>
+  );
 }

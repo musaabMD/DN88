@@ -2,6 +2,9 @@
   "name": "drnote",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "next dev",
     "prebuild": "node scripts/refresh-catalog.mjs && node scripts/generate-redirects.mjs",
@@ -9,6 +12,14 @@
     "start": "next start",
     "lint": "eslint",
     "catalog:refresh": "node scripts/refresh-catalog.mjs",
+    "catalog:dry-run": "node scripts/catalog-dry-run.mjs",
+    "catalog:dry-run:fixture": "node scripts/catalog-dry-run.mjs --fixture",
+    "catalog:sync": "node scripts/catalog-sync.mjs",
+    "catalog:sync:fixture": "node scripts/catalog-sync.mjs --fixture",
+    "catalog:verify": "node scripts/verify-catalog.mjs",
+    "catalog:migrate": "npx wrangler d1 execute dn88-catalog --file=migrations/d1/001_initial.sql -c workers/dn88/wrangler.jsonc --remote",
+    "test:catalog": "npm run test --workspace=@dn88/catalog",
+    "build:catalog": "npm run build --workspace=@dn88/catalog",
     "deploy": "npm run build && wrangler pages deploy out --project-name=dn88",
     "worker:dev": "wrangler dev -c workers/dn88/wrangler.jsonc",
     "worker:deploy": "wrangler deploy -c workers/dn88/wrangler.jsonc"
@@ -48,6 +59,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260711.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
