@@ -180,6 +180,14 @@ export function LibraryTiptapEditor({
     if (needsPersist) {
       saveArticleEditorContent(article.id, resolved, ARTICLE_EDITOR_CONTENT_VERSION);
     }
+
+    // Run reader DOM enhancements once after content is applied. Do not tie this
+    // to editor "update" events — ArticleReaderEnhancements mutates the DOM and
+    // would otherwise re-trigger updates in a tight loop (page hang).
+    const afterContent = window.requestAnimationFrame(() => {
+      setReaderEpoch((value) => value + 1);
+    });
+    return () => window.cancelAnimationFrame(afterContent);
   }, [article.id, editor]);
 
   useEffect(() => {
@@ -201,20 +209,6 @@ export function LibraryTiptapEditor({
       window.clearTimeout(afterContent);
     };
   }, [article.id]);
-
-  useEffect(() => {
-    if (!editor) return;
-    const bump = () => {
-      window.requestAnimationFrame(() => {
-        setReaderEpoch((value) => value + 1);
-      });
-    };
-    bump();
-    editor.on("update", bump);
-    return () => {
-      editor.off("update", bump);
-    };
-  }, [editor]);
 
   useEffect(() => {
     if (!searchOpen) return;
