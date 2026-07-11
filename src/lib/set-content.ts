@@ -683,10 +683,12 @@ export function getSetById(tab: string, setId: string): StudySet | undefined {
   return (SETS_BY_TAB[tab] ?? []).find((set) => set.id === setId);
 }
 
+import { resolveLibraryArticle as resolveArticleBySlug } from "@/lib/entities";
+
 export function getLibraryArticleById(
   articleId: string
 ): LibraryArticle | undefined {
-  return LIBRARY_ARTICLES.find((a) => a.id === articleId);
+  return resolveArticleBySlug(articleId);
 }
 
 export function filterLibraryArticles(

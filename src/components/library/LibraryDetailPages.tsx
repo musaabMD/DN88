@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { LibraryBrowseShell } from "@/components/library/LibraryBrowseShell";
 import { LibraryGrid, LibraryListCard } from "@/components/library/LibraryListCard";
@@ -8,7 +7,6 @@ import { LibraryPageHeader } from "@/components/library/LibraryPageHeader";
 import {
   BookmarkButton,
   ComingSoonPanel,
-  LibraryCtaButton,
   useBookmark,
 } from "@/components/library/LibraryUi";
 import {
@@ -17,12 +15,12 @@ import {
   toggleSpecialtyBookmark,
   toggleTopicBookmark,
 } from "@/lib/library-bookmarks";
-import { getLibraryArticleById } from "@/lib/mock-data";
+import {
+  entityPathForTopic,
+} from "@/lib/entities";
 import {
   LIBRARY_PATH,
-  articlePath,
   specialtyPath,
-  topicPath,
 } from "@/lib/routes";
 import {
   getTopicsForSpecialty,
@@ -55,7 +53,7 @@ export function SpecialtyPageClient({
         meta={
           topics.length > 0
             ? `${topics.length} topic${topics.length === 1 ? "" : "s"}`
-            : "Content coming soon"
+            : "Updating soon"
         }
         bookmark={
           <BookmarkButton
@@ -86,8 +84,7 @@ export function SpecialtyPageClient({
 }
 
 function SpecialtyTopicRow({ topic }: { topic: SpecialtyTopic }) {
-  const article = getLibraryArticleById(topic.id);
-  const href = article ? articlePath(article.id) : topicPath(topic.id);
+  const href = entityPathForTopic(topic);
 
   const { bookmarked, toggleBookmark } = useBookmark(
     () => isTopicBookmarked(topic.id),
@@ -109,66 +106,5 @@ function SpecialtyTopicRow({ topic }: { topic: SpecialtyTopic }) {
         />
       }
     />
-  );
-}
-
-export function TopicPageClient({ topic }: { topic: SpecialtyTopic }) {
-  const router = useRouter();
-  const article = getLibraryArticleById(topic.id);
-  const { bookmarked, toggleBookmark } = useBookmark(
-    () => isTopicBookmarked(topic.id),
-    () => toggleTopicBookmark(topic.id),
-    [topic.id]
-  );
-
-  useEffect(() => {
-    if (article) router.replace(articlePath(article.id));
-  }, [article, router]);
-
-  if (article) {
-    return (
-      <LibraryBrowseShell
-        showBack
-        onBack={() => router.push(LIBRARY_PATH)}
-      >
-        <p className="pt-6 text-center text-sm font-bold text-slate-400">
-          Opening article…
-        </p>
-      </LibraryBrowseShell>
-    );
-  }
-
-  return (
-    <LibraryBrowseShell
-      showBack
-      onBack={() => router.push(LIBRARY_PATH)}
-    >
-      <LibraryPageHeader
-        seed={topic.specialty}
-        title={topic.title}
-        meta="Article coming soon"
-        breadcrumb={{
-          label: topic.specialty,
-          href: specialtyPath(specialtySlug(topic.specialty)),
-        }}
-        bookmark={
-          <BookmarkButton
-            bookmarked={bookmarked}
-            onToggle={toggleBookmark}
-            label={bookmarked ? "Remove topic bookmark" : "Bookmark topic"}
-            showOnHover
-          />
-        }
-      />
-
-      <ComingSoonPanel
-        title="Article coming soon"
-        description="Full clinical notes, summary, questions, and flashcards will appear here as content is published."
-      >
-        <LibraryCtaButton href={specialtyPath(specialtySlug(topic.specialty))}>
-          Browse {topic.specialty}
-        </LibraryCtaButton>
-      </ComingSoonPanel>
-    </LibraryBrowseShell>
   );
 }

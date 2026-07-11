@@ -2,7 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import LibraryArticle from "@/components/content/LibraryArticle";
-import { getLibraryArticleById } from "@/lib/mock-data";
+import { LibraryBrowseShell } from "@/components/library/LibraryBrowseShell";
+import { LibraryPageHeader } from "@/components/library/LibraryPageHeader";
+import {
+  ComingSoonPanel,
+  LibraryCtaButton,
+} from "@/components/library/LibraryUi";
+import { getEntity, resolveLibraryArticle } from "@/lib/entities";
 import { getCreatedPageById } from "@/lib/pages/create-page-store";
 import type { LibraryArticle as LibraryArticleType } from "@/lib/set-content";
 import { LIBRARY_PATH } from "@/lib/routes";
@@ -31,28 +37,36 @@ function createdPageToArticle(page: {
 
 export function LibraryArticleClient({ articleId }: { articleId: string }) {
   const router = useRouter();
-  const article = getLibraryArticleById(articleId);
+  const article = resolveLibraryArticle(articleId);
   const created = !article ? getCreatedPageById(articleId) : undefined;
   const resolved = article ?? (created ? createdPageToArticle(created) : undefined);
   const backToLibrary = () => router.push(LIBRARY_PATH);
 
   if (!resolved) {
+    const entity =
+      getEntity("conditions", articleId) ??
+      getEntity("medications", articleId) ??
+      getEntity("assessments", articleId) ??
+      getEntity("overviews", articleId);
+
+    const displayTitle =
+      entity?.title ??
+      articleId.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
     return (
-      <div className="simple-editor-page flex min-h-dvh items-center justify-center">
-        <div className="text-center">
-          <p className="mb-2 font-semibold text-slate-800">Article not found</p>
-          <p className="mb-4 text-sm text-slate-500">
-            Click a red wiki link in any article to create this page.
-          </p>
-          <button
-            type="button"
-            onClick={backToLibrary}
-            className="text-sm font-medium text-slate-600 underline"
-          >
-            Back to library
-          </button>
-        </div>
-      </div>
+      <LibraryBrowseShell showBack onBack={backToLibrary}>
+        <LibraryPageHeader
+          seed={displayTitle}
+          title={displayTitle}
+          meta="Updating soon"
+        />
+        <ComingSoonPanel
+          title="Content updating soon"
+          description="Full clinical notes, summaries, questions, and flashcards for this topic are being published. Check back soon."
+        >
+          <LibraryCtaButton href={LIBRARY_PATH}>Back to Library</LibraryCtaButton>
+        </ComingSoonPanel>
+      </LibraryBrowseShell>
     );
   }
 

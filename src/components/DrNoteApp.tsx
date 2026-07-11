@@ -18,8 +18,8 @@ import {
   type QuestionItem,
   type StudySet,
 } from "@/lib/set-content";
+import { entityPathForArticle } from "@/lib/entities";
 import {
-  articlePath,
   examTabPath,
   filtersPath,
   setPath,
@@ -1691,7 +1691,7 @@ export default function DrNoteApp({
           filters={browseFilters}
           onOpenSet={openSet}
           onOpenArticle={(article) =>
-            router.push(articlePath(article.id))
+            router.push(entityPathForArticle(article))
           }
         />
       </main>

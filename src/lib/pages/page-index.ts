@@ -1,6 +1,10 @@
 import { LIBRARY_ARTICLES } from "@/lib/set-content";
 import { articlePath } from "@/lib/routes";
 import {
+  entityPathForArticle,
+  resolveLibraryArticle,
+} from "@/lib/entities";
+import {
   createStoredPage,
   getCreatedPageById,
   getCreatedPageByTitle,
@@ -102,6 +106,9 @@ export function searchPages(query: string, limit = 8): PageSearchItem[] {
 
 /** Resolve slug at render/navigation time from stable pageId. */
 export function resolvePageHref(pageId: string): string {
+  const article = resolveLibraryArticle(pageId);
+  if (article) return entityPathForArticle(article);
+
   const page = getPageById(pageId);
   if (page) return articlePath(page.slug);
   if (isPendingPageId(pageId)) {
