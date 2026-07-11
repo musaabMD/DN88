@@ -1,0 +1,46 @@
+name: Refresh catalog
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: catalog-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Refresh catalog bundle
+        run: node scripts/refresh-catalog.mjs
+        env:
+          CATALOG_SYNC_ORIGIN: ${{ secrets.CATALOG_SYNC_ORIGIN }}
+          CATALOG_SYNC_ORIGIN_B64: ${{ secrets.CATALOG_SYNC_ORIGIN_B64 }}
+          CATALOG_SYNC_TOKEN: ${{ secrets.CATALOG_SYNC_TOKEN }}
+          CATALOG_SYNC_REF: ${{ secrets.CATALOG_SYNC_REF }}
+
+      - name: Commit and push if changed
+        run: |
+          if git diff --quiet -- src/generated/; then
+            echo "Catalog unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/generated/
+          git commit -m "chore(catalog): refresh library bundle"
+          git push

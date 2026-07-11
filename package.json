@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/refresh-catalog.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "catalog:refresh": "node scripts/refresh-catalog.mjs",
     "deploy": "npm run build && wrangler pages deploy out --project-name=dn88",
     "worker:dev": "wrangler dev -c workers/dn88/wrangler.jsonc",
     "worker:deploy": "wrangler deploy -c workers/dn88/wrangler.jsonc"
