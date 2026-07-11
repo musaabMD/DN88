@@ -998,160 +998,14 @@ body {
   margin: 2rem 0 0.25rem;
 }
 
-/* Collapsible article sections (Summary, Pathophysiology, …) */
-.tiptap h2.article-section-heading.is-collapsible {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  margin: 1.75rem 0 0;
-  padding: 0.55rem 0.75rem;
-  border: 1px solid var(--article-border);
-  border-left: 3px solid var(--article-accent);
-  border-radius: 0.5rem 0.5rem 0 0;
-  background: var(--article-pre-bg);
-  cursor: pointer;
-  user-select: none;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease;
+/* Article section headings — clean Notion-like toggles, no boxed panels */
+.tiptap h2.article-section-heading {
+  margin: 2rem 0 0.35rem;
 }
 
-.tiptap h2.article-section-heading.is-collapsible.is-collapsed {
-  margin-bottom: 0.75rem;
-  border-radius: 0.5rem;
-}
-
-.tiptap h2.article-section-heading.is-collapsible:hover {
-  background: color-mix(in srgb, var(--article-accent) 6%, var(--article-pre-bg));
-}
-
-.tiptap h2.article-section-heading.is-collapsible::before {
-  content: "";
-  width: 0;
-  height: 0;
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
-  border-left: 6px solid var(--article-accent);
-  transform: rotate(90deg);
-  transition: transform 0.15s ease;
-  flex-shrink: 0;
-}
-
-.tiptap h2.article-section-heading.is-collapsible.is-collapsed::before {
-  transform: rotate(0deg);
-}
-
-.article-section-panel {
-  margin: 0.35rem 0 0.75rem;
-  padding: 0.65rem 0.85rem 0.85rem 1.1rem;
-  border: 1px solid var(--article-border);
-  border-top: none;
-  border-radius: 0 0 0.5rem 0.5rem;
-  background: rgb(255 255 255);
-}
-
-.article-section-panel.is-collapsed {
-  display: none;
-}
-
-.dark .simple-editor-page .article-section-panel {
-  background: rgb(12 12 12);
-}
-
-.dark .simple-editor-page .tiptap h2.article-section-heading.is-collapsible {
-  background: rgb(18 18 18);
-}
-
-.dark .simple-editor-page .tiptap h2.article-section-heading.is-collapsible:hover {
-  background: rgb(24 24 24);
-}
-
-/* Notion-style content blocks */
+/* Notion-style content blocks — no hover borders in read mode */
 .simple-editor-scroll {
   position: relative;
-}
-
-.tiptap .article-content-block {
-  position: relative;
-  border-radius: 0.375rem;
-  transition:
-    background-color 0.12s ease,
-    box-shadow 0.12s ease;
-}
-
-.tiptap .article-content-block:hover,
-.tiptap .article-content-block.is-block-selected {
-  background: var(--article-pre-bg);
-  box-shadow: 0 0 0 1px var(--article-border);
-}
-
-.tiptap li.article-content-block {
-  padding-left: 0.15rem;
-}
-
-.tiptap .article-callout.article-content-block:hover,
-.tiptap .article-callout.article-content-block.is-block-selected {
-  box-shadow:
-    0 0 0 1px var(--article-border),
-    inset 0 0 0 1px rgb(255 255 255 / 0.02);
-}
-
-.article-block-handle {
-  position: absolute;
-  z-index: 12;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.15rem;
-  padding: 0.15rem;
-  border: 1px solid var(--article-border);
-  border-radius: 0.375rem;
-  background: rgb(255 255 255);
-  box-shadow: 0 4px 16px rgb(15 23 42 / 0.08);
-}
-
-.article-block-handle-grip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: rgb(148 163 184);
-}
-
-.article-block-handle-copy {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border: none;
-  border-radius: 0.25rem;
-  background: transparent;
-  color: rgb(71 85 105);
-  cursor: pointer;
-}
-
-.article-block-handle-copy:hover {
-  background: rgb(241 245 249);
-  color: rgb(15 23 42);
-}
-
-.article-block-handle-copy.is-copied {
-  color: rgb(22 163 74);
-}
-
-.article-section-citations {
-  margin-top: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px dashed var(--article-border);
-}
-
-.article-section-citations-label {
-  margin: 0 0 0.5rem;
-  font-family: var(--article-font-sans);
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--article-text-muted);
 }
 
 /* In-article search modal */
@@ -1263,16 +1117,6 @@ body {
 
 .dark .article-search-dialog {
   background: rgb(18 18 18);
-}
-
-.dark .article-block-handle {
-  background: rgb(18 18 18);
-  border-color: rgb(255 255 255 / 0.12);
-}
-
-.dark .article-block-handle-copy:hover {
-  background: rgb(32 32 32);
-  color: rgb(245 245 245);
 }
 
 .tiptap .article-section-heading + p,
@@ -1481,10 +1325,10 @@ body {
   --callout-accent: var(--article-text-muted);
   --callout-tint: var(--article-pre-bg);
   margin: 1.25rem 0;
-  padding: 0.75rem 1rem 0.75rem 1.1rem;
-  border: 1px solid var(--article-border);
+  padding: 0.35rem 0 0.35rem 0.85rem;
+  border: none;
   border-left: 3px solid var(--article-border);
-  border-radius: 0.5rem;
+  border-radius: 0;
   background: transparent;
 }
 
@@ -1543,10 +1387,11 @@ body {
   --callout-tint: rgb(224 231 255 / 0.45);
 }
 
-/* Colorful view ON: light up boxes with tint + accent border + label color. */
+/* Colorful view ON: subtle tint + accent bar (still no full border box). */
 .simple-editor-page.is-colorful .tiptap .article-callout {
+  padding: 0.65rem 0.85rem 0.65rem 1rem;
+  border-radius: 0.25rem;
   background: var(--callout-tint);
-  border-color: color-mix(in srgb, var(--callout-accent) 28%, transparent);
   border-left-color: var(--callout-accent);
 }
 

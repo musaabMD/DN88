@@ -50,7 +50,6 @@ import { ArticleReaderFooter } from "@/components/library/editor/reader/ArticleR
 import { HighlightsPanel } from "@/components/library/editor/reader/HighlightsPanel";
 import { ImageLightbox } from "@/components/library/editor/reader/ImageLightbox";
 import { ReaderProgress } from "@/components/library/editor/reader/ReaderProgress";
-import { ArticleReaderEnhancements } from "@/components/library/editor/reader/ArticleReaderEnhancements";
 import { SectionDeepLink } from "@/components/library/editor/reader/SectionDeepLink";
 import {
   ZOOM_DEFAULT,
@@ -97,7 +96,6 @@ export function LibraryTiptapEditor({
   const [glossaryOn, setGlossaryOn] = useState(() => getGlossaryEnabled());
   const [colorfulOn, setColorfulOn] = useState(() => getColorfulViewEnabled());
   const [searchOpen, setSearchOpen] = useState(false);
-  const [readerEpoch, setReaderEpoch] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const initialContent = useMemo(() => {
@@ -122,13 +120,6 @@ export function LibraryTiptapEditor({
       DetailsContent,
       Image.configure({
         HTMLAttributes: { class: "simple-editor-image" },
-        resize: {
-          enabled: true,
-          directions: ["top", "bottom", "left", "right"],
-          minWidth: 50,
-          minHeight: 50,
-          alwaysPreserveAspectRatio: true,
-        },
       }),
       TableKit.configure({
         table: {
@@ -153,11 +144,8 @@ export function LibraryTiptapEditor({
       DecorationOnly,
     ],
     content: initialContent,
-    editable: true,
+    editable: false,
     immediatelyRender: false,
-    onUpdate: ({ editor: ed }) => {
-      saveArticleEditorContent(article.id, ed.getJSON());
-    },
     editorProps: {
       attributes: {
         class: "tiptap simple-editor-prose",
@@ -180,14 +168,6 @@ export function LibraryTiptapEditor({
     if (needsPersist) {
       saveArticleEditorContent(article.id, resolved, ARTICLE_EDITOR_CONTENT_VERSION);
     }
-
-    // Run reader DOM enhancements once after content is applied. Do not tie this
-    // to editor "update" events — ArticleReaderEnhancements mutates the DOM and
-    // would otherwise re-trigger updates in a tight loop (page hang).
-    const afterContent = window.requestAnimationFrame(() => {
-      setReaderEpoch((value) => value + 1);
-    });
-    return () => window.cancelAnimationFrame(afterContent);
   }, [article.id, editor]);
 
   useEffect(() => {
@@ -356,14 +336,6 @@ export function LibraryTiptapEditor({
             className="simple-editor-scroll"
             data-study-mode={activeStudyMode ?? "read"}
           >
-            {isReadMode ? (
-              <ArticleReaderEnhancements
-                article={article}
-                containerSelector=".simple-editor-scroll"
-                enabled={isReadMode}
-                contentEpoch={readerEpoch}
-              />
-            ) : null}
             <div
               className="simple-editor-canvas"
               style={{
