@@ -5,6 +5,7 @@ import type { Editor } from "@tiptap/core";
 import { BubbleMenu } from "@tiptap/react/menus";
 import {
   Bold,
+  ClipboardCopy,
   FileText,
   Italic,
   Underline,
@@ -117,17 +118,16 @@ export function SelectionBubbleMenu({ editor }: { editor: Editor }) {
         <BubbleBtn title="Link to page" onClick={() => setWikiPickerOpen(true)}>
           <FileText size={15} strokeWidth={2} />
         </BubbleBtn>
-        <button
-          type="button"
-          className="tiptap-bubble-copy"
+        <BubbleBtn
+          title="Copy"
           onClick={async () => {
             const { from, to } = editor.state.selection;
             const text = editor.state.doc.textBetween(from, to, "\n");
             await navigator.clipboard.writeText(text);
           }}
         >
-          Copy
-        </button>
+          <ClipboardCopy size={15} strokeWidth={2} />
+        </BubbleBtn>
       </BubbleMenu>
 
       <WikiLinkPicker

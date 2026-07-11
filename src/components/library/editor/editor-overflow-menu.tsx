@@ -4,10 +4,9 @@ import { Link2, Maximize2, Minus, Plus, Settings } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   clampZoom,
-  getNextPresetZoom,
   ZOOM_MAX,
   ZOOM_MIN,
-  ZOOM_PRESETS,
+  ZOOM_STEP,
   type ZoomLevel,
 } from "@/components/library/editor/zoom-dropdown-menu";
 
@@ -85,41 +84,20 @@ export function EditorOverflowMenu({
                 title="Zoom out"
                 aria-label="Zoom out"
                 disabled={isMinZoom}
-                onClick={() =>
-                  setZoom(
-                    getNextPresetZoom(zoom, "down", ZOOM_PRESETS, ZOOM_MIN, ZOOM_MAX)
-                  )
-                }
+                onClick={() => setZoom(zoom - ZOOM_STEP)}
               >
                 <Minus size={16} strokeWidth={2} />
               </button>
-              <span className="simple-editor-settings-zoom-value">{zoom}%</span>
               <button
                 type="button"
                 className="tiptap-toolbar-btn"
                 title="Zoom in"
                 aria-label="Zoom in"
                 disabled={isMaxZoom}
-                onClick={() =>
-                  setZoom(
-                    getNextPresetZoom(zoom, "up", ZOOM_PRESETS, ZOOM_MIN, ZOOM_MAX)
-                  )
-                }
+                onClick={() => setZoom(zoom + ZOOM_STEP)}
               >
                 <Plus size={16} strokeWidth={2} />
               </button>
-            </div>
-            <div className="tiptap-zoom-presets simple-editor-settings-zoom-presets">
-              {ZOOM_PRESETS.map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  className={preset === zoom ? "is-active" : undefined}
-                  onClick={() => setZoom(preset)}
-                >
-                  {preset}%
-                </button>
-              ))}
             </div>
             {onFitToPage ? (
               <button

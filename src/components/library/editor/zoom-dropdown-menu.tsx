@@ -6,6 +6,7 @@ import { Maximize2, Minus, Plus } from "lucide-react";
 export const ZOOM_MIN = 40;
 export const ZOOM_MAX = 200;
 export const ZOOM_DEFAULT = 100;
+export const ZOOM_STEP = 10;
 export const ZOOM_PRESETS = [40, 50, 75, 90, 100, 125, 150, 175, 200] as const;
 export type ZoomLevel = number;
 

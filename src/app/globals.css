@@ -724,7 +724,8 @@ body {
 }
 
 .simple-editor-canvas {
-  max-width: 44rem;
+  width: 100%;
+  max-width: 52rem;
   margin: 0 auto;
   padding: 2.5rem 1.25rem 5rem;
   transition: transform 0.15s ease;
@@ -978,12 +979,14 @@ body {
   scroll-margin-top: 5.5rem;
 }
 
-.tiptap h1 + p {
+.tiptap h1 + p,
+.tiptap .article-meta {
   margin-bottom: 1.75rem;
   font-size: 0.875rem;
   line-height: 1.5;
   color: var(--article-text-muted);
   font-style: normal;
+  letter-spacing: 0.01em;
 }
 
 .tiptap .article-section-heading,
@@ -998,9 +1001,65 @@ body {
   margin: 2rem 0 0.25rem;
 }
 
-/* Article section headings — clean Notion-like toggles, no boxed panels */
-.tiptap h2.article-section-heading {
+/* Collapsible section headings — Notion-style chevron, no border boxes */
+.tiptap h2.article-section-heading.is-collapsible {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
   margin: 2rem 0 0.35rem;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.tiptap h2.article-section-heading.is-collapsible:hover {
+  color: var(--article-accent, var(--article-text));
+}
+
+.tiptap h2.article-section-heading.is-collapsible::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 6px solid var(--article-text-muted);
+  transform: rotate(90deg);
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.tiptap h2.article-section-heading.is-collapsible.is-collapsed::before {
+  transform: rotate(0deg);
+}
+
+.tiptap h2.article-section-heading.is-collapsed {
+  margin-bottom: 0.75rem;
+}
+
+/* Section body + bullet subtext */
+.tiptap h2.article-section-heading + p {
+  color: var(--article-text);
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.tiptap ul,
+.tiptap ol {
+  margin: 0.35rem 0 0.85rem;
+  padding-left: 1.35rem;
+}
+
+.tiptap li {
+  margin: 0.2rem 0;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: var(--article-text);
+}
+
+.tiptap li::marker {
+  color: var(--article-text-muted);
 }
 
 /* Notion-style content blocks — no hover borders in read mode */
@@ -1183,6 +1242,7 @@ body {
 .tiptap mark {
   border-radius: 0.125rem;
   padding: 0.05em 0.125rem;
+  color: rgb(17 17 17);
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
@@ -2521,29 +2581,16 @@ body {
   color: rgb(220 220 220);
 }
 
-/* Highlights — readable on black background */
+/* Highlights — standard highlighter colors in light and dark */
 .dark .simple-editor-page .tiptap mark {
   color: rgb(17 17 17);
 }
 
-/* Legacy light-mode pastel highlights */
-.dark .simple-editor-page .tiptap mark[style*="#fef08a"],
-.dark .simple-editor-page .tiptap mark[style*="#bbf7d0"],
-.dark .simple-editor-page .tiptap mark[style*="#bae6fd"],
-.dark .simple-editor-page .tiptap mark[style*="#e9d5ff"],
-.dark .simple-editor-page .tiptap mark[style*="#fbcfe8"],
-.dark .simple-editor-page .tiptap mark[style*="#fed7aa"] {
+.dark .simple-editor-page .tiptap mark[style*="#fff59d"],
+.dark .simple-editor-page .tiptap mark[style*="#b9f6ca"],
+.dark .simple-editor-page .tiptap mark[style*="#b3e5fc"],
+.dark .simple-editor-page .tiptap mark[style*="#f8bbd0"] {
   color: rgb(17 17 17);
-}
-
-/* Dark-mode highlight colors (rich backgrounds, light text) */
-.dark .simple-editor-page .tiptap mark[style*="#854d0e"],
-.dark .simple-editor-page .tiptap mark[style*="#166534"],
-.dark .simple-editor-page .tiptap mark[style*="#1e3a8a"],
-.dark .simple-editor-page .tiptap mark[style*="#6b21a8"],
-.dark .simple-editor-page .tiptap mark[style*="#9d174d"],
-.dark .simple-editor-page .tiptap mark[style*="#9a3412"] {
-  color: rgb(255 252 245);
 }
 
 /* Presentation mode — Drnote title slide + deck-style content */

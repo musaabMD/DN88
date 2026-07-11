@@ -118,6 +118,7 @@ export function articleToTiptapContent(article: LibraryArticle): JSONContent {
     },
     {
       type: "paragraph",
+      attrs: { class: "article-meta" },
       content: [
         {
           type: "text",

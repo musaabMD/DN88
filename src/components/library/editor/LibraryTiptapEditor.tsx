@@ -17,8 +17,8 @@ import {
   TableOfContents,
 } from "@tiptap/extension-table-of-contents";
 import { UniqueID } from "@tiptap/extension-unique-id";
-import { ArrowLeft, Palette, Search } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, Search } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { StudyModeFilter } from "@/components/content/ArticleStudyModes";
 import { FloatingToc } from "@/components/content/FloatingToc";
 import { ArticleSearchModal } from "@/components/content/ArticleSearchModal";
@@ -34,12 +34,10 @@ import {
   ARTICLE_EDITOR_CONTENT_VERSION,
   countCalloutNodes,
   getArticleEditorContent,
-  getColorfulViewEnabled,
   getGlossaryEnabled,
   getStoredArticleEditorVersion,
   resolveArticleEditorContent,
   saveArticleEditorContent,
-  setColorfulViewEnabled as persistColorfulView,
   setGlossaryEnabled as persistGlossaryEnabled,
 } from "@/lib/library-editor-preferences";
 import {
@@ -50,9 +48,12 @@ import { ArticleReaderFooter } from "@/components/library/editor/reader/ArticleR
 import { HighlightsPanel } from "@/components/library/editor/reader/HighlightsPanel";
 import { ImageLightbox } from "@/components/library/editor/reader/ImageLightbox";
 import { ReaderProgress } from "@/components/library/editor/reader/ReaderProgress";
+import { ArticleSectionToggles } from "@/components/library/editor/reader/ArticleSectionToggles";
 import { SectionDeepLink } from "@/components/library/editor/reader/SectionDeepLink";
 import {
+  clampZoom,
   ZOOM_DEFAULT,
+  ZOOM_MAX,
   type ZoomLevel,
 } from "@/components/library/editor/zoom-dropdown-menu";
 import { sectionSlug } from "@/components/content/ArticleTableOfContents";
@@ -94,8 +95,8 @@ export function LibraryTiptapEditor({
     null
   );
   const [glossaryOn, setGlossaryOn] = useState(() => getGlossaryEnabled());
-  const [colorfulOn, setColorfulOn] = useState(() => getColorfulViewEnabled());
   const [searchOpen, setSearchOpen] = useState(false);
+  const [sectionToggleKey, setSectionToggleKey] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const initialContent = useMemo(() => {
@@ -144,7 +145,7 @@ export function LibraryTiptapEditor({
       DecorationOnly,
     ],
     content: initialContent,
-    editable: false,
+    editable: true,
     immediatelyRender: false,
     editorProps: {
       attributes: {
@@ -168,6 +169,11 @@ export function LibraryTiptapEditor({
     if (needsPersist) {
       saveArticleEditorContent(article.id, resolved, ARTICLE_EDITOR_CONTENT_VERSION);
     }
+
+    const afterContent = window.requestAnimationFrame(() => {
+      setSectionToggleKey((value) => value + 1);
+    });
+    return () => window.cancelAnimationFrame(afterContent);
   }, [article.id, editor]);
 
   useEffect(() => {
@@ -221,13 +227,19 @@ export function LibraryTiptapEditor({
     if (editor) setGlossaryDecorations(editor, enabled);
   };
 
-  const handleColorfulToggle = () => {
-    setColorfulOn((prev) => {
-      const next = !prev;
-      persistColorfulView(next);
-      return next;
-    });
-  };
+  const handleFitToPage = useCallback(() => {
+    const scroll = scrollRef.current;
+    if (!scroll) return;
+    const canvas = scroll.querySelector<HTMLElement>(".simple-editor-canvas");
+    if (!canvas) return;
+
+    const padding = 24;
+    const available = scroll.clientWidth - padding;
+    const baseWidth = canvas.getBoundingClientRect().width / (zoom / 100);
+    if (baseWidth <= 0 || available <= 0) return;
+
+    setZoom(clampZoom(Math.round((available / baseWidth) * 100), 40, ZOOM_MAX));
+  }, [zoom]);
 
   const slideDeck = useMemo(() => articleToSlideDeck(article), [article]);
 
@@ -274,7 +286,7 @@ export function LibraryTiptapEditor({
   return (
     <Tiptap editor={editor}>
       <div
-        className={`simple-editor-page${!isReadMode ? " simple-editor-page--study" : ""}${colorfulOn ? " is-colorful" : ""}`}
+        className={`simple-editor-page${!isReadMode ? " simple-editor-page--study" : ""} is-colorful`}
       >
         <header className="simple-editor-header">
           <div className="simple-editor-header-start">
@@ -293,7 +305,7 @@ export function LibraryTiptapEditor({
             <EditorOverflowMenu
               currentZoom={zoom}
               onZoomChange={setZoom}
-              onFitToPage={() => setZoom(ZOOM_DEFAULT)}
+              onFitToPage={handleFitToPage}
               glossaryEnabled={glossaryOn}
               onGlossaryToggle={handleGlossaryToggle}
             />
@@ -306,18 +318,6 @@ export function LibraryTiptapEditor({
                 onClick={() => setSearchOpen(true)}
               >
                 <Search size={18} strokeWidth={2} />
-              </button>
-            ) : null}
-            {isReadMode ? (
-              <button
-                type="button"
-                className={`simple-editor-icon-btn${colorfulOn ? " is-active" : ""}`}
-                title={colorfulOn ? "Colorful view: on" : "Colorful view: off"}
-                aria-label="Toggle colorful view"
-                aria-pressed={colorfulOn}
-                onClick={handleColorfulToggle}
-              >
-                <Palette size={18} strokeWidth={2} />
               </button>
             ) : null}
             <ThemeToggle />
@@ -336,6 +336,12 @@ export function LibraryTiptapEditor({
             className="simple-editor-scroll"
             data-study-mode={activeStudyMode ?? "read"}
           >
+            {isReadMode ? (
+              <ArticleSectionToggles
+                containerSelector=".simple-editor-scroll"
+                contentKey={sectionToggleKey}
+              />
+            ) : null}
             <div
               className="simple-editor-canvas"
               style={{
