@@ -71,19 +71,52 @@ export function ComingSoonPanel({
   title,
   description,
   children,
+  className = "mt-8",
 }: {
   title: string;
   description: string;
   children?: ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="mt-8 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center">
+    <div
+      className={`rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center ${className}`}
+    >
       <p className="text-lg font-extrabold text-slate-700">{title}</p>
       <p className="mx-auto mt-2 max-w-md text-sm font-bold leading-relaxed text-slate-400">
         {description}
       </p>
       {children}
     </div>
+  );
+}
+
+export function LibraryCtaButton({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className="mt-5 inline-flex rounded-xl border-2 border-b-4 border-slate-200 bg-white px-4 py-2 text-sm font-extrabold text-slate-700 transition-colors hover:bg-slate-50"
+    >
+      {children}
+    </Link>
+  );
+}
+
+export function LibraryEmptyState({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <ComingSoonPanel title={title} description={description} className="mt-2" />
   );
 }
 

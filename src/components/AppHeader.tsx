@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { ArrowLeft, Search } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -16,6 +17,10 @@ type AppHeaderProps = {
   minimal?: boolean;
   onSearchClick?: () => void;
   hidden?: boolean;
+  /** Match library browse content width. */
+  contentMaxWidth?: "4xl" | "6xl";
+  /** Replaces default auth controls (e.g. ProductSiteNav on library home). */
+  headerEnd?: ReactNode;
 };
 
 export function AppHeader({
@@ -26,8 +31,12 @@ export function AppHeader({
   minimal,
   onSearchClick,
   hidden,
+  contentMaxWidth = "6xl",
+  headerEnd,
 }: AppHeaderProps) {
   const router = useRouter();
+  const maxWidthClass =
+    contentMaxWidth === "4xl" ? "max-w-4xl" : "max-w-6xl";
 
   const handleBack = () => {
     if (onBack) {
@@ -42,7 +51,7 @@ export function AppHeader({
   return (
     <>
       <header className="fixed inset-x-0 top-0 z-40 border-b border-slate-100 bg-white/95 backdrop-blur-md">
-        <div className="mx-auto grid h-14 max-w-6xl grid-cols-[auto_1fr_auto] items-center gap-2 px-4 sm:gap-3 sm:px-6">
+        <div className={`mx-auto grid h-14 ${maxWidthClass} grid-cols-[auto_1fr_auto] items-center gap-2 px-4 sm:gap-3 sm:px-6`}>
           <div className="flex min-w-0 items-center gap-1 sm:gap-2">
             {showBack ? (
               <button
@@ -97,7 +106,7 @@ export function AppHeader({
                 <Search className="h-5 w-5" strokeWidth={2.5} />
               </button>
             ) : null}
-            <UserAuthControls compact />
+            {headerEnd ?? <UserAuthControls compact />}
           </div>
         </div>
       </header>

@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronRight } from "lucide-react";
-import { AppHeader } from "@/components/AppHeader";
-import { LibraryThumb, LibraryThumbHero } from "@/components/library/LibraryThumb";
+import { LibraryBrowseShell } from "@/components/library/LibraryBrowseShell";
+import { LibraryGrid, LibraryListCard } from "@/components/library/LibraryListCard";
+import { LibraryPageHeader } from "@/components/library/LibraryPageHeader";
 import {
   BookmarkButton,
   ComingSoonPanel,
+  LibraryCtaButton,
   useBookmark,
 } from "@/components/library/LibraryUi";
 import {
@@ -22,6 +22,7 @@ import {
   LIBRARY_PATH,
   articlePath,
   specialtyPath,
+  topicPath,
 } from "@/lib/routes";
 import {
   getTopicsForSpecialty,
@@ -30,25 +31,12 @@ import {
   type SpecialtyTopic,
 } from "@/lib/specialties";
 
-function PostPageShell({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-  return (
-    <div className="min-h-screen bg-white font-sans">
-      <AppHeader
-        showBack
-        onBack={() => router.push(LIBRARY_PATH)}
-        minimal
-      />
-      <main className="mx-auto w-full max-w-4xl px-4 pb-14 sm:px-6">{children}</main>
-    </div>
-  );
-}
-
 export function SpecialtyPageClient({
   specialty,
 }: {
   specialty: MedicalSpecialty;
 }) {
+  const router = useRouter();
   const topics = getTopicsForSpecialty(specialty);
   const { bookmarked, toggleBookmark } = useBookmark(
     () => isSpecialtyBookmarked(specialty),
@@ -57,48 +45,50 @@ export function SpecialtyPageClient({
   );
 
   return (
-    <PostPageShell>
-      <div className="group flex items-start gap-4 pt-4">
-        <LibraryThumbHero seed={specialty} />
-        <div className="min-w-0 flex-1 text-left">
-          <h1 className="text-2xl font-black leading-tight tracking-tight text-slate-900 sm:text-3xl">
-            {specialty}
-          </h1>
-          <p className="mt-1.5 text-sm font-bold text-slate-400">
-            {topics.length > 0
-              ? `${topics.length} topic${topics.length === 1 ? "" : "s"}`
-              : "Content coming soon"}
-          </p>
-        </div>
-        <BookmarkButton
-          bookmarked={bookmarked}
-          onToggle={toggleBookmark}
-          label={bookmarked ? "Remove specialty bookmark" : "Bookmark specialty"}
-          showOnHover
-        />
-      </div>
+    <LibraryBrowseShell
+      showBack
+      onBack={() => router.push(LIBRARY_PATH)}
+    >
+      <LibraryPageHeader
+        seed={specialty}
+        title={specialty}
+        meta={
+          topics.length > 0
+            ? `${topics.length} topic${topics.length === 1 ? "" : "s"}`
+            : "Content coming soon"
+        }
+        bookmark={
+          <BookmarkButton
+            bookmarked={bookmarked}
+            onToggle={toggleBookmark}
+            label={
+              bookmarked ? "Remove specialty bookmark" : "Bookmark specialty"
+            }
+            showOnHover
+          />
+        }
+      />
 
       {topics.length > 0 ? (
-        <div className="mt-8 grid grid-cols-1 gap-3 md:grid-cols-2">
+        <LibraryGrid>
           {topics.map((topic) => (
             <SpecialtyTopicRow key={topic.id} topic={topic} />
           ))}
-        </div>
+        </LibraryGrid>
       ) : (
         <ComingSoonPanel
           title="No topics yet"
           description="We're building guides for this specialty. Bookmark it to get notified when new topics land."
         />
       )}
-    </PostPageShell>
+    </LibraryBrowseShell>
   );
 }
 
 function SpecialtyTopicRow({ topic }: { topic: SpecialtyTopic }) {
   const article = getLibraryArticleById(topic.id);
-  const href = article
-    ? articlePath(article.id)
-    : specialtyPath(specialtySlug(topic.specialty));
+  const href = article ? articlePath(article.id) : topicPath(topic.id);
+
   const { bookmarked, toggleBookmark } = useBookmark(
     () => isTopicBookmarked(topic.id),
     () => toggleTopicBookmark(topic.id),
@@ -106,27 +96,19 @@ function SpecialtyTopicRow({ topic }: { topic: SpecialtyTopic }) {
   );
 
   return (
-    <div className="group flex w-full items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4 text-left transition-colors hover:bg-slate-50">
-      <Link href={href} className="flex min-w-0 flex-1 items-center gap-3">
-        <LibraryThumb seed={topic.specialty} />
-        <div className="min-w-0 flex-1 text-left">
-          <h3 className="text-base font-extrabold leading-snug tracking-tight text-slate-700">
-            {topic.title}
-          </h3>
-        </div>
-        <ChevronRight
-          size={20}
-          strokeWidth={3}
-          className="shrink-0 text-slate-300 opacity-0 transition-all duration-150 group-hover:translate-x-1 group-hover:opacity-100 group-hover:text-[#334155]"
+    <LibraryListCard
+      href={href}
+      seed={topic.specialty}
+      title={topic.title}
+      trailing={
+        <BookmarkButton
+          bookmarked={bookmarked}
+          onToggle={toggleBookmark}
+          label={bookmarked ? "Remove topic bookmark" : "Bookmark topic"}
+          showOnHover
         />
-      </Link>
-      <BookmarkButton
-        bookmarked={bookmarked}
-        onToggle={toggleBookmark}
-        label={bookmarked ? "Remove topic bookmark" : "Bookmark topic"}
-        showOnHover
-      />
-    </div>
+      }
+    />
   );
 }
 
@@ -145,51 +127,48 @@ export function TopicPageClient({ topic }: { topic: SpecialtyTopic }) {
 
   if (article) {
     return (
-      <PostPageShell>
-        <p className="pt-10 text-center text-sm font-bold text-slate-400">
+      <LibraryBrowseShell
+        showBack
+        onBack={() => router.push(LIBRARY_PATH)}
+      >
+        <p className="pt-6 text-center text-sm font-bold text-slate-400">
           Opening article…
         </p>
-      </PostPageShell>
+      </LibraryBrowseShell>
     );
   }
 
   return (
-    <PostPageShell>
-      <div className="pt-4">
-        <Link
-          href={specialtyPath(specialtySlug(topic.specialty))}
-          className="text-sm font-extrabold text-slate-500 transition-colors hover:text-slate-800"
-        >
-          {topic.specialty}
-        </Link>
-      </div>
-
-      <div className="group mt-4 flex items-start gap-4">
-        <LibraryThumbHero seed={topic.title} />
-        <div className="min-w-0 flex-1 text-left">
-          <h1 className="text-2xl font-black leading-tight tracking-tight text-slate-900 sm:text-3xl">
-            {topic.title}
-          </h1>
-        </div>
-        <BookmarkButton
-          bookmarked={bookmarked}
-          onToggle={toggleBookmark}
-          label={bookmarked ? "Remove topic bookmark" : "Bookmark topic"}
-          showOnHover
-        />
-      </div>
+    <LibraryBrowseShell
+      showBack
+      onBack={() => router.push(LIBRARY_PATH)}
+    >
+      <LibraryPageHeader
+        seed={topic.specialty}
+        title={topic.title}
+        meta="Article coming soon"
+        breadcrumb={{
+          label: topic.specialty,
+          href: specialtyPath(specialtySlug(topic.specialty)),
+        }}
+        bookmark={
+          <BookmarkButton
+            bookmarked={bookmarked}
+            onToggle={toggleBookmark}
+            label={bookmarked ? "Remove topic bookmark" : "Bookmark topic"}
+            showOnHover
+          />
+        }
+      />
 
       <ComingSoonPanel
         title="Article coming soon"
-        description="This topic page is ready — full clinical notes, summary, questions, and flashcards will appear here as content is published."
+        description="Full clinical notes, summary, questions, and flashcards will appear here as content is published."
       >
-        <Link
-          href={specialtyPath(specialtySlug(topic.specialty))}
-          className="mt-5 inline-flex rounded-xl border-2 border-b-4 border-slate-200 bg-white px-4 py-2 text-sm font-extrabold text-slate-700 transition-colors hover:bg-slate-50"
-        >
+        <LibraryCtaButton href={specialtyPath(specialtySlug(topic.specialty))}>
           Browse {topic.specialty}
-        </Link>
+        </LibraryCtaButton>
       </ComingSoonPanel>
-    </PostPageShell>
+    </LibraryBrowseShell>
   );
 }
