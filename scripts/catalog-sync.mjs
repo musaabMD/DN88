@@ -61,9 +61,11 @@ function getCommitSha(repoRoot) {
   }
 }
 
-function uploadToR2(localPath, r2Key) {
+function uploadToR2(localPath, r2Key, localOnly = false) {
+  const objectPath = `dn88-catalog-snapshots/${r2Key}`;
+  const localFlag = localOnly ? " --local" : "";
   execSync(
-    `npx wrangler r2 object put "${r2Key}" --file="${localPath}" --bucket=dn88-catalog-snapshots -c workers/dn88/wrangler.jsonc`,
+    `npx wrangler r2 object put "${objectPath}" --file="${localPath}"${localFlag} -c workers/dn88/wrangler.jsonc`,
     { cwd: ROOT, stdio: "pipe" }
   );
 }
@@ -115,12 +117,13 @@ async function main() {
     STAGING_DIR
   );
 
-  console.log(`[catalog-sync] Uploading snapshot to R2...`);
+  const localOnly = process.argv.includes("--local") || !process.env.CLOUDFLARE_API_TOKEN;
+  console.log(`[catalog-sync] Uploading snapshot to R2 (${localOnly ? "local" : "remote"})...`);
   const files = walkFiles(snapshotDir);
   for (const file of files) {
     const rel = file.slice(snapshotDir.length + 1);
     const key = `catalog/snapshots/${commitSha}/${rel}`;
-    uploadToR2(file, key);
+    uploadToR2(file, key, localOnly);
   }
 
   const apiUrl = process.env.CATALOG_API_URL?.trim() || process.env.NEXT_PUBLIC_DN88_API_URL?.trim() || "http://localhost:8787";

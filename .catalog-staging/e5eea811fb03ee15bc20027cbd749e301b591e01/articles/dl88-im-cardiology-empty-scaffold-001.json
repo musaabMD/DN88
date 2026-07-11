@@ -1,0 +1,27 @@
+{
+  "id": "dl88-im-cardiology-empty-scaffold-001",
+  "title": "Empty scaffold topic",
+  "slug": "empty-scaffold",
+  "specialty": "cardiology",
+  "updatedAt": "2026-01-01",
+  "sourcePath": "/workspace/tests/fixtures/dl88-mini/content/internal-medicine/cardiology/empty-scaffold/article.md",
+  "sections": [],
+  "preambleMarkdown": "TODO: write this article.",
+  "contentStatus": "scaffold",
+  "wordCount": 4,
+  "readMinutes": 1,
+  "publicSlug": "cardiology-empty-scaffold",
+  "specialtyLabel": "Cardiology",
+  "subject": "Internal medicine",
+  "sourceHash": "7f4e7e75bd183841c1fb922ce0ec2a60573e7b417c332c50fb0227cea8697d05",
+  "hasBlockingErrors": false,
+  "allIssues": [
+    {
+      "code": "sections.no_h2",
+      "severity": "warning",
+      "message": "Article has no root-level h2 sections",
+      "sourcePath": "/workspace/tests/fixtures/dl88-mini/content/internal-medicine/cardiology/empty-scaffold/article.md"
+    }
+  ],
+  "commitSha": "e5eea811fb03ee15bc20027cbd749e301b591e01"
+}

@@ -16,6 +16,7 @@
     "catalog:dry-run:fixture": "node scripts/catalog-dry-run.mjs --fixture",
     "catalog:sync": "node scripts/catalog-sync.mjs",
     "catalog:sync:fixture": "node scripts/catalog-sync.mjs --fixture",
+    "catalog:verify": "node scripts/verify-catalog.mjs",
     "catalog:migrate": "npx wrangler d1 execute dn88-catalog --file=migrations/d1/001_initial.sql -c workers/dn88/wrangler.jsonc --remote",
     "test:catalog": "npm run test --workspace=@dn88/catalog",
     "build:catalog": "npm run build --workspace=@dn88/catalog",
@@ -24,7 +25,6 @@
     "worker:deploy": "wrangler deploy -c workers/dn88/wrangler.jsonc"
   },
   "dependencies": {
-    "@dn88/catalog": "workspace:*",
     "@base-ui/react": "^1.6.0",
     "@clerk/backend": "^3.11.1",
     "@clerk/clerk-react": "^5.61.8",

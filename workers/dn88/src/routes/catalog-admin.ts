@@ -3,7 +3,7 @@ import type { ArticleRow, Bindings } from "../types";
 import { requireAdmin } from "../middleware/auth";
 import { canApprove, rowToPublishable } from "../services/publication";
 import { logAudit, getCatalogState } from "../services/catalog-db";
-import { runAiReview } from "@dn88/catalog";
+import { runAiReview } from "../services/ai-review";
 
 type Env = { Bindings: Bindings };
 

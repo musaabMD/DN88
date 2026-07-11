@@ -1,0 +1,38 @@
+{
+  "id": "dl88-im-cardiology-duplicate-heading-001",
+  "title": "Duplicate headings",
+  "slug": "duplicate-headings",
+  "specialty": "cardiology",
+  "updatedAt": "2026-01-01",
+  "sourcePath": "/workspace/tests/fixtures/dl88-mini/content/internal-medicine/cardiology/duplicate-headings/article.md",
+  "sections": [
+    {
+      "id": "management",
+      "heading": "Management",
+      "bodyMarkdown": "## Management\n\nFirst management section.",
+      "sortOrder": 0
+    },
+    {
+      "id": "management-2",
+      "heading": "Management",
+      "bodyMarkdown": "## Management\n\nSecond management section should get id management-2.",
+      "sortOrder": 1
+    },
+    {
+      "id": "management-3",
+      "heading": "Management",
+      "bodyMarkdown": "## Management\n\nThird gets management-3.",
+      "sortOrder": 2
+    }
+  ],
+  "contentStatus": "scaffold",
+  "wordCount": 16,
+  "readMinutes": 1,
+  "publicSlug": "cardiology-duplicate-headings",
+  "specialtyLabel": "Cardiology",
+  "subject": "Internal medicine",
+  "sourceHash": "1d9048bda4d3aefc564f1c59db0cb86622dd9cfb196d711907290ab8d54e4472",
+  "hasBlockingErrors": false,
+  "allIssues": [],
+  "commitSha": "e5eea811fb03ee15bc20027cbd749e301b591e01"
+}

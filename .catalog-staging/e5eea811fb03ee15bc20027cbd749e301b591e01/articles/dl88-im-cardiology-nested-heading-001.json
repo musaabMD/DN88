@@ -1,0 +1,46 @@
+{
+  "id": "dl88-im-cardiology-nested-heading-001",
+  "title": "Nested heading test",
+  "slug": "nested-heading",
+  "specialty": "cardiology",
+  "updatedAt": "2026-01-01",
+  "sourcePath": "/workspace/tests/fixtures/dl88-mini/content/internal-medicine/cardiology/nested-heading/article.md",
+  "sections": [
+    {
+      "id": "actual-section",
+      "heading": "Actual section",
+      "bodyMarkdown": "## Actual section\n\nOnly this creates a section boundary.",
+      "sortOrder": 0
+    }
+  ],
+  "preambleMarkdown": "Intro without h2 becomes preamble.\n\n> ## Blockquote heading\n>\n> This heading must not create a section.\n\n- List item\n  ## Not a real section in list context",
+  "contentStatus": "scaffold",
+  "wordCount": 28,
+  "readMinutes": 1,
+  "publicSlug": "cardiology-nested-heading",
+  "specialtyLabel": "Cardiology",
+  "subject": "Internal medicine",
+  "sourceHash": "b42cd4b5cc388fd79c9259481bdc1babdfe675cd1412bae2ab7d0d8491fbf3bd",
+  "hasBlockingErrors": false,
+  "allIssues": [
+    {
+      "code": "sections.nested_h2_ignored",
+      "severity": "warning",
+      "message": "Headings inside blockquotes, lists, or code blocks do not create sections",
+      "sourcePath": "/workspace/tests/fixtures/dl88-mini/content/internal-medicine/cardiology/nested-heading/article.md"
+    },
+    {
+      "code": "sections.nested_h2_ignored",
+      "severity": "warning",
+      "message": "Headings inside blockquotes, lists, or code blocks do not create sections",
+      "sourcePath": "/workspace/tests/fixtures/dl88-mini/content/internal-medicine/cardiology/nested-heading/article.md"
+    },
+    {
+      "code": "sections.preamble_before_first_h2",
+      "severity": "warning",
+      "message": "Content exists before the first root-level h2; stored as preamble",
+      "sourcePath": "/workspace/tests/fixtures/dl88-mini/content/internal-medicine/cardiology/nested-heading/article.md"
+    }
+  ],
+  "commitSha": "e5eea811fb03ee15bc20027cbd749e301b591e01"
+}

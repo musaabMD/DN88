@@ -1,0 +1,32 @@
+{
+  "id": "dl88-im-cardiology-code-heading-001",
+  "title": "Code block heading test",
+  "slug": "code-heading",
+  "specialty": "cardiology",
+  "updatedAt": "2026-01-01",
+  "sourcePath": "/workspace/tests/fixtures/dl88-mini/content/internal-medicine/cardiology/code-heading/article.md",
+  "sections": [
+    {
+      "id": "real-section",
+      "heading": "Real section",
+      "bodyMarkdown": "## Real section\n\nThis section should be parsed.\n\n```markdown\n## Fake section inside code\nThis must not split the article.\n```",
+      "sortOrder": 0
+    },
+    {
+      "id": "second-section",
+      "heading": "Second section",
+      "bodyMarkdown": "## Second section\n\nContent after the code block.",
+      "sortOrder": 1
+    }
+  ],
+  "contentStatus": "scaffold",
+  "wordCount": 14,
+  "readMinutes": 1,
+  "publicSlug": "cardiology-code-heading",
+  "specialtyLabel": "Cardiology",
+  "subject": "Internal medicine",
+  "sourceHash": "68516e63a9e27f3955712d51faa199856fa49f3a8b56cdb2f0b79c3e656c6da6",
+  "hasBlockingErrors": false,
+  "allIssues": [],
+  "commitSha": "e5eea811fb03ee15bc20027cbd749e301b591e01"
+}
