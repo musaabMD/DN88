@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { Bookmark, ChevronRight, Search } from "lucide-react";
-import { DrNoteLogo } from "@/components/DrNoteLogo";
-import { LibraryThumb } from "@/components/library/LibraryThumb";
+import { Bookmark, Search } from "lucide-react";
+import { LibraryBrowseShell } from "@/components/library/LibraryBrowseShell";
+import { LibraryGrid, LibraryListCard } from "@/components/library/LibraryListCard";
 import {
   BookmarkButton,
+  LibraryEmptyState,
   useBookmark,
 } from "@/components/library/LibraryUi";
 import { SuggestArticleModal } from "@/components/SuggestArticleModal";
@@ -26,7 +26,6 @@ import {
 } from "@/lib/library-bookmarks";
 import { filterLibraryArticles, getLibraryArticleById, LIBRARY_ARTICLES } from "@/lib/mock-data";
 import {
-  HOME_PATH,
   articlePath,
   specialtyPath,
   topicPath,
@@ -69,23 +68,6 @@ function HighlightText({ text, query }: { text: string; query: string }) {
 
   if (start < text.length) parts.push(text.slice(start));
   return <>{parts}</>;
-}
-
-function LibraryHomeHeader() {
-  return (
-    <>
-      <header className="fixed inset-x-0 top-0 z-40 border-b border-slate-100 bg-white/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href={HOME_PATH} className="flex min-w-0 items-center">
-            <DrNoteLogo showWordmark forceWordmark />
-          </Link>
-
-          <ProductSiteNav />
-        </div>
-      </header>
-      <div className="h-[4.5rem] shrink-0" aria-hidden />
-    </>
-  );
 }
 
 function LibraryHero({ onSuggestArticle }: { onSuggestArticle: () => void }) {
@@ -147,36 +129,25 @@ function SpecialtyCard({
   );
 
   return (
-    <div className="group flex w-full items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4 text-left transition-colors duration-150 hover:bg-slate-50">
-      <Link
-        href={specialtyPath(specialtySlug(specialty))}
-        className="flex min-w-0 flex-1 items-center gap-3"
-      >
-        <LibraryThumb seed={specialty} />
-        <div className="min-w-0 flex-1 text-left">
-          <h3 className="text-base font-extrabold leading-snug tracking-tight text-slate-700">
-            <HighlightText text={specialty} query={query} />
-          </h3>
-          <p className="mt-1 text-left text-sm font-bold text-slate-400">
-            {meta}
-          </p>
-        </div>
-        <ChevronRight
-          size={20}
-          strokeWidth={3}
-          className="shrink-0 text-slate-300 opacity-0 transition-all duration-150 group-hover:translate-x-1 group-hover:opacity-100 group-hover:text-[#334155]"
+    <LibraryListCard
+      href={specialtyPath(specialtySlug(specialty))}
+      seed={specialty}
+      title={<HighlightText text={specialty} query={query} />}
+      meta={meta}
+      trailing={
+        <BookmarkButton
+          bookmarked={bookmarked}
+          onToggle={() => {
+            toggleBookmark();
+            onBookmarkChange?.();
+          }}
+          label={
+            bookmarked ? "Remove specialty bookmark" : "Bookmark specialty"
+          }
+          showOnHover
         />
-      </Link>
-      <BookmarkButton
-        bookmarked={bookmarked}
-        onToggle={() => {
-          toggleBookmark();
-          onBookmarkChange?.();
-        }}
-        label={bookmarked ? "Remove specialty bookmark" : "Bookmark specialty"}
-        showOnHover
-      />
-    </div>
+      }
+    />
   );
 }
 
@@ -198,30 +169,22 @@ function TopicCard({
   );
 
   return (
-    <div className="group flex w-full items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4 text-left transition-colors duration-150 hover:bg-slate-50">
-      <Link href={href} className="flex min-w-0 flex-1 items-center gap-3">
-        <LibraryThumb seed={topic.specialty} />
-        <div className="min-w-0 flex-1 text-left">
-          <h3 className="text-base font-extrabold leading-snug tracking-tight text-slate-700">
-            <HighlightText text={topic.title} query={query} />
-          </h3>
-        </div>
-        <ChevronRight
-          size={20}
-          strokeWidth={3}
-          className="shrink-0 text-slate-300 opacity-0 transition-all duration-150 group-hover:translate-x-1 group-hover:opacity-100 group-hover:text-[#334155]"
+    <LibraryListCard
+      href={href}
+      seed={topic.specialty}
+      title={<HighlightText text={topic.title} query={query} />}
+      trailing={
+        <BookmarkButton
+          bookmarked={bookmarked}
+          onToggle={() => {
+            toggleBookmark();
+            onBookmarkChange?.();
+          }}
+          label={bookmarked ? "Remove topic bookmark" : "Bookmark topic"}
+          showOnHover
         />
-      </Link>
-      <BookmarkButton
-        bookmarked={bookmarked}
-        onToggle={() => {
-          toggleBookmark();
-          onBookmarkChange?.();
-        }}
-        label={bookmarked ? "Remove topic bookmark" : "Bookmark topic"}
-        showOnHover
-      />
-    </div>
+      }
+    />
   );
 }
 
@@ -246,36 +209,23 @@ function ArticleCard({
   );
 
   return (
-    <div className="group flex w-full items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-4 text-left transition-colors duration-150 hover:bg-slate-50">
-      <Link
-        href={articlePath(article.id)}
-        className="flex min-w-0 flex-1 items-center gap-3"
-      >
-        <LibraryThumb seed={article.subject} />
-        <div className="min-w-0 flex-1 text-left">
-          <h3 className="text-base font-extrabold leading-snug tracking-tight text-slate-700">
-            <HighlightText text={article.title} query={query} />
-          </h3>
-          <p className="mt-1 text-left text-sm font-bold text-slate-400">
-            <HighlightText text={article.subject} query={query} />
-          </p>
-        </div>
-        <ChevronRight
-          size={20}
-          strokeWidth={3}
-          className="shrink-0 text-slate-300 opacity-0 transition-all duration-150 group-hover:translate-x-1 group-hover:opacity-100 group-hover:text-[#334155]"
+    <LibraryListCard
+      href={articlePath(article.id)}
+      seed={article.subject}
+      title={<HighlightText text={article.title} query={query} />}
+      meta={<HighlightText text={article.subject} query={query} />}
+      trailing={
+        <BookmarkButton
+          bookmarked={bookmarked}
+          onToggle={() => {
+            toggleBookmark();
+            onBookmarkChange?.();
+          }}
+          label={bookmarked ? "Remove bookmark" : "Bookmark article"}
+          showOnHover
         />
-      </Link>
-      <BookmarkButton
-        bookmarked={bookmarked}
-        onToggle={() => {
-          toggleBookmark();
-          onBookmarkChange?.();
-        }}
-        label={bookmarked ? "Remove bookmark" : "Bookmark article"}
-        showOnHover
-      />
-    </div>
+      }
+    />
   );
 }
 
@@ -308,21 +258,21 @@ function SpecialtyTab({
 
   if (specialties.length === 0) {
     return (
-      <div className="mt-2 rounded-2xl border-2 border-dashed border-slate-200 px-6 py-12 text-center">
-        <p className="text-lg font-extrabold text-slate-700">
-          {bookmarksOnly ? "No bookmarked specialties" : "No specialties found"}
-        </p>
-        <p className="mt-1 text-sm font-bold text-slate-400">
-          {bookmarksOnly
+      <LibraryEmptyState
+        title={
+          bookmarksOnly ? "No bookmarked specialties" : "No specialties found"
+        }
+        description={
+          bookmarksOnly
             ? "Tap the bookmark icon on a specialty to save it here"
-            : "Try a different search term"}
-        </p>
-      </div>
+            : "Try a different search term"
+        }
+      />
     );
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+    <LibraryGrid>
       {specialties.map((specialty) => {
         const count = topicCountForSpecialty(specialty);
         const meta =
@@ -339,7 +289,7 @@ function SpecialtyTab({
           />
         );
       })}
-    </div>
+    </LibraryGrid>
   );
 }
 
@@ -366,23 +316,21 @@ function TopicTab({
 
   if (articles.length === 0 && topics.length === 0) {
     return (
-      <div className="mt-2 rounded-2xl border-2 border-dashed border-slate-200 px-6 py-12 text-center">
-        <p className="text-lg font-extrabold text-slate-700">
-          {bookmarksOnly ? "No bookmarked topics" : "No topics found"}
-        </p>
-        <p className="mt-1 text-sm font-bold text-slate-400">
-          {bookmarksOnly
+      <LibraryEmptyState
+        title={bookmarksOnly ? "No bookmarked topics" : "No topics found"}
+        description={
+          bookmarksOnly
             ? "Tap the bookmark icon on a topic to save it here"
-            : "Try a different search term"}
-        </p>
-      </div>
+            : "Try a different search term"
+        }
+      />
     );
   }
 
   return (
     <div className="space-y-6">
       {articles.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <LibraryGrid>
           {articles.map((article) => (
             <ArticleCard
               key={article.id}
@@ -391,11 +339,11 @@ function TopicTab({
               onBookmarkChange={onBookmarkChange}
             />
           ))}
-        </div>
+        </LibraryGrid>
       ) : null}
 
       {topics.length > 0 ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <LibraryGrid>
           {topics.map((topic) => (
             <TopicCard
               key={topic.id}
@@ -404,7 +352,7 @@ function TopicTab({
               onBookmarkChange={onBookmarkChange}
             />
           ))}
-        </div>
+        </LibraryGrid>
       ) : null}
     </div>
   );
@@ -461,12 +409,10 @@ function BookmarksTab({
 
   if (specialties.length === 0 && topics.length === 0 && articles.length === 0) {
     return (
-      <div className="mt-2 rounded-2xl border-2 border-dashed border-slate-200 px-6 py-12 text-center">
-        <p className="text-lg font-extrabold text-slate-700">No bookmarks yet</p>
-        <p className="mt-1 text-sm font-bold text-slate-400">
-          Save specialties, topics, or articles to find them here
-        </p>
-      </div>
+      <LibraryEmptyState
+        title="No bookmarks yet"
+        description="Save specialties, topics, or articles to find them here"
+      />
     );
   }
 
@@ -617,9 +563,30 @@ export default function LibraryHome() {
     specialtyIds.length + topicIds.length + articleIds.length;
 
   return (
-    <main className="mx-auto w-full max-w-4xl bg-white px-4 pb-28 sm:px-6">
-      <LibraryHomeHeader />
-
+    <LibraryBrowseShell
+      headerEnd={<ProductSiteNav />}
+      footer={
+        <StickyLibrarySearch
+          query={query}
+          onQuery={setQuery}
+          bookmarksOnly={bookmarksOnly || activeTab === "bookmarks"}
+          onToggleBookmarks={() => {
+            if (activeTab === "bookmarks") {
+              setActiveTab("specialty");
+              setBookmarksOnly(false);
+              return;
+            }
+            if (bookmarksOnly) {
+              setBookmarksOnly(false);
+              return;
+            }
+            setActiveTab("bookmarks");
+            setBookmarksOnly(false);
+          }}
+          bookmarkCount={bookmarkCount}
+        />
+      }
+    >
       <LibraryHero onSuggestArticle={() => setShowSuggestModal(true)} />
 
       <div className="mt-6 flex justify-center gap-2">
@@ -675,29 +642,9 @@ export default function LibraryHome() {
         )}
       </div>
 
-      <StickyLibrarySearch
-        query={query}
-        onQuery={setQuery}
-        bookmarksOnly={bookmarksOnly || activeTab === "bookmarks"}
-        onToggleBookmarks={() => {
-          if (activeTab === "bookmarks") {
-            setActiveTab("specialty");
-            setBookmarksOnly(false);
-            return;
-          }
-          if (bookmarksOnly) {
-            setBookmarksOnly(false);
-            return;
-          }
-          setActiveTab("bookmarks");
-          setBookmarksOnly(false);
-        }}
-        bookmarkCount={bookmarkCount}
-      />
-
       {showSuggestModal ? (
         <SuggestArticleModal onClose={() => setShowSuggestModal(false)} />
       ) : null}
-    </main>
+    </LibraryBrowseShell>
   );
 }
