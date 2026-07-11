@@ -1303,9 +1303,13 @@ body {
   --callout-tint: rgb(49 46 129 / 0.3);
 }
 
-.dark .simple-editor-page .tiptap .article-callout {
+.dark .simple-editor-page:not(.is-colorful) .tiptap .article-callout {
   border-color: var(--article-border);
   border-left-color: var(--article-border);
+}
+
+.dark .simple-editor-page.is-colorful .tiptap .article-callout {
+  border-left-color: var(--callout-accent);
 }
 
 .tiptap img.simple-editor-image,
