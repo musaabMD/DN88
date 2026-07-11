@@ -2,10 +2,27 @@ import type { JSONContent } from "@tiptap/react";
 
 const ARTICLE_CONTENT_KEY = "drnote-library-article-content";
 
+/** Bump when article→Tiptap conversion changes (e.g. callout nodes). */
+export const ARTICLE_EDITOR_CONTENT_VERSION = 2;
+
 type StoredArticleContent = {
   articleId: string;
   content: JSONContent;
+  /** Missing on legacy saves — treated as version 0. */
+  version?: number;
 };
+
+/** Count callout nodes in a Tiptap JSON tree (for migration checks). */
+export function countCalloutNodes(content: JSONContent | null | undefined): number {
+  if (!content) return 0;
+  let count = 0;
+  const walk = (node: JSONContent) => {
+    if (node.type === "callout") count += 1;
+    node.content?.forEach(walk);
+  };
+  walk(content);
+  return count;
+}
 
 function readJson<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -27,13 +44,43 @@ export function getArticleEditorContent(articleId: string): JSONContent | null {
   return all.find((entry) => entry.articleId === articleId)?.content ?? null;
 }
 
+export function getStoredArticleEditorVersion(articleId: string): number {
+  const all = readJson<StoredArticleContent[]>(ARTICLE_CONTENT_KEY, []);
+  return all.find((entry) => entry.articleId === articleId)?.version ?? 0;
+}
+
 export function saveArticleEditorContent(
   articleId: string,
-  content: JSONContent
+  content: JSONContent,
+  version: number = ARTICLE_EDITOR_CONTENT_VERSION
 ): void {
   const all = readJson<StoredArticleContent[]>(ARTICLE_CONTENT_KEY, []);
   const without = all.filter((entry) => entry.articleId !== articleId);
-  writeJson(ARTICLE_CONTENT_KEY, [...without, { articleId, content }]);
+  writeJson(ARTICLE_CONTENT_KEY, [
+    ...without,
+    { articleId, content, version },
+  ]);
+}
+
+/**
+ * Pick saved editor JSON or regenerate from the article when a legacy save
+ * predates callouts / a content-version bump.
+ */
+export function resolveArticleEditorContent(
+  articleId: string,
+  freshContent: JSONContent
+): JSONContent {
+  const saved = getArticleEditorContent(articleId);
+  if (!saved) return freshContent;
+
+  const storedVersion = getStoredArticleEditorVersion(articleId);
+  if (storedVersion < ARTICLE_EDITOR_CONTENT_VERSION) return freshContent;
+
+  const savedCallouts = countCalloutNodes(saved);
+  const freshCallouts = countCalloutNodes(freshContent);
+  if (freshCallouts > savedCallouts) return freshContent;
+
+  return saved;
 }
 
 const TOC_VISIBLE_KEY = "drnote-library-toc-visible";

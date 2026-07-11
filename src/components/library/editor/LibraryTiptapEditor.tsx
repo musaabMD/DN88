@@ -30,9 +30,13 @@ import { SectionHeading } from "@/components/library/editor/section-heading";
 import { Callout } from "@/components/library/editor/callout";
 import { articleToTiptapContent } from "@/components/library/editor/article-to-tiptap";
 import {
+  ARTICLE_EDITOR_CONTENT_VERSION,
+  countCalloutNodes,
   getArticleEditorContent,
   getColorfulViewEnabled,
   getGlossaryEnabled,
+  getStoredArticleEditorVersion,
+  resolveArticleEditorContent,
   saveArticleEditorContent,
   setColorfulViewEnabled as persistColorfulView,
   setGlossaryEnabled as persistGlossaryEnabled,
@@ -92,8 +96,8 @@ export function LibraryTiptapEditor({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const initialContent = useMemo(() => {
-    const saved = getArticleEditorContent(article.id);
-    return saved ?? articleToTiptapContent(article);
+    const fresh = articleToTiptapContent(article);
+    return resolveArticleEditorContent(article.id, fresh);
   }, [article]);
 
   const editor = useEditor({
@@ -159,11 +163,19 @@ export function LibraryTiptapEditor({
 
   useEffect(() => {
     if (!editor) return;
+    const fresh = articleToTiptapContent(article);
+    const resolved = resolveArticleEditorContent(article.id, fresh);
+    editor.commands.setContent(resolved);
+
+    const storedVersion = getStoredArticleEditorVersion(article.id);
     const saved = getArticleEditorContent(article.id);
-    if (!saved) {
-      editor.commands.setContent(articleToTiptapContent(article));
+    const needsPersist =
+      storedVersion < ARTICLE_EDITOR_CONTENT_VERSION ||
+      countCalloutNodes(saved) < countCalloutNodes(fresh);
+    if (needsPersist) {
+      saveArticleEditorContent(article.id, resolved, ARTICLE_EDITOR_CONTENT_VERSION);
     }
-  }, [article, editor]);
+  }, [article.id, editor]);
 
   useEffect(() => {
     const root = scrollRef.current;
