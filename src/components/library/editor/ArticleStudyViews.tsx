@@ -8,6 +8,7 @@ import {
   ChevronRight,
   CircleDot,
   Clock,
+  Network,
   RotateCcw,
   Send,
   X,
@@ -767,6 +768,107 @@ export function ArticleQAView({ article }: { article: LibraryArticle }) {
             <Send size={16} strokeWidth={2.5} />
           </button>
         </form>
+      </div>
+    </StudyViewShell>
+  );
+}
+
+function mindmapLeafLabel(text: string): string {
+  const short = text.split(/[—–:-]/)[0]?.trim();
+  const label = short || text;
+  return label.length > 72 ? `${label.slice(0, 69)}…` : label;
+}
+
+export function ArticleMindmapView({ article }: { article: LibraryArticle }) {
+  const sections = article.sections.filter((section) => section.id !== "summary");
+  const [activeSectionId, setActiveSectionId] = useState<string | null>(
+    sections[0]?.id ?? null
+  );
+
+  const activeSection =
+    sections.find((section) => section.id === activeSectionId) ?? sections[0];
+
+  if (sections.length === 0) {
+    return (
+      <StudyViewShell label="Mindmap" title={article.title}>
+        <p className="article-study-empty">No sections available for a mindmap.</p>
+      </StudyViewShell>
+    );
+  }
+
+  return (
+    <StudyViewShell
+      label="Mindmap"
+      title={article.title}
+      description="Visual overview — tap a branch to focus that section."
+    >
+      <div className="article-study-mindmap">
+        <div className="article-study-mindmap-tree" role="tree" aria-label="Article mindmap">
+          <div className="article-study-mindmap-root-node" role="treeitem" aria-expanded="true">
+            <Network size={16} strokeWidth={2.5} aria-hidden />
+            <span>{article.title}</span>
+          </div>
+
+          <div className="article-study-mindmap-spine" aria-hidden />
+
+          <div className="article-study-mindmap-rail" aria-hidden />
+
+          <div className="article-study-mindmap-branches">
+            {sections.map((section) => {
+              const leaves =
+                section.bullets?.slice(0, 4).map((bullet) => mindmapLeafLabel(bullet)) ??
+                (section.body
+                  ? [mindmapLeafLabel(summarizeSectionText(section.body))]
+                  : []);
+              const isActive = section.id === activeSection?.id;
+
+              return (
+                <div
+                  key={section.id}
+                  className={cn(
+                    "article-study-mindmap-branch",
+                    isActive && "is-active"
+                  )}
+                  role="group"
+                  aria-label={section.heading}
+                >
+                  <div className="article-study-mindmap-branch-spine" aria-hidden />
+                  <button
+                    type="button"
+                    role="treeitem"
+                    aria-selected={isActive}
+                    className={cn(
+                      "article-study-mindmap-node",
+                      isActive && "is-active"
+                    )}
+                    onClick={() => setActiveSectionId(section.id)}
+                  >
+                    {section.heading}
+                  </button>
+                  {leaves.length > 0 ? (
+                    <ul className="article-study-mindmap-leaves">
+                      {leaves.map((leaf, leafIndex) => (
+                        <li
+                          key={`${section.id}-leaf-${leafIndex}`}
+                          className="article-study-mindmap-leaf"
+                        >
+                          {leaf}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {activeSection ? (
+          <div className="article-study-mindmap-detail">
+            <p className="article-study-mindmap-detail-label">Focused section</p>
+            <SectionBlock section={activeSection} />
+          </div>
+        ) : null}
       </div>
     </StudyViewShell>
   );
