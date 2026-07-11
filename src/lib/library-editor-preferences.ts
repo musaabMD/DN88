@@ -57,3 +57,15 @@ export function getGlossaryEnabled(): boolean {
 export function setGlossaryEnabled(enabled: boolean): void {
   localStorage.setItem(GLOSSARY_KEY, enabled ? "true" : "false");
 }
+
+const COLORFUL_KEY = "drnote-library-colorful-view";
+
+/** Colorful reader view: tint semantic callout boxes by type. Off by default. */
+export function getColorfulViewEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(COLORFUL_KEY) === "true";
+}
+
+export function setColorfulViewEnabled(enabled: boolean): void {
+  localStorage.setItem(COLORFUL_KEY, enabled ? "true" : "false");
+}
