@@ -124,9 +124,9 @@ export function LibraryBackLink({ href = "/library/" }: { href?: string }) {
   return (
     <Link
       href={href}
-      className="inline-flex items-center gap-1 text-sm font-extrabold text-slate-500 transition-colors hover:text-slate-800"
+      className="text-sm font-bold text-slate-500 transition-colors hover:text-slate-800"
     >
-      ← Library
+      Library
     </Link>
   );
 }

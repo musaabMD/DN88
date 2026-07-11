@@ -5,14 +5,10 @@ import { AppHeader } from "@/components/AppHeader";
 
 export function LibraryBrowseShell({
   children,
-  showBack = false,
-  onBack,
   headerEnd,
   footer,
 }: {
   children: ReactNode;
-  showBack?: boolean;
-  onBack?: () => void;
   /** e.g. ProductSiteNav on the library home page */
   headerEnd?: ReactNode;
   footer?: ReactNode;
@@ -20,10 +16,8 @@ export function LibraryBrowseShell({
   return (
     <div className="min-h-screen bg-white font-sans">
       <AppHeader
-        showBack={showBack}
-        onBack={onBack ?? (() => undefined)}
         minimal
-        showLibrary={!showBack}
+        showLibrary
         contentMaxWidth="4xl"
         headerEnd={headerEnd}
       />

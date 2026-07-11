@@ -63,7 +63,7 @@ export function LibraryArticleClient({ articleId }: { articleId: string }) {
       resolvedArticleId.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
     return (
-      <LibraryBrowseShell showBack onBack={backToLibrary}>
+      <LibraryBrowseShell>
         <LibraryPageHeader
           seed={displayTitle}
           title={displayTitle}

@@ -51,68 +51,6 @@ function iconFor(seed: string): LucideIcon {
   return Stethoscope;
 }
 
-function patternId(seed: string): number {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = seed.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return Math.abs(hash) % 4;
-}
-
-function ThumbPattern({ variant }: { variant: number }) {
-  if (variant === 0) {
-    return (
-      <svg
-        aria-hidden="true"
-        className="absolute inset-0 h-full w-full opacity-25"
-        viewBox="0 0 48 48"
-      >
-        {[8, 24, 40].map((x) =>
-          [8, 24, 40].map((y) => (
-            <circle key={`${x}-${y}`} cx={x} cy={y} r="2" fill="white" />
-          ))
-        )}
-      </svg>
-    );
-  }
-  if (variant === 1) {
-    return (
-      <svg
-        aria-hidden="true"
-        className="absolute inset-0 h-full w-full opacity-20"
-        viewBox="0 0 48 48"
-      >
-        <path d="M0 12h48M0 24h48M0 36h48" stroke="white" strokeWidth="2" />
-      </svg>
-    );
-  }
-  if (variant === 2) {
-    return (
-      <svg
-        aria-hidden="true"
-        className="absolute inset-0 h-full w-full opacity-20"
-        viewBox="0 0 48 48"
-      >
-        <path
-          d="M-8 8l64 64M-8 24l64 64M-8 -8l64 64M-8 40l64 64"
-          stroke="white"
-          strokeWidth="3"
-        />
-      </svg>
-    );
-  }
-  return (
-    <svg
-      aria-hidden="true"
-      className="absolute inset-0 h-full w-full opacity-20"
-      viewBox="0 0 48 48"
-    >
-      <circle cx="36" cy="12" r="14" fill="white" />
-      <circle cx="10" cy="40" r="10" fill="white" />
-    </svg>
-  );
-}
-
 export function LibraryThumb({
   seed,
   size = "md",
@@ -120,47 +58,43 @@ export function LibraryThumb({
   seed: string;
   size?: "sm" | "md" | "lg";
 }) {
-  const { bg, border } = getTileColors(seed);
+  const { bg } = getTileColors(seed);
   const Icon = iconFor(seed);
-  const variant = patternId(seed);
   const box =
     size === "lg"
-      ? "h-14 w-14 rounded-2xl"
+      ? "h-12 w-12 rounded-xl"
       : size === "sm"
-        ? "h-10 w-10 rounded-xl"
-        : "h-12 w-12 rounded-2xl";
-  const iconSize = size === "lg" ? 24 : size === "sm" ? 16 : 20;
+        ? "h-9 w-9 rounded-lg"
+        : "h-10 w-10 rounded-xl";
+  const iconSize = size === "lg" ? 22 : size === "sm" ? 15 : 18;
 
   return (
     <div
-      className={`relative flex shrink-0 items-center justify-center overflow-hidden border-b-4 ${box}`}
-      style={{ background: bg, borderColor: border }}
+      className={`relative flex shrink-0 items-center justify-center overflow-hidden ${box}`}
+      style={{ background: bg }}
     >
-      <ThumbPattern variant={variant} />
       <Icon
         size={iconSize}
-        strokeWidth={2.5}
-        className="relative text-white drop-shadow-sm"
+        strokeWidth={2.25}
+        className="relative text-white"
       />
     </div>
   );
 }
 
 export function LibraryThumbHero({ seed }: { seed: string }) {
-  const { bg, border } = getTileColors(seed);
+  const { bg } = getTileColors(seed);
   const Icon = iconFor(seed);
-  const variant = patternId(seed);
 
   return (
     <div
-      className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl border-b-4 sm:h-24 sm:w-24"
-      style={{ background: bg, borderColor: border }}
+      className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl sm:h-20 sm:w-20"
+      style={{ background: bg }}
     >
-      <ThumbPattern variant={variant} />
       <Icon
-        size={36}
+        size={32}
         strokeWidth={2.25}
-        className="relative text-white drop-shadow-sm"
+        className="relative text-white"
       />
     </div>
   );

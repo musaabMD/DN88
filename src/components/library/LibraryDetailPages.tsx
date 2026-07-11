@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { LibraryBrowseShell } from "@/components/library/LibraryBrowseShell";
 import { LibraryGrid, LibraryListCard } from "@/components/library/LibraryListCard";
 import { LibraryPageHeader } from "@/components/library/LibraryPageHeader";
@@ -19,7 +18,6 @@ import {
   entityPathForTopic,
 } from "@/lib/entities";
 import {
-  LIBRARY_PATH,
   specialtyPath,
 } from "@/lib/routes";
 import {
@@ -34,7 +32,6 @@ export function SpecialtyPageClient({
 }: {
   specialty: MedicalSpecialty;
 }) {
-  const router = useRouter();
   const topics = getTopicsForSpecialty(specialty);
   const { bookmarked, toggleBookmark } = useBookmark(
     () => isSpecialtyBookmarked(specialty),
@@ -43,10 +40,7 @@ export function SpecialtyPageClient({
   );
 
   return (
-    <LibraryBrowseShell
-      showBack
-      onBack={() => router.push(LIBRARY_PATH)}
-    >
+    <LibraryBrowseShell>
       <LibraryPageHeader
         seed={specialty}
         title={specialty}
