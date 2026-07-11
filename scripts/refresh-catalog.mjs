@@ -1,47 +1,17 @@
 #!/usr/bin/env node
 /**
- * Refreshes the local catalog bundle from a configured remote origin.
- * Origin is supplied only via environment — never embedded in app code.
+ * Catalog refresh for prebuild — PR1 keeps the committed local bundle.
+ * Markdown import is available via `npm run catalog:dry-run`.
+ * JSON bundle discovery has been removed per DL88 markdown-only direction.
  */
 
-import { createHash } from "node:crypto";
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  readdirSync,
-  rmSync,
-  statSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { execSync } from "node:child_process";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
-const OUT_DIR = join(ROOT, "src", "generated");
-const OUT_FILE = join(OUT_DIR, "catalog.json");
-const STAMP_FILE = join(OUT_DIR, ".catalog-stamp");
-const CACHE_DIR = join(ROOT, ".catalog-sync");
-
-const BUNDLE_PATHS = [
-  "export/library-articles.json",
-  "export/articles.json",
-  "content/library-articles.json",
-  "content/articles.json",
-  "content/export/library-articles.json",
-  "data/library-articles.json",
-  "dist/library-articles.json",
-];
-
-const ARTICLE_DIR_PATHS = [
-  "export/articles",
-  "content/articles",
-  "content/library",
-  "articles",
-  "data/articles",
-];
+const OUT_FILE = join(ROOT, "src", "generated", "catalog.json");
 
 function decodeOrigin() {
   const direct = process.env.CATALOG_SYNC_ORIGIN?.trim();
@@ -55,248 +25,12 @@ function decodeOrigin() {
   return "";
 }
 
-function readJson(path) {
-  return JSON.parse(readFileSync(path, "utf8"));
-}
-
-function isArticleArray(value) {
-  return (
-    Array.isArray(value) &&
-    value.length > 0 &&
-    typeof value[0] === "object" &&
-    value[0] !== null &&
-    typeof value[0].id === "string" &&
-    typeof value[0].title === "string" &&
-    Array.isArray(value[0].sections)
-  );
-}
-
-function normalizePayload(raw) {
-  if (isArticleArray(raw)) return raw;
-  if (raw && isArticleArray(raw.articles)) return raw.articles;
-  if (raw && isArticleArray(raw.libraryArticles)) return raw.libraryArticles;
-  if (raw && isArticleArray(raw.items)) return raw.items;
-  throw new Error("Unrecognized catalog payload shape");
-}
-
-function loadArticlesFromDir(dir) {
-  const files = readdirSync(dir)
-    .filter((name) => name.endsWith(".json") && name !== "manifest.json")
-    .sort();
-  if (files.length === 0) return null;
-  return files.map((name) => readJson(join(dir, name)));
-}
-
-function isSingleArticle(value) {
-  return (
-    value &&
-    typeof value === "object" &&
-    typeof value.id === "string" &&
-    typeof value.title === "string" &&
-    Array.isArray(value.sections)
-  );
-}
-
-function dedupeArticles(articles) {
-  const byId = new Map();
-  for (const article of articles) {
-    if (isSingleArticle(article)) byId.set(article.id, article);
-  }
-  return [...byId.values()];
-}
-
-function extractArticlesFromJson(raw) {
-  if (isSingleArticle(raw)) return [raw];
-  if (isArticleArray(raw)) return raw;
-  if (raw && isArticleArray(raw.articles)) return raw.articles;
-  if (raw && isArticleArray(raw.libraryArticles)) return raw.libraryArticles;
-  if (raw && isArticleArray(raw.items)) return raw.items;
-  return [];
-}
-
-function collectArticlesRecursively(dir, depth = 0) {
-  if (!existsSync(dir) || depth > 8) return [];
-
-  const skipDirs = new Set([
-    ".git",
-    "node_modules",
-    ".github",
-    "prompts",
-    "scripts",
-  ]);
-  const skipFiles = new Set([
-    "package.json",
-    "package-lock.json",
-    "tsconfig.json",
-    "manifest.json",
-  ]);
-
-  const found = [];
-  for (const name of readdirSync(dir)) {
-    if (skipDirs.has(name)) continue;
-    const full = join(dir, name);
-    let st;
-    try {
-      st = statSync(full);
-    } catch {
-      continue;
-    }
-
-    if (st.isDirectory()) {
-      found.push(...collectArticlesRecursively(full, depth + 1));
-      continue;
-    }
-
-    if (!name.endsWith(".json") || skipFiles.has(name)) continue;
-    try {
-      found.push(...extractArticlesFromJson(readJson(full)));
-    } catch {
-      // ignore invalid json payloads
-    }
-  }
-
-  return found;
-}
-
-function describeTree(base) {
-  if (!existsSync(base)) return "(missing)";
-  return readdirSync(base)
-    .slice(0, 12)
-    .map((name) => {
-      const full = join(base, name);
-      try {
-        return statSync(full).isDirectory() ? `${name}/` : name;
-      } catch {
-        return name;
-      }
-    })
-    .join(", ");
-}
-
-function findBundleInTree(base) {
-  for (const rel of BUNDLE_PATHS) {
-    const full = join(base, rel);
-    if (existsSync(full)) {
-      return normalizePayload(readJson(full));
-    }
-  }
-
-  for (const rel of ARTICLE_DIR_PATHS) {
-    const full = join(base, rel);
-    if (existsSync(full) && statSync(full).isDirectory()) {
-      const articles = loadArticlesFromDir(full);
-      if (articles) return articles;
-    }
-  }
-
-  const recursiveRoots = ["content", "export", "data", "dist", "."];
-  for (const rel of recursiveRoots) {
-    const full = rel === "." ? base : join(base, rel);
-    if (!existsSync(full)) continue;
-    const collected = dedupeArticles(collectArticlesRecursively(full));
-    if (collected.length > 0) return collected;
-  }
-
-  return null;
-}
-
-function isGitOrigin(origin) {
-  return (
-    origin.startsWith("git@") ||
-    origin.endsWith(".git") ||
-    /github\.com[:/][^/]+\/[^/]+/.test(origin)
-  );
-}
-
-function isJsonBundleUrl(origin) {
-  return (
-    origin.endsWith(".json") ||
-    origin.includes("raw.githubusercontent.com")
-  );
-}
-
-function cloneFromGitOrigin(origin) {
-  rmSync(CACHE_DIR, { recursive: true, force: true });
-  mkdirSync(CACHE_DIR, { recursive: true });
-
-  const token = process.env.CATALOG_SYNC_TOKEN?.trim();
-  let cloneUrl = origin;
-  if (token && origin.includes("github.com") && !origin.includes("@")) {
-    cloneUrl = origin.replace(
-      "https://",
-      `https://x-access-token:${token}@`
-    );
-  }
-
-  const branch = process.env.CATALOG_SYNC_REF?.trim() || "main";
-  execSync(
-    `git clone --depth 1 --branch "${branch}" --single-branch "${cloneUrl}" "${CACHE_DIR}/payload"`,
-    { stdio: "pipe" }
-  );
-
-  const payloadRoot = join(CACHE_DIR, "payload");
-  const articles = findBundleInTree(payloadRoot);
-  if (!articles) {
-    throw new Error(
-      `No catalog bundle found in remote tree (top-level: ${describeTree(payloadRoot)})`
-    );
-  }
-  return articles;
-}
-
-function materializeFromOrigin(origin) {
-  mkdirSync(CACHE_DIR, { recursive: true });
-
-  if (origin.startsWith("file://") || origin.startsWith("/")) {
-    const localPath = origin.startsWith("file://")
-      ? fileURLToPath(origin)
-      : origin;
-    const articles = findBundleInTree(localPath);
-    if (!articles) throw new Error("No catalog bundle found at local origin");
-    return Promise.resolve(articles);
-  }
-
-  if (isGitOrigin(origin)) {
-    return Promise.resolve(cloneFromGitOrigin(origin));
-  }
-
-  if (/^https?:\/\//i.test(origin) && isJsonBundleUrl(origin)) {
-    return fetch(origin).then(async (response) => {
-      if (!response.ok) {
-        throw new Error(`Origin fetch failed (${response.status})`);
-      }
-      const raw = await response.json();
-      return normalizePayload(raw);
-    });
-  }
-
-  if (/^https?:\/\//i.test(origin)) {
-    return Promise.resolve(cloneFromGitOrigin(origin));
-  }
-
-  return Promise.resolve(cloneFromGitOrigin(origin));
-}
-
-function writeBundle(articles) {
-  mkdirSync(OUT_DIR, { recursive: true });
-  const payload = {
-    version: 1,
-    syncedAt: new Date().toISOString(),
-    articles,
-  };
-  const serialized = `${JSON.stringify(payload, null, 2)}\n`;
-  writeFileSync(OUT_FILE, serialized, "utf8");
-
-  const digest = createHash("sha256").update(serialized).digest("hex");
-  writeFileSync(STAMP_FILE, `${digest}\n`, "utf8");
-  return digest;
-}
-
 function loadExisting() {
   if (!existsSync(OUT_FILE)) return null;
   try {
-    const raw = readJson(OUT_FILE);
-    return normalizePayload(raw.articles ?? raw);
+    const raw = JSON.parse(readFileSync(OUT_FILE, "utf8"));
+    const articles = Array.isArray(raw.articles) ? raw.articles : raw;
+    return Array.isArray(articles) ? articles : null;
   } catch {
     return null;
   }
@@ -304,36 +38,26 @@ function loadExisting() {
 
 async function main() {
   const origin = decodeOrigin();
-  const force = process.argv.includes("--force");
+  const existing = loadExisting();
 
-  if (!origin) {
-    const existing = loadExisting();
-    if (existing?.length) {
-      console.log(
-        `[catalog] No origin configured — keeping ${existing.length} local article(s)`
-      );
-      return;
-    }
-    throw new Error(
-      "No catalog origin configured and no local bundle present"
+  if (origin) {
+    console.warn(
+      "[catalog] CATALOG_SYNC_ORIGIN is set but JSON bundle sync is removed. " +
+        "Run `npm run catalog:dry-run` for markdown import reports. " +
+        "Full snapshot sync arrives in PR3."
     );
   }
 
-  try {
-    const articles = await materializeFromOrigin(origin);
-    const digest = writeBundle(articles);
+  if (existing?.length) {
     console.log(
-      `[catalog] Refreshed ${articles.length} article(s) · ${digest.slice(0, 12)}`
+      `[catalog] Keeping ${existing.length} committed article(s) from src/generated/catalog.json`
     );
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    const existing = loadExisting();
-    if (existing?.length && !force) {
-      console.warn(`[catalog] Refresh failed (${message}) — using local bundle`);
-      return;
-    }
-    throw error;
+    return;
   }
+
+  throw new Error(
+    "No local catalog bundle present. Commit src/generated/catalog.json or run catalog:dry-run against DL88."
+  );
 }
 
 main().catch((error) => {

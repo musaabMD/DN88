@@ -2,6 +2,9 @@
   "name": "drnote",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "next dev",
     "prebuild": "node scripts/refresh-catalog.mjs && node scripts/generate-redirects.mjs",
@@ -9,6 +12,10 @@
     "start": "next start",
     "lint": "eslint",
     "catalog:refresh": "node scripts/refresh-catalog.mjs",
+    "catalog:dry-run": "node scripts/catalog-dry-run.mjs",
+    "catalog:dry-run:fixture": "node scripts/catalog-dry-run.mjs --fixture",
+    "test:catalog": "npm run test --workspace=@dn88/catalog",
+    "build:catalog": "npm run build --workspace=@dn88/catalog",
     "deploy": "npm run build && wrangler pages deploy out --project-name=dn88",
     "worker:dev": "wrangler dev -c workers/dn88/wrangler.jsonc",
     "worker:deploy": "wrangler deploy -c workers/dn88/wrangler.jsonc"
