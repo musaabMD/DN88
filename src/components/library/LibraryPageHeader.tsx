@@ -22,7 +22,7 @@ export function LibraryPageHeader({
     <header className="mb-8">
       <nav
         aria-label="Library breadcrumb"
-        className="mb-4 flex flex-wrap items-center gap-1.5 text-sm font-extrabold text-slate-500"
+        className="mb-4 flex flex-wrap items-center gap-1.5 text-sm font-semibold text-slate-500"
       >
         <LibraryBackLink />
         {breadcrumb ? (

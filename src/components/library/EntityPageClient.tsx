@@ -67,7 +67,7 @@ export function EntityPageClient({ kind, slug }: EntityPageClientProps) {
   const relatedSpecialties = entity?.specialties ?? [];
 
   return (
-    <LibraryBrowseShell showBack onBack={() => router.push(LIBRARY_PATH)}>
+    <LibraryBrowseShell>
       <LibraryPageHeader
         seed={displayTitle}
         title={displayTitle}
@@ -137,7 +137,7 @@ export function TopicEntityPageClient({
 
   if (!topic) {
     return (
-      <LibraryBrowseShell showBack onBack={() => router.push(LIBRARY_PATH)}>
+      <LibraryBrowseShell>
         <LibraryPageHeader seed={resolvedTopicId} title="Topic not found" meta="" />
         <ComingSoonPanel
           title="Topic not found"

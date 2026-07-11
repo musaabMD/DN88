@@ -43,7 +43,7 @@ import {
   type SpecialtyTopic,
 } from "@/lib/specialties";
 
-type LibraryTab = "specialty" | "topic" | "bookmarks";
+type LibraryTab = "browse" | "bookmarks";
 
 function HighlightText({ text, query }: { text: string; query: string }) {
   const q = query.trim();
@@ -60,7 +60,7 @@ function HighlightText({ text, query }: { text: string; query: string }) {
     parts.push(
       <mark
         key={`${index}-${q}`}
-        className="rounded-sm bg-amber-200 px-0.5 text-inherit"
+        className="rounded-sm bg-slate-200 px-0.5 text-inherit"
       >
         {text.slice(index, index + q.length)}
       </mark>
@@ -295,34 +295,38 @@ function SpecialtyTab({
   );
 }
 
-function TopicTab({
+function SearchAllResults({
   query,
   bookmarksOnly,
-  bookmarkedTopicIds,
-  bookmarkedArticleIds,
+  specialtyIds,
+  topicIds,
+  articleIds,
   onBookmarkChange,
 }: {
   query: string;
   bookmarksOnly: boolean;
-  bookmarkedTopicIds: string[];
-  bookmarkedArticleIds: string[];
+  specialtyIds: string[];
+  topicIds: string[];
+  articleIds: string[];
   onBookmarkChange: () => void;
 }) {
+  let specialties = filterSpecialties(query);
   let topics = filterSpecialtyTopics(query);
   let articles = filterLibraryArticles(query);
 
   if (bookmarksOnly) {
-    topics = topics.filter((t) => bookmarkedTopicIds.includes(t.id));
-    articles = articles.filter((a) => bookmarkedArticleIds.includes(a.id));
+    specialties = specialties.filter((s) => specialtyIds.includes(s));
+    topics = topics.filter((t) => topicIds.includes(t.id));
+    articles = articles.filter((a) => articleIds.includes(a.id));
   }
 
-  if (articles.length === 0 && topics.length === 0) {
+  if (specialties.length === 0 && topics.length === 0 && articles.length === 0) {
     return (
       <LibraryEmptyState
-        title={bookmarksOnly ? "No bookmarked topics" : "No topics found"}
+        title={bookmarksOnly ? "No bookmarked matches" : "No results found"}
         description={
           bookmarksOnly
-            ? "Tap the bookmark icon on a topic to save it here"
+            ? "Try turning off the bookmarks filter"
             : "Try a different search term"
         }
       />
@@ -330,35 +334,72 @@ function TopicTab({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {specialties.length > 0 ? (
+        <section>
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-400">
+            Specialties
+          </h2>
+          <LibraryGrid>
+            {specialties.map((specialty) => {
+              const count = topicCountForSpecialty(specialty);
+              const meta =
+                count > 0
+                  ? `${count} topic${count === 1 ? "" : "s"}`
+                  : "Coming soon";
+              return (
+                <SpecialtyCard
+                  key={specialty}
+                  specialty={specialty}
+                  meta={meta}
+                  query={query}
+                  onBookmarkChange={onBookmarkChange}
+                />
+              );
+            })}
+          </LibraryGrid>
+        </section>
+      ) : null}
+
       {articles.length > 0 ? (
-        <LibraryGrid>
-          {articles.map((article) => (
-            <ArticleCard
-              key={article.id}
-              article={article}
-              query={query}
-              onBookmarkChange={onBookmarkChange}
-            />
-          ))}
-        </LibraryGrid>
+        <section>
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-400">
+            Articles
+          </h2>
+          <LibraryGrid>
+            {articles.map((article) => (
+              <ArticleCard
+                key={article.id}
+                article={article}
+                query={query}
+                onBookmarkChange={onBookmarkChange}
+              />
+            ))}
+          </LibraryGrid>
+        </section>
       ) : null}
 
       {topics.length > 0 ? (
-        <LibraryGrid>
-          {topics.map((topic) => (
-            <TopicCard
-              key={topic.id}
-              topic={topic}
-              query={query}
-              onBookmarkChange={onBookmarkChange}
-            />
-          ))}
-        </LibraryGrid>
+        <section>
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-400">
+            Topics
+          </h2>
+          <LibraryGrid>
+            {topics.map((topic) => (
+              <TopicCard
+                key={topic.id}
+                topic={topic}
+                query={query}
+                onBookmarkChange={onBookmarkChange}
+              />
+            ))}
+          </LibraryGrid>
+        </section>
       ) : null}
     </div>
   );
 }
+
 
 function BookmarksTab({
   query,
@@ -497,12 +538,12 @@ function StickyLibrarySearch({
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       <div className="mx-auto flex max-w-4xl items-center gap-2 px-4 py-3 sm:px-6">
-        <div className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl border-2 border-b-4 border-slate-200 bg-white px-3 py-2.5">
+        <div className="flex min-w-0 flex-1 items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
           <Search size={18} strokeWidth={2.5} className="shrink-0 text-slate-400" />
           <input
             value={query}
             onChange={(e) => onQuery(e.target.value)}
-            placeholder="Search specialties and topics"
+            placeholder="Search library"
             className="w-full bg-transparent text-sm font-bold text-slate-700 outline-none placeholder:text-slate-400"
           />
         </div>
@@ -513,10 +554,10 @@ function StickyLibrarySearch({
           aria-label={
             bookmarksOnly ? "Show all results" : "Filter to my bookmarks"
           }
-          className={`flex h-11 shrink-0 items-center gap-1.5 rounded-xl border-2 border-b-4 px-3 text-xs font-extrabold transition-colors active:translate-y-0.5 active:border-b-2 ${
+          className={`flex h-11 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition-colors ${
             bookmarksOnly
               ? "border-slate-700 bg-slate-700 text-white"
-              : "border-slate-200 bg-white text-slate-500 hover:border-slate-400 hover:text-slate-700"
+              : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700"
           }`}
         >
           <Bookmark
@@ -544,7 +585,7 @@ function StickyLibrarySearch({
 
 export default function LibraryHome() {
   const [query, setQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<LibraryTab>("specialty");
+  const [activeTab, setActiveTab] = useState<LibraryTab>("browse");
   const [showSuggestModal, setShowSuggestModal] = useState(false);
   const [bookmarksOnly, setBookmarksOnly] = useState(false);
   const [specialtyIds, setSpecialtyIds] = useState<string[]>([]);
@@ -564,6 +605,8 @@ export default function LibraryHome() {
   const bookmarkCount =
     specialtyIds.length + topicIds.length + articleIds.length;
 
+  const isSearching = query.trim().length > 0;
+
   return (
     <LibraryBrowseShell
       headerEnd={<ProductSiteNav />}
@@ -574,7 +617,7 @@ export default function LibraryHome() {
           bookmarksOnly={bookmarksOnly || activeTab === "bookmarks"}
           onToggleBookmarks={() => {
             if (activeTab === "bookmarks") {
-              setActiveTab("specialty");
+              setActiveTab("browse");
               setBookmarksOnly(false);
               return;
             }
@@ -591,46 +634,48 @@ export default function LibraryHome() {
     >
       <LibraryHero onSuggestArticle={() => setShowSuggestModal(true)} />
 
-      <div className="mt-6 flex justify-center gap-2">
-        {(
-          [
-            { id: "specialty" as const, label: "Specialty" },
-            { id: "topic" as const, label: "Topic" },
-            { id: "bookmarks" as const, label: "My Bookmarks" },
-          ] as const
-        ).map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => {
-              setActiveTab(tab.id);
-              if (tab.id === "bookmarks") setBookmarksOnly(false);
-            }}
-            className={`rounded-xl border-2 border-b-4 px-3 py-2 text-sm font-extrabold transition-colors active:translate-y-0.5 active:border-b-2 sm:px-4 ${
-              activeTab === tab.id
-                ? "border-slate-700 bg-slate-700 text-white"
-                : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      {!isSearching ? (
+        <div className="mt-6 flex justify-center gap-2">
+          {(
+            [
+              { id: "browse" as const, label: "Browse" },
+              { id: "bookmarks" as const, label: "My Bookmarks" },
+            ] as const
+          ).map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => {
+                setActiveTab(tab.id);
+                if (tab.id === "bookmarks") setBookmarksOnly(false);
+              }}
+              className={`rounded-xl border px-3 py-2 text-sm font-bold transition-colors sm:px-4 ${
+                activeTab === tab.id
+                  ? "border-slate-700 bg-slate-700 text-white"
+                  : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       <div className="mt-6">
-        {activeTab === "specialty" ? (
+        {isSearching ? (
+          <SearchAllResults
+            query={query}
+            bookmarksOnly={bookmarksOnly}
+            specialtyIds={specialtyIds}
+            topicIds={topicIds}
+            articleIds={articleIds}
+            onBookmarkChange={refreshBookmarks}
+          />
+        ) : activeTab === "browse" ? (
           <SpecialtyTab
             query={query}
             bookmarksOnly={bookmarksOnly}
             bookmarkedIds={specialtyIds}
-            onBookmarkChange={refreshBookmarks}
-          />
-        ) : activeTab === "topic" ? (
-          <TopicTab
-            query={query}
-            bookmarksOnly={bookmarksOnly}
-            bookmarkedTopicIds={topicIds}
-            bookmarkedArticleIds={articleIds}
             onBookmarkChange={refreshBookmarks}
           />
         ) : (
