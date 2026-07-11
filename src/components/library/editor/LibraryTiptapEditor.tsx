@@ -67,6 +67,7 @@ import {
   ArticleExamView,
   ArticleFlashcardsView,
   ArticleHYView,
+  ArticleMindmapView,
   ArticlePracticeView,
   ArticleQAView,
   ArticleRoundView,
@@ -246,6 +247,8 @@ export function LibraryTiptapEditor({
         return <ArticleRoundView article={article} />;
       case "qa":
         return <ArticleQAView article={article} />;
+      case "mindmap":
+        return <ArticleMindmapView article={article} />;
       default:
         return (
           <>

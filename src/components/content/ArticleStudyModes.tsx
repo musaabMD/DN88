@@ -7,6 +7,7 @@ import {
   FileText,
   MessageCircleQuestion,
   Monitor,
+  Network,
   Stethoscope,
   Timer,
   Zap,
@@ -22,7 +23,8 @@ export type StudyModeFilter =
   | "er"
   | "hy"
   | "round"
-  | "qa";
+  | "qa"
+  | "mindmap";
 
 /** Modes that transform section content in place (not a separate page). */
 export const INLINE_CONTENT_MODES: StudyModeFilter[] = [
@@ -31,6 +33,7 @@ export const INLINE_CONTENT_MODES: StudyModeFilter[] = [
   "questions",
   "round",
   "qa",
+  "mindmap",
 ];
 
 /** Modes that filter which sections appear. */
@@ -51,6 +54,7 @@ export const STUDY_MODE_OPTIONS: Array<{
   { id: "hy", shortLabel: "HY", icon: Zap, group: "filter" },
   { id: "round", shortLabel: "Round", icon: CircleDot, group: "content" },
   { id: "qa", shortLabel: "QA", icon: MessageCircleQuestion, group: "content" },
+  { id: "mindmap", shortLabel: "Mindmap", icon: Network, group: "content" },
 ];
 
 export function getActiveStudyMode(

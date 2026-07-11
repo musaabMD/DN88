@@ -2953,6 +2953,166 @@ body {
   justify-content: flex-start;
 }
 
+/* Mindmap study view */
+.article-study-mindmap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.article-study-mindmap-tree {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.25rem 0.5rem 0.5rem;
+  border: 1px solid rgb(226 232 240);
+  border-radius: 0.875rem;
+  background: linear-gradient(
+    180deg,
+    rgb(248 250 252) 0%,
+    rgb(255 255 255) 100%
+  );
+  overflow-x: auto;
+}
+
+.article-study-mindmap-root-node {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: min(100%, 28rem);
+  padding: 0.65rem 1rem;
+  border: 2px solid rgb(35 131 226);
+  border-radius: 999px;
+  background: rgb(255 255 255);
+  color: rgb(15 23 42);
+  font-family: var(--article-font-sans);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
+  box-shadow: 0 4px 14px rgb(35 131 226 / 0.12);
+}
+
+.article-study-mindmap-spine {
+  width: 2px;
+  height: 1.25rem;
+  margin-top: 0.35rem;
+  background: rgb(148 163 184);
+}
+
+.article-study-mindmap-rail {
+  width: min(100%, calc(100% - 2rem));
+  height: 2px;
+  margin-bottom: 0.35rem;
+  background: rgb(203 213 225);
+}
+
+.article-study-mindmap-branches {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem 1rem;
+  width: 100%;
+  padding: 0 0.5rem 0.75rem;
+}
+
+.article-study-mindmap-branch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1 1 8.5rem;
+  min-width: 7.5rem;
+  max-width: 11rem;
+}
+
+.article-study-mindmap-branch-spine {
+  width: 2px;
+  height: 0.85rem;
+  margin-bottom: 0.35rem;
+  background: rgb(203 213 225);
+}
+
+.article-study-mindmap-branch.is-active .article-study-mindmap-branch-spine {
+  background: rgb(35 131 226);
+}
+
+.article-study-mindmap-node {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgb(203 213 225);
+  border-radius: 0.625rem;
+  background: rgb(255 255 255);
+  color: rgb(30 41 59);
+  font-family: var(--article-font-sans);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.article-study-mindmap-node:hover {
+  border-color: rgb(35 131 226 / 0.45);
+  background: rgb(239 246 255);
+}
+
+.article-study-mindmap-node.is-active {
+  border-color: rgb(35 131 226);
+  background: rgb(239 246 255);
+  box-shadow: 0 0 0 3px rgb(35 131 226 / 0.12);
+}
+
+.article-study-mindmap-leaves {
+  width: 100%;
+  margin: 0.45rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.article-study-mindmap-leaf {
+  position: relative;
+  margin: 0;
+  padding: 0.3rem 0.35rem 0.3rem 0.85rem;
+  color: rgb(100 116 139);
+  font-family: var(--article-font-sans);
+  font-size: 0.6875rem;
+  line-height: 1.35;
+}
+
+.article-study-mindmap-leaf::before {
+  content: "";
+  position: absolute;
+  left: 0.35rem;
+  top: 0.62rem;
+  width: 0.3rem;
+  height: 0.3rem;
+  border-radius: 999px;
+  background: rgb(148 163 184);
+}
+
+.article-study-mindmap-branch.is-active .article-study-mindmap-leaf::before {
+  background: rgb(35 131 226);
+}
+
+.article-study-mindmap-detail {
+  padding-top: 0.25rem;
+}
+
+.article-study-mindmap-detail-label {
+  margin: 0 0 0.75rem;
+  font-family: var(--article-font-sans);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgb(100 116 139);
+}
+
 .article-study-qa {
   display: flex;
   flex-direction: column;
@@ -3131,6 +3291,61 @@ body {
   border-color: rgb(255 255 255 / 0.12);
   background: rgb(18 18 18);
   color: rgb(220 220 220);
+}
+
+.dark .article-study-mindmap-tree {
+  border-color: rgb(255 255 255 / 0.12);
+  background: linear-gradient(180deg, rgb(24 24 24) 0%, rgb(12 12 12) 100%);
+}
+
+.dark .article-study-mindmap-root-node {
+  border-color: rgb(96 165 250);
+  background: rgb(18 18 18);
+  color: rgb(245 245 245);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.35);
+}
+
+.dark .article-study-mindmap-spine,
+.dark .article-study-mindmap-rail,
+.dark .article-study-mindmap-branch-spine {
+  background: rgb(255 255 255 / 0.18);
+}
+
+.dark .article-study-mindmap-branch.is-active .article-study-mindmap-branch-spine {
+  background: rgb(96 165 250);
+}
+
+.dark .article-study-mindmap-node {
+  border-color: rgb(255 255 255 / 0.14);
+  background: rgb(18 18 18);
+  color: rgb(235 235 235);
+}
+
+.dark .article-study-mindmap-node:hover {
+  border-color: rgb(96 165 250 / 0.45);
+  background: rgb(30 41 59);
+}
+
+.dark .article-study-mindmap-node.is-active {
+  border-color: rgb(96 165 250);
+  background: rgb(30 41 59);
+  box-shadow: 0 0 0 3px rgb(96 165 250 / 0.15);
+}
+
+.dark .article-study-mindmap-leaf {
+  color: rgb(160 160 160);
+}
+
+.dark .article-study-mindmap-leaf::before {
+  background: rgb(160 160 160);
+}
+
+.dark .article-study-mindmap-branch.is-active .article-study-mindmap-leaf::before {
+  background: rgb(96 165 250);
+}
+
+.dark .article-study-mindmap-detail-label {
+  color: rgb(160 160 160);
 }
 
 @keyframes drnote-slide-in {

@@ -10,6 +10,7 @@ import {
   FileText,
   Menu,
   MessageCircleQuestion,
+  Network,
   Play,
   Zap,
 } from "lucide-react";
@@ -23,7 +24,8 @@ export type ArticleViewMode =
   | "exam"
   | "flashcards"
   | "round"
-  | "qa";
+  | "qa"
+  | "mindmap";
 
 const VIEW_MENU_ITEMS: Array<{
   id: ArticleViewMode;
@@ -38,6 +40,7 @@ const VIEW_MENU_ITEMS: Array<{
   { id: "flashcards", label: "Flashcards", icon: CreditCard, studyMode: "flashcards" },
   { id: "round", label: "Round", icon: CircleDot, studyMode: "round" },
   { id: "qa", label: "QA", icon: MessageCircleQuestion, studyMode: "qa" },
+  { id: "mindmap", label: "Mindmap", icon: Network, studyMode: "mindmap" },
 ];
 
 function viewModeFromStudyMode(studyMode: StudyModeFilter | null): ArticleViewMode {
