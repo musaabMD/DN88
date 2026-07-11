@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/refresh-catalog.mjs",
+    "prebuild": "node scripts/refresh-catalog.mjs && node scripts/generate-redirects.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

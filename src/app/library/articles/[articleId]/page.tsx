@@ -1,9 +1,8 @@
-import { notFound } from "next/navigation";
 import { LibraryArticleClient } from "@/components/LibraryArticleClient";
-import { getAllArticleStaticParams, getLibraryArticleById } from "@/lib/mock-data";
+import { getAllResolvableArticleSlugs } from "@/lib/entities";
 
 export function generateStaticParams() {
-  return getAllArticleStaticParams();
+  return getAllResolvableArticleSlugs().map((articleId) => ({ articleId }));
 }
 
 export default async function LibraryArticlePage({
@@ -12,8 +11,5 @@ export default async function LibraryArticlePage({
   params: Promise<{ articleId: string }>;
 }) {
   const { articleId } = await params;
-  if (!getLibraryArticleById(articleId)) {
-    notFound();
-  }
   return <LibraryArticleClient articleId={articleId} />;
 }

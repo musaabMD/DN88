@@ -1,10 +1,8 @@
-import { notFound } from "next/navigation";
-import { TopicPageClient } from "@/components/library/LibraryDetailPages";
-import { getPublishedTopicStaticParams } from "@/lib/mock-data";
-import { getTopicById } from "@/lib/specialties";
+import { TopicEntityPageClient } from "@/components/library/EntityPageClient";
+import { getAllTopicStaticParams } from "@/lib/specialties";
 
 export function generateStaticParams() {
-  return getPublishedTopicStaticParams();
+  return getAllTopicStaticParams();
 }
 
 export default async function TopicPage({
@@ -13,7 +11,5 @@ export default async function TopicPage({
   params: Promise<{ topicId: string }>;
 }) {
   const { topicId } = await params;
-  const topic = getTopicById(topicId);
-  if (!topic) notFound();
-  return <TopicPageClient topic={topic} />;
+  return <TopicEntityPageClient topicId={topicId} />;
 }

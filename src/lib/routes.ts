@@ -10,10 +10,15 @@
  *   /qbank/{examId}/{tab}/sets/{setId}/quiz
  *   /qbank/{examId}/{tab}/sets/{setId}/results
  *   /qbank/{examId}/filters         Filter panel
- *   /library                        Article library product
- *   /library/specialties/{slug}     Specialty hub (topics list / coming soon)
- *   /library/topics/{topicId}       Topic page (article or coming soon)
- *   /library/articles/{articleId}   Article reader
+ *   /library                        Article library product (browse hub)
+ *   /specialties/{slug}             Specialty hub (canonical)
+ *   /conditions/{slug}              Condition entity (canonical)
+ *   /medications/{slug}             Medication entity (canonical)
+ *   /assessments/{slug}             Clinical assessment entity (canonical)
+ *   /overviews/{slug}               Topic overview entity (canonical)
+ *   /library/specialties/{slug}     Legacy → redirects to /specialties/{slug}
+ *   /library/topics/{topicId}       Legacy → redirects to canonical entity
+ *   /library/articles/{articleId}   Legacy article reader → redirects to entity
  *   /upgrade                        Upgrade page
  */
 
@@ -43,8 +48,20 @@ export const DASHBOARD_PATH = "/dashboard/";
 /** Global article library product. */
 export const LIBRARY_PATH = "/library/";
 
-/** Product features overview (Qbank + Library). */
-export const FEATURES_PATH = "/features/";
+/** Canonical specialty hub. */
+export function specialtyPath(specialtySlug: string): string {
+  return `/specialties/${specialtySlug}/`;
+}
+
+/** @deprecated Legacy topic path — prefer entityPathForTopic from @/lib/entities */
+export function topicPath(topicId: string): string {
+  return `/library/topics/${topicId}/`;
+}
+
+/** Legacy article reader — prefer entityPathForArticle from @/lib/entities */
+export function articlePath(articleId: string): string {
+  return `/library/articles/${articleId}/`;
+}
 
 export type QuizMode =
   | "resume"
@@ -127,18 +144,8 @@ export function filtersPath(examId: string = DEFAULT_EXAM_ID): string {
 export const UPGRADE_PATH = "/upgrade/";
 export const PRICING_PATH = "/pricing/";
 
-/** Library article reader — independent of qbank exams. */
-export function articlePath(articleId: string): string {
-  return `/library/articles/${articleId}/`;
-}
-
-export function specialtyPath(specialtySlug: string): string {
-  return `/library/specialties/${specialtySlug}/`;
-}
-
-export function topicPath(topicId: string): string {
-  return `/library/topics/${topicId}/`;
-}
+/** Product features overview (Qbank + Library). */
+export const FEATURES_PATH = "/features/";
 
 /** @deprecated Use filtersPath(examId) */
 export const FILTERS_PATH = filtersPath(DEFAULT_EXAM_ID);

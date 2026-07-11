@@ -24,11 +24,14 @@ import {
   toggleSpecialtyBookmark,
   toggleTopicBookmark,
 } from "@/lib/library-bookmarks";
-import { filterLibraryArticles, getLibraryArticleById, LIBRARY_ARTICLES } from "@/lib/mock-data";
+import { filterLibraryArticles, LIBRARY_ARTICLES } from "@/lib/mock-data";
 import {
-  articlePath,
+  entityPathForArticle,
+  entityPathForTopic,
+} from "@/lib/entities";
+import {
+  LIBRARY_PATH,
   specialtyPath,
-  topicPath,
 } from "@/lib/routes";
 import {
   ALL_SPECIALTY_TOPICS,
@@ -160,8 +163,7 @@ function TopicCard({
   query: string;
   onBookmarkChange?: () => void;
 }) {
-  const article = getLibraryArticleById(topic.id);
-  const href = article ? articlePath(article.id) : topicPath(topic.id);
+  const href = entityPathForTopic(topic);
   const { bookmarked, toggleBookmark } = useBookmark(
     () => isTopicBookmarked(topic.id),
     () => toggleTopicBookmark(topic.id),
@@ -210,7 +212,7 @@ function ArticleCard({
 
   return (
     <LibraryListCard
-      href={articlePath(article.id)}
+      href={entityPathForArticle(article)}
       seed={article.subject}
       title={<HighlightText text={article.title} query={query} />}
       meta={<HighlightText text={article.subject} query={query} />}
