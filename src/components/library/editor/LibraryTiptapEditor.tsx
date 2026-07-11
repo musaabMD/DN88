@@ -17,10 +17,11 @@ import {
   TableOfContents,
 } from "@tiptap/extension-table-of-contents";
 import { UniqueID } from "@tiptap/extension-unique-id";
-import { ArrowLeft, Palette } from "lucide-react";
+import { ArrowLeft, Palette, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { StudyModeFilter } from "@/components/content/ArticleStudyModes";
 import { FloatingToc } from "@/components/content/FloatingToc";
+import { ArticleSearchModal } from "@/components/content/ArticleSearchModal";
 import type { LibraryArticle } from "@/lib/set-content";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { ArticleHeaderNav } from "@/components/library/editor/ArticleHeaderNav";
@@ -49,6 +50,7 @@ import { ArticleReaderFooter } from "@/components/library/editor/reader/ArticleR
 import { HighlightsPanel } from "@/components/library/editor/reader/HighlightsPanel";
 import { ImageLightbox } from "@/components/library/editor/reader/ImageLightbox";
 import { ReaderProgress } from "@/components/library/editor/reader/ReaderProgress";
+import { ArticleReaderEnhancements } from "@/components/library/editor/reader/ArticleReaderEnhancements";
 import { SectionDeepLink } from "@/components/library/editor/reader/SectionDeepLink";
 import {
   ZOOM_DEFAULT,
@@ -94,6 +96,8 @@ export function LibraryTiptapEditor({
   );
   const [glossaryOn, setGlossaryOn] = useState(() => getGlossaryEnabled());
   const [colorfulOn, setColorfulOn] = useState(() => getColorfulViewEnabled());
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [readerEpoch, setReaderEpoch] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const initialContent = useMemo(() => {
@@ -200,6 +204,40 @@ export function LibraryTiptapEditor({
 
   useEffect(() => {
     if (!editor) return;
+    const bump = () => {
+      window.requestAnimationFrame(() => {
+        setReaderEpoch((value) => value + 1);
+      });
+    };
+    bump();
+    editor.on("update", bump);
+    return () => {
+      editor.off("update", bump);
+    };
+  }, [editor]);
+
+  useEffect(() => {
+    if (!searchOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSearchOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [searchOpen]);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setSearchOpen((open) => !open);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
+    if (!editor) return;
     if (!getGlossaryEnabled()) setGlossaryDecorations(editor, false);
   }, [editor]);
 
@@ -288,6 +326,17 @@ export function LibraryTiptapEditor({
             {isReadMode ? (
               <button
                 type="button"
+                className="simple-editor-icon-btn"
+                title="Search article (⌘K)"
+                aria-label="Search article"
+                onClick={() => setSearchOpen(true)}
+              >
+                <Search size={18} strokeWidth={2} />
+              </button>
+            ) : null}
+            {isReadMode ? (
+              <button
+                type="button"
                 className={`simple-editor-icon-btn${colorfulOn ? " is-active" : ""}`}
                 title={colorfulOn ? "Colorful view: on" : "Colorful view: off"}
                 aria-label="Toggle colorful view"
@@ -313,6 +362,14 @@ export function LibraryTiptapEditor({
             className="simple-editor-scroll"
             data-study-mode={activeStudyMode ?? "read"}
           >
+            {isReadMode ? (
+              <ArticleReaderEnhancements
+                article={article}
+                containerSelector=".simple-editor-scroll"
+                enabled={isReadMode}
+                contentEpoch={readerEpoch}
+              />
+            ) : null}
             <div
               className="simple-editor-canvas"
               style={{
@@ -344,6 +401,12 @@ export function LibraryTiptapEditor({
         ) : null}
         {isReadMode ? (
           <FloatingToc containerSelector=".simple-editor-scroll" />
+        ) : null}
+        {isReadMode && searchOpen ? (
+          <ArticleSearchModal
+            article={article}
+            onClose={() => setSearchOpen(false)}
+          />
         ) : null}
       </div>
     </Tiptap>

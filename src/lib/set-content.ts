@@ -1,5 +1,17 @@
 import type { SerializableCitation } from "@/components/tool-ui/citation";
 import type { ContentTab } from "@/lib/routes";
+import {
+  ADA_COMPLICATIONS,
+  ADA_DIAGNOSIS_CRITERIA,
+  ADA_PHARMACOLOGIC,
+  ADA_STANDARDS_2024,
+  CDC_DIABETES_OVERVIEW,
+  ENDOTEXT_T1DM,
+  ENDOTEXT_T2DM,
+  PUBMED_INSULIN_PHYSIOLOGY,
+  USPSTF_DIABETES_SCREENING,
+  WHO_DIABETES_FACTS,
+} from "@/lib/library/article-citations";
 
 export type StudySet = {
   id: string;
@@ -622,6 +634,7 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
         id: "summary",
         heading: "Summary",
         body: "Diabetes mellitus is chronic hyperglycemia from absolute (type 1) or relative (type 2) insulin deficiency. Type 1 is autoimmune \u03b2-cell destruction; type 2 is insulin resistance with progressive \u03b2-cell failure, usually linked to obesity. Diagnose with glucose or HbA1c criteria; treat glycemia while screening for and preventing micro- and macrovascular complications.",
+        citations: [ADA_STANDARDS_2024, WHO_DIABETES_FACTS],
       },
       {
         id: "overview",
@@ -634,6 +647,7 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
           "T2DM clues: acanthosis nigricans, skin tags, recurrent infections, often asymptomatic at diagnosis",
           "Other types to know: gestational DM, LADA (late autoimmune T1), MODY (autosomal dominant, onset <25 y)",
         ],
+        citations: [ENDOTEXT_T1DM, ENDOTEXT_T2DM, CDC_DIABETES_OVERVIEW],
       },
       {
         id: "pathophysiology",
@@ -644,6 +658,7 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
           "T2DM: central obesity \u2192 \u2191 free fatty acids \u2192 impaired insulin signaling (IRS-1, GLUT4) \u2192 insulin resistance; amylin deposits worsen \u03b2-cell function over time",
           "Early T2DM: compensatory hyperinsulinemia; later: postprandial then fasting hyperglycemia as secretion fails",
         ],
+        citations: [PUBMED_INSULIN_PHYSIOLOGY, ENDOTEXT_T2DM],
       },
       {
         id: "clinical-features",
@@ -654,6 +669,7 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
           "Repeat normal screens every 3 years; annually if prediabetes; every 1\u20133 years after gestational diabetes",
           "Suspect DM with unexplained weight loss, blurred vision, fatigue, poor wound healing, or recurrent UTIs/candidiasis",
         ],
+        citations: [USPSTF_DIABETES_SCREENING, CDC_DIABETES_OVERVIEW],
       },
       {
         id: "diagnosis",
@@ -673,6 +689,7 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
             ],
           },
         ],
+        citations: [ADA_DIAGNOSIS_CRITERIA],
       },
       {
         id: "management",
@@ -690,6 +707,7 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
             body: "Avoid hypoglycemia \u2014 it limits how aggressively you can push glycemic targets, especially in elderly or CKD patients. Individualize: a frail 80-year-old does not need an HbA1c <7%.",
           },
         ],
+        citations: [ADA_STANDARDS_2024],
       },
       {
         id: "glycemic-treatment",
@@ -708,6 +726,7 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
             body: "Agents that help weight & CV/renal outcomes \u2014 \u201cthe good G's\u201d: GLP-1 RAs and the \u201cgliflozins\u201d (SGLT2i). Reach for these in ASCVD, HF, or CKD.",
           },
         ],
+        citations: [ADA_PHARMACOLOGIC],
       },
       {
         id: "complications",
@@ -719,6 +738,7 @@ export const LIBRARY_ARTICLES: LibraryArticle[] = [
           "Prediabetes: ~10% annual progression to T2DM \u2014 lifestyle (\u22657% weight loss) first; consider metformin in high-risk adults",
           "Pediatrics: >90% T1DM; screen T2DM in obese children \u226510 y with risk factors; sulfonylureas, TZDs, DPP-4i, and SGLT2i have limited pediatric approval",
         ],
+        citations: [ADA_COMPLICATIONS],
       },
     ],
     highYield:

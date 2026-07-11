@@ -5,6 +5,17 @@ import { Search, X } from "lucide-react";
 import type { LibraryArticle } from "@/lib/set-content";
 import { sectionSlug } from "@/components/content/ArticleTableOfContents";
 
+function snippetAround(text: string, query: string, radius = 80): string {
+  const lower = text.toLowerCase();
+  const index = lower.indexOf(query);
+  if (index < 0) return text.slice(0, radius * 2);
+  const start = Math.max(0, index - radius);
+  const end = Math.min(text.length, index + query.length + radius);
+  const prefix = start > 0 ? "…" : "";
+  const suffix = end < text.length ? "…" : "";
+  return `${prefix}${text.slice(start, end)}${suffix}`;
+}
+
 export function ArticleSearchModal({
   article,
   onClose,
@@ -17,83 +28,98 @@ export function ArticleSearchModal({
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
-    return article.sections.flatMap((section) => {
-      const matches: Array<{ heading: string; snippet: string; id: string }> = [];
+
+    const matches: Array<{ heading: string; snippet: string; id: string }> = [];
+
+    const pushMatch = (heading: string, text: string, id: string) => {
+      matches.push({
+        heading,
+        snippet: snippetAround(text, q),
+        id,
+      });
+    };
+
+    if (article.summary?.toLowerCase().includes(q)) {
+      pushMatch("Summary", article.summary, "summary");
+    }
+    if (article.highYield?.toLowerCase().includes(q)) {
+      pushMatch("High yield", article.highYield, "high-yield");
+    }
+
+    for (const section of article.sections) {
+      const anchor = sectionSlug(section.heading);
       if (section.body.toLowerCase().includes(q)) {
-        matches.push({
-          heading: section.heading,
-          snippet: section.body,
-          id: sectionSlug(section.heading),
-        });
+        pushMatch(section.heading, section.body, anchor);
       }
       for (const bullet of section.bullets ?? []) {
         if (bullet.toLowerCase().includes(q)) {
-          matches.push({
-            heading: section.heading,
-            snippet: bullet,
-            id: sectionSlug(section.heading),
-          });
+          pushMatch(section.heading, bullet, anchor);
         }
       }
-      return matches;
-    });
-  }, [article.sections, query]);
+      for (const callout of section.callouts ?? []) {
+        if (callout.body?.toLowerCase().includes(q)) {
+          pushMatch(section.heading, callout.body, anchor);
+        }
+        for (const bullet of callout.bullets ?? []) {
+          if (bullet.toLowerCase().includes(q)) {
+            pushMatch(section.heading, bullet, anchor);
+          }
+        }
+      }
+    }
+
+    return matches;
+  }, [article, query]);
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 pt-20"
+      className="article-search-overlay"
       onClick={onClose}
       role="presentation"
     >
       <div
-        className="w-full max-w-lg rounded-2xl bg-white shadow-xl"
+        className="article-search-dialog"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-label="Search article"
       >
-        <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
-          <Search size={18} strokeWidth={2.5} className="shrink-0 text-slate-400" />
+        <div className="article-search-header">
+          <Search size={18} strokeWidth={2.5} className="shrink-0" aria-hidden />
           <input
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search in this article..."
-            className="w-full bg-transparent text-sm font-bold text-slate-700 outline-none placeholder:text-slate-400"
+            className="article-search-input"
           />
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100"
+            className="article-search-close"
             aria-label="Close"
           >
             <X size={16} strokeWidth={2.5} />
           </button>
         </div>
 
-        <div className="max-h-80 overflow-y-auto p-2">
+        <div className="article-search-results">
           {query.trim() && results.length === 0 ? (
-            <p className="px-3 py-6 text-center text-sm font-bold text-slate-400">
-              No matches found
-            </p>
+            <p className="article-search-empty">No matches found</p>
           ) : null}
           {results.map((result, i) => (
             <a
               key={`${result.id}-${i}`}
               href={`#${result.id}`}
               onClick={onClose}
-              className="block rounded-xl px-3 py-2.5 hover:bg-slate-50"
+              className="article-search-result"
             >
-              <p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">
-                {result.heading}
-              </p>
-              <p className="mt-0.5 line-clamp-2 text-sm font-medium text-slate-700">
-                {result.snippet}
-              </p>
+              <p className="article-search-result-heading">{result.heading}</p>
+              <p className="article-search-result-snippet">{result.snippet}</p>
             </a>
           ))}
           {!query.trim() ? (
-            <p className="px-3 py-6 text-center text-sm font-medium text-slate-400">
-              Search headings, paragraphs, and bullet points
+            <p className="article-search-empty">
+              Search headings, bullets, callouts, and high-yield notes
             </p>
           ) : null}
         </div>
