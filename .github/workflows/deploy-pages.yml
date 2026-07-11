@@ -29,24 +29,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Refresh catalog bundle
-        run: node scripts/refresh-catalog.mjs
-        env:
-          CATALOG_SYNC_ORIGIN: ${{ secrets.CATALOG_SYNC_ORIGIN }}
-          CATALOG_SYNC_ORIGIN_B64: ${{ secrets.CATALOG_SYNC_ORIGIN_B64 }}
-          CATALOG_SYNC_TOKEN: ${{ secrets.CATALOG_SYNC_TOKEN }}
-          CATALOG_SYNC_REF: ${{ secrets.CATALOG_SYNC_REF }}
-
       - name: Build
         run: npm run build
         env:
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
           NEXT_PUBLIC_CLERK_DOMAIN: drnote.co
           NEXT_PUBLIC_DN88_API_URL: ${{ secrets.NEXT_PUBLIC_DN88_API_URL }}
-          CATALOG_SYNC_ORIGIN: ${{ secrets.CATALOG_SYNC_ORIGIN }}
-          CATALOG_SYNC_ORIGIN_B64: ${{ secrets.CATALOG_SYNC_ORIGIN_B64 }}
-          CATALOG_SYNC_TOKEN: ${{ secrets.CATALOG_SYNC_TOKEN }}
-          CATALOG_SYNC_REF: ${{ secrets.CATALOG_SYNC_REF }}
+          NEXT_PUBLIC_CATALOG_API_ENABLED: "true"
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
@@ -91,6 +80,15 @@ jobs:
           if [ -n "$STRIPE_PRICE_YEARLY" ]; then
             printf '%s' "$STRIPE_PRICE_YEARLY" | npx wrangler secret put STRIPE_PRICE_YEARLY -c workers/dn88/wrangler.jsonc
           fi
+          if [ -n "$CATALOG_SYNC_SECRET" ]; then
+            printf '%s' "$CATALOG_SYNC_SECRET" | npx wrangler secret put CATALOG_SYNC_SECRET -c workers/dn88/wrangler.jsonc
+          fi
+          if [ -n "$OPENAI_API_KEY" ]; then
+            printf '%s' "$OPENAI_API_KEY" | npx wrangler secret put OPENAI_API_KEY -c workers/dn88/wrangler.jsonc
+          fi
+          if [ -n "$ADMIN_BOOTSTRAP_IDS" ]; then
+            printf '%s' "$ADMIN_BOOTSTRAP_IDS" | npx wrangler secret put ADMIN_BOOTSTRAP_IDS -c workers/dn88/wrangler.jsonc
+          fi
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -99,3 +97,6 @@ jobs:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_PRICE_MONTHLY: ${{ secrets.STRIPE_PRICE_MONTHLY }}
           STRIPE_PRICE_YEARLY: ${{ secrets.STRIPE_PRICE_YEARLY }}
+          CATALOG_SYNC_SECRET: ${{ secrets.CATALOG_SYNC_SECRET }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ADMIN_BOOTSTRAP_IDS: ${{ secrets.ADMIN_BOOTSTRAP_IDS }}

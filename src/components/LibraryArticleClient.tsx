@@ -1,13 +1,20 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import LibraryArticle from "@/components/content/LibraryArticle";
 import { LibraryBrowseShell } from "@/components/library/LibraryBrowseShell";
 import { LibraryPageHeader } from "@/components/library/LibraryPageHeader";
+import { CatalogStateBanner } from "@/components/library/CatalogStateBanner";
 import {
   ComingSoonPanel,
   LibraryCtaButton,
 } from "@/components/library/LibraryUi";
+import {
+  catalogArticleToLibraryArticle,
+  fetchPublicArticle,
+  isCatalogApiEnabled,
+} from "@/lib/catalog/api";
 import { getEntity, resolveLibraryArticle } from "@/lib/entities";
 import { getCreatedPageById } from "@/lib/pages/create-page-store";
 import type { LibraryArticle as LibraryArticleType } from "@/lib/set-content";
@@ -37,32 +44,77 @@ function createdPageToArticle(page: {
 
 export function LibraryArticleClient({ articleId }: { articleId: string }) {
   const router = useRouter();
-  const article = resolveLibraryArticle(articleId);
-  const created = !article ? getCreatedPageById(articleId) : undefined;
-  const resolved = article ?? (created ? createdPageToArticle(created) : undefined);
+  const pathname = usePathname();
+  const resolvedId =
+    articleId === "_"
+      ? (pathname.match(/^\/library\/articles\/([^/]+)/)?.[1] ?? articleId)
+      : articleId;
+
+  const bundled = resolveLibraryArticle(resolvedId);
+  const created = !bundled ? getCreatedPageById(resolvedId) : undefined;
+
+  const [apiArticle, setApiArticle] = useState<LibraryArticleType | null>(null);
+  const [loading, setLoading] = useState(isCatalogApiEnabled());
+
+  useEffect(() => {
+    if (!isCatalogApiEnabled()) return;
+    let cancelled = false;
+    void fetchPublicArticle(resolvedId).then((detail) => {
+      if (cancelled) return;
+      setApiArticle(detail ? catalogArticleToLibraryArticle(detail) : null);
+      setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [resolvedId]);
+
+  const resolved =
+    isCatalogApiEnabled()
+      ? apiArticle ?? undefined
+      : bundled ?? (created ? createdPageToArticle(created) : undefined);
+
   const backToLibrary = () => router.push(LIBRARY_PATH);
+
+  if (loading) {
+    return (
+      <LibraryBrowseShell showBack onBack={backToLibrary}>
+        <CatalogStateBanner />
+        <p className="text-muted-foreground">Loading article…</p>
+      </LibraryBrowseShell>
+    );
+  }
 
   if (!resolved) {
     const entity =
-      getEntity("conditions", articleId) ??
-      getEntity("medications", articleId) ??
-      getEntity("assessments", articleId) ??
-      getEntity("overviews", articleId);
+      getEntity("conditions", resolvedId) ??
+      getEntity("medications", resolvedId) ??
+      getEntity("assessments", resolvedId) ??
+      getEntity("overviews", resolvedId);
 
     const displayTitle =
       entity?.title ??
-      articleId.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      resolvedId.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
     return (
       <LibraryBrowseShell showBack onBack={backToLibrary}>
+        <CatalogStateBanner />
         <LibraryPageHeader
           seed={displayTitle}
           title={displayTitle}
-          meta="Updating soon"
+          meta={isCatalogApiEnabled() ? "Not yet published" : "Updating soon"}
         />
         <ComingSoonPanel
-          title="Content updating soon"
-          description="Full clinical notes, summaries, questions, and flashcards for this topic are being published. Check back soon."
+          title={
+            isCatalogApiEnabled()
+              ? "Not yet published"
+              : "Content updating soon"
+          }
+          description={
+            isCatalogApiEnabled()
+              ? "This article has not been approved for public publication yet."
+              : "Full clinical notes, summaries, questions, and flashcards for this topic are being published. Check back soon."
+          }
         >
           <LibraryCtaButton href={LIBRARY_PATH}>Back to Library</LibraryCtaButton>
         </ComingSoonPanel>
@@ -70,5 +122,10 @@ export function LibraryArticleClient({ articleId }: { articleId: string }) {
     );
   }
 
-  return <LibraryArticle article={resolved} onBack={backToLibrary} />;
+  return (
+    <>
+      <CatalogStateBanner />
+      <LibraryArticle article={resolved} onBack={backToLibrary} />
+    </>
+  );
 }

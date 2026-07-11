@@ -1,8 +1,8 @@
 import { LibraryArticleClient } from "@/components/LibraryArticleClient";
-import { getPublishedArticleStaticParams } from "@/lib/entities";
 
+/** Static export shell — articles load from Worker API at runtime. */
 export function generateStaticParams() {
-  return getPublishedArticleStaticParams();
+  return [{ articleId: "_" }];
 }
 
 export default async function LibraryArticlePage({

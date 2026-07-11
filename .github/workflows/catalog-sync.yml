@@ -1,0 +1,47 @@
+name: Catalog sync
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build:catalog
+
+      - name: Apply D1 migrations
+        run: npm run catalog:migrate
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Sync DL88 catalog
+        run: npm run catalog:sync
+        env:
+          CATALOG_SYNC_ORIGIN: ${{ secrets.CATALOG_SYNC_ORIGIN }}
+          CATALOG_SYNC_ORIGIN_B64: ${{ secrets.CATALOG_SYNC_ORIGIN_B64 }}
+          CATALOG_SYNC_TOKEN: ${{ secrets.CATALOG_SYNC_TOKEN }}
+          CATALOG_SYNC_REF: ${{ secrets.CATALOG_SYNC_REF }}
+          CATALOG_SYNC_SECRET: ${{ secrets.CATALOG_SYNC_SECRET }}
+          CATALOG_API_URL: ${{ secrets.CATALOG_API_URL }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy Worker
+        run: npm run worker:deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

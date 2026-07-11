@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 /**
- * Catalog refresh for prebuild — PR1 keeps the committed local bundle.
- * Markdown import is available via `npm run catalog:dry-run`.
- * JSON bundle discovery has been removed per DL88 markdown-only direction.
+ * Catalog refresh for prebuild — keeps committed bundle only in DEMO_MODE.
+ * Production uses Worker catalog API (no silent demo fallback).
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -13,17 +12,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 const OUT_FILE = join(ROOT, "src", "generated", "catalog.json");
 
-function decodeOrigin() {
-  const direct = process.env.CATALOG_SYNC_ORIGIN?.trim();
-  if (direct) return direct;
-
-  const encoded = process.env.CATALOG_SYNC_ORIGIN_B64?.trim();
-  if (encoded) {
-    return Buffer.from(encoded, "base64").toString("utf8").trim();
-  }
-
-  return "";
-}
+const DEMO_MODE = process.env.DEMO_MODE === "true";
+const CATALOG_API_ENABLED =
+  process.env.NEXT_PUBLIC_CATALOG_API_ENABLED !== "false";
 
 function loadExisting() {
   if (!existsSync(OUT_FILE)) return null;
@@ -37,26 +28,23 @@ function loadExisting() {
 }
 
 async function main() {
-  const origin = decodeOrigin();
-  const existing = loadExisting();
-
-  if (origin) {
-    console.warn(
-      "[catalog] CATALOG_SYNC_ORIGIN is set but JSON bundle sync is removed. " +
-        "Run `npm run catalog:dry-run` for markdown import reports. " +
-        "Full snapshot sync arrives in PR3."
+  if (!DEMO_MODE && CATALOG_API_ENABLED) {
+    console.log(
+      "[catalog] Production mode — articles served from Worker API. No local bundle refresh."
     );
+    return;
   }
 
+  const existing = loadExisting();
   if (existing?.length) {
     console.log(
-      `[catalog] Keeping ${existing.length} committed article(s) from src/generated/catalog.json`
+      `[catalog] DEMO_MODE — keeping ${existing.length} local article(s) from src/generated/catalog.json`
     );
     return;
   }
 
   throw new Error(
-    "No local catalog bundle present. Commit src/generated/catalog.json or run catalog:dry-run against DL88."
+    "No local catalog bundle. Set DEMO_MODE=true for local demo articles."
   );
 }
 

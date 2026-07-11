@@ -28,3 +28,48 @@ export {
   formatDryRunReport,
   type DryRunReport,
 } from "./report/dry-run.js";
+export {
+  CLASSIFICATION_VERSION,
+  classifyContentStatus,
+  type ContentStatus,
+} from "./classify/content-status.js";
+export {
+  SPECIALTY_REGISTRY,
+  resolveSpecialtyLabel,
+  resolveSpecialtyFromPath,
+  computePublicSlug,
+} from "./classify/specialty-registry.js";
+export {
+  detectPlaceholders,
+  hasBlockingPlaceholders,
+} from "./classify/placeholders.js";
+export { enrichArticle, hashSourceContent, type EnrichedArticle } from "./classify/enrich.js";
+export { countMeaningfulWords, computeReadMinutes } from "./parse/word-count.js";
+export { validateAssets, extractAssetReferences } from "./validate/assets.js";
+export {
+  isPubliclyPublishable,
+  canApproveForPublication,
+  canRequestAiReview,
+  type PublishableArticle,
+  type AiReviewStatus,
+  type AdminPublicationStatus,
+} from "./services/publication.js";
+export {
+  importAndClassifyRepo,
+  formatFullImportReport,
+  type FullImportResult,
+} from "./sync/full-import.js";
+export {
+  buildSnapshot,
+  readSnapshotManifest,
+  copyArticleAssets,
+  SANITIZATION_VERSION,
+  type SnapshotManifest,
+} from "./sync/snapshot.js";
+export {
+  runAiReview,
+  buildAiReviewPrompt,
+  parseAiReviewResponse,
+  AI_REVIEW_VERSION,
+  type AiReviewResult,
+} from "./ai/review.js";

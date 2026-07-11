@@ -90,21 +90,19 @@ async function main() {
   }
 
   const {
-    importArticleRepo,
-    buildDryRunReport,
-    formatDryRunReport,
+    importAndClassifyRepo,
+    formatFullImportReport,
   } = await import(catalogDist);
 
   const repoRoot = resolveRepoRoot();
   const jsonOutput = process.argv.includes("--json");
 
-  const importResult = importArticleRepo(repoRoot);
-  const report = buildDryRunReport(importResult);
+  const importResult = importAndClassifyRepo(repoRoot);
 
   if (jsonOutput) {
-    console.log(JSON.stringify(report, null, 2));
+    console.log(JSON.stringify(importResult, null, 2));
   } else {
-    console.log(formatDryRunReport(report));
+    console.log(formatFullImportReport(importResult));
   }
 }
 

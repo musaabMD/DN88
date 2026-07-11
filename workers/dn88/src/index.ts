@@ -1,16 +1,13 @@
 import { createClerkClient, verifyToken } from "@clerk/backend";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import type { Bindings } from "./types";
+import { catalogPublicRoutes } from "./routes/catalog-public";
+import { catalogAdminRoutes } from "./routes/catalog-admin";
+import { assetRoutes } from "./routes/assets";
+import { syncRoutes } from "./routes/sync";
 
 type BillingInterval = "monthly" | "yearly";
-
-type Bindings = {
-  CLERK_SECRET_KEY: string;
-  CLERK_PUBLISHABLE_KEY: string;
-  STRIPE_SECRET_KEY?: string;
-  STRIPE_PRICE_MONTHLY?: string;
-  STRIPE_PRICE_YEARLY?: string;
-};
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -28,7 +25,7 @@ app.use(
       if (!origin) return allowedOrigins[0];
       return allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
     },
-    allowHeaders: ["Authorization", "Content-Type"],
+    allowHeaders: ["Authorization", "Content-Type", "X-Catalog-Sync-Secret"],
     allowMethods: ["GET", "POST", "OPTIONS"],
   })
 );
@@ -104,7 +101,10 @@ async function createStripeCheckoutSession(
     body,
   });
 
-  const payload = (await response.json()) as { url?: string; error?: { message?: string } };
+  const payload = (await response.json()) as {
+    url?: string;
+    error?: { message?: string };
+  };
 
   if (!response.ok) {
     throw new Error(payload.error?.message ?? "Stripe checkout failed");
@@ -144,6 +144,7 @@ app.get("/api/me", async (c) => {
     lastName: user.lastName,
     email: user.primaryEmailAddress?.emailAddress ?? null,
     imageUrl: user.imageUrl,
+    role: user.publicMetadata?.role ?? null,
   });
 });
 
@@ -194,6 +195,11 @@ app.post("/api/stripe/checkout", async (c) => {
     return c.json({ error: message }, 502);
   }
 });
+
+app.route("/api/catalog", catalogPublicRoutes);
+app.route("/api/admin", catalogAdminRoutes);
+app.route("/api/dl88-assets", assetRoutes);
+app.route("/api/admin/sync", syncRoutes);
 
 app.notFound((c) => c.json({ error: "Not found" }, 404));
 

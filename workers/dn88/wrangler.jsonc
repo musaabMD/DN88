@@ -6,5 +6,18 @@
   "account_id": "5000e0a4f0ca6dd90b08bde9dc11ccb9",
   "observability": {
     "enabled": true
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dn88-catalog",
+      "database_id": "d1b680ec-9f06-4497-99de-071c69056537"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "SNAPSHOTS",
+      "bucket_name": "dn88-catalog-snapshots"
+    }
+  ]
 }
