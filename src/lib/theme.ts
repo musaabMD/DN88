@@ -33,3 +33,9 @@ export function toggleTheme(): ThemeMode {
   setTheme(next);
   return next;
 }
+
+/** Subscribe to theme changes (class on `<html>`). */
+export function readThemeFromDom(): ThemeMode {
+  if (typeof document === "undefined") return "light";
+  return document.documentElement.classList.contains("dark") ? "dark" : "light";
+}
