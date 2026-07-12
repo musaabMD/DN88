@@ -5,7 +5,13 @@ import { useEffect, useState } from "react";
 import { Check, ChevronRight, Plus, Search } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { ProductSiteNav } from "@/components/ProductSiteNav";
-import { EXAMS, type Exam } from "@/lib/exams";
+import {
+  EXAM_CATEGORIES,
+  EXAMS,
+  formatExamCategory,
+  type Exam,
+  type ExamCategory,
+} from "@/lib/exams";
 import { saveCurrentExamId } from "@/lib/current-exam";
 import { HOME_PATH, examPath } from "@/lib/routes";
 import { getTileColors } from "@/lib/tile-colors";
@@ -73,6 +79,39 @@ function ExamHero({
   );
 }
 
+function CategoryChip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-2xl border-2 px-4 py-2 text-sm font-bold"
+      style={
+        active
+          ? {
+              background: "#334155",
+              borderColor: "#1e293b",
+              color: "#fff",
+            }
+          : {
+              background: "#fff",
+              borderColor: "#e2e8f0",
+              color: "#64748b",
+            }
+      }
+    >
+      {label}
+    </button>
+  );
+}
+
 function ExamCard({
   exam,
   added,
@@ -106,9 +145,14 @@ function ExamCard({
           </span>
         </div>
 
-        <h3 className="min-w-0 flex-1 truncate text-base font-extrabold tracking-tight text-slate-700">
-          {exam.name}
-        </h3>
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-base font-extrabold tracking-tight text-slate-700">
+            {exam.name}
+          </h3>
+          <p className="mt-0.5 truncate text-xs font-bold text-slate-400">
+            {exam.country} · {formatExamCategory(exam.category)}
+          </p>
+        </div>
 
         <ChevronRight
           size={20}
@@ -138,15 +182,31 @@ function ExamCard({
 
 export default function ExamHome() {
   const [query, setQuery] = useState("");
+  const [category, setCategory] = useState<ExamCategory | "all">("all");
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
 
   useEffect(() => {
     setPinnedIds(getUserExamIds());
   }, []);
 
-  const filtered = EXAMS.filter((exam) =>
-    exam.name.toLowerCase().includes(query.trim().toLowerCase())
-  );
+  const normalizedQuery = query.trim().toLowerCase();
+
+  const filtered = EXAMS.filter((exam) => {
+    const matchesCategory = category === "all" || exam.category === category;
+    if (!matchesCategory) return false;
+    if (!normalizedQuery) return true;
+
+    const haystack = [
+      exam.name,
+      exam.country,
+      exam.category,
+      formatExamCategory(exam.category),
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    return haystack.includes(normalizedQuery);
+  });
 
   const toggleExam = (examId: string) => {
     if (isUserExam(examId)) {
@@ -162,6 +222,22 @@ export default function ExamHome() {
       <ExamHomeHeader />
 
       <ExamHero query={query} onQuery={setQuery} />
+
+      <div className="mt-6 flex flex-wrap gap-2">
+        <CategoryChip
+          label="All"
+          active={category === "all"}
+          onClick={() => setCategory("all")}
+        />
+        {EXAM_CATEGORIES.map((value) => (
+          <CategoryChip
+            key={value}
+            label={formatExamCategory(value)}
+            active={category === value}
+            onClick={() => setCategory(value)}
+          />
+        ))}
+      </div>
 
       <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
         {filtered.map((exam) => (
