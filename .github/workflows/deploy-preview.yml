@@ -1,0 +1,92 @@
+name: Deploy Preview to Cloudflare Pages
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: pages-preview-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-preview:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: |
+          export NEXT_PUBLIC_DN88_API_URL="${NEXT_PUBLIC_DN88_API_URL:-https://dn88-api.musaab.workers.dev}"
+          npm run build
+        env:
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_CLERK_DOMAIN: drnote.co
+          NEXT_PUBLIC_DN88_API_URL: ${{ secrets.NEXT_PUBLIC_DN88_API_URL }}
+          NEXT_PUBLIC_CATALOG_API_ENABLED: "true"
+
+      - name: Deploy preview to Cloudflare Pages
+        id: deploy
+        run: |
+          set -euo pipefail
+          OUTPUT="$(npx wrangler pages deploy out \
+            --project-name=dn88 \
+            --branch="${{ github.head_ref || github.ref_name }}" 2>&1)"
+          echo "$OUTPUT"
+          PREVIEW_URL="$(echo "$OUTPUT" | sed -n 's/.*Deployment alias URL: //p' | head -1)"
+          if [ -z "$PREVIEW_URL" ]; then
+            PREVIEW_URL="$(echo "$OUTPUT" | grep -Eo 'https://[a-z0-9]+\.dn88\.pages\.dev' | head -1)"
+          fi
+          echo "url=${PREVIEW_URL}" >> "$GITHUB_OUTPUT"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Comment preview URL on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branch = context.payload.pull_request.head.ref;
+            const previewUrl = `${{ steps.deploy.outputs.url }}/`;
+            const body = `## Preview deployment\n\nHomepage redesign is live at:\n\n**${previewUrl}**\n\nBranch: \`${branch}\`\n\nThis is a preview only — production (\`drnote.co\`) is unchanged until merged to \`main\`.`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+            });
+
+            const marker = '<!-- drnote-preview-deploy -->';
+            const existing = comments.find((c) => c.body?.includes(marker));
+            const fullBody = `${marker}\n${body}`;
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body: fullBody,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body: fullBody,
+              });
+            }
