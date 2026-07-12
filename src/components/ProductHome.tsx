@@ -7,6 +7,7 @@ import { useUser } from "@clerk/clerk-react";
 import {
   ArrowRight,
   BookOpen,
+  ChevronDown,
   ChevronRight,
   FileQuestion,
   Lock,
@@ -16,7 +17,8 @@ import {
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { ProductSiteNav } from "@/components/ProductSiteNav";
 import { useClerkEnabled, useClientMounted } from "@/hooks/useClerkEnabled";
-import { EXAMS } from "@/lib/exams";
+import { DEFAULT_EXAM_ID, EXAMS, getExamById } from "@/lib/exams";
+import { loadCurrentExamId, saveCurrentExamId } from "@/lib/current-exam";
 import { filterLibraryArticles } from "@/lib/mock-data";
 import {
   hasQbankPreorder,
@@ -50,8 +52,8 @@ const TAB_COPY: Record<
   },
   qbank: {
     title: "Practice for your exam",
-    subtitle: "Question sets, filters, and quiz modes when you are ready.",
-    placeholder: "Search exams…",
+    subtitle: "Pick your exam first, then start practicing sets and quizzes.",
+    placeholder: "Optional: search sets or topics…",
   },
   ask: {
     title: "Ask about any topic",
@@ -117,18 +119,26 @@ function HomeTabNav({
 function QbankPreorderPanel({
   onClose,
   defaultEmail,
+  defaultExamId,
 }: {
   onClose: () => void;
   defaultEmail?: string;
+  defaultExamId?: string;
 }) {
   const [email, setEmail] = useState(defaultEmail ?? "");
-  const [examId, setExamId] = useState(EXAMS[0]?.id ?? "smle");
+  const [examId, setExamId] = useState(
+    defaultExamId || EXAMS[0]?.id || "smle"
+  );
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (defaultEmail) setEmail(defaultEmail);
   }, [defaultEmail]);
+
+  useEffect(() => {
+    if (defaultExamId) setExamId(defaultExamId);
+  }, [defaultExamId]);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -229,16 +239,62 @@ function QbankPreorderPanel({
   );
 }
 
+function ExamPicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (examId: string) => void;
+}) {
+  const selected = getExamById(value);
+
+  return (
+    <label className="relative inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 py-1.5 pl-3 pr-2 text-xs font-extrabold text-slate-600">
+      <FileQuestion size={14} strokeWidth={2.5} className="shrink-0" />
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(
+          "max-w-[10.5rem] cursor-pointer appearance-none bg-transparent pr-5 text-xs font-extrabold outline-none sm:max-w-[12rem]",
+          selected ? "text-slate-700" : "text-slate-400"
+        )}
+        aria-label="Select exam"
+        required
+      >
+        <option value="" disabled>
+          Select exam
+        </option>
+        {EXAMS.map((exam) => (
+          <option key={exam.id} value={exam.id}>
+            {exam.name}
+          </option>
+        ))}
+      </select>
+      <ChevronDown
+        size={14}
+        strokeWidth={2.5}
+        className="pointer-events-none absolute right-2 shrink-0 text-slate-400"
+      />
+    </label>
+  );
+}
+
 function CommandPanel({
   activeTab,
   query,
   onQuery,
   onSubmit,
+  selectedExamId,
+  onExamChange,
+  canStartQbank,
 }: {
   activeTab: HomeTab;
   query: string;
   onQuery: (value: string) => void;
   onSubmit: () => void;
+  selectedExamId: string;
+  onExamChange: (examId: string) => void;
+  canStartQbank: boolean;
 }) {
   const copy = TAB_COPY[activeTab];
   const Icon =
@@ -285,10 +341,7 @@ function CommandPanel({
             </Link>
           ) : null}
           {activeTab === "qbank" ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-extrabold text-slate-600">
-              <FileQuestion size={14} strokeWidth={2.5} />
-              Exam practice
-            </span>
+            <ExamPicker value={selectedExamId} onChange={onExamChange} />
           ) : null}
           {activeTab === "ask" ? (
             <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-extrabold text-slate-600">
@@ -300,8 +353,14 @@ function CommandPanel({
 
         <button
           type="submit"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-white transition-colors hover:bg-slate-700"
-          aria-label="Submit"
+          disabled={activeTab === "qbank" && !canStartQbank}
+          className={cn(
+            "inline-flex h-10 w-10 items-center justify-center rounded-full text-white transition-colors",
+            activeTab === "qbank" && !canStartQbank
+              ? "cursor-not-allowed bg-slate-300"
+              : "bg-slate-900 hover:bg-slate-700"
+          )}
+          aria-label={activeTab === "qbank" && !canStartQbank ? "Select an exam first" : "Submit"}
         >
           <ArrowRight size={18} strokeWidth={2.5} />
         </button>
@@ -385,12 +444,14 @@ function QbankQuickLinks({
   query,
   canOpenQbank,
   alreadyJoined,
-  onJoinWaitlist,
+  selectedExamId,
+  onSelectExam,
 }: {
   query: string;
   canOpenQbank: boolean;
   alreadyJoined: boolean;
-  onJoinWaitlist: () => void;
+  selectedExamId: string;
+  onSelectExam: (examId: string) => void;
 }) {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -410,6 +471,7 @@ function QbankQuickLinks({
       <ul className="space-y-2">
         {filtered.map((exam) => {
           const locked = !canOpenQbank;
+          const isSelected = selectedExamId === exam.id;
           const inner = (
             <>
               <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-white">
@@ -425,35 +487,35 @@ function QbankQuickLinks({
                   {exam.name}
                 </p>
                 <p className="text-xs font-bold text-slate-400">
-                  {canOpenQbank
-                    ? "Open practice sets"
-                    : alreadyJoined
-                      ? "On waitlist"
-                      : "Join waitlist"}
+                  {isSelected
+                    ? "Selected — press arrow to start"
+                    : canOpenQbank
+                      ? "Tap to select this exam"
+                      : alreadyJoined
+                        ? "On waitlist"
+                        : "Tap to select, then join waitlist"}
                 </p>
               </div>
               <ChevronRight size={18} className="shrink-0 text-slate-300" />
             </>
           );
 
-          const className =
-            "group relative flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left transition-colors hover:border-slate-300 hover:bg-slate-50";
-
-          if (locked) {
-            return (
-              <li key={exam.id}>
-                <button type="button" onClick={onJoinWaitlist} className={className}>
-                  {inner}
-                </button>
-              </li>
-            );
-          }
+          const className = cn(
+            "group relative flex w-full items-center gap-4 rounded-xl border bg-white px-4 py-3 text-left transition-colors",
+            isSelected
+              ? "border-emerald-300 bg-emerald-50/60"
+              : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+          );
 
           return (
             <li key={exam.id}>
-              <Link href={examPath(exam.id)} className={className}>
+              <button
+                type="button"
+                onClick={() => onSelectExam(exam.id)}
+                className={className}
+              >
                 {inner}
-              </Link>
+              </button>
             </li>
           );
         })}
@@ -546,6 +608,7 @@ function ProductHomeBody({
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<HomeTab>("library");
   const [query, setQuery] = useState("");
+  const [selectedExamId, setSelectedExamId] = useState("");
   const [showPreorder, setShowPreorder] = useState(false);
   const [alreadyJoined, setAlreadyJoined] = useState(false);
 
@@ -554,10 +617,21 @@ function ProductHomeBody({
   }, [userEmail]);
 
   useEffect(() => {
+    const saved = loadCurrentExamId();
+    if (saved) setSelectedExamId(saved);
+  }, []);
+
+  useEffect(() => {
     setQuery("");
   }, [activeTab]);
 
+  const handleExamChange = (examId: string) => {
+    setSelectedExamId(examId);
+    if (examId) saveCurrentExamId(examId);
+  };
+
   const copy = TAB_COPY[activeTab];
+  const canStartQbank = activeTab !== "qbank" || Boolean(selectedExamId);
 
   const handleSubmit = () => {
     const trimmed = query.trim();
@@ -570,14 +644,10 @@ function ProductHomeBody({
       return;
     }
     if (activeTab === "qbank") {
+      if (!selectedExamId) return;
+      saveCurrentExamId(selectedExamId);
       if (canOpenQbank) {
-        const match = EXAMS.find(
-          (exam) =>
-            !trimmed ||
-            exam.name.toLowerCase().includes(trimmed.toLowerCase()) ||
-            exam.id.toLowerCase().includes(trimmed.toLowerCase())
-        );
-        router.push(match ? examPath(match.id) : QBANK_PATH);
+        router.push(examPath(selectedExamId));
       } else {
         setShowPreorder(true);
       }
@@ -614,6 +684,9 @@ function ProductHomeBody({
             query={query}
             onQuery={setQuery}
             onSubmit={handleSubmit}
+            selectedExamId={selectedExamId}
+            onExamChange={handleExamChange}
+            canStartQbank={canStartQbank}
           />
         </div>
 
@@ -625,7 +698,8 @@ function ProductHomeBody({
               query={query}
               canOpenQbank={canOpenQbank}
               alreadyJoined={alreadyJoined}
-              onJoinWaitlist={() => setShowPreorder(true)}
+              selectedExamId={selectedExamId}
+              onSelectExam={handleExamChange}
             />
           ) : (
             <AskQuickLinks query={query} />
@@ -636,6 +710,7 @@ function ProductHomeBody({
       {showPreorder ? (
         <QbankPreorderPanel
           defaultEmail={userEmail}
+          defaultExamId={selectedExamId || DEFAULT_EXAM_ID}
           onClose={() => {
             setShowPreorder(false);
             if (userEmail && hasQbankPreorder(userEmail)) setAlreadyJoined(true);
