@@ -1,13 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useUser } from "@clerk/clerk-react";
-import { BookOpen, ChevronRight, FileQuestion, Lock } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  ChevronRight,
+  FileQuestion,
+  Lock,
+  Search,
+  Sparkles,
+} from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { ProductSiteNav } from "@/components/ProductSiteNav";
 import { useClerkEnabled, useClientMounted } from "@/hooks/useClerkEnabled";
 import { EXAMS } from "@/lib/exams";
+import { filterLibraryArticles } from "@/lib/mock-data";
 import {
   hasQbankPreorder,
   isQbankOwnerEmail,
@@ -16,15 +26,45 @@ import {
 import {
   LIBRARY_PATH,
   QBANK_PATH,
-  UPGRADE_PATH,
+  examPath,
 } from "@/lib/routes";
-import { getTileColors } from "@/lib/tile-colors";
+import { MEDICAL_SPECIALTIES } from "@/lib/specialties";
+import { cn } from "@/lib/utils";
+
+type HomeTab = "library" | "qbank" | "ask";
+
+const HOME_TABS: { id: HomeTab; label: string }[] = [
+  { id: "library", label: "Library" },
+  { id: "qbank", label: "Qbank" },
+  { id: "ask", label: "Ask" },
+];
+
+const TAB_COPY: Record<
+  HomeTab,
+  { title: string; subtitle: string; placeholder: string }
+> = {
+  library: {
+    title: "Browse clinical guides",
+    subtitle: "Specialties, topics, and articles written for study.",
+    placeholder: "Search specialties, topics, or articles…",
+  },
+  qbank: {
+    title: "Practice for your exam",
+    subtitle: "Question sets, filters, and quiz modes when you are ready.",
+    placeholder: "Search exams…",
+  },
+  ask: {
+    title: "Ask about any topic",
+    subtitle: "Get answers grounded in DrNote articles — open a guide to keep chatting.",
+    placeholder: "Ask anything about medicine…",
+  },
+};
 
 function ProductHomeHeader() {
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-40 border-b border-slate-100 bg-white/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-xl items-center justify-between px-4 py-4 sm:px-6">
+      <header className="fixed inset-x-0 top-0 z-40 border-b border-slate-100 bg-white">
+        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4 sm:px-6">
           <Link href="/" className="flex min-w-0 items-center">
             <DrNoteLogo showWordmark forceWordmark />
           </Link>
@@ -37,78 +77,40 @@ function ProductHomeHeader() {
   );
 }
 
-function ProductCard({
-  title,
-  description,
-  href,
-  colorKey,
-  icon: Icon,
-  badge,
-  locked,
-  onClick,
+function HomeTabNav({
+  activeTab,
+  onTabChange,
 }: {
-  title: string;
-  description: string;
-  href?: string;
-  colorKey: string;
-  icon: typeof FileQuestion;
-  badge?: string;
-  locked?: boolean;
-  onClick?: () => void;
+  activeTab: HomeTab;
+  onTabChange: (tab: HomeTab) => void;
 }) {
-  const { bg, border } = getTileColors(colorKey);
-
-  const inner = (
-    <>
-      <div
-        className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-b-4"
-        style={{ background: bg, borderColor: border }}
-      >
-        <Icon size={24} strokeWidth={2.5} className="relative text-white" />
-        {locked ? (
-          <span className="absolute bottom-1 right-1 flex h-5 w-5 items-center justify-center rounded-md bg-white/90 text-slate-700">
-            <Lock size={12} strokeWidth={3} />
-          </span>
-        ) : null}
-      </div>
-
-      <div className="min-w-0 flex-1 text-left">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-lg font-extrabold tracking-tight text-slate-800 sm:text-xl">
-            {title}
-          </h2>
-          {badge ? (
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-slate-500">
-              {badge}
-            </span>
-          ) : null}
-        </div>
-        <p className="mt-1 text-sm font-bold text-slate-400">{description}</p>
-      </div>
-
-      <ChevronRight
-        size={22}
-        strokeWidth={3}
-        className="shrink-0 text-slate-300 transition-all duration-150 group-hover:translate-x-1 group-hover:text-[#334155]"
-      />
-    </>
-  );
-
-  const className =
-    "group flex w-full items-center gap-4 rounded-2xl border-2 border-b-4 border-slate-200 bg-white p-5 text-left transition-colors duration-150 hover:bg-slate-50";
-
-  if (href && !locked) {
-    return (
-      <Link href={href} className={className}>
-        {inner}
-      </Link>
-    );
-  }
-
   return (
-    <button type="button" onClick={onClick} className={className}>
-      {inner}
-    </button>
+    <div
+      className="inline-flex rounded-full border border-slate-200 bg-slate-100 p-1"
+      role="tablist"
+      aria-label="DrNote products"
+    >
+      {HOME_TABS.map((tab) => {
+        const active = activeTab === tab.id;
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onTabChange(tab.id)}
+            className={cn(
+              "rounded-full px-5 py-2 text-sm font-extrabold transition-all duration-200 sm:px-6",
+              active
+                ? "bg-emerald-800 text-white shadow-sm"
+                : "text-slate-600 hover:text-slate-900"
+            )}
+          >
+            {tab.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -142,7 +144,7 @@ function QbankPreorderPanel({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-4 sm:items-center">
-      <div className="w-full max-w-md rounded-3xl border-2 border-slate-200 bg-white p-5 shadow-xl sm:p-6">
+      <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-5 shadow-xl sm:p-6">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-extrabold uppercase tracking-wide text-slate-400">
@@ -165,7 +167,7 @@ function QbankPreorderPanel({
         </div>
 
         {done ? (
-          <div className="mt-5 rounded-2xl border-2 border-emerald-200 bg-emerald-50 px-4 py-5 text-center">
+          <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-5 text-center">
             <p className="text-base font-extrabold text-emerald-900">
               You&apos;re on the list
             </p>
@@ -175,7 +177,7 @@ function QbankPreorderPanel({
             <button
               type="button"
               onClick={onClose}
-              className="mt-4 rounded-xl border-2 border-b-4 border-slate-700 bg-slate-700 px-4 py-2 text-sm font-extrabold text-white"
+              className="mt-4 rounded-xl bg-emerald-800 px-4 py-2 text-sm font-extrabold text-white"
             >
               Done
             </button>
@@ -192,7 +194,7 @@ function QbankPreorderPanel({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@school.edu"
-                className="mt-1 w-full rounded-xl border-2 border-slate-200 bg-white px-3 py-2.5 text-sm font-bold text-slate-800 outline-none focus:border-slate-400"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-bold text-slate-800 outline-none focus:border-slate-400"
               />
             </label>
             <label className="block text-left">
@@ -202,7 +204,7 @@ function QbankPreorderPanel({
               <select
                 value={examId}
                 onChange={(e) => setExamId(e.target.value)}
-                className="mt-1 w-full rounded-xl border-2 border-slate-200 bg-white px-3 py-2.5 text-sm font-bold text-slate-800 outline-none focus:border-slate-400"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-bold text-slate-800 outline-none focus:border-slate-400"
               >
                 {EXAMS.map((exam) => (
                   <option key={exam.id} value={exam.id}>
@@ -216,13 +218,320 @@ function QbankPreorderPanel({
             ) : null}
             <button
               type="submit"
-              className="w-full rounded-xl border-2 border-b-4 border-slate-700 bg-slate-700 px-4 py-3 text-sm font-extrabold text-white transition-colors hover:bg-slate-600 active:translate-y-0.5 active:border-b-2"
+              className="w-full rounded-xl bg-emerald-800 px-4 py-3 text-sm font-extrabold text-white transition-colors hover:bg-emerald-700"
             >
               Preorder notify me
             </button>
           </form>
         )}
       </div>
+    </div>
+  );
+}
+
+function CommandPanel({
+  activeTab,
+  query,
+  onQuery,
+  onSubmit,
+}: {
+  activeTab: HomeTab;
+  query: string;
+  onQuery: (value: string) => void;
+  onSubmit: () => void;
+}) {
+  const copy = TAB_COPY[activeTab];
+  const Icon =
+    activeTab === "ask" ? Sparkles : activeTab === "qbank" ? FileQuestion : Search;
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit();
+      }}
+      className="w-full max-w-2xl rounded-2xl border border-dashed border-slate-300 bg-white p-4 shadow-sm transition-shadow focus-within:border-slate-400 focus-within:shadow-md sm:p-5"
+    >
+      <div className="flex items-start gap-3">
+        <Icon
+          size={20}
+          strokeWidth={2.5}
+          className="mt-1 shrink-0 text-slate-400"
+        />
+        <textarea
+          value={query}
+          onChange={(e) => onQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              onSubmit();
+            }
+          }}
+          rows={2}
+          placeholder={copy.placeholder}
+          className="min-h-[3rem] w-full resize-none bg-transparent text-base font-bold text-slate-800 outline-none placeholder:font-bold placeholder:text-slate-400"
+        />
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+        <div className="flex flex-wrap items-center gap-2">
+          {activeTab === "library" ? (
+            <Link
+              href={LIBRARY_PATH}
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-extrabold text-slate-600 transition-colors hover:bg-slate-100"
+            >
+              <BookOpen size={14} strokeWidth={2.5} />
+              Browse all
+            </Link>
+          ) : null}
+          {activeTab === "qbank" ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-extrabold text-slate-600">
+              <FileQuestion size={14} strokeWidth={2.5} />
+              Exam practice
+            </span>
+          ) : null}
+          {activeTab === "ask" ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-extrabold text-slate-600">
+              <Sparkles size={14} strokeWidth={2.5} />
+              Article-grounded
+            </span>
+          ) : null}
+        </div>
+
+        <button
+          type="submit"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-white transition-colors hover:bg-slate-700"
+          aria-label="Submit"
+        >
+          <ArrowRight size={18} strokeWidth={2.5} />
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function LibraryQuickLinks({ query }: { query: string }) {
+  const router = useRouter();
+  const articles = useMemo(
+    () => filterLibraryArticles(query).slice(0, 4),
+    [query]
+  );
+  const specialties = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return MEDICAL_SPECIALTIES.slice(0, 6);
+    return MEDICAL_SPECIALTIES.filter((s) => s.toLowerCase().includes(q)).slice(
+      0,
+      6
+    );
+  }, [query]);
+
+  return (
+    <div className="w-full max-w-2xl space-y-6">
+      {query.trim() && articles.length > 0 ? (
+        <div>
+          <p className="mb-3 text-xs font-extrabold uppercase tracking-wide text-slate-400">
+            Articles
+          </p>
+          <ul className="space-y-2">
+            {articles.map((article) => (
+              <li key={article.id}>
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(`${LIBRARY_PATH}?q=${encodeURIComponent(query)}`)
+                  }
+                  className="group flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-left transition-colors hover:border-slate-300 hover:bg-slate-50"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-extrabold text-slate-800">
+                      {article.title}
+                    </p>
+                    <p className="truncate text-xs font-bold text-slate-400">
+                      {article.subject}
+                    </p>
+                  </div>
+                  <ChevronRight
+                    size={18}
+                    className="shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-slate-500"
+                  />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      <div>
+        <p className="mb-3 text-xs font-extrabold uppercase tracking-wide text-slate-400">
+          {query.trim() ? "Specialties" : "Popular specialties"}
+        </p>
+        <div className="flex flex-wrap justify-center gap-2">
+          {specialties.map((specialty) => (
+            <Link
+              key={specialty}
+              href={LIBRARY_PATH}
+              className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-extrabold text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50"
+            >
+              {specialty}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function QbankQuickLinks({
+  query,
+  canOpenQbank,
+  alreadyJoined,
+  onJoinWaitlist,
+}: {
+  query: string;
+  canOpenQbank: boolean;
+  alreadyJoined: boolean;
+  onJoinWaitlist: () => void;
+}) {
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return EXAMS;
+    return EXAMS.filter(
+      (exam) =>
+        exam.name.toLowerCase().includes(q) ||
+        exam.id.toLowerCase().includes(q)
+    );
+  }, [query]);
+
+  return (
+    <div className="w-full max-w-2xl">
+      <p className="mb-3 text-center text-xs font-extrabold uppercase tracking-wide text-slate-400">
+        {canOpenQbank ? "Your exams" : "Exams coming soon"}
+      </p>
+      <ul className="space-y-2">
+        {filtered.map((exam) => {
+          const locked = !canOpenQbank;
+          const inner = (
+            <>
+              <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-white">
+                <FileQuestion size={20} strokeWidth={2.5} />
+                {locked ? (
+                  <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-white text-slate-700">
+                    <Lock size={10} strokeWidth={3} />
+                  </span>
+                ) : null}
+              </div>
+              <div className="min-w-0 flex-1 text-left">
+                <p className="text-sm font-extrabold text-slate-800">
+                  {exam.name}
+                </p>
+                <p className="text-xs font-bold text-slate-400">
+                  {canOpenQbank
+                    ? "Open practice sets"
+                    : alreadyJoined
+                      ? "On waitlist"
+                      : "Join waitlist"}
+                </p>
+              </div>
+              <ChevronRight size={18} className="shrink-0 text-slate-300" />
+            </>
+          );
+
+          const className =
+            "group relative flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left transition-colors hover:border-slate-300 hover:bg-slate-50";
+
+          if (locked) {
+            return (
+              <li key={exam.id}>
+                <button type="button" onClick={onJoinWaitlist} className={className}>
+                  {inner}
+                </button>
+              </li>
+            );
+          }
+
+          return (
+            <li key={exam.id}>
+              <Link href={examPath(exam.id)} className={className}>
+                {inner}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+
+      {canOpenQbank ? (
+        <div className="mt-4 text-center">
+          <Link
+            href={QBANK_PATH}
+            className="text-sm font-extrabold text-emerald-800 hover:underline"
+          >
+            View all exams
+          </Link>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function AskQuickLinks({ query }: { query: string }) {
+  const router = useRouter();
+  const matches = useMemo(
+    () => filterLibraryArticles(query).slice(0, 3),
+    [query]
+  );
+
+  return (
+    <div className="w-full max-w-2xl space-y-4">
+      <p className="text-center text-sm font-bold text-slate-500">
+        Ask opens inside any Library article — pick a topic to start chatting.
+      </p>
+
+      {query.trim() && matches.length > 0 ? (
+        <ul className="space-y-2">
+          {matches.map((article) => (
+            <li key={article.id}>
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(`${LIBRARY_PATH}?q=${encodeURIComponent(article.title)}`)
+                }
+                className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left transition-colors hover:border-emerald-200 hover:bg-emerald-50/50"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-800 text-white">
+                  <Sparkles size={16} strokeWidth={2.5} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-extrabold text-slate-800">
+                    {article.title}
+                  </p>
+                  <p className="text-xs font-bold text-slate-400">
+                    Open and ask about this topic
+                  </p>
+                </div>
+                <ChevronRight
+                  size={18}
+                  className="shrink-0 text-slate-300 group-hover:text-emerald-700"
+                />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="flex flex-wrap justify-center gap-2">
+          {["Heart failure", "Diabetes", "Pneumonia", "Sepsis"].map((topic) => (
+            <button
+              key={topic}
+              type="button"
+              onClick={() =>
+                router.push(`${LIBRARY_PATH}?q=${encodeURIComponent(topic)}`)
+              }
+              className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-extrabold text-slate-600 transition-colors hover:border-emerald-200 hover:bg-emerald-50"
+            >
+              {topic}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -234,6 +543,9 @@ function ProductHomeBody({
   canOpenQbank: boolean;
   userEmail?: string;
 }) {
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<HomeTab>("library");
+  const [query, setQuery] = useState("");
   const [showPreorder, setShowPreorder] = useState(false);
   const [alreadyJoined, setAlreadyJoined] = useState(false);
 
@@ -241,32 +553,84 @@ function ProductHomeBody({
     if (userEmail && hasQbankPreorder(userEmail)) setAlreadyJoined(true);
   }, [userEmail]);
 
+  useEffect(() => {
+    setQuery("");
+  }, [activeTab]);
+
+  const copy = TAB_COPY[activeTab];
+
+  const handleSubmit = () => {
+    const trimmed = query.trim();
+    if (activeTab === "library") {
+      router.push(
+        trimmed
+          ? `${LIBRARY_PATH}?q=${encodeURIComponent(trimmed)}`
+          : LIBRARY_PATH
+      );
+      return;
+    }
+    if (activeTab === "qbank") {
+      if (canOpenQbank) {
+        const match = EXAMS.find(
+          (exam) =>
+            !trimmed ||
+            exam.name.toLowerCase().includes(trimmed.toLowerCase()) ||
+            exam.id.toLowerCase().includes(trimmed.toLowerCase())
+        );
+        router.push(match ? examPath(match.id) : QBANK_PATH);
+      } else {
+        setShowPreorder(true);
+      }
+      return;
+    }
+    router.push(
+      trimmed
+        ? `${LIBRARY_PATH}?q=${encodeURIComponent(trimmed)}`
+        : LIBRARY_PATH
+    );
+  };
+
   return (
     <>
-      <div className="mx-auto mt-8 grid max-w-xl grid-cols-1 gap-4">
-        <ProductCard
-          title="Library"
-          description="Browse specialties, topics, and clinical articles"
-          href={LIBRARY_PATH}
-          colorKey="Library"
-          icon={BookOpen}
-        />
-        <ProductCard
-          title="Qbank"
-          description={
-            canOpenQbank
-              ? "Private preview — open exam practice"
-              : alreadyJoined
-                ? "You're on the waitlist — we'll email you at launch"
-                : "Coming soon — join the waitlist with your exam"
-          }
-          href={canOpenQbank ? QBANK_PATH : undefined}
-          colorKey="Qbank"
-          icon={FileQuestion}
-          badge={canOpenQbank ? "Preview" : "Coming soon"}
-          locked={!canOpenQbank}
-          onClick={canOpenQbank ? undefined : () => setShowPreorder(true)}
-        />
+      <div className="flex flex-col items-center px-4 pb-16 pt-8 sm:pt-12">
+        <HomeTabNav activeTab={activeTab} onTabChange={setActiveTab} />
+
+        <div
+          className="mt-10 max-w-2xl text-center"
+          role="tabpanel"
+          aria-label={copy.title}
+        >
+          <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-5xl">
+            {copy.title}
+          </h1>
+          <p className="mx-auto mt-3 max-w-lg text-sm font-bold text-slate-500 sm:text-base">
+            {copy.subtitle}
+          </p>
+        </div>
+
+        <div className="mt-8 w-full flex justify-center">
+          <CommandPanel
+            activeTab={activeTab}
+            query={query}
+            onQuery={setQuery}
+            onSubmit={handleSubmit}
+          />
+        </div>
+
+        <div className="mt-10 w-full flex justify-center">
+          {activeTab === "library" ? (
+            <LibraryQuickLinks query={query} />
+          ) : activeTab === "qbank" ? (
+            <QbankQuickLinks
+              query={query}
+              canOpenQbank={canOpenQbank}
+              alreadyJoined={alreadyJoined}
+              onJoinWaitlist={() => setShowPreorder(true)}
+            />
+          ) : (
+            <AskQuickLinks query={query} />
+          )}
+        </div>
       </div>
 
       {showPreorder ? (
@@ -299,32 +663,8 @@ export default function ProductHome() {
   const mounted = useClientMounted();
 
   return (
-    <main className="mx-auto w-full max-w-4xl bg-white px-4 pb-14 sm:px-6">
+    <main className="min-h-screen bg-white">
       <ProductHomeHeader />
-
-      <div className="relative overflow-hidden rounded-3xl border-2 border-slate-200 bg-slate-50 px-6 py-8 sm:px-10 sm:py-10">
-        <span
-          aria-hidden="true"
-          className="absolute -top-6 right-8 select-none text-8xl font-black text-slate-200"
-        >
-          D
-        </span>
-        <span
-          aria-hidden="true"
-          className="absolute -bottom-8 -left-4 select-none text-8xl font-black text-slate-200"
-        >
-          ?
-        </span>
-
-        <div className="relative mx-auto max-w-2xl text-center">
-          <h1 className="text-2xl font-black leading-tight tracking-tight text-slate-900 sm:text-4xl">
-            Study medicine your way
-          </h1>
-          <p className="mx-auto mt-2 max-w-md text-sm font-bold text-slate-500 sm:text-base">
-            Read clinical guides in Library, or practice with Qbank when it launches.
-          </p>
-        </div>
-      </div>
 
       {mounted && clerkEnabled ? (
         <ClerkGatedProducts />

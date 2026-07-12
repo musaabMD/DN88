@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Bookmark, Search } from "lucide-react";
 import { LibraryBrowseShell } from "@/components/library/LibraryBrowseShell";
 import { LibraryGrid, LibraryListCard } from "@/components/library/LibraryListCard";
@@ -584,6 +585,7 @@ function StickyLibrarySearch({
 }
 
 export default function LibraryHome() {
+  const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
   const [activeTab, setActiveTab] = useState<LibraryTab>("browse");
   const [showSuggestModal, setShowSuggestModal] = useState(false);
@@ -601,6 +603,11 @@ export default function LibraryHome() {
   useEffect(() => {
     refreshBookmarks();
   }, []);
+
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q) setQuery(q);
+  }, [searchParams]);
 
   const bookmarkCount =
     specialtyIds.length + topicIds.length + articleIds.length;
