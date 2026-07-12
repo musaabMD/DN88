@@ -6,11 +6,8 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useUser } from "@clerk/clerk-react";
 import {
   ArrowRight,
-  BookOpen,
   ChevronDown,
-  ChevronRight,
   FileQuestion,
-  Lock,
   Search,
   Sparkles,
 } from "lucide-react";
@@ -19,18 +16,20 @@ import { ProductSiteNav } from "@/components/ProductSiteNav";
 import { useClerkEnabled, useClientMounted } from "@/hooks/useClerkEnabled";
 import { DEFAULT_EXAM_ID, EXAMS, getExamById } from "@/lib/exams";
 import { loadCurrentExamId, saveCurrentExamId } from "@/lib/current-exam";
-import { filterLibraryArticles } from "@/lib/mock-data";
+import { entityPathForTopic } from "@/lib/entities";
+import {
+  ALL_SPECIALTY_TOPICS,
+  filterSpecialtyTopics,
+  type SpecialtyTopic,
+} from "@/lib/specialties";
 import {
   hasQbankPreorder,
   isQbankOwnerEmail,
   saveQbankPreorder,
 } from "@/lib/qbank-access";
 import {
-  LIBRARY_PATH,
-  QBANK_PATH,
   examPath,
 } from "@/lib/routes";
-import { MEDICAL_SPECIALTIES } from "@/lib/specialties";
 import { cn } from "@/lib/utils";
 
 type HomeTab = "library" | "qbank" | "ask";
@@ -47,8 +46,8 @@ const TAB_COPY: Record<
 > = {
   library: {
     title: "Browse clinical guides",
-    subtitle: "Specialties, topics, and articles written for study.",
-    placeholder: "Search specialties, topics, or articles…",
+    subtitle: "Search topics or pick one below to open the guide.",
+    placeholder: "Search topic names…",
   },
   qbank: {
     title: "Practice for your exam",
@@ -65,7 +64,7 @@ const TAB_COPY: Record<
 function ProductHomeHeader() {
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-40 border-b border-slate-100 bg-white">
+      <header className="fixed inset-x-0 top-0 z-40 bg-white">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4 sm:px-6">
           <Link href="/" className="flex min-w-0 items-center">
             <DrNoteLogo showWordmark forceWordmark />
@@ -279,6 +278,31 @@ function ExamPicker({
   );
 }
 
+const FEATURED_TOPIC_TITLES = [
+  "Heart failure with reduced ejection fraction",
+  "Diabetes mellitus",
+  "Community-acquired pneumonia",
+  "Sepsis in adults",
+  "Asthma in adults",
+  "Chronic kidney disease",
+  "ST-elevation myocardial infarction",
+  "Established atrial fibrillation",
+] as const;
+
+function featuredTopics(): SpecialtyTopic[] {
+  const byTitle = new Map(
+    ALL_SPECIALTY_TOPICS.map((topic) => [topic.title, topic])
+  );
+  return FEATURED_TOPIC_TITLES.flatMap((title) => {
+    const topic = byTitle.get(title);
+    return topic ? [topic] : [];
+  });
+}
+
+function openTopic(router: ReturnType<typeof useRouter>, topic: SpecialtyTopic) {
+  router.push(entityPathForTopic(topic));
+}
+
 function CommandPanel({
   activeTab,
   query,
@@ -329,17 +353,8 @@ function CommandPanel({
         />
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          {activeTab === "library" ? (
-            <Link
-              href={LIBRARY_PATH}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-extrabold text-slate-600 transition-colors hover:bg-slate-100"
-            >
-              <BookOpen size={14} strokeWidth={2.5} />
-              Browse all
-            </Link>
-          ) : null}
           {activeTab === "qbank" ? (
             <ExamPicker value={selectedExamId} onChange={onExamChange} />
           ) : null}
@@ -369,231 +384,39 @@ function CommandPanel({
   );
 }
 
-function LibraryQuickLinks({ query }: { query: string }) {
-  const router = useRouter();
-  const articles = useMemo(
-    () => filterLibraryArticles(query).slice(0, 4),
-    [query]
-  );
-  const specialties = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return MEDICAL_SPECIALTIES.slice(0, 6);
-    return MEDICAL_SPECIALTIES.filter((s) => s.toLowerCase().includes(q)).slice(
-      0,
-      6
-    );
-  }, [query]);
-
-  return (
-    <div className="w-full max-w-2xl space-y-6">
-      {query.trim() && articles.length > 0 ? (
-        <div>
-          <p className="mb-3 text-xs font-extrabold uppercase tracking-wide text-slate-400">
-            Articles
-          </p>
-          <ul className="space-y-2">
-            {articles.map((article) => (
-              <li key={article.id}>
-                <button
-                  type="button"
-                  onClick={() =>
-                    router.push(`${LIBRARY_PATH}?q=${encodeURIComponent(query)}`)
-                  }
-                  className="group flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-left transition-colors hover:border-slate-300 hover:bg-slate-50"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-extrabold text-slate-800">
-                      {article.title}
-                    </p>
-                    <p className="truncate text-xs font-bold text-slate-400">
-                      {article.subject}
-                    </p>
-                  </div>
-                  <ChevronRight
-                    size={18}
-                    className="shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-slate-500"
-                  />
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-
-      <div>
-        <p className="mb-3 text-xs font-extrabold uppercase tracking-wide text-slate-400">
-          {query.trim() ? "Specialties" : "Popular specialties"}
-        </p>
-        <div className="flex flex-wrap justify-center gap-2">
-          {specialties.map((specialty) => (
-            <Link
-              key={specialty}
-              href={LIBRARY_PATH}
-              className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-extrabold text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50"
-            >
-              {specialty}
-            </Link>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function QbankQuickLinks({
+function TopicQuickLinks({
   query,
-  canOpenQbank,
-  alreadyJoined,
-  selectedExamId,
-  onSelectExam,
+  label,
 }: {
   query: string;
-  canOpenQbank: boolean;
-  alreadyJoined: boolean;
-  selectedExamId: string;
-  onSelectExam: (examId: string) => void;
+  label: string;
 }) {
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return EXAMS;
-    return EXAMS.filter(
-      (exam) =>
-        exam.name.toLowerCase().includes(q) ||
-        exam.id.toLowerCase().includes(q)
-    );
+  const router = useRouter();
+  const topics = useMemo(() => {
+    const q = query.trim();
+    if (q) return filterSpecialtyTopics(q).slice(0, 10);
+    return featuredTopics();
   }, [query]);
+
+  if (topics.length === 0) return null;
 
   return (
     <div className="w-full max-w-2xl">
       <p className="mb-3 text-center text-xs font-extrabold uppercase tracking-wide text-slate-400">
-        {canOpenQbank ? "Your exams" : "Exams coming soon"}
+        {label}
       </p>
-      <ul className="space-y-2">
-        {filtered.map((exam) => {
-          const locked = !canOpenQbank;
-          const isSelected = selectedExamId === exam.id;
-          const inner = (
-            <>
-              <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-white">
-                <FileQuestion size={20} strokeWidth={2.5} />
-                {locked ? (
-                  <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-white text-slate-700">
-                    <Lock size={10} strokeWidth={3} />
-                  </span>
-                ) : null}
-              </div>
-              <div className="min-w-0 flex-1 text-left">
-                <p className="text-sm font-extrabold text-slate-800">
-                  {exam.name}
-                </p>
-                <p className="text-xs font-bold text-slate-400">
-                  {isSelected
-                    ? "Selected — press arrow to start"
-                    : canOpenQbank
-                      ? "Tap to select this exam"
-                      : alreadyJoined
-                        ? "On waitlist"
-                        : "Tap to select, then join waitlist"}
-                </p>
-              </div>
-              <ChevronRight size={18} className="shrink-0 text-slate-300" />
-            </>
-          );
-
-          const className = cn(
-            "group relative flex w-full items-center gap-4 rounded-xl border bg-white px-4 py-3 text-left transition-colors",
-            isSelected
-              ? "border-emerald-300 bg-emerald-50/60"
-              : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-          );
-
-          return (
-            <li key={exam.id}>
-              <button
-                type="button"
-                onClick={() => onSelectExam(exam.id)}
-                className={className}
-              >
-                {inner}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-
-      {canOpenQbank ? (
-        <div className="mt-4 text-center">
-          <Link
-            href={QBANK_PATH}
-            className="text-sm font-extrabold text-emerald-800 hover:underline"
+      <div className="flex flex-wrap justify-center gap-2">
+        {topics.map((topic) => (
+          <button
+            key={topic.id}
+            type="button"
+            onClick={() => openTopic(router, topic)}
+            className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-extrabold text-slate-600 transition-colors hover:border-emerald-200 hover:bg-emerald-50"
           >
-            View all exams
-          </Link>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function AskQuickLinks({ query }: { query: string }) {
-  const router = useRouter();
-  const matches = useMemo(
-    () => filterLibraryArticles(query).slice(0, 3),
-    [query]
-  );
-
-  return (
-    <div className="w-full max-w-2xl space-y-4">
-      <p className="text-center text-sm font-bold text-slate-500">
-        Ask opens inside any Library article — pick a topic to start chatting.
-      </p>
-
-      {query.trim() && matches.length > 0 ? (
-        <ul className="space-y-2">
-          {matches.map((article) => (
-            <li key={article.id}>
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(`${LIBRARY_PATH}?q=${encodeURIComponent(article.title)}`)
-                }
-                className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left transition-colors hover:border-emerald-200 hover:bg-emerald-50/50"
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-800 text-white">
-                  <Sparkles size={16} strokeWidth={2.5} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-extrabold text-slate-800">
-                    {article.title}
-                  </p>
-                  <p className="text-xs font-bold text-slate-400">
-                    Open and ask about this topic
-                  </p>
-                </div>
-                <ChevronRight
-                  size={18}
-                  className="shrink-0 text-slate-300 group-hover:text-emerald-700"
-                />
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <div className="flex flex-wrap justify-center gap-2">
-          {["Heart failure", "Diabetes", "Pneumonia", "Sepsis"].map((topic) => (
-            <button
-              key={topic}
-              type="button"
-              onClick={() =>
-                router.push(`${LIBRARY_PATH}?q=${encodeURIComponent(topic)}`)
-              }
-              className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-extrabold text-slate-600 transition-colors hover:border-emerald-200 hover:bg-emerald-50"
-            >
-              {topic}
-            </button>
-          ))}
-        </div>
-      )}
+            {topic.title}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -635,12 +458,10 @@ function ProductHomeBody({
 
   const handleSubmit = () => {
     const trimmed = query.trim();
-    if (activeTab === "library") {
-      router.push(
-        trimmed
-          ? `${LIBRARY_PATH}?q=${encodeURIComponent(trimmed)}`
-          : LIBRARY_PATH
-      );
+    if (activeTab === "library" || activeTab === "ask") {
+      if (!trimmed) return;
+      const match = filterSpecialtyTopics(trimmed)[0];
+      if (match) openTopic(router, match);
       return;
     }
     if (activeTab === "qbank") {
@@ -653,11 +474,6 @@ function ProductHomeBody({
       }
       return;
     }
-    router.push(
-      trimmed
-        ? `${LIBRARY_PATH}?q=${encodeURIComponent(trimmed)}`
-        : LIBRARY_PATH
-    );
   };
 
   return (
@@ -690,21 +506,20 @@ function ProductHomeBody({
           />
         </div>
 
-        <div className="mt-10 w-full flex justify-center">
-          {activeTab === "library" ? (
-            <LibraryQuickLinks query={query} />
-          ) : activeTab === "qbank" ? (
-            <QbankQuickLinks
+        {activeTab !== "qbank" ? (
+          <div className="mt-10 w-full flex justify-center">
+            <TopicQuickLinks
               query={query}
-              canOpenQbank={canOpenQbank}
-              alreadyJoined={alreadyJoined}
-              selectedExamId={selectedExamId}
-              onSelectExam={handleExamChange}
+              label={
+                query.trim()
+                  ? "Matching topics"
+                  : activeTab === "ask"
+                    ? "Popular topics to ask about"
+                    : "Popular topics"
+              }
             />
-          ) : (
-            <AskQuickLinks query={query} />
-          )}
-        </div>
+          </div>
+        ) : null}
       </div>
 
       {showPreorder ? (
