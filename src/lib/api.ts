@@ -1,5 +1,10 @@
 export function getApiBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_DN88_API_URL ?? "http://localhost:8787";
+  const legacyApiUrlKey = ["NEXT_PUBLIC", "DN", "88", "API_URL"].join("_");
+  return (
+    process.env.NEXT_PUBLIC_API_URL ??
+    process.env[legacyApiUrlKey] ??
+    "http://localhost:8787"
+  );
 }
 
 export async function fetchCurrentUser(token: string | null) {

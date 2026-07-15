@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "syncedAt": "2026-07-15T11:50:01.733Z",
+  "syncedAt": "2026-07-15T12:07:29.392Z",
   "articles": [
     {
       "id": "drnote-anatomy-abdominal-cavity-001",
@@ -2968,7 +2968,7 @@
       "slug": "hypoparathyroidism",
       "subject": "Endocrinology and metabolic disorders",
       "title": "Hypoparathyroidism",
-      "readMinutes": 9,
+      "readMinutes": 10,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -3788,7 +3788,7 @@
       "slug": "hepatitis-b",
       "subject": "Gastroenterology",
       "title": "Hepatitis B",
-      "readMinutes": 9,
+      "readMinutes": 10,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -4478,7 +4478,7 @@
       "slug": "thalassemia",
       "subject": "Hematology",
       "title": "Thalassemia",
-      "readMinutes": 9,
+      "readMinutes": 10,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -4738,7 +4738,7 @@
       "slug": "anorectal-abscess-and-fistula",
       "subject": "infectious-diseases",
       "title": "Anorectal abscess and fistula",
-      "readMinutes": 10,
+      "readMinutes": 11,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -6408,7 +6408,7 @@
       "slug": "fistulas",
       "subject": "Internal medicine",
       "title": "Fistulas",
-      "readMinutes": 9,
+      "readMinutes": 10,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -9398,7 +9398,7 @@
       "slug": "hydrocephalus",
       "subject": "Neurology",
       "title": "Hydrocephalus",
-      "readMinutes": 9,
+      "readMinutes": 10,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -9808,7 +9808,7 @@
       "slug": "vertigo",
       "subject": "Neurology",
       "title": "Vertigo",
-      "readMinutes": 9,
+      "readMinutes": 10,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -9918,7 +9918,7 @@
       "slug": "abnormal-uterine-bleeding",
       "subject": "obstetrics-gynecology",
       "title": "Abnormal uterine bleeding",
-      "readMinutes": 10,
+      "readMinutes": 11,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -10918,7 +10918,7 @@
       "slug": "ankle-fracture",
       "subject": "orthopedics",
       "title": "Ankle fracture",
-      "readMinutes": 9,
+      "readMinutes": 10,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -11098,7 +11098,7 @@
       "slug": "hip-fractures",
       "subject": "orthopedics",
       "title": "Hip fractures",
-      "readMinutes": 9,
+      "readMinutes": 10,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -11678,7 +11678,7 @@
       "slug": "laryngitis",
       "subject": "otolaryngology",
       "title": "Laryngitis",
-      "readMinutes": 9,
+      "readMinutes": 10,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -13488,7 +13488,7 @@
       "slug": "asthma",
       "subject": "pulmonology",
       "title": "Asthma",
-      "readMinutes": 9,
+      "readMinutes": 10,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -13568,7 +13568,7 @@
       "slug": "hemoptysis",
       "subject": "pulmonology",
       "title": "Hemoptysis",
-      "readMinutes": 9,
+      "readMinutes": 10,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -13668,7 +13668,7 @@
       "slug": "pneumothorax",
       "subject": "pulmonology",
       "title": "Pneumothorax",
-      "readMinutes": 9,
+      "readMinutes": 10,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },

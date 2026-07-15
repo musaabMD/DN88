@@ -1,5 +1,5 @@
 /**
- * Clerk runs on the custom domain (drnote.co) only — not on dn88.pages.dev.
+ * Clerk runs on the custom domain (drnote.co) only, not preview domains.
  */
 
 export const CLERK_CUSTOM_DOMAIN =

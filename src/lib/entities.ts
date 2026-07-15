@@ -2,7 +2,7 @@
  * Medical knowledge graph — entities, relationships, and canonical URLs.
  *
  * Articles are synced from an external catalog (see scripts/refresh-catalog.mjs),
- * not from the DN88 worker (which handles auth/billing only).
+ * not from the auth/billing worker.
  */
 
 import {

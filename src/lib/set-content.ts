@@ -93,9 +93,9 @@ export type LibraryArticle = {
   readMinutes: number;
   updated: string;
   sections: LibraryArticleSection[];
-  /** DL88 frontmatter slug — used for entity URL resolution. */
+  /** Source frontmatter slug, used for entity URL resolution. */
   slug?: string;
-  /** DL88 public slug (specialty-topic) — matches Worker catalog lookup. */
+  /** Public slug (specialty-topic), used for catalog lookup. */
   publicSlug?: string;
   highYield?: string;
   /** Condensed summary for library study mode (not exam sets). */
