@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+function optionalTextField() {
+  return z.preprocess(
+    (value) => (value == null || value === "" ? undefined : value),
+    z.string().min(1).optional()
+  );
+}
+
 export const frontmatterSchema = z
   .object({
     id: z.string().min(1, "id is required"),
@@ -12,7 +19,7 @@ export const frontmatterSchema = z
     specialty: z.string().min(1, "specialty is required").optional(),
     updated_at: z.string().min(1, "updated_at is required").optional(),
     updated: z.string().min(1).optional(),
-    subspecialty: z.string().min(1).optional(),
+    subspecialty: optionalTextField(),
     tags: z.array(z.string().min(1)).optional(),
     provenance: z.unknown().optional(),
     status: z.string().optional(),

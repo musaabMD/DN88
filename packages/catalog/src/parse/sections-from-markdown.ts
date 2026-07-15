@@ -14,6 +14,7 @@ export type SectionParseResult = {
 type SectionDraft = {
   heading: string;
   startOffset: number;
+  bodyStartOffset: number;
   endOffset?: number;
 };
 
@@ -33,11 +34,21 @@ export function parseSectionsFromMarkdown(
     if (isRootLevelH2(node)) {
       const position = node.position;
       const startOffset = position?.start?.offset;
+      const bodyStartOffset = position?.end?.offset;
       if (startOffset == null) {
         warnings.push({
           code: "sections.missing_position",
           severity: "warning",
           message: `Section heading "${extractHeadingText(node)}" has no source position`,
+          sourcePath,
+        });
+        continue;
+      }
+      if (bodyStartOffset == null) {
+        warnings.push({
+          code: "sections.missing_position",
+          severity: "warning",
+          message: `Section heading "${extractHeadingText(node)}" has no end position`,
           sourcePath,
         });
         continue;
@@ -55,6 +66,7 @@ export function parseSectionsFromMarkdown(
       drafts.push({
         heading: extractHeadingText(node),
         startOffset,
+        bodyStartOffset,
       });
       continue;
     }
@@ -106,7 +118,7 @@ export function parseSectionsFromMarkdown(
 
   const sections: ParsedSection[] = drafts.map((draft, index) => {
     const end = draft.endOffset ?? markdown.length;
-    const bodyMarkdown = markdown.slice(draft.startOffset, end).trim();
+    const bodyMarkdown = markdown.slice(draft.bodyStartOffset, end).trim();
 
     return {
       id: sectionIds[index] ?? `section-${index + 1}`,

@@ -155,7 +155,6 @@ async function main() {
   const payload = {
     version: 1,
     syncedAt: new Date().toISOString(),
-    source: repoRoot,
     articles: publishable.map(toLibraryArticle),
   };
 

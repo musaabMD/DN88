@@ -1,8 +1,9 @@
 import { TopicEntityPageClient } from "@/components/library/EntityPageClient";
 import { ENTITY_PLACEHOLDER_SLUG } from "@/lib/entities";
+import { getAllTopicStaticParams } from "@/lib/specialties";
 
 export function generateStaticParams() {
-  return [{ topicId: ENTITY_PLACEHOLDER_SLUG }];
+  return [{ topicId: ENTITY_PLACEHOLDER_SLUG }, ...getAllTopicStaticParams()];
 }
 
 export default async function TopicPage({
