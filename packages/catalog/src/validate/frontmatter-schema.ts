@@ -7,16 +7,18 @@ export const frontmatterSchema = z
     slug: z
       .string()
       .min(1, "slug is required")
-      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "slug must be kebab-case"),
-    specialty: z.string().min(1, "specialty is required"),
-    updated_at: z.string().min(1, "updated_at is required"),
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "slug must be kebab-case")
+      .optional(),
+    specialty: z.string().min(1, "specialty is required").optional(),
+    updated_at: z.string().min(1, "updated_at is required").optional(),
+    updated: z.string().min(1).optional(),
     subspecialty: z.string().min(1).optional(),
     tags: z.array(z.string().min(1)).optional(),
     provenance: z.unknown().optional(),
     status: z.string().optional(),
     ai_status: z.string().optional(),
   })
-  .strict();
+  .strip();
 
 export type ArticleFrontmatter = z.infer<typeof frontmatterSchema>;
 

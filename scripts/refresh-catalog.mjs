@@ -130,8 +130,17 @@ async function main() {
   );
 
   console.log(
-    `[catalog] DL88 stats: discovered=${importResult.discovered} complete=${importResult.complete} partial=${importResult.partial} scaffold=${importResult.scaffold} publishable=${publishable.length}`
+    `[catalog] DL88 stats: discovered=${importResult.discovered} invalid=${importResult.invalid} complete=${importResult.complete} partial=${importResult.partial} scaffold=${importResult.scaffold} publishable=${publishable.length}`
   );
+
+  if (publishable.length === 0 && importResult.invalidPaths.length > 0) {
+    for (const sample of importResult.invalidPaths.slice(0, 3)) {
+      const err = sample.errors[0];
+      console.warn(
+        `[catalog] Invalid sample: ${sample.sourcePath} — ${err?.code ?? "?"}: ${err?.message ?? "unknown"}`
+      );
+    }
+  }
 
   if (publishable.length === 0) {
     if (existing?.articles?.length) {
