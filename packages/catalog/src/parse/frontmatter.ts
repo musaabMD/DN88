@@ -21,6 +21,21 @@ const IGNORED_FRONTMATTER_KEYS = new Set([
   "ai_status",
 ]);
 
+function normalizeFrontmatterValue(value: unknown): unknown {
+  if (value instanceof Date) {
+    return value.toISOString().slice(0, 10);
+  }
+  return value;
+}
+
+function normalizeFrontmatterData(
+  data: Record<string, unknown>
+): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(data).map(([key, value]) => [key, normalizeFrontmatterValue(value)])
+  );
+}
+
 export function parseFrontmatter(
   raw: string,
   sourcePath: string
@@ -43,7 +58,7 @@ export function parseFrontmatter(
     };
   }
 
-  const result = frontmatterSchema.safeParse(parsed.data);
+  const result = frontmatterSchema.safeParse(normalizeFrontmatterData(parsed.data));
   if (!result.success) {
     return {
       ok: false,
