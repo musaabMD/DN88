@@ -5,8 +5,10 @@
  * not from the DN88 worker (which handles auth/billing only).
  */
 
-import { LIBRARY_ARTICLES } from "@/lib/catalog-bundle";
-import type { LibraryArticle } from "@/lib/set-content";
+import {
+  LIBRARY_ARTICLE_INDEX,
+  type CatalogArticleIndexItem,
+} from "@/lib/catalog-index";
 import {
   ALL_SPECIALTY_TOPICS,
   getTopicById,
@@ -99,7 +101,7 @@ export function entityPathForTopic(topic: SpecialtyTopic): string {
 }
 
 export function entityPathForArticle(
-  article: Pick<LibraryArticle, "title" | "subject">
+  article: Pick<CatalogArticleIndexItem, "title" | "subject">
 ): string {
   const kind = classifyEntityKind(article.title, article.subject);
   const slug = entitySlugFromTopicTitle(article.title);
@@ -120,12 +122,12 @@ export function entityPathForCatalogArticle(article: {
 /** Resolve a published article by legacy id, entity slug, public slug, or title slug. */
 export function resolveLibraryArticle(
   slugOrId: string
-): LibraryArticle | undefined {
-  const direct = LIBRARY_ARTICLES.find((a) => a.id === slugOrId);
+): CatalogArticleIndexItem | undefined {
+  const direct = LIBRARY_ARTICLE_INDEX.find((a) => a.id === slugOrId);
   if (direct) return direct;
 
   const normalized = slugOrId.toLowerCase();
-  return LIBRARY_ARTICLES.find((article) => {
+  return LIBRARY_ARTICLE_INDEX.find((article) => {
     if (article.id.toLowerCase() === normalized) return true;
     if (article.publicSlug?.toLowerCase() === normalized) return true;
     if (article.slug?.toLowerCase() === normalized) return true;
@@ -159,7 +161,7 @@ function buildEntityRegistry(): Map<string, EntityNode> {
     });
   }
 
-  for (const article of LIBRARY_ARTICLES) {
+  for (const article of LIBRARY_ARTICLE_INDEX) {
     const kind = classifyEntityKind(article.title, article.subject);
     const slug = entitySlugFromTopicTitle(article.title);
     const key = `${kind}:${slug}`;
@@ -299,7 +301,7 @@ export function getTopicRedirectMap(): Array<{ from: string; to: string }> {
 }
 
 export function getArticleRedirectMap(): Array<{ from: string; to: string }> {
-  return LIBRARY_ARTICLES.map((article) => ({
+  return LIBRARY_ARTICLE_INDEX.map((article) => ({
     from: `/library/articles/${article.id}`,
     to: entityPathForArticle(article),
   }));
@@ -310,7 +312,7 @@ export function getPublishedArticleStaticParams(): Array<{ articleId: string }> 
   const seen = new Set<string>([ENTITY_PLACEHOLDER_SLUG]);
   const params = [{ articleId: ENTITY_PLACEHOLDER_SLUG }];
 
-  for (const article of LIBRARY_ARTICLES) {
+  for (const article of LIBRARY_ARTICLE_INDEX) {
     if (seen.has(article.id)) continue;
     seen.add(article.id);
     params.push({ articleId: article.id });

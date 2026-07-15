@@ -18,7 +18,6 @@ import {
 import {
   ENTITY_PLACEHOLDER_SLUG,
   getEntity,
-  resolveLibraryArticle,
 } from "@/lib/entities";
 import { getCreatedPageById } from "@/lib/pages/create-page-store";
 import type { LibraryArticle as LibraryArticleType } from "@/lib/set-content";
@@ -54,8 +53,7 @@ export function LibraryArticleClient({ articleId }: { articleId: string }) {
       ? (pathname.match(/^\/library\/articles\/([^/]+)/)?.[1] ?? "")
       : articleId;
 
-  const bundled = resolveLibraryArticle(resolvedArticleId);
-  const created = !bundled ? getCreatedPageById(resolvedArticleId) : undefined;
+  const created = getCreatedPageById(resolvedArticleId);
 
   const [apiArticle, setApiArticle] = useState<LibraryArticleType | null>(null);
   const [loading, setLoading] = useState(isCatalogApiEnabled());
@@ -73,7 +71,7 @@ export function LibraryArticleClient({ articleId }: { articleId: string }) {
     };
   }, [resolvedArticleId]);
 
-  const resolved = apiArticle ?? bundled ?? (created ? createdPageToArticle(created) : undefined);
+  const resolved = apiArticle ?? (created ? createdPageToArticle(created) : undefined);
 
   const backToLibrary = () => router.push(LIBRARY_PATH);
 

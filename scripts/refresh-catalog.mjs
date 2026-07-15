@@ -13,6 +13,8 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 const OUT_FILE = join(ROOT, "src", "generated", "catalog.json");
+const INDEX_FILE = join(ROOT, "src", "generated", "catalog-index.json");
+const PUBLIC_CATALOG_DIR = join(ROOT, "public", "catalog");
 const CACHE_DIR = join(ROOT, ".catalog-sync");
 const FIXTURE_ROOT = join(ROOT, "tests", "fixtures", "dl88-mini");
 
@@ -82,6 +84,33 @@ function toLibraryArticle(article) {
       id: section.id,
       heading: section.heading,
       body: section.bodyMarkdown,
+    })),
+  };
+}
+
+function toCatalogSummary(article) {
+  return {
+    id: article.id,
+    publicSlug: article.publicSlug,
+    slug: article.slug,
+    subject: article.subject,
+    title: article.title,
+    readMinutes: article.readMinutes,
+    updated: formatUpdated(article.updatedAt),
+    updatedAt: article.updatedAt,
+  };
+}
+
+function toPublicArticleDetail(article) {
+  return {
+    ...toCatalogSummary(article),
+    specialty: article.specialty,
+    preambleMarkdown: article.preambleMarkdown ?? null,
+    sections: article.sections.map((section) => ({
+      id: section.id,
+      heading: section.heading,
+      bodyMarkdown: section.bodyMarkdown,
+      sortOrder: section.sortOrder,
     })),
   };
 }
@@ -159,6 +188,27 @@ async function main() {
   };
 
   writeFileSync(OUT_FILE, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+  const indexPayload = {
+    version: payload.version,
+    syncedAt: payload.syncedAt,
+    articles: publishable.map(toCatalogSummary),
+  };
+  writeFileSync(INDEX_FILE, `${JSON.stringify(indexPayload, null, 2)}\n`, "utf8");
+
+  rmSync(PUBLIC_CATALOG_DIR, { recursive: true, force: true });
+  mkdirSync(join(PUBLIC_CATALOG_DIR, "articles"), { recursive: true });
+  writeFileSync(
+    join(PUBLIC_CATALOG_DIR, "index.json"),
+    `${JSON.stringify(indexPayload)}\n`,
+    "utf8"
+  );
+  for (const article of publishable) {
+    writeFileSync(
+      join(PUBLIC_CATALOG_DIR, "articles", `${article.id}.json`),
+      `${JSON.stringify(toPublicArticleDetail(article))}\n`,
+      "utf8"
+    );
+  }
   console.log(
     `[catalog] Wrote ${payload.articles.length} article(s) to src/generated/catalog.json`
   );

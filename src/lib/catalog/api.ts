@@ -6,6 +6,8 @@ import type {
   CatalogState,
 } from "@/lib/catalog/types";
 
+let staticIndexCache: CatalogArticleSummary[] | null = null;
+
 function catalogEnabled(): boolean {
   if (process.env.DEMO_MODE === "true") return false;
   return process.env.NEXT_PUBLIC_CATALOG_API_ENABLED !== "false";
@@ -51,12 +53,16 @@ export async function fetchPublicArticles(): Promise<{
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return { articles: [], syncState: "unavailable" };
-    return res.json() as Promise<{
+    const data = (await res.json()) as {
       articles: CatalogArticleSummary[];
       syncState: CatalogState["syncState"];
-    }>;
+    };
+    if (!data.articles?.length) {
+      return { articles: await fetchStaticArticleIndex(), syncState: data.syncState };
+    }
+    return data;
   } catch {
-    return { articles: [], syncState: "unavailable" };
+    return { articles: await fetchStaticArticleIndex(), syncState: "fresh" };
   }
 }
 
@@ -69,10 +75,10 @@ export async function fetchPublicArticle(
       `${getApiBaseUrl()}/api/catalog/articles/${encodeURIComponent(slug)}`,
       { signal: AbortSignal.timeout(8000) }
     );
-    if (!res.ok) return null;
+    if (!res.ok) return fetchStaticArticle(slug);
     return res.json() as Promise<CatalogArticleDetail>;
   } catch {
-    return null;
+    return fetchStaticArticle(slug);
   }
 }
 
@@ -89,7 +95,70 @@ export async function searchCatalog(
     const data = (await res.json()) as { results: CatalogArticleSummary[] };
     return data.results;
   } catch {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    return (await fetchStaticArticleIndex())
+      .filter(
+        (article) =>
+          article.title.toLowerCase().includes(q) ||
+          article.publicSlug.toLowerCase().includes(q) ||
+          article.slug.toLowerCase().includes(q) ||
+          (article.subject ?? "").toLowerCase().includes(q)
+      )
+      .slice(0, 50);
+  }
+}
+
+async function fetchStaticArticleIndex(): Promise<CatalogArticleSummary[]> {
+  if (staticIndexCache) return staticIndexCache;
+  try {
+    const res = await fetch("/catalog/index.json", {
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { articles: CatalogArticleSummary[] };
+    staticIndexCache = data.articles ?? [];
+    return staticIndexCache;
+  } catch {
     return [];
+  }
+}
+
+function entitySlugFromTitle(title: string): string {
+  const assessment = title.match(/^Assessment of (.+)$/i);
+  const overview = title.match(/^Overview of (.+)$/i);
+  const base = assessment?.[1] ?? overview?.[1] ?? title;
+  return base
+    .trim()
+    .toLowerCase()
+    .replace(/['']/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+async function fetchStaticArticle(
+  slug: string
+): Promise<CatalogArticleDetail | null> {
+  const normalized = slug.toLowerCase();
+  const match = (await fetchStaticArticleIndex()).find((article) => {
+    return (
+      article.id.toLowerCase() === normalized ||
+      article.publicSlug.toLowerCase() === normalized ||
+      article.slug.toLowerCase() === normalized ||
+      entitySlugFromTitle(article.title) === normalized
+    );
+  });
+
+  if (!match) return null;
+
+  try {
+    const res = await fetch(`/catalog/articles/${encodeURIComponent(match.id)}.json`, {
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return null;
+    return res.json() as Promise<CatalogArticleDetail>;
+  } catch {
+    return null;
   }
 }
 

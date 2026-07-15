@@ -26,7 +26,6 @@ import {
   entitySlugFromPathname,
   entitySlugFromTopicTitle,
   getEntity,
-  resolveLibraryArticle,
   type EntityKind,
 } from "@/lib/entities";
 import { isTopicBookmarked, toggleTopicBookmark } from "@/lib/library-bookmarks";
@@ -51,13 +50,6 @@ export function EntityPageClient({ kind, slug }: EntityPageClientProps) {
   const [apiArticle, setApiArticle] = useState<LibraryArticleType | null>(null);
   const [apiLoading, setApiLoading] = useState(false);
   const [apiChecked, setApiChecked] = useState(!isCatalogApiEnabled());
-
-  const bundledArticle =
-    resolveLibraryArticle(resolvedSlug) ??
-    (entity?.articleId ? resolveLibraryArticle(entity.articleId) : undefined) ??
-    (entity?.title
-      ? resolveLibraryArticle(entitySlugFromTopicTitle(entity.title))
-      : undefined);
 
   useEffect(() => {
     if (!isCatalogApiEnabled()) return;
@@ -113,7 +105,7 @@ export function EntityPageClient({ kind, slug }: EntityPageClientProps) {
     };
   }, [resolvedSlug, entity?.title]);
 
-  const article = apiArticle ?? bundledArticle ?? undefined;
+  const article = apiArticle ?? undefined;
 
   const displayTitle =
     article?.title ??

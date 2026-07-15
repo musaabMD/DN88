@@ -1,8 +1,13 @@
 import type { SerializableCitation } from "@/components/tool-ui/citation";
-import { LIBRARY_ARTICLES } from "@/lib/catalog-bundle";
+import { LIBRARY_ARTICLE_INDEX } from "@/lib/catalog-index";
 import type { ContentTab } from "@/lib/routes";
 
-export { LIBRARY_ARTICLES };
+const LIBRARY_ARTICLES_FROM_INDEX = LIBRARY_ARTICLE_INDEX.map((article) => ({
+  ...article,
+  sections: [],
+}));
+
+export const LIBRARY_ARTICLES: LibraryArticle[] = LIBRARY_ARTICLES_FROM_INDEX;
 
 export type StudySet = {
   id: string;
@@ -687,12 +692,16 @@ export function getSetById(tab: string, setId: string): StudySet | undefined {
   return (SETS_BY_TAB[tab] ?? []).find((set) => set.id === setId);
 }
 
-import { resolveLibraryArticle as resolveArticleBySlug } from "@/lib/entities";
-
 export function getLibraryArticleById(
   articleId: string
 ): LibraryArticle | undefined {
-  return resolveArticleBySlug(articleId);
+  const normalized = articleId.toLowerCase();
+  return LIBRARY_ARTICLES.find(
+    (article) =>
+      article.id.toLowerCase() === normalized ||
+      article.publicSlug?.toLowerCase() === normalized ||
+      article.slug?.toLowerCase() === normalized
+  );
 }
 
 export function filterLibraryArticles(
