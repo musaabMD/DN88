@@ -1,0 +1,5 @@
+/catalog/index.json
+  Cache-Control: public, max-age=0, must-revalidate
+
+/catalog/articles/*.json
+  Cache-Control: public, max-age=0, must-revalidate
