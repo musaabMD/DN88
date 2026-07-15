@@ -194,6 +194,49 @@ export function getEntity(
   return ENTITY_REGISTRY.get(`${kind}:${slug.toLowerCase()}`);
 }
 
+export type DedupedTopicResult = {
+  topic: SpecialtyTopic;
+  specialties: MedicalSpecialty[];
+  entityKey: string;
+};
+
+/** Collapse duplicate specialty-topic rows that map to the same canonical entity. */
+export function dedupeTopicsForSearch(
+  topics: SpecialtyTopic[]
+): DedupedTopicResult[] {
+  const map = new Map<string, DedupedTopicResult>();
+
+  for (const topic of topics) {
+    const kind = classifyEntityKind(topic.title);
+    const slug = entitySlugFromTopicTitle(topic.title);
+    const entityKey = `${kind}:${slug}`;
+
+    const existing = map.get(entityKey);
+    if (!existing) {
+      map.set(entityKey, {
+        topic,
+        specialties: [topic.specialty],
+        entityKey,
+      });
+      continue;
+    }
+
+    if (!existing.specialties.includes(topic.specialty)) {
+      existing.specialties.push(topic.specialty);
+    }
+  }
+
+  return [...map.values()];
+}
+
+export function formatTopicSpecialtyMeta(
+  specialties: MedicalSpecialty[]
+): string {
+  if (specialties.length <= 1) return specialties[0] ?? "";
+  if (specialties.length === 2) return `${specialties[0]} · ${specialties[1]}`;
+  return `${specialties.length} specialties`;
+}
+
 export function getAllEntities(kind?: EntityKind): EntityNode[] {
   const nodes = [...ENTITY_REGISTRY.values()];
   return kind ? nodes.filter((n) => n.kind === kind) : nodes;

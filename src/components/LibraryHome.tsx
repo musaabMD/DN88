@@ -32,6 +32,8 @@ import {
   entityPathForCatalogArticle,
   entityPathForTopic,
   entitySlugFromTopicTitle,
+  dedupeTopicsForSearch,
+  formatTopicSpecialtyMeta,
 } from "@/lib/entities";
 import {
   fetchPublicArticles,
@@ -198,16 +200,21 @@ function TopicCard({
   topic,
   query,
   onBookmarkChange,
+  meta,
+  bookmarkKey,
 }: {
   topic: SpecialtyTopic;
   query: string;
   onBookmarkChange?: () => void;
+  meta?: string;
+  bookmarkKey?: string;
 }) {
   const href = entityPathForTopic(topic);
+  const resolvedBookmarkKey = bookmarkKey ?? topic.id;
   const { bookmarked, toggleBookmark } = useBookmark(
-    () => isTopicBookmarked(topic.id),
-    () => toggleTopicBookmark(topic.id),
-    [topic.id]
+    () => isTopicBookmarked(resolvedBookmarkKey),
+    () => toggleTopicBookmark(resolvedBookmarkKey),
+    [resolvedBookmarkKey]
   );
 
   return (
@@ -215,6 +222,7 @@ function TopicCard({
       href={href}
       seed={topic.specialty}
       title={<HighlightText text={topic.title} query={query} />}
+      meta={meta}
       trailing={
         <BookmarkButton
           bookmarked={bookmarked}
@@ -228,6 +236,17 @@ function TopicCard({
       }
     />
   );
+}
+
+function dedupeCatalogArticles(
+  articles: CatalogArticleSummary[]
+): CatalogArticleSummary[] {
+  const seen = new Map<string, CatalogArticleSummary>();
+  for (const article of articles) {
+    const key = article.publicSlug || article.id;
+    if (!seen.has(key)) seen.set(key, article);
+  }
+  return [...seen.values()];
 }
 
 function ArticleCard({
@@ -578,12 +597,16 @@ function SearchAllResults({
   }
 
   const articleCards = useCatalog
-    ? (articles as CatalogArticleSummary[]).map(catalogToCardProps)
+    ? dedupeCatalogArticles(articles as CatalogArticleSummary[]).map(
+        catalogToCardProps
+      )
     : (articles as ReturnType<typeof bundledToCardProps>[]);
+
+  const dedupedTopics = dedupeTopicsForSearch(topics);
 
   if (
     specialties.length === 0 &&
-    topics.length === 0 &&
+    dedupedTopics.length === 0 &&
     articleCards.length === 0
   ) {
     return (
@@ -644,17 +667,19 @@ function SearchAllResults({
         </section>
       ) : null}
 
-      {topics.length > 0 ? (
+      {dedupedTopics.length > 0 ? (
         <section>
           <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-400">
             Topics
           </h2>
           <LibraryGrid>
-            {topics.map((topic) => (
+            {dedupedTopics.map(({ topic, specialties, entityKey }) => (
               <TopicCard
-                key={topic.id}
+                key={entityKey}
                 topic={topic}
                 query={query}
+                meta={formatTopicSpecialtyMeta(specialties)}
+                bookmarkKey={entityKey}
                 onBookmarkChange={onBookmarkChange}
               />
             ))}
@@ -732,7 +757,12 @@ function BookmarksTab({
     ? catalogBookmarked.map(catalogToCardProps)
     : bundledBookmarked.map(bundledToCardProps);
 
-  if (specialties.length === 0 && topics.length === 0 && articles.length === 0) {
+  const dedupedTopics = useMemo(
+    () => dedupeTopicsForSearch(topics),
+    [topics]
+  );
+
+  if (specialties.length === 0 && dedupedTopics.length === 0 && articles.length === 0) {
     return (
       <LibraryEmptyState
         title="No bookmarks yet"
@@ -780,17 +810,19 @@ function BookmarksTab({
         </section>
       ) : null}
 
-      {topics.length > 0 ? (
+      {dedupedTopics.length > 0 ? (
         <section>
           <h2 className="mb-3 text-xs font-extrabold uppercase tracking-wide text-slate-400">
             Topics
           </h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {topics.map((topic) => (
+            {dedupedTopics.map(({ topic, specialties, entityKey }) => (
               <TopicCard
-                key={topic.id}
+                key={entityKey}
                 topic={topic}
                 query={query}
+                meta={formatTopicSpecialtyMeta(specialties)}
+                bookmarkKey={entityKey}
                 onBookmarkChange={onBookmarkChange}
               />
             ))}
