@@ -39,6 +39,7 @@ jobs:
           command: deploy -c workers/dn88/wrangler.jsonc
 
       - name: Set Worker Clerk secrets
+        continue-on-error: true
         run: |
           printf '%s' "$CLERK_SECRET_KEY" | npx wrangler secret put CLERK_SECRET_KEY -c workers/dn88/wrangler.jsonc
           printf '%s' "$CLERK_PUBLISHABLE_KEY" | npx wrangler secret put CLERK_PUBLISHABLE_KEY -c workers/dn88/wrangler.jsonc
