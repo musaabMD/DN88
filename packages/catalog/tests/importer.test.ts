@@ -61,6 +61,24 @@ Body`;
     expect(result.ok).toBe(true);
   });
 
+  it("accepts YAML date values for updated_at", () => {
+    const raw = `---
+id: test-id
+title: Test
+slug: test-article
+specialty: cardiology
+updated_at: 2026-06-15
+---
+
+Body`;
+
+    const result = parseFrontmatter(raw, "dated.md");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.updated_at).toBe("2026-06-15");
+    }
+  });
+
   it("strips unknown frontmatter keys instead of rejecting", () => {
     const raw = `---
 id: test-id
