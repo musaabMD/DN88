@@ -12,7 +12,7 @@ import {
   isQbankOwnerEmail,
   saveQbankPreorder,
 } from "@/lib/qbank-access";
-import { HOME_PATH, LIBRARY_PATH } from "@/lib/routes";
+import { HOME_PATH } from "@/lib/routes";
 
 function QbankComingSoon({ defaultEmail }: { defaultEmail?: string }) {
   const [email, setEmail] = useState(defaultEmail ?? "");
@@ -67,12 +67,6 @@ function QbankComingSoon({ defaultEmail }: { defaultEmail?: string }) {
             <p className="mt-1 text-sm font-bold text-emerald-700">
               We saved your email and exam preference.
             </p>
-            <Link
-              href={LIBRARY_PATH}
-              className="mt-4 inline-flex rounded-xl border-2 border-b-4 border-slate-700 bg-slate-700 px-4 py-2 text-sm font-extrabold text-white"
-            >
-              Browse Library
-            </Link>
           </div>
         ) : (
           <form onSubmit={submit} className="mt-8 w-full space-y-3 text-left">
@@ -114,12 +108,6 @@ function QbankComingSoon({ defaultEmail }: { defaultEmail?: string }) {
             >
               Notify me at launch
             </button>
-            <Link
-              href={LIBRARY_PATH}
-              className="block text-center text-sm font-extrabold text-slate-500 hover:text-slate-800"
-            >
-              Or browse Library now
-            </Link>
           </form>
         )}
       </div>

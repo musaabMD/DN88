@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { LibraryAccessGate } from "@/components/LibraryAccessGate";
 import LibraryHome from "@/components/LibraryHome";
 
 export const metadata: Metadata = {
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function LibraryPage() {
-  return <LibraryHome />;
+  return (
+    <LibraryAccessGate>
+      <LibraryHome />
+    </LibraryAccessGate>
+  );
 }

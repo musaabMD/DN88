@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { LibraryAccessGate } from "@/components/LibraryAccessGate";
 import AdminCatalogClient from "./AdminCatalogClient";
 
 export default function AdminCatalogPage() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
-  return <AdminCatalogClient />;
+  return (
+    <LibraryAccessGate>
+      <AdminCatalogClient />
+    </LibraryAccessGate>
+  );
 }

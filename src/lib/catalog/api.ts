@@ -1,4 +1,8 @@
 import { getApiBaseUrl } from "@/lib/api";
+import {
+  LIBRARY_ARTICLE_INDEX,
+  type CatalogArticleIndexItem,
+} from "@/lib/catalog-index";
 import type {
   AdminArticleSummary,
   CatalogArticleDetail,
@@ -129,13 +133,35 @@ async function fetchStaticArticleIndex(): Promise<CatalogArticleSummary[]> {
     const res = await fetch("/catalog/index.json", {
       signal: AbortSignal.timeout(8000),
     });
-    if (!res.ok) return [];
+    if (!res.ok) return getBundledArticleIndex();
     const data = (await res.json()) as { articles: CatalogArticleSummary[] };
-    staticIndexCache = data.articles ?? [];
+    staticIndexCache = data.articles?.length
+      ? data.articles
+      : getBundledArticleIndex();
     return staticIndexCache;
   } catch {
-    return [];
+    return getBundledArticleIndex();
   }
+}
+
+function getBundledArticleIndex(): CatalogArticleSummary[] {
+  return LIBRARY_ARTICLE_INDEX.map(catalogIndexItemToSummary);
+}
+
+function catalogIndexItemToSummary(
+  article: CatalogArticleIndexItem
+): CatalogArticleSummary {
+  return {
+    id: article.id,
+    publicSlug:
+      article.publicSlug ?? article.slug ?? entitySlugFromTitle(article.title),
+    title: article.title,
+    slug: article.slug ?? article.id,
+    specialty: article.subject,
+    subject: article.subject,
+    readMinutes: article.readMinutes,
+    updatedAt: article.updatedAt ?? article.updated,
+  };
 }
 
 function entitySlugFromTitle(title: string): string {

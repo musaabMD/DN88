@@ -17,6 +17,8 @@ const INDEX_FILE = join(ROOT, "src", "generated", "catalog-index.json");
 const PUBLIC_CATALOG_DIR = join(ROOT, "public", "catalog");
 const CACHE_DIR = join(ROOT, ".catalog-sync");
 const FIXTURE_ROOT = join(ROOT, "tests", "fixtures", "dl88-mini");
+const PUBLIC_CATALOG_EXPORT_ENABLED =
+  process.env.PUBLIC_CATALOG_EXPORT_ENABLED === "true";
 
 function decodeOrigin() {
   const direct = process.env.CATALOG_SYNC_ORIGIN?.trim();
@@ -115,6 +117,22 @@ function toPublicArticleDetail(article) {
   };
 }
 
+function writeUnavailablePublicCatalog(syncedAt) {
+  rmSync(PUBLIC_CATALOG_DIR, { recursive: true, force: true });
+  mkdirSync(PUBLIC_CATALOG_DIR, { recursive: true });
+  writeFileSync(
+    join(PUBLIC_CATALOG_DIR, "index.json"),
+    `${JSON.stringify({
+      version: 1,
+      syncedAt,
+      articles: [],
+      unavailable: true,
+      message: "Library temporarily unavailable",
+    })}\n`,
+    "utf8"
+  );
+}
+
 function loadExistingPayload() {
   if (!existsSync(OUT_FILE)) return null;
   try {
@@ -143,6 +161,9 @@ async function main() {
       console.log(
         `[catalog] No CATALOG_SYNC_ORIGIN — keeping ${existing.articles.length} committed article(s)`
       );
+      if (!PUBLIC_CATALOG_EXPORT_ENABLED) {
+        writeUnavailablePublicCatalog(existing.syncedAt ?? new Date().toISOString());
+      }
       return;
     }
     throw new Error(
@@ -176,6 +197,9 @@ async function main() {
       console.warn(
         `[catalog] Import found 0 publishable articles — keeping ${existing.articles.length} committed article(s)`
       );
+      if (!PUBLIC_CATALOG_EXPORT_ENABLED) {
+        writeUnavailablePublicCatalog(existing.syncedAt ?? new Date().toISOString());
+      }
       return;
     }
     throw new Error("DL88 import produced no publishable articles");
@@ -195,19 +219,23 @@ async function main() {
   };
   writeFileSync(INDEX_FILE, `${JSON.stringify(indexPayload, null, 2)}\n`, "utf8");
 
-  rmSync(PUBLIC_CATALOG_DIR, { recursive: true, force: true });
-  mkdirSync(join(PUBLIC_CATALOG_DIR, "articles"), { recursive: true });
-  writeFileSync(
-    join(PUBLIC_CATALOG_DIR, "index.json"),
-    `${JSON.stringify(indexPayload)}\n`,
-    "utf8"
-  );
-  for (const article of publishable) {
+  if (PUBLIC_CATALOG_EXPORT_ENABLED) {
+    rmSync(PUBLIC_CATALOG_DIR, { recursive: true, force: true });
+    mkdirSync(join(PUBLIC_CATALOG_DIR, "articles"), { recursive: true });
     writeFileSync(
-      join(PUBLIC_CATALOG_DIR, "articles", `${article.id}.json`),
-      `${JSON.stringify(toPublicArticleDetail(article))}\n`,
+      join(PUBLIC_CATALOG_DIR, "index.json"),
+      `${JSON.stringify(indexPayload)}\n`,
       "utf8"
     );
+    for (const article of publishable) {
+      writeFileSync(
+        join(PUBLIC_CATALOG_DIR, "articles", `${article.id}.json`),
+        `${JSON.stringify(toPublicArticleDetail(article))}\n`,
+        "utf8"
+      );
+    }
+  } else {
+    writeUnavailablePublicCatalog(payload.syncedAt);
   }
   console.log(
     `[catalog] Wrote ${payload.articles.length} article(s) to src/generated/catalog.json`

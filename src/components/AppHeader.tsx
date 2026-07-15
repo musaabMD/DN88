@@ -4,8 +4,11 @@ import type { ReactNode } from "react";
 import { ArrowLeft, Search } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/clerk-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { UserAuthControls } from "@/components/UserAuthControls";
+import { useClerkEnabled, useClientMounted } from "@/hooks/useClerkEnabled";
+import { isLibraryOwnerEmail } from "@/lib/library-access";
 import { FEATURES_PATH, HOME_PATH, LIBRARY_PATH } from "@/lib/routes";
 
 type AppHeaderProps = {
@@ -22,6 +25,32 @@ type AppHeaderProps = {
   /** Replaces default auth controls (e.g. ProductSiteNav on library home). */
   headerEnd?: ReactNode;
 };
+
+function ClerkOwnerLibraryLink() {
+  const { user, isLoaded } = useUser();
+  const email =
+    user?.primaryEmailAddress?.emailAddress ??
+    user?.emailAddresses?.[0]?.emailAddress;
+
+  if (!isLoaded || !isLibraryOwnerEmail(email)) return null;
+
+  return (
+    <Link
+      href={LIBRARY_PATH}
+      className="hidden rounded-lg px-2.5 py-1.5 text-xs font-extrabold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800 sm:inline"
+    >
+      Library
+    </Link>
+  );
+}
+
+function OwnerLibraryLink() {
+  const mounted = useClientMounted();
+  const clerkEnabled = useClerkEnabled();
+
+  if (!mounted || !clerkEnabled) return null;
+  return <ClerkOwnerLibraryLink />;
+}
 
 export function AppHeader({
   showBack,
@@ -66,14 +95,7 @@ export function AppHeader({
             <Link href={HOME_PATH} className="shrink-0">
               <DrNoteLogo size="sm" showWordmark forceWordmark />
             </Link>
-            {showLibrary && !minimal ? (
-              <Link
-                href={LIBRARY_PATH}
-                className="hidden rounded-lg px-2.5 py-1.5 text-xs font-extrabold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800 sm:inline"
-              >
-                Library
-              </Link>
-            ) : null}
+            {showLibrary && !minimal ? <OwnerLibraryLink /> : null}
             {!minimal ? (
               <Link
                 href={FEATURES_PATH}

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { LibraryAccessGate } from "@/components/LibraryAccessGate";
 import { SpecialtyPageClient } from "@/components/library/LibraryDetailPages";
 import {
   getAllSpecialtyStaticParams,
@@ -19,5 +20,9 @@ export default async function SpecialtyPage({
   const { slug } = await params;
   const specialty = getSpecialtyBySlug(slug);
   if (!specialty) notFound();
-  return <SpecialtyPageClient specialty={specialty} />;
+  return (
+    <LibraryAccessGate>
+      <SpecialtyPageClient specialty={specialty} />
+    </LibraryAccessGate>
+  );
 }

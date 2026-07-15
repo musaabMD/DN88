@@ -1,3 +1,4 @@
+import { LibraryAccessGate } from "@/components/LibraryAccessGate";
 import { TopicEntityPageClient } from "@/components/library/EntityPageClient";
 import { ENTITY_PLACEHOLDER_SLUG } from "@/lib/entities";
 
@@ -11,5 +12,9 @@ export default async function TopicPage({
   params: Promise<{ topicId: string }>;
 }) {
   const { topicId } = await params;
-  return <TopicEntityPageClient topicId={topicId} />;
+  return (
+    <LibraryAccessGate>
+      <TopicEntityPageClient topicId={topicId} />
+    </LibraryAccessGate>
+  );
 }

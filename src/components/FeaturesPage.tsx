@@ -1,22 +1,13 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import {
-  BookOpen,
   FileQuestion,
   Filter,
-  Highlighter,
-  Library,
   Monitor,
-  Search,
-  Sparkles,
 } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
-import { LIBRARY_PATH, QBANK_PATH } from "@/lib/routes";
-import { cn } from "@/lib/utils";
-
-type FeatureTab = "qbank" | "library";
+import { QBANK_PATH } from "@/lib/routes";
 
 const QBANK_FEATURES = [
   {
@@ -36,35 +27,7 @@ const QBANK_FEATURES = [
   },
 ];
 
-const LIBRARY_FEATURES = [
-  {
-    icon: Library,
-    title: "Specialty library",
-    body: "Browse specialties and topics with clinical articles written for study.",
-  },
-  {
-    icon: Sparkles,
-    title: "Ask AI",
-    body: "Ask follow-ups on any article and keep the chat with that topic.",
-  },
-  {
-    icon: Highlighter,
-    title: "Study modes",
-    body: "Flip a section into Summary, Questions, Cards, or Present — one mode at a time.",
-  },
-  {
-    icon: Search,
-    title: "In-article search",
-    body: "Jump straight to the paragraph you need without leaving the page.",
-  },
-];
-
 export function FeaturesPageClient() {
-  const [tab, setTab] = useState<FeatureTab>("library");
-  const features = tab === "qbank" ? QBANK_FEATURES : LIBRARY_FEATURES;
-  const ctaHref = tab === "qbank" ? QBANK_PATH : LIBRARY_PATH;
-  const ctaLabel = tab === "qbank" ? "Open Qbank" : "Open Library";
-
   return (
     <div className="min-h-screen bg-white font-sans">
       <AppHeader showBack title="Features" showLibrary />
@@ -73,46 +36,11 @@ export function FeaturesPageClient() {
           Features
         </h1>
         <p className="mt-2 max-w-xl text-sm font-bold leading-relaxed text-slate-500">
-          Two products, one study flow — practice exams in Qbank, read and ask
-          in Library.
+          Practice exams in Qbank, with filters and quiz modes built for study.
         </p>
 
-        <div
-          className="mt-6 grid grid-cols-2 gap-1 rounded-2xl border border-slate-200 bg-slate-50 p-1"
-          role="tablist"
-          aria-label="Product features"
-        >
-          {(
-            [
-              { id: "library", label: "Library", icon: BookOpen },
-              { id: "qbank", label: "Qbank", icon: FileQuestion },
-            ] as const
-          ).map((item) => {
-            const Icon = item.icon;
-            const active = tab === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setTab(item.id)}
-                className={cn(
-                  "flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-extrabold transition-colors",
-                  active
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-500 hover:text-slate-700"
-                )}
-              >
-                <Icon size={16} strokeWidth={2.5} />
-                {item.label}
-              </button>
-            );
-          })}
-        </div>
-
         <ul className="mt-8 space-y-5" role="tabpanel">
-          {features.map((feature) => {
+          {QBANK_FEATURES.map((feature) => {
             const Icon = feature.icon;
             return (
               <li key={feature.title} className="flex gap-4">
@@ -133,10 +61,10 @@ export function FeaturesPageClient() {
         </ul>
 
         <Link
-          href={ctaHref}
+          href={QBANK_PATH}
           className="mt-10 inline-flex rounded-xl border-2 border-b-4 border-slate-800 bg-slate-800 px-5 py-3 text-sm font-extrabold text-white transition-colors hover:bg-slate-700 active:translate-y-0.5 active:border-b-2"
         >
-          {ctaLabel}
+          Open Qbank
         </Link>
       </main>
     </div>

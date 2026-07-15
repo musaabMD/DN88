@@ -13,6 +13,7 @@ import {
   isQbankOwnerEmail,
   saveQbankPreorder,
 } from "@/lib/qbank-access";
+import { isLibraryOwnerEmail } from "@/lib/library-access";
 import {
   LIBRARY_PATH,
   QBANK_PATH,
@@ -229,9 +230,11 @@ function QbankPreorderPanel({
 
 function ProductHomeBody({
   canOpenQbank,
+  canOpenLibrary,
   userEmail,
 }: {
   canOpenQbank: boolean;
+  canOpenLibrary: boolean;
   userEmail?: string;
 }) {
   const [showPreorder, setShowPreorder] = useState(false);
@@ -244,13 +247,15 @@ function ProductHomeBody({
   return (
     <>
       <div className="mx-auto mt-8 grid max-w-xl grid-cols-1 gap-4">
-        <ProductCard
-          title="Library"
-          description="Browse specialties, topics, and clinical articles"
-          href={LIBRARY_PATH}
-          colorKey="Library"
-          icon={BookOpen}
-        />
+        {canOpenLibrary ? (
+          <ProductCard
+            title="Library"
+            description="Browse specialties, topics, and clinical articles"
+            href={LIBRARY_PATH}
+            colorKey="Library"
+            icon={BookOpen}
+          />
+        ) : null}
         <ProductCard
           title="Qbank"
           description={
@@ -287,10 +292,15 @@ function ClerkGatedProducts() {
   const email =
     user?.primaryEmailAddress?.emailAddress ??
     user?.emailAddresses?.[0]?.emailAddress;
-  const canOpen = isLoaded && isQbankOwnerEmail(email);
+  const canOpenQbank = isLoaded && isQbankOwnerEmail(email);
+  const canOpenLibrary = isLoaded && isLibraryOwnerEmail(email);
 
   return (
-    <ProductHomeBody canOpenQbank={canOpen} userEmail={email} />
+    <ProductHomeBody
+      canOpenQbank={canOpenQbank}
+      canOpenLibrary={canOpenLibrary}
+      userEmail={email}
+    />
   );
 }
 
@@ -321,7 +331,7 @@ export default function ProductHome() {
             Study medicine your way
           </h1>
           <p className="mx-auto mt-2 max-w-md text-sm font-bold text-slate-500 sm:text-base">
-            Read clinical guides in Library, or practice with Qbank when it launches.
+            Practice medicine questions with Qbank when it launches.
           </p>
         </div>
       </div>
@@ -329,7 +339,7 @@ export default function ProductHome() {
       {mounted && clerkEnabled ? (
         <ClerkGatedProducts />
       ) : (
-        <ProductHomeBody canOpenQbank={false} />
+        <ProductHomeBody canOpenQbank={false} canOpenLibrary={false} />
       )}
     </main>
   );
