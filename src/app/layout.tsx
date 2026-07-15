@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, JetBrains_Mono, Nunito, Source_Serif_4 } from "next/font/google";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { ClerkProviderWrapper } from "@/components/providers/ClerkProviderWrapper";
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -63,6 +64,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full antialiased">
+        <GoogleAnalytics />
         <ClerkProviderWrapper>{children}</ClerkProviderWrapper>
       </body>
     </html>
