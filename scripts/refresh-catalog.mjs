@@ -133,7 +133,15 @@ async function main() {
     `[catalog] DL88 stats: discovered=${importResult.discovered} invalid=${importResult.invalid} complete=${importResult.complete} partial=${importResult.partial} scaffold=${importResult.scaffold} publishable=${publishable.length}`
   );
 
-  if (publishable.length === 0 && importResult.invalidPaths.length > 0) {
+  if (importResult.invalidPaths.length > 0) {
+    const errorCodes = {};
+    for (const sample of importResult.invalidPaths) {
+      for (const err of sample.errors) {
+        const code = err?.code ?? "unknown";
+        errorCodes[code] = (errorCodes[code] ?? 0) + 1;
+      }
+    }
+    console.log(`[catalog] Invalid error codes: ${JSON.stringify(errorCodes)}`);
     for (const sample of importResult.invalidPaths.slice(0, 3)) {
       const err = sample.errors[0];
       console.warn(

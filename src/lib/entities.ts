@@ -114,7 +114,20 @@ export function entityPathForCatalogArticle(article: {
   publicSlug: string;
 }): string {
   const kind = classifyEntityKind(article.title, article.subject ?? undefined);
-  return entityPath(kind, article.publicSlug);
+  const slug = entitySlugFromTopicTitle(article.title);
+  return entityPath(kind, slug);
+}
+
+function articleMatchesSlug(article: LibraryArticle, normalized: string): boolean {
+  if (article.id.toLowerCase() === normalized) return true;
+  if (article.publicSlug?.toLowerCase() === normalized) return true;
+  if (article.slug?.toLowerCase() === normalized) return true;
+  if (entitySlugFromTopicTitle(article.title) === normalized) return true;
+  if (entitySlugFromTitle(article.title) === normalized) return true;
+  const publicSlug = article.publicSlug?.toLowerCase();
+  if (publicSlug?.endsWith(`-${normalized}`)) return true;
+  if (publicSlug && normalized.endsWith(`-${publicSlug}`)) return true;
+  return false;
 }
 
 /** Resolve a published article by legacy id, entity slug, public slug, or title slug. */
@@ -125,14 +138,17 @@ export function resolveLibraryArticle(
   if (direct) return direct;
 
   const normalized = slugOrId.toLowerCase();
-  return LIBRARY_ARTICLES.find((article) => {
-    if (article.id.toLowerCase() === normalized) return true;
-    if (article.publicSlug?.toLowerCase() === normalized) return true;
-    if (article.slug?.toLowerCase() === normalized) return true;
-    if (entitySlugFromTopicTitle(article.title) === normalized) return true;
-    if (entitySlugFromTitle(article.title) === normalized) return true;
-    return false;
-  });
+  return LIBRARY_ARTICLES.find((article) => articleMatchesSlug(article, normalized));
+}
+
+/** Find bundled article by exact title (case-insensitive). */
+export function resolveLibraryArticleByTitle(
+  title: string
+): LibraryArticle | undefined {
+  const normalized = title.trim().toLowerCase();
+  return LIBRARY_ARTICLES.find(
+    (article) => article.title.trim().toLowerCase() === normalized
+  );
 }
 
 function buildEntityRegistry(): Map<string, EntityNode> {
