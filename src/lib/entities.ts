@@ -106,6 +106,17 @@ export function entityPathForArticle(
   return entityPath(kind, slug);
 }
 
+/** Canonical entity URL for a published catalog article (matches Worker slug lookup). */
+export function entityPathForCatalogArticle(article: {
+  title: string;
+  subject: string | null;
+  specialty: string;
+  publicSlug: string;
+}): string {
+  const kind = classifyEntityKind(article.title, article.subject ?? undefined);
+  return entityPath(kind, article.publicSlug);
+}
+
 /** Resolve a published article by legacy id, entity slug, or title slug. */
 export function resolveLibraryArticle(
   slugOrId: string
