@@ -117,9 +117,9 @@ function toPublicArticleDetail(article) {
   };
 }
 
-function writeUnavailablePublicCatalog(syncedAt) {
+function writeUnavailablePublicCatalog(syncedAt, articles = []) {
   rmSync(PUBLIC_CATALOG_DIR, { recursive: true, force: true });
-  mkdirSync(PUBLIC_CATALOG_DIR, { recursive: true });
+  mkdirSync(join(PUBLIC_CATALOG_DIR, "articles"), { recursive: true });
   writeFileSync(
     join(PUBLIC_CATALOG_DIR, "index.json"),
     `${JSON.stringify({
@@ -131,6 +131,16 @@ function writeUnavailablePublicCatalog(syncedAt) {
     })}\n`,
     "utf8"
   );
+  for (const article of articles) {
+    writeFileSync(
+      join(PUBLIC_CATALOG_DIR, "articles", `${article.id}.json`),
+      `${JSON.stringify({
+        unavailable: true,
+        message: "Library temporarily unavailable",
+      })}\n`,
+      "utf8"
+    );
+  }
 }
 
 function loadExistingPayload() {
@@ -162,7 +172,10 @@ async function main() {
         `[catalog] No CATALOG_SYNC_ORIGIN — keeping ${existing.articles.length} committed article(s)`
       );
       if (!PUBLIC_CATALOG_EXPORT_ENABLED) {
-        writeUnavailablePublicCatalog(existing.syncedAt ?? new Date().toISOString());
+        writeUnavailablePublicCatalog(
+          existing.syncedAt ?? new Date().toISOString(),
+          existing.articles
+        );
       }
       return;
     }
@@ -198,7 +211,10 @@ async function main() {
         `[catalog] Import found 0 publishable articles — keeping ${existing.articles.length} committed article(s)`
       );
       if (!PUBLIC_CATALOG_EXPORT_ENABLED) {
-        writeUnavailablePublicCatalog(existing.syncedAt ?? new Date().toISOString());
+        writeUnavailablePublicCatalog(
+          existing.syncedAt ?? new Date().toISOString(),
+          existing.articles
+        );
       }
       return;
     }
@@ -235,7 +251,7 @@ async function main() {
       );
     }
   } else {
-    writeUnavailablePublicCatalog(payload.syncedAt);
+    writeUnavailablePublicCatalog(payload.syncedAt, publishable);
   }
   console.log(
     `[catalog] Wrote ${payload.articles.length} article(s) to src/generated/catalog.json`
