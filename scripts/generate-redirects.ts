@@ -6,12 +6,20 @@
 import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { getEntitySplatRewrites } from "../src/lib/entities";
 import { getAllSpecialtyStaticParams } from "../src/lib/specialties";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT_FILE = join(resolve(__dirname, ".."), "public", "_redirects");
 
 const lines: string[] = [];
+
+for (const { from, to } of getEntitySplatRewrites()) {
+  lines.push(`${from} ${to} 200`);
+}
+
+lines.push(`/library/topics/* /library/topics/_/ 200`);
+lines.push(`/library/articles/* /library/articles/_/ 200`);
 
 for (const { specialtySlug } of getAllSpecialtyStaticParams()) {
   lines.push(`/library/specialties/${specialtySlug}/ /specialties/${specialtySlug}/ 301`);

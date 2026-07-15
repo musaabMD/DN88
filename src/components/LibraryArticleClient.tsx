@@ -48,9 +48,11 @@ function createdPageToArticle(page: {
 export function LibraryArticleClient({ articleId }: { articleId: string }) {
   const router = useRouter();
   const pathname = usePathname();
+  const browserPathname =
+    typeof window === "undefined" ? pathname : window.location.pathname;
   const resolvedArticleId =
     articleId === ENTITY_PLACEHOLDER_SLUG
-      ? (pathname.match(/^\/library\/articles\/([^/]+)/)?.[1] ?? "")
+      ? (browserPathname.match(/^\/library\/articles\/([^/]+)/)?.[1] ?? "")
       : articleId;
 
   const created = getCreatedPageById(resolvedArticleId);

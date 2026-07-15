@@ -41,9 +41,11 @@ type EntityPageClientProps = {
 export function EntityPageClient({ kind, slug }: EntityPageClientProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const browserPathname =
+    typeof window === "undefined" ? pathname : window.location.pathname;
   const resolvedSlug =
     slug === ENTITY_PLACEHOLDER_SLUG
-      ? entitySlugFromPathname(pathname, kind)
+      ? entitySlugFromPathname(browserPathname, kind)
       : slug;
   const entity = getEntity(kind, resolvedSlug);
 
@@ -212,9 +214,11 @@ export function TopicEntityPageClient({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const browserPathname =
+    typeof window === "undefined" ? pathname : window.location.pathname;
   const resolvedTopicId =
     topicId === ENTITY_PLACEHOLDER_SLUG
-      ? (pathname.match(/^\/library\/topics\/([^/]+)/)?.[1] ?? "")
+      ? (browserPathname.match(/^\/library\/topics\/([^/]+)/)?.[1] ?? "")
       : topicId;
   const topic = getTopicById(resolvedTopicId);
 

@@ -266,16 +266,8 @@ export function getPublishedEntityStaticParams(
 export function getEntityStaticParams(
   kind: EntityKind
 ): Array<{ slug: string }> {
-  const seen = new Set<string>([ENTITY_PLACEHOLDER_SLUG]);
-  const params = [{ slug: ENTITY_PLACEHOLDER_SLUG }];
-
-  for (const param of getPublishedEntityStaticParams(kind)) {
-    if (seen.has(param.slug)) continue;
-    seen.add(param.slug);
-    params.push(param);
-  }
-
-  return params;
+  void kind;
+  return [{ slug: ENTITY_PLACEHOLDER_SLUG }];
 }
 
 /** Cloudflare Pages splat rewrites — serve placeholder shells for unpublished entities. */
@@ -309,14 +301,5 @@ export function getArticleRedirectMap(): Array<{ from: string; to: string }> {
 
 /** Legacy article ids that should pre-render at /library/articles/{id}. */
 export function getPublishedArticleStaticParams(): Array<{ articleId: string }> {
-  const seen = new Set<string>([ENTITY_PLACEHOLDER_SLUG]);
-  const params = [{ articleId: ENTITY_PLACEHOLDER_SLUG }];
-
-  for (const article of LIBRARY_ARTICLE_INDEX) {
-    if (seen.has(article.id)) continue;
-    seen.add(article.id);
-    params.push({ articleId: article.id });
-  }
-
-  return params;
+  return [{ articleId: ENTITY_PLACEHOLDER_SLUG }];
 }

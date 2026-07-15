@@ -1,3 +1,10 @@
+/conditions/* /conditions/_/ 200
+/medications/* /medications/_/ 200
+/procedures/* /procedures/_/ 200
+/assessments/* /assessments/_/ 200
+/overviews/* /overviews/_/ 200
+/library/topics/* /library/topics/_/ 200
+/library/articles/* /library/articles/_/ 200
 /library/specialties/allergy-and-immunology/ /specialties/allergy-and-immunology/ 301
 /library/specialties/allergy-and-immunology /specialties/allergy-and-immunology/ 301
 /library/specialties/anaesthesiology/ /specialties/anaesthesiology/ 301
