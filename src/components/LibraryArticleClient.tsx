@@ -73,10 +73,7 @@ export function LibraryArticleClient({ articleId }: { articleId: string }) {
     };
   }, [resolvedArticleId]);
 
-  const resolved =
-    isCatalogApiEnabled()
-      ? apiArticle ?? undefined
-      : bundled ?? (created ? createdPageToArticle(created) : undefined);
+  const resolved = apiArticle ?? bundled ?? (created ? createdPageToArticle(created) : undefined);
 
   const backToLibrary = () => router.push(LIBRARY_PATH);
 
