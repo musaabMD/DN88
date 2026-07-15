@@ -12,6 +12,7 @@
     "start": "next start",
     "lint": "eslint",
     "catalog:refresh": "node scripts/refresh-catalog.mjs",
+    "catalog:refresh:fixture": "node scripts/refresh-catalog.mjs --fixture",
     "catalog:dry-run": "node scripts/catalog-dry-run.mjs",
     "catalog:dry-run:fixture": "node scripts/catalog-dry-run.mjs --fixture",
     "catalog:sync": "node scripts/catalog-sync.mjs",

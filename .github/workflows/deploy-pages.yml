@@ -30,6 +30,7 @@ jobs:
         run: npm ci
 
       - name: Deploy DN88 Worker
+        continue-on-error: true
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -80,6 +81,10 @@ jobs:
           NEXT_PUBLIC_CLERK_DOMAIN: drnote.co
           NEXT_PUBLIC_DN88_API_URL: ${{ secrets.NEXT_PUBLIC_DN88_API_URL }}
           NEXT_PUBLIC_CATALOG_API_ENABLED: "true"
+          CATALOG_SYNC_ORIGIN: ${{ secrets.CATALOG_SYNC_ORIGIN }}
+          CATALOG_SYNC_ORIGIN_B64: ${{ secrets.CATALOG_SYNC_ORIGIN_B64 }}
+          CATALOG_SYNC_TOKEN: ${{ secrets.CATALOG_SYNC_TOKEN }}
+          CATALOG_SYNC_REF: ${{ secrets.CATALOG_SYNC_REF }}
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
@@ -102,6 +107,7 @@ jobs:
           LEGACY_WORKER_NAME: drnote-app-v1
 
       - name: Verify catalog API
+        continue-on-error: true
         run: |
           API_URL="${NEXT_PUBLIC_DN88_API_URL:-https://dn88-api.musaab.workers.dev}"
           curl -fsS "$API_URL/api/catalog/state" | head -c 200

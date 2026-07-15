@@ -31,6 +31,7 @@ import {
   entityPathForArticle,
   entityPathForCatalogArticle,
   entityPathForTopic,
+  entitySlugFromTopicTitle,
 } from "@/lib/entities";
 import {
   fetchPublicArticles,
@@ -893,6 +894,7 @@ export default function LibraryHome() {
   useEffect(() => {
     if (!isCatalogApiEnabled()) {
       setCatalogLoading(false);
+      if (LIBRARY_ARTICLES.length > 0) setActiveTab("articles");
       return;
     }
     let cancelled = false;
@@ -900,7 +902,9 @@ export default function LibraryHome() {
       .then(({ articles }) => {
         if (cancelled) return;
         setCatalogArticles(articles);
-        if (articles.length > 0) setActiveTab("articles");
+        if (articles.length > 0 || LIBRARY_ARTICLES.length > 0) {
+          setActiveTab("articles");
+        }
       })
       .finally(() => {
         if (!cancelled) setCatalogLoading(false);
@@ -909,6 +913,27 @@ export default function LibraryHome() {
       cancelled = true;
     };
   }, []);
+
+  const bundledAsCatalog = useMemo(
+    () =>
+      LIBRARY_ARTICLES.map((article) => ({
+        id: article.id,
+        publicSlug:
+          article.publicSlug ??
+          article.slug ??
+          entitySlugFromTopicTitle(article.title),
+        title: article.title,
+        slug: article.slug ?? article.id,
+        specialty: article.subject,
+        subject: article.subject,
+        readMinutes: article.readMinutes,
+        updatedAt: article.updated,
+      })),
+    []
+  );
+
+  const displayArticles =
+    catalogArticles.length > 0 ? catalogArticles : bundledAsCatalog;
 
   useEffect(() => {
     if (!isCatalogApiEnabled() || !query.trim()) {
@@ -964,7 +989,7 @@ export default function LibraryHome() {
       <CatalogStateBanner />
       <LibraryHero
         onSuggestArticle={() => setShowSuggestModal(true)}
-        articleCount={catalogArticles.length}
+        articleCount={displayArticles.length}
       />
 
       {!isSearching ? (
@@ -984,7 +1009,7 @@ export default function LibraryHome() {
               }`}
             >
               {tab.label}
-              {tab.id === "articles" && catalogArticles.length > 0 ? (
+              {tab.id === "articles" && displayArticles.length > 0 ? (
                 <span
                   className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-black ${
                     activeTab === tab.id
@@ -992,7 +1017,7 @@ export default function LibraryHome() {
                       : "bg-emerald-100 text-emerald-800"
                   }`}
                 >
-                  {catalogArticles.length}
+                  {displayArticles.length}
                 </span>
               ) : null}
             </button>
@@ -1008,13 +1033,23 @@ export default function LibraryHome() {
             specialtyIds={specialtyIds}
             topicIds={topicIds}
             articleIds={articleIds}
-            catalogArticles={catalogArticles}
-            catalogSearchResults={catalogSearchResults}
+            catalogArticles={displayArticles}
+            catalogSearchResults={
+              catalogSearchResults.length > 0
+                ? catalogSearchResults
+                : bundledAsCatalog.filter(
+                    (a) =>
+                      a.title.toLowerCase().includes(query.trim().toLowerCase()) ||
+                      (a.subject ?? "")
+                        .toLowerCase()
+                        .includes(query.trim().toLowerCase())
+                  )
+            }
             onBookmarkChange={refreshBookmarks}
           />
         ) : activeTab === "articles" ? (
           <ArticlesTab
-            articles={catalogArticles}
+            articles={displayArticles}
             query={query}
             bookmarksOnly={bookmarksOnly}
             bookmarkedIds={articleIds}
@@ -1034,7 +1069,7 @@ export default function LibraryHome() {
             specialtyIds={specialtyIds}
             topicIds={topicIds}
             articleIds={articleIds}
-            catalogArticles={catalogArticles}
+            catalogArticles={displayArticles}
             onBookmarkChange={refreshBookmarks}
           />
         )}

@@ -9,13 +9,7 @@ type CatalogPayload = {
 
 const payload = catalogPayload as CatalogPayload;
 
-const DEMO_MODE = process.env.DEMO_MODE === "true";
-const CATALOG_API_ENABLED =
-  process.env.NEXT_PUBLIC_CATALOG_API_ENABLED !== "false";
+/** Build-time DL88 bundle — primary offline source; Worker API supplements at runtime. */
+export const LIBRARY_ARTICLES: LibraryArticle[] = payload.articles;
 
-/** Demo bundle only — production uses Worker catalog API. */
-export const LIBRARY_ARTICLES: LibraryArticle[] =
-  !DEMO_MODE && CATALOG_API_ENABLED ? [] : payload.articles;
-
-export const CATALOG_SYNCED_AT: string | null =
-  !DEMO_MODE && CATALOG_API_ENABLED ? null : payload.syncedAt;
+export const CATALOG_SYNCED_AT: string | null = payload.syncedAt ?? null;

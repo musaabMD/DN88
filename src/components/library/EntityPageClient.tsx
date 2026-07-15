@@ -17,6 +17,7 @@ import {
   catalogArticleToLibraryArticle,
   fetchPublicArticle,
   isCatalogApiEnabled,
+  searchCatalog,
 } from "@/lib/catalog/api";
 import {
   classifyEntityKind,
@@ -55,22 +56,61 @@ export function EntityPageClient({ kind, slug }: EntityPageClientProps) {
     if (!isCatalogApiEnabled()) return;
     let cancelled = false;
     setApiLoading(true);
-    void fetchPublicArticle(resolvedSlug).then((detail) => {
-      if (cancelled) return;
-      setApiArticle(detail ? catalogArticleToLibraryArticle(detail) : null);
+
+    async function loadArticle() {
+      const slugsToTry = [
+        resolvedSlug,
+        entity?.title ? entitySlugFromTopicTitle(entity.title) : null,
+      ].filter((value, index, list): value is string => {
+        return Boolean(value) && list.indexOf(value) === index;
+      });
+
+      for (const slug of slugsToTry) {
+        const detail = await fetchPublicArticle(slug);
+        if (cancelled) return;
+        if (detail) {
+          setApiArticle(catalogArticleToLibraryArticle(detail));
+          setApiLoading(false);
+          setApiChecked(true);
+          return;
+        }
+      }
+
+      if (entity?.title) {
+        const results = await searchCatalog(entity.title);
+        if (cancelled) return;
+        const match = results[0];
+        if (match) {
+          const detail = await fetchPublicArticle(match.publicSlug);
+          if (cancelled) return;
+          if (detail) {
+            setApiArticle(catalogArticleToLibraryArticle(detail));
+            setApiLoading(false);
+            setApiChecked(true);
+            return;
+          }
+        }
+      }
+
+      setApiArticle(null);
       setApiLoading(false);
       setApiChecked(true);
-    });
+    }
+
+    void loadArticle();
     return () => {
       cancelled = true;
     };
-  }, [resolvedSlug]);
+  }, [resolvedSlug, entity?.title]);
 
   const bundledArticle =
     resolveLibraryArticle(resolvedSlug) ??
-    (entity?.articleId ? resolveLibraryArticle(entity.articleId) : undefined);
+    (entity?.articleId ? resolveLibraryArticle(entity.articleId) : undefined) ??
+    (entity?.title
+      ? resolveLibraryArticle(entitySlugFromTopicTitle(entity.title))
+      : undefined);
 
-  const article = isCatalogApiEnabled() ? apiArticle ?? undefined : bundledArticle;
+  const article = apiArticle ?? bundledArticle ?? undefined;
 
   const displayTitle =
     article?.title ??

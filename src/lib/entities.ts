@@ -117,7 +117,7 @@ export function entityPathForCatalogArticle(article: {
   return entityPath(kind, article.publicSlug);
 }
 
-/** Resolve a published article by legacy id, entity slug, or title slug. */
+/** Resolve a published article by legacy id, entity slug, public slug, or title slug. */
 export function resolveLibraryArticle(
   slugOrId: string
 ): LibraryArticle | undefined {
@@ -127,6 +127,8 @@ export function resolveLibraryArticle(
   const normalized = slugOrId.toLowerCase();
   return LIBRARY_ARTICLES.find((article) => {
     if (article.id.toLowerCase() === normalized) return true;
+    if (article.publicSlug?.toLowerCase() === normalized) return true;
+    if (article.slug?.toLowerCase() === normalized) return true;
     if (entitySlugFromTopicTitle(article.title) === normalized) return true;
     if (entitySlugFromTitle(article.title) === normalized) return true;
     return false;
