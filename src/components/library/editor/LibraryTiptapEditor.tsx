@@ -83,6 +83,61 @@ function getScrollParent(): HTMLElement | Window {
   );
 }
 
+function getCssHighlights() {
+  if (typeof CSS === "undefined") return null;
+  return (
+    CSS as typeof CSS & {
+      highlights?: {
+        set: (name: string, highlight: unknown) => void;
+        delete: (name: string) => void;
+      };
+    }
+  ).highlights;
+}
+
+function getHighlightConstructor() {
+  if (typeof window === "undefined") return null;
+  return (
+    window as typeof window & {
+      Highlight?: new (...ranges: Range[]) => unknown;
+    }
+  ).Highlight;
+}
+
+function buildSearchRanges(root: HTMLElement, query: string): Range[] {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return [];
+
+  const ranges: Range[] = [];
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const parent = node.parentElement;
+      if (!parent) return NodeFilter.FILTER_REJECT;
+      if (parent.closest(".article-search-dialog")) return NodeFilter.FILTER_REJECT;
+      return node.textContent?.toLowerCase().includes(needle)
+        ? NodeFilter.FILTER_ACCEPT
+        : NodeFilter.FILTER_REJECT;
+    },
+  });
+
+  let node = walker.nextNode();
+  while (node && ranges.length < 250) {
+    const text = node.textContent ?? "";
+    const lower = text.toLowerCase();
+    let index = lower.indexOf(needle);
+    while (index >= 0 && ranges.length < 250) {
+      const range = document.createRange();
+      range.setStart(node, index);
+      range.setEnd(node, index + needle.length);
+      ranges.push(range);
+      index = lower.indexOf(needle, index + needle.length);
+    }
+    node = walker.nextNode();
+  }
+
+  return ranges;
+}
+
 export function LibraryTiptapEditor({
   article,
   onBack,
@@ -96,6 +151,7 @@ export function LibraryTiptapEditor({
   );
   const [glossaryOn, setGlossaryOn] = useState(() => getGlossaryEnabled());
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchHighlightQuery, setSearchHighlightQuery] = useState("");
   const [sectionToggleKey, setSectionToggleKey] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -199,11 +255,46 @@ export function LibraryTiptapEditor({
   useEffect(() => {
     if (!searchOpen) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSearchOpen(false);
+      if (event.key === "Escape") {
+        setSearchOpen(false);
+        setSearchHighlightQuery("");
+      }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [searchOpen]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const id = "drnote-search-highlight-style";
+    if (document.getElementById(id)) return;
+    const style = document.createElement("style");
+    style.id = id;
+    style.textContent =
+      "::highlight(article-search-match){background:rgb(250 204 21 / 0.55);color:inherit;}";
+    document.head.appendChild(style);
+  }, []);
+
+  useEffect(() => {
+    const highlights = getCssHighlights();
+    const HighlightCtor = getHighlightConstructor();
+    highlights?.delete("article-search-match");
+    if (!highlights || !HighlightCtor || !searchHighlightQuery.trim()) return;
+
+    const root = scrollRef.current?.querySelector<HTMLElement>(
+      ".simple-editor-prose"
+    );
+    if (!root) return;
+
+    const ranges = buildSearchRanges(root, searchHighlightQuery);
+    if (ranges.length > 0) {
+      highlights.set("article-search-match", new HighlightCtor(...ranges));
+    }
+
+    return () => {
+      highlights.delete("article-search-match");
+    };
+  }, [article.id, searchHighlightQuery]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -301,6 +392,10 @@ export function LibraryTiptapEditor({
             <DrNoteLogo showWordmark />
           </div>
 
+          <div className="simple-editor-titlebar" title={article.title}>
+            <span>{article.title}</span>
+          </div>
+
           <div className="simple-editor-header-end">
             <EditorOverflowMenu
               currentZoom={zoom}
@@ -377,6 +472,8 @@ export function LibraryTiptapEditor({
         {isReadMode && searchOpen ? (
           <ArticleSearchModal
             article={article}
+            onQueryChange={setSearchHighlightQuery}
+            onResultSelect={(_result, query) => setSearchHighlightQuery(query)}
             onClose={() => setSearchOpen(false)}
           />
         ) : null}

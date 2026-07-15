@@ -48,9 +48,12 @@ export async function fetchPublicArticles(): Promise<{
   syncState: CatalogState["syncState"];
 }> {
   if (!catalogEnabled()) return { articles: [], syncState: "unavailable" };
+  if (typeof window !== "undefined") {
+    return { articles: await fetchStaticArticleIndex(), syncState: "fresh" };
+  }
   try {
     const res = await fetch(`${getApiBaseUrl()}/api/catalog/articles`, {
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(2500),
     });
     if (!res.ok) return { articles: [], syncState: "unavailable" };
     const data = (await res.json()) as {
@@ -70,10 +73,14 @@ export async function fetchPublicArticle(
   slug: string
 ): Promise<CatalogArticleDetail | null> {
   if (!catalogEnabled()) return null;
+  if (typeof window !== "undefined") {
+    const staticArticle = await fetchStaticArticle(slug);
+    if (staticArticle) return staticArticle;
+  }
   try {
     const res = await fetch(
       `${getApiBaseUrl()}/api/catalog/articles/${encodeURIComponent(slug)}`,
-      { signal: AbortSignal.timeout(8000) }
+      { signal: AbortSignal.timeout(2500) }
     );
     if (!res.ok) return fetchStaticArticle(slug);
     return res.json() as Promise<CatalogArticleDetail>;
@@ -86,27 +93,34 @@ export async function searchCatalog(
   query: string
 ): Promise<CatalogArticleSummary[]> {
   if (!catalogEnabled()) return [];
+  if (typeof window !== "undefined") return searchStaticArticleIndex(query);
   try {
     const res = await fetch(
       `${getApiBaseUrl()}/api/catalog/search?q=${encodeURIComponent(query)}`,
-      { signal: AbortSignal.timeout(8000) }
+      { signal: AbortSignal.timeout(2500) }
     );
     if (!res.ok) return [];
     const data = (await res.json()) as { results: CatalogArticleSummary[] };
     return data.results;
   } catch {
-    const q = query.trim().toLowerCase();
-    if (!q) return [];
-    return (await fetchStaticArticleIndex())
-      .filter(
-        (article) =>
-          article.title.toLowerCase().includes(q) ||
-          article.publicSlug.toLowerCase().includes(q) ||
-          article.slug.toLowerCase().includes(q) ||
-          (article.subject ?? "").toLowerCase().includes(q)
-      )
-      .slice(0, 50);
+    return searchStaticArticleIndex(query);
   }
+}
+
+async function searchStaticArticleIndex(
+  query: string
+): Promise<CatalogArticleSummary[]> {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  return (await fetchStaticArticleIndex())
+    .filter(
+      (article) =>
+        article.title.toLowerCase().includes(q) ||
+        article.publicSlug.toLowerCase().includes(q) ||
+        article.slug.toLowerCase().includes(q) ||
+        (article.subject ?? "").toLowerCase().includes(q)
+    )
+    .slice(0, 50);
 }
 
 async function fetchStaticArticleIndex(): Promise<CatalogArticleSummary[]> {

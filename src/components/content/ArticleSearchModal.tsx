@@ -5,6 +5,12 @@ import { Search, X } from "lucide-react";
 import type { LibraryArticle } from "@/lib/set-content";
 import { sectionSlug } from "@/components/content/ArticleTableOfContents";
 
+type SearchResult = {
+  heading: string;
+  snippet: string;
+  id: string;
+};
+
 function snippetAround(text: string, query: string, radius = 80): string {
   const lower = text.toLowerCase();
   const index = lower.indexOf(query);
@@ -16,20 +22,66 @@ function snippetAround(text: string, query: string, radius = 80): string {
   return `${prefix}${text.slice(start, end)}${suffix}`;
 }
 
+function HighlightedText({ text, query }: { text: string; query: string }) {
+  const q = query.trim();
+  if (!q) return text;
+
+  const lower = text.toLowerCase();
+  const needle = q.toLowerCase();
+  const pieces: Array<{ text: string; match: boolean }> = [];
+  let start = 0;
+  let index = lower.indexOf(needle);
+
+  while (index >= 0) {
+    if (index > start) {
+      pieces.push({ text: text.slice(start, index), match: false });
+    }
+    pieces.push({ text: text.slice(index, index + q.length), match: true });
+    start = index + q.length;
+    index = lower.indexOf(needle, start);
+  }
+
+  if (start < text.length) {
+    pieces.push({ text: text.slice(start), match: false });
+  }
+
+  return (
+    <>
+      {pieces.map((piece, index) =>
+        piece.match ? (
+          <mark key={index} className="article-search-snippet-mark">
+            {piece.text}
+          </mark>
+        ) : (
+          <span key={index}>{piece.text}</span>
+        )
+      )}
+    </>
+  );
+}
+
 export function ArticleSearchModal({
   article,
   onClose,
+  onQueryChange,
+  onResultSelect,
 }: {
   article: LibraryArticle;
   onClose: () => void;
+  onQueryChange?: (query: string) => void;
+  onResultSelect?: (result: SearchResult, query: string) => void;
 }) {
   const [query, setQuery] = useState("");
+  const dismiss = () => {
+    onQueryChange?.("");
+    onClose();
+  };
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
 
-    const matches: Array<{ heading: string; snippet: string; id: string }> = [];
+    const matches: SearchResult[] = [];
 
     const pushMatch = (heading: string, text: string, id: string) => {
       matches.push({
@@ -74,7 +126,7 @@ export function ArticleSearchModal({
   return (
     <div
       className="article-search-overlay"
-      onClick={onClose}
+      onClick={dismiss}
       role="presentation"
     >
       <div
@@ -88,13 +140,16 @@ export function ArticleSearchModal({
           <input
             autoFocus
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              onQueryChange?.(e.target.value);
+            }}
             placeholder="Search in this article..."
             className="article-search-input"
           />
           <button
             type="button"
-            onClick={onClose}
+            onClick={dismiss}
             className="article-search-close"
             aria-label="Close"
           >
@@ -110,11 +165,16 @@ export function ArticleSearchModal({
             <a
               key={`${result.id}-${i}`}
               href={`#${result.id}`}
-              onClick={onClose}
+              onClick={() => {
+                onResultSelect?.(result, query);
+                onClose();
+              }}
               className="article-search-result"
             >
               <p className="article-search-result-heading">{result.heading}</p>
-              <p className="article-search-result-snippet">{result.snippet}</p>
+              <p className="article-search-result-snippet">
+                <HighlightedText text={result.snippet} query={query} />
+              </p>
             </a>
           ))}
           {!query.trim() ? (

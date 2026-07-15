@@ -3,7 +3,7 @@ import type { JSONContent } from "@tiptap/react";
 const ARTICLE_CONTENT_KEY = "drnote-library-article-content";
 
 /** Bump when article→Tiptap conversion changes (e.g. callout nodes). */
-export const ARTICLE_EDITOR_CONTENT_VERSION = 2;
+export const ARTICLE_EDITOR_CONTENT_VERSION = 3;
 
 type StoredArticleContent = {
   articleId: string;

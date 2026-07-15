@@ -14,6 +14,9 @@ import {
 
 /** Matches an admonition prefix like `[!warning]` or `[!hy]` at line start. */
 const ADMONITION_REGEX = /^\s*\[!([a-z-]+)\]\s*/i;
+const MARKDOWN_BULLET_REGEX = /^\s*[-*]\s+(.+)$/;
+const MARKDOWN_ORDERED_REGEX = /^\s*\d+[.)]\s+(.+)$/;
+const MARKDOWN_HEADING_REGEX = /^\s*#{3,6}\s+(.+)$/;
 
 function calloutNode(callout: LibraryArticleCallout): JSONContent {
   const content: JSONContent[] = [];
@@ -52,14 +55,119 @@ function admonitionCalloutFromText(text: string): JSONContent | null {
   return calloutNode({ variant, body });
 }
 
+function headingFromWikiText(text: string): JSONContent {
+  return {
+    type: "heading",
+    attrs: { level: 3 },
+    content: parseWikiLinksInText(text),
+  };
+}
+
+function pushMarkdownTextContent(content: JSONContent[], text: string): void {
+  const lines = text.replace(/\r\n/g, "\n").split("\n");
+  const nonEmptyLines = lines.map((line) => line.trim()).filter(Boolean);
+  if (nonEmptyLines.length === 1) {
+    const singleBullet = MARKDOWN_BULLET_REGEX.exec(nonEmptyLines[0]);
+    const singleOrdered = MARKDOWN_ORDERED_REGEX.exec(nonEmptyLines[0]);
+    const normalized = singleBullet?.[1] ?? singleOrdered?.[1];
+    if (normalized) {
+      const callout = admonitionCalloutFromText(normalized);
+      content.push(callout ?? paragraphFromWikiText(normalized));
+      return;
+    }
+  }
+
+  const paragraphLines: string[] = [];
+  const bulletLines: string[] = [];
+  const orderedLines: string[] = [];
+
+  const flushParagraph = () => {
+    const paragraph = paragraphLines.join(" ").trim();
+    paragraphLines.length = 0;
+    if (!paragraph) return;
+    const callout = admonitionCalloutFromText(paragraph);
+    content.push(callout ?? paragraphFromWikiText(paragraph));
+  };
+
+  const flushBullets = () => {
+    if (bulletLines.length === 0) return;
+    content.push({
+      type: "bulletList",
+      content: bulletLines.map((item) => bulletItemFromWikiText(item)),
+    });
+    bulletLines.length = 0;
+  };
+
+  const flushOrdered = () => {
+    if (orderedLines.length === 0) return;
+    content.push({
+      type: "orderedList",
+      content: orderedLines.map((item) => bulletItemFromWikiText(item)),
+    });
+    orderedLines.length = 0;
+  };
+
+  const flushLists = () => {
+    flushBullets();
+    flushOrdered();
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+
+    if (!line) {
+      flushParagraph();
+      flushLists();
+      continue;
+    }
+
+    const headingMatch = MARKDOWN_HEADING_REGEX.exec(line);
+    if (headingMatch?.[1]) {
+      flushParagraph();
+      flushLists();
+      content.push(headingFromWikiText(headingMatch[1].trim()));
+      continue;
+    }
+
+    const callout = admonitionCalloutFromText(line);
+    if (callout) {
+      flushParagraph();
+      flushLists();
+      content.push(callout);
+      continue;
+    }
+
+    const bulletMatch = MARKDOWN_BULLET_REGEX.exec(rawLine);
+    if (bulletMatch?.[1]) {
+      flushParagraph();
+      flushOrdered();
+      bulletLines.push(bulletMatch[1].trim());
+      continue;
+    }
+
+    const orderedMatch = MARKDOWN_ORDERED_REGEX.exec(rawLine);
+    if (orderedMatch?.[1]) {
+      flushParagraph();
+      flushBullets();
+      orderedLines.push(orderedMatch[1].trim());
+      continue;
+    }
+
+    flushLists();
+    paragraphLines.push(line);
+  }
+
+  flushParagraph();
+  flushLists();
+}
+
 /** Push a section's body + bullets, promoting any `[!type]` lines to callouts. */
 function pushSectionContent(
   content: JSONContent[],
   section: LibraryArticleSection
 ): void {
   if (section.body) {
-    const callout = admonitionCalloutFromText(section.body);
-    content.push(callout ?? paragraphFromWikiText(section.body));
+    pushMarkdownTextContent(content, section.body);
   }
 
   if (section.bullets && section.bullets.length > 0) {
