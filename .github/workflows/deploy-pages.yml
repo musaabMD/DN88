@@ -107,6 +107,16 @@ jobs:
           CLOUDFLARE_ZONE_ID: 789a9273b51c942e1f96be6186062963
           LEGACY_WORKER_NAME: drnote-app-v1
 
+      - name: Purge stale Cloudflare cache
+        run: |
+          curl -fsS -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: 789a9273b51c942e1f96be6186062963
+
       - name: Verify catalog API
         continue-on-error: true
         run: |
