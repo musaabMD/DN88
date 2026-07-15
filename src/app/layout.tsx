@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, JetBrains_Mono, Nunito, Source_Serif_4 } from "next/font/google";
-import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { ClerkProviderWrapper } from "@/components/providers/ClerkProviderWrapper";
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -58,13 +57,21 @@ export default function RootLayout({
     >
       <head>
         <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-B0QJB3Q649"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-B0QJB3Q649');`,
+          }}
+        />
+        <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem("drnote-theme");var d=t?t==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;if(d){document.documentElement.classList.add("dark");document.documentElement.style.colorScheme="dark";}}catch(e){}})();`,
           }}
         />
       </head>
       <body className="min-h-full antialiased">
-        <GoogleAnalytics />
         <ClerkProviderWrapper>{children}</ClerkProviderWrapper>
       </body>
     </html>
