@@ -49,8 +49,15 @@ export function EntityPageClient({ kind, slug }: EntityPageClientProps) {
   const entity = getEntity(kind, resolvedSlug);
 
   const [apiArticle, setApiArticle] = useState<LibraryArticleType | null>(null);
-  const [apiLoading, setApiLoading] = useState(isCatalogApiEnabled());
+  const [apiLoading, setApiLoading] = useState(false);
   const [apiChecked, setApiChecked] = useState(!isCatalogApiEnabled());
+
+  const bundledArticle =
+    resolveLibraryArticle(resolvedSlug) ??
+    (entity?.articleId ? resolveLibraryArticle(entity.articleId) : undefined) ??
+    (entity?.title
+      ? resolveLibraryArticle(entitySlugFromTopicTitle(entity.title))
+      : undefined);
 
   useEffect(() => {
     if (!isCatalogApiEnabled()) return;
@@ -58,30 +65,16 @@ export function EntityPageClient({ kind, slug }: EntityPageClientProps) {
     setApiLoading(true);
 
     async function loadArticle() {
-      const slugsToTry = [
-        resolvedSlug,
-        entity?.title ? entitySlugFromTopicTitle(entity.title) : null,
-      ].filter((value, index, list): value is string => {
-        return Boolean(value) && list.indexOf(value) === index;
-      });
+      try {
+        const slugsToTry = [
+          resolvedSlug,
+          entity?.title ? entitySlugFromTopicTitle(entity.title) : null,
+        ].filter((value, index, list): value is string => {
+          return Boolean(value) && list.indexOf(value) === index;
+        });
 
-      for (const slug of slugsToTry) {
-        const detail = await fetchPublicArticle(slug);
-        if (cancelled) return;
-        if (detail) {
-          setApiArticle(catalogArticleToLibraryArticle(detail));
-          setApiLoading(false);
-          setApiChecked(true);
-          return;
-        }
-      }
-
-      if (entity?.title) {
-        const results = await searchCatalog(entity.title);
-        if (cancelled) return;
-        const match = results[0];
-        if (match) {
-          const detail = await fetchPublicArticle(match.publicSlug);
+        for (const slug of slugsToTry) {
+          const detail = await fetchPublicArticle(slug);
           if (cancelled) return;
           if (detail) {
             setApiArticle(catalogArticleToLibraryArticle(detail));
@@ -90,11 +83,28 @@ export function EntityPageClient({ kind, slug }: EntityPageClientProps) {
             return;
           }
         }
-      }
 
-      setApiArticle(null);
-      setApiLoading(false);
-      setApiChecked(true);
+        if (entity?.title) {
+          const results = await searchCatalog(entity.title);
+          if (cancelled) return;
+          const match = results[0];
+          if (match) {
+            const detail = await fetchPublicArticle(match.publicSlug);
+            if (cancelled) return;
+            if (detail) {
+              setApiArticle(catalogArticleToLibraryArticle(detail));
+              setApiLoading(false);
+              setApiChecked(true);
+              return;
+            }
+          }
+        }
+      } finally {
+        if (!cancelled) {
+          setApiLoading(false);
+          setApiChecked(true);
+        }
+      }
     }
 
     void loadArticle();
@@ -102,13 +112,6 @@ export function EntityPageClient({ kind, slug }: EntityPageClientProps) {
       cancelled = true;
     };
   }, [resolvedSlug, entity?.title]);
-
-  const bundledArticle =
-    resolveLibraryArticle(resolvedSlug) ??
-    (entity?.articleId ? resolveLibraryArticle(entity.articleId) : undefined) ??
-    (entity?.title
-      ? resolveLibraryArticle(entitySlugFromTopicTitle(entity.title))
-      : undefined);
 
   const article = apiArticle ?? bundledArticle ?? undefined;
 
@@ -125,7 +128,7 @@ export function EntityPageClient({ kind, slug }: EntityPageClientProps) {
     [bookmarkKey]
   );
 
-  if (apiLoading && isCatalogApiEnabled()) {
+  if (apiLoading && isCatalogApiEnabled() && !article) {
     return (
       <LibraryBrowseShell>
         <CatalogStateBanner />

@@ -46,33 +46,51 @@ export async function fetchPublicArticles(): Promise<{
   syncState: CatalogState["syncState"];
 }> {
   if (!catalogEnabled()) return { articles: [], syncState: "unavailable" };
-  const res = await fetch(`${getApiBaseUrl()}/api/catalog/articles`);
-  if (!res.ok) return { articles: [], syncState: "unavailable" };
-  return res.json() as Promise<{
-    articles: CatalogArticleSummary[];
-    syncState: CatalogState["syncState"];
-  }>;
+  try {
+    const res = await fetch(`${getApiBaseUrl()}/api/catalog/articles`, {
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return { articles: [], syncState: "unavailable" };
+    return res.json() as Promise<{
+      articles: CatalogArticleSummary[];
+      syncState: CatalogState["syncState"];
+    }>;
+  } catch {
+    return { articles: [], syncState: "unavailable" };
+  }
 }
 
 export async function fetchPublicArticle(
   slug: string
 ): Promise<CatalogArticleDetail | null> {
   if (!catalogEnabled()) return null;
-  const res = await fetch(`${getApiBaseUrl()}/api/catalog/articles/${encodeURIComponent(slug)}`);
-  if (!res.ok) return null;
-  return res.json() as Promise<CatalogArticleDetail>;
+  try {
+    const res = await fetch(
+      `${getApiBaseUrl()}/api/catalog/articles/${encodeURIComponent(slug)}`,
+      { signal: AbortSignal.timeout(8000) }
+    );
+    if (!res.ok) return null;
+    return res.json() as Promise<CatalogArticleDetail>;
+  } catch {
+    return null;
+  }
 }
 
 export async function searchCatalog(
   query: string
 ): Promise<CatalogArticleSummary[]> {
   if (!catalogEnabled()) return [];
-  const res = await fetch(
-    `${getApiBaseUrl()}/api/catalog/search?q=${encodeURIComponent(query)}`
-  );
-  if (!res.ok) return [];
-  const data = (await res.json()) as { results: CatalogArticleSummary[] };
-  return data.results;
+  try {
+    const res = await fetch(
+      `${getApiBaseUrl()}/api/catalog/search?q=${encodeURIComponent(query)}`,
+      { signal: AbortSignal.timeout(8000) }
+    );
+    if (!res.ok) return [];
+    const data = (await res.json()) as { results: CatalogArticleSummary[] };
+    return data.results;
+  } catch {
+    return [];
+  }
 }
 
 export async function fetchAdminSummary(token: string) {
