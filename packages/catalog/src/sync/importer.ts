@@ -20,6 +20,26 @@ function deriveSlugFromPath(filePath: string, title: string): string {
   return slugifyHeading(title) || "article";
 }
 
+export function canonicalTopicSlugFromPath(
+  filePath: string,
+  title: string
+): string {
+  return deriveSlugFromPath(filePath, title);
+}
+
+function inferIdFromPath(
+  filePath: string,
+  slug: string,
+  specialty: string
+): string {
+  const specialtyPart = specialty
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return `dl88-${specialtyPart}-${slug}`.replace(/-+/g, "-");
+}
+
 function resolveSpecialtyKeyFromPath(sourcePath: string): string | undefined {
   const match = sourcePath.match(/content\/([^/]+)\//i);
   return match?.[1]?.toLowerCase();
@@ -28,7 +48,7 @@ function resolveSpecialtyKeyFromPath(sourcePath: string): string | undefined {
 function normalizeArticleFields(
   filePath: string,
   data: {
-    id: string;
+    id?: string;
     title: string;
     slug?: string;
     specialty?: string;
@@ -61,11 +81,21 @@ function normalizeArticleFields(
     });
   }
 
+  const id = data.id?.trim() || inferIdFromPath(filePath, slug, specialty);
+  if (!data.id) {
+    warnings.push({
+      code: "frontmatter.id_inferred",
+      severity: "warning",
+      message: `Missing id — inferred "${id}" from path`,
+      sourcePath: filePath,
+    });
+  }
+
   const updatedAt = data.updated_at?.trim() || data.updated?.trim() || new Date().toISOString().slice(0, 10);
 
   return {
     article: {
-      id: data.id,
+      id,
       title: data.title,
       slug,
       specialty,
@@ -140,31 +170,47 @@ export function importArticleFile(
 export function importArticleRepo(repoRoot: string): ImportRepoResult {
   const files = findArticleMarkdownFiles(repoRoot);
   const results: ImportArticleResult[] = [];
-  const seenIds = new Map<string, string>();
+  /** Keep the richest markdown copy per canonical topic slug (same condition across specialties). */
+  const bestByTopicSlug = new Map<
+    string,
+    { index: number; contentLength: number }
+  >();
 
   for (const filePath of files) {
     const result = importArticleFile(filePath, repoRoot);
 
-    if (result.ok) {
-      const existingPath = seenIds.get(result.article.id);
-      if (existingPath) {
-        results.push({
-          ok: false,
-          sourcePath: filePath,
-          errors: [
-            {
-              code: "article.duplicate_id",
-              severity: "error",
-              message: `Duplicate id "${result.article.id}" (also in ${existingPath})`,
-              sourcePath: filePath,
-            },
-          ],
-        });
-        continue;
-      }
-      seenIds.set(result.article.id, filePath);
+    if (!result.ok) {
+      results.push(result);
+      continue;
     }
 
+    const topicSlug = canonicalTopicSlugFromPath(
+      filePath,
+      result.article.title
+    );
+    let rawLength = 0;
+    try {
+      rawLength = readFileSync(filePath, "utf8").length;
+    } catch {
+      rawLength = 0;
+    }
+
+    const existing = bestByTopicSlug.get(topicSlug);
+    if (existing) {
+      if (rawLength > existing.contentLength) {
+        results[existing.index] = result;
+        bestByTopicSlug.set(topicSlug, {
+          index: existing.index,
+          contentLength: rawLength,
+        });
+      }
+      continue;
+    }
+
+    bestByTopicSlug.set(topicSlug, {
+      index: results.length,
+      contentLength: rawLength,
+    });
     results.push(result);
   }
 

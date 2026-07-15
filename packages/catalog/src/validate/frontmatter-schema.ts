@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const frontmatterSchema = z
   .object({
-    id: z.string().min(1, "id is required"),
+    id: z.string().min(1, "id is required").optional(),
     title: z.string().min(1, "title is required"),
     slug: z
       .string()

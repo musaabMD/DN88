@@ -27,6 +27,7 @@ import {
   entitySlugFromTopicTitle,
   getEntity,
   resolveLibraryArticle,
+  resolveLibraryArticleByTitle,
   type EntityKind,
 } from "@/lib/entities";
 import { isTopicBookmarked, toggleTopicBookmark } from "@/lib/library-bookmarks";
@@ -57,7 +58,8 @@ export function EntityPageClient({ kind, slug }: EntityPageClientProps) {
     (entity?.articleId ? resolveLibraryArticle(entity.articleId) : undefined) ??
     (entity?.title
       ? resolveLibraryArticle(entitySlugFromTopicTitle(entity.title))
-      : undefined);
+      : undefined) ??
+    (entity?.title ? resolveLibraryArticleByTitle(entity.title) : undefined);
 
   useEffect(() => {
     if (!isCatalogApiEnabled()) return;

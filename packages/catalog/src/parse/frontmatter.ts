@@ -36,6 +36,45 @@ function normalizeFrontmatterData(
   );
 }
 
+function normalizeSlugValue(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, "-")
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/** Map common DL88 field aliases before schema validation. */
+function coerceFrontmatterFields(
+  data: Record<string, unknown>
+): Record<string, unknown> {
+  const coerced = normalizeFrontmatterData(data);
+
+  if (!coerced.id) {
+    if (typeof coerced.uuid === "string") coerced.id = coerced.uuid;
+    else if (typeof coerced.article_id === "string") coerced.id = coerced.article_id;
+    else if (typeof coerced.articleId === "string") coerced.id = coerced.articleId;
+  }
+
+  if (!coerced.title) {
+    if (typeof coerced.name === "string") coerced.title = coerced.name;
+    else if (typeof coerced.heading === "string") coerced.title = coerced.heading;
+  }
+
+  if (coerced.slug !== undefined) {
+    coerced.slug = normalizeSlugValue(coerced.slug);
+  }
+
+  if (!coerced.updated_at && typeof coerced.updated === "string") {
+    coerced.updated_at = coerced.updated;
+  }
+
+  return coerced;
+}
+
 export function parseFrontmatter(
   raw: string,
   sourcePath: string
@@ -58,7 +97,7 @@ export function parseFrontmatter(
     };
   }
 
-  const result = frontmatterSchema.safeParse(normalizeFrontmatterData(parsed.data));
+  const result = frontmatterSchema.safeParse(coerceFrontmatterFields(parsed.data));
   if (!result.success) {
     return {
       ok: false,

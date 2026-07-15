@@ -23,11 +23,12 @@ export function buildDryRunReport(importResult: ImportRepoResult): DryRunReport 
   );
 
   const invalid = articles.filter((a) => a.status === "invalid").length;
+  const valid = articles.filter((a) => a.status === "valid").length;
 
   return {
     discovered: importResult.discovered,
     invalid,
-    valid: importResult.discovered - invalid,
+    valid,
     parserVersion: importResult.parserVersion,
     repoRoot: importResult.repoRoot,
     articles,
