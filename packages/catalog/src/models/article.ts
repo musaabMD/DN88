@@ -21,6 +21,7 @@ export type ParsedArticle = {
   slug: string;
   specialty: string;
   subspecialty?: string;
+  articleType?: string;
   tags?: string[];
   updatedAt: string;
   sourcePath: string;

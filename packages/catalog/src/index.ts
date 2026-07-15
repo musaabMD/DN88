@@ -43,6 +43,7 @@ export {
   detectPlaceholders,
   hasBlockingPlaceholders,
 } from "./classify/placeholders.js";
+export { sanitizeArticleSections } from "./classify/section-sanitizer.js";
 export { enrichArticle, hashSourceContent, type EnrichedArticle } from "./classify/enrich.js";
 export { countMeaningfulWords, computeReadMinutes } from "./parse/word-count.js";
 export { validateAssets, extractAssetReferences } from "./validate/assets.js";

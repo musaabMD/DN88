@@ -36,6 +36,28 @@ describe("classification", () => {
     );
   });
 
+  it("removes clinical filler from basic-science articles", () => {
+    const result = importAndClassifyRepo(FIXTURE_ROOT);
+    const aminoAcids = result.articles.find((a) => a.slug === "amino-acids");
+    const skull = result.articles.find((a) => a.slug === "skull");
+
+    for (const article of [aminoAcids, skull]) {
+      expect(article).toBeTruthy();
+      const headings = article?.sections.map((section) => section.heading) ?? [];
+      const body = [
+        article?.preambleMarkdown,
+        ...(article?.sections.map((section) => section.bodyMarkdown) ?? []),
+      ].join("\n");
+
+      expect(headings).not.toContain("Epidemiology");
+      expect(headings).not.toContain("Risk Factors");
+      expect(headings).not.toContain("Management");
+      expect(body).not.toMatch(/clinical condition or syndrome/i);
+      expect(body).not.toMatch(/risk factors should guide pretest probability/i);
+      expect(body).not.toMatch(/The epidemiology of/i);
+    }
+  });
+
   it("classifyContentStatus boundaries", () => {
     expect(
       classifyContentStatus({

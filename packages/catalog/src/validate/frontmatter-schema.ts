@@ -21,6 +21,7 @@ export const frontmatterSchema = z
     updated: z.string().min(1).optional(),
     subspecialty: optionalTextField(),
     tags: z.array(z.string().min(1)).optional(),
+    type: z.string().min(1).optional(),
     provenance: z.unknown().optional(),
     status: z.string().optional(),
     ai_status: z.string().optional(),

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "syncedAt": "2026-07-15T10:53:24.280Z",
+  "syncedAt": "2026-07-15T11:29:26.755Z",
   "articles": [
     {
       "id": "drnote-anatomy-abdominal-cavity-001",
@@ -8,7 +8,7 @@
       "slug": "abdominal-cavity",
       "subject": "anatomy",
       "title": "Abdominal cavity",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -18,7 +18,7 @@
       "slug": "airways-and-lungs",
       "subject": "anatomy",
       "title": "Airways and lungs",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -28,7 +28,7 @@
       "slug": "anatomical-terms",
       "subject": "anatomy",
       "title": "Anatomical terms",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -38,7 +38,7 @@
       "slug": "anatomy-overview",
       "subject": "anatomy",
       "title": "Anatomy overview",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -48,7 +48,7 @@
       "slug": "anterior-abdominal-wall",
       "subject": "anatomy",
       "title": "Anterior abdominal wall",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -58,7 +58,7 @@
       "slug": "autonomic-nervous-system",
       "subject": "anatomy",
       "title": "Autonomic nervous system",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -68,7 +68,7 @@
       "slug": "back-muscles",
       "subject": "anatomy",
       "title": "Back muscles",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -78,7 +78,7 @@
       "slug": "benign-lesions-of-the-stomach-and-small-intestine",
       "subject": "anatomy",
       "title": "Benign lesions of the stomach and small intestine",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -88,7 +88,7 @@
       "slug": "blood-vessels",
       "subject": "anatomy",
       "title": "Blood vessels",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -98,7 +98,7 @@
       "slug": "brainstem",
       "subject": "anatomy",
       "title": "Brainstem",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -108,7 +108,7 @@
       "slug": "cerebrovascular-system",
       "subject": "anatomy",
       "title": "Cerebrovascular system",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -118,7 +118,7 @@
       "slug": "chest-wall",
       "subject": "anatomy",
       "title": "Chest wall",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -128,7 +128,7 @@
       "slug": "diencephalon",
       "subject": "anatomy",
       "title": "Diencephalon",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -138,7 +138,7 @@
       "slug": "esophagus",
       "subject": "anatomy",
       "title": "Esophagus",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -148,7 +148,7 @@
       "slug": "eye-and-orbit",
       "subject": "anatomy",
       "title": "Eye and orbit",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -158,7 +158,7 @@
       "slug": "female-reproductive-organs",
       "subject": "anatomy",
       "title": "Female reproductive organs",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -168,7 +168,7 @@
       "slug": "forearm-wrist-and-hand",
       "subject": "anatomy",
       "title": "Forearm, wrist, and hand",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -178,7 +178,7 @@
       "slug": "gastrointestinal-tract",
       "subject": "anatomy",
       "title": "Gastrointestinal tract",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -188,7 +188,7 @@
       "slug": "head-and-neck-region",
       "subject": "anatomy",
       "title": "Head and neck region",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -198,7 +198,7 @@
       "slug": "heart",
       "subject": "anatomy",
       "title": "Heart",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -208,7 +208,7 @@
       "slug": "joints",
       "subject": "anatomy",
       "title": "Joints",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -218,7 +218,7 @@
       "slug": "kidneys",
       "subject": "anatomy",
       "title": "Kidneys",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -228,7 +228,7 @@
       "slug": "large-intestine",
       "subject": "anatomy",
       "title": "Large intestine",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -238,7 +238,7 @@
       "slug": "liver",
       "subject": "anatomy",
       "title": "Liver",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -248,7 +248,7 @@
       "slug": "lymphatic-system",
       "subject": "anatomy",
       "title": "Lymphatic system",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -258,7 +258,7 @@
       "slug": "male-reproductive-organs",
       "subject": "anatomy",
       "title": "Male reproductive organs",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -268,7 +268,7 @@
       "slug": "neurovasculature-of-the-lower-limbs",
       "subject": "anatomy",
       "title": "Neurovasculature of the lower limbs",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -278,7 +278,7 @@
       "slug": "neurovasculature-of-the-upper-limbs",
       "subject": "anatomy",
       "title": "Neurovasculature of the upper limbs",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -288,7 +288,7 @@
       "slug": "nose-and-sinuses",
       "subject": "anatomy",
       "title": "Nose and sinuses",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -298,7 +298,7 @@
       "slug": "pancreas",
       "subject": "anatomy",
       "title": "Pancreas",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -308,7 +308,7 @@
       "slug": "pelvis-and-hip-joint",
       "subject": "anatomy",
       "title": "Pelvis and hip joint",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -318,7 +318,7 @@
       "slug": "anatomy-illustration-quizzes",
       "subject": "anatomy",
       "title": "Anatomy illustration quizzes",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -328,7 +328,7 @@
       "slug": "shoulder-and-axilla",
       "subject": "anatomy",
       "title": "Shoulder and axilla",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -338,7 +338,7 @@
       "slug": "skull-base-syndromes",
       "subject": "anatomy",
       "title": "Skull base syndromes",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -348,7 +348,7 @@
       "slug": "skull",
       "subject": "anatomy",
       "title": "Skull",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -358,7 +358,7 @@
       "slug": "small-intestine",
       "subject": "anatomy",
       "title": "Small intestine",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -368,7 +368,7 @@
       "slug": "spleen",
       "subject": "anatomy",
       "title": "Spleen",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -378,7 +378,7 @@
       "slug": "stomach",
       "subject": "anatomy",
       "title": "Stomach",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -388,7 +388,7 @@
       "slug": "the-breasts",
       "subject": "anatomy",
       "title": "The breasts",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -398,7 +398,7 @@
       "slug": "the-ear",
       "subject": "anatomy",
       "title": "The ear",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -408,7 +408,7 @@
       "slug": "the-leg-ankle-and-foot",
       "subject": "anatomy",
       "title": "The leg, ankle, and foot",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -418,7 +418,7 @@
       "slug": "the-menstrual-cycle",
       "subject": "anatomy",
       "title": "The menstrual cycle",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -428,7 +428,7 @@
       "slug": "the-somatosensory-system",
       "subject": "anatomy",
       "title": "The somatosensory system",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -438,7 +438,7 @@
       "slug": "thigh-knee-and-popliteal-fossa",
       "subject": "anatomy",
       "title": "Thigh, knee, and popliteal fossa",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -448,7 +448,7 @@
       "slug": "thoracic-cavity",
       "subject": "anatomy",
       "title": "Thoracic cavity",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -458,7 +458,7 @@
       "slug": "upper-arm-and-elbow",
       "subject": "anatomy",
       "title": "Upper arm and elbow",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -468,7 +468,7 @@
       "slug": "vertebral-column",
       "subject": "anatomy",
       "title": "Vertebral column",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -518,7 +518,7 @@
       "slug": "amino-acids",
       "subject": "biochemistry",
       "title": "Amino acids",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -528,7 +528,7 @@
       "slug": "citric-acid-cycle",
       "subject": "biochemistry",
       "title": "Citric acid cycle",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -538,7 +538,7 @@
       "slug": "dna-replication-and-repair",
       "subject": "biochemistry",
       "title": "DNA replication and repair",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -548,7 +548,7 @@
       "slug": "electron-transport-chain-and-oxidative-phosphorylation",
       "subject": "biochemistry",
       "title": "Electron transport chain and oxidative phosphorylation",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -558,7 +558,7 @@
       "slug": "energy-metabolism-and-heat-balance",
       "subject": "biochemistry",
       "title": "Energy metabolism and heat balance",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -568,7 +568,7 @@
       "slug": "enzymes-and-biocatalysis",
       "subject": "biochemistry",
       "title": "Enzymes and biocatalysis",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -578,7 +578,7 @@
       "slug": "gene-expression-and-transcription",
       "subject": "biochemistry",
       "title": "Gene expression and transcription",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -588,7 +588,7 @@
       "slug": "glycogen-metabolism",
       "subject": "biochemistry",
       "title": "Glycogen metabolism",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -598,7 +598,7 @@
       "slug": "glycolysis-and-gluconeogenesis",
       "subject": "biochemistry",
       "title": "Glycolysis and gluconeogenesis",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -608,7 +608,7 @@
       "slug": "lipids-and-their-metabolism",
       "subject": "biochemistry",
       "title": "Lipids and their metabolism",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -618,7 +618,7 @@
       "slug": "nucleotides-dna-and-rna",
       "subject": "biochemistry",
       "title": "Nucleotides, DNA, and RNA",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -628,7 +628,7 @@
       "slug": "proteins-and-peptides",
       "subject": "biochemistry",
       "title": "Proteins and peptides",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -638,7 +638,7 @@
       "slug": "purines-and-pyrimidines",
       "subject": "biochemistry",
       "title": "Purines and pyrimidines",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -648,7 +648,7 @@
       "slug": "signal-transduction",
       "subject": "biochemistry",
       "title": "Signal transduction",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -658,7 +658,7 @@
       "slug": "substance-transport",
       "subject": "biochemistry",
       "title": "Substance transport",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -668,7 +668,7 @@
       "slug": "translation-and-protein-synthesis",
       "subject": "biochemistry",
       "title": "Translation and protein synthesis",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -678,7 +678,7 @@
       "slug": "vitamin-d-deficiency",
       "subject": "biochemistry",
       "title": "Vitamin D deficiency",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -688,7 +688,7 @@
       "slug": "vitamin-k-deficiency-bleeding",
       "subject": "biochemistry",
       "title": "Vitamin K deficiency bleeding",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -698,7 +698,7 @@
       "slug": "vitamins",
       "subject": "biochemistry",
       "title": "Vitamins",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -2578,7 +2578,7 @@
       "slug": "basics-of-embryology",
       "subject": "embryology",
       "title": "Basics of embryology",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -2588,7 +2588,7 @@
       "slug": "development-of-the-reproductive-system",
       "subject": "embryology",
       "title": "Development of the reproductive system",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -2598,7 +2598,7 @@
       "slug": "embryogenesis",
       "subject": "embryology",
       "title": "Embryogenesis",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -2608,7 +2608,7 @@
       "slug": "teratogenesis",
       "subject": "embryology",
       "title": "Teratogenesis",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -4058,7 +4058,7 @@
       "slug": "basics-of-human-genetics",
       "subject": "genetics",
       "title": "Basics of human genetics",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -4068,7 +4068,7 @@
       "slug": "chromosomal-abnormalities",
       "subject": "genetics",
       "title": "Chromosomal abnormalities",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -4078,7 +4078,7 @@
       "slug": "down-syndrome",
       "subject": "genetics",
       "title": "Down syndrome",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -4088,7 +4088,7 @@
       "slug": "inborn-errors-of-metabolism",
       "subject": "genetics",
       "title": "Inborn errors of metabolism",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -4098,7 +4098,7 @@
       "slug": "lysosomal-storage-diseases",
       "subject": "genetics",
       "title": "Lysosomal storage diseases",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -4538,7 +4538,7 @@
       "slug": "adipose-tissue",
       "subject": "histology",
       "title": "Adipose tissue",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -4548,7 +4548,7 @@
       "slug": "bone-tissue",
       "subject": "histology",
       "title": "Bone tissue",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -4558,7 +4558,7 @@
       "slug": "cartilage",
       "subject": "histology",
       "title": "Cartilage",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -4568,7 +4568,7 @@
       "slug": "cellular-changes-and-adaptive-responses",
       "subject": "histology",
       "title": "Cellular changes and adaptive responses",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -4578,7 +4578,7 @@
       "slug": "connective-tissue",
       "subject": "histology",
       "title": "Connective tissue",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -4588,7 +4588,7 @@
       "slug": "general-histology",
       "subject": "histology",
       "title": "General histology",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -4598,7 +4598,7 @@
       "slug": "muscle-tissue",
       "subject": "histology",
       "title": "Muscle tissue",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -4608,7 +4608,7 @@
       "slug": "the-cell-cycle",
       "subject": "histology",
       "title": "The cell cycle",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -4618,7 +4618,7 @@
       "slug": "the-cell",
       "subject": "histology",
       "title": "The cell",
-      "readMinutes": 9,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -12888,7 +12888,7 @@
       "slug": "cardiac-physiology",
       "subject": "physiology",
       "title": "Cardiac physiology",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -12898,7 +12898,7 @@
       "slug": "circadian-rhythm-sleep-and-induced-states-of-altered-consciousness",
       "subject": "physiology",
       "title": "Circadian rhythm, sleep, and induced states of altered consciousness",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -12908,7 +12908,7 @@
       "slug": "female-sex-hormones",
       "subject": "physiology",
       "title": "Female sex hormones",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -12918,7 +12918,7 @@
       "slug": "nociception-and-pain-modulation",
       "subject": "physiology",
       "title": "Nociception and pain modulation",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -12928,7 +12928,7 @@
       "slug": "respiratory-physiology",
       "subject": "physiology",
       "title": "Respiratory physiology",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -12938,7 +12938,7 @@
       "slug": "resting-potentials-and-action-potentials",
       "subject": "physiology",
       "title": "Resting potentials and action potentials",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -12948,7 +12948,7 @@
       "slug": "vascular-physiology",
       "subject": "physiology",
       "title": "Vascular physiology",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },
@@ -12958,7 +12958,7 @@
       "slug": "water-and-electrolyte-metabolism",
       "subject": "physiology",
       "title": "Water and electrolyte metabolism",
-      "readMinutes": 10,
+      "readMinutes": 2,
       "updated": "Jul 2026",
       "updatedAt": "2026-07-15"
     },

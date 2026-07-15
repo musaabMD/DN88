@@ -14,6 +14,7 @@ import {
   resolveSpecialtyFromPath,
   resolveSpecialtyLabel,
 } from "../classify/specialty-registry.js";
+import { sanitizeArticleSections } from "../classify/section-sanitizer.js";
 import { countMeaningfulWords, computeReadMinutes } from "../parse/word-count.js";
 import { validateAssets } from "../validate/assets.js";
 
@@ -40,9 +41,10 @@ export function enrichArticle(
   rawContent: string,
   extraIssues: ValidationIssue[] = []
 ): EnrichedArticle {
+  const sanitizedArticle = sanitizeArticleSections(article);
   const fullMarkdown = [
-    article.preambleMarkdown ?? "",
-    ...article.sections.map((s) => s.bodyMarkdown),
+    sanitizedArticle.preambleMarkdown ?? "",
+    ...sanitizedArticle.sections.map((s) => s.bodyMarkdown),
   ].join("\n\n");
 
   const placeholders = detectPlaceholders(fullMarkdown);
@@ -64,7 +66,7 @@ export function enrichArticle(
   });
 
   return {
-    ...article,
+    ...sanitizedArticle,
     contentStatus,
     wordCount,
     readMinutes: computeReadMinutes(wordCount),

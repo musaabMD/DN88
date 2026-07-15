@@ -33,6 +33,7 @@ function normalizeArticleFields(
     slug?: string;
     specialty?: string;
     subspecialty?: string;
+    type?: string;
     tags?: string[];
     updated_at?: string;
     updated?: string;
@@ -70,6 +71,7 @@ function normalizeArticleFields(
       slug,
       specialty,
       subspecialty: data.subspecialty,
+      articleType: data.type,
       tags: data.tags,
       updatedAt,
       sourcePath: filePath,
