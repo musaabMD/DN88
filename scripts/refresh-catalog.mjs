@@ -125,7 +125,12 @@ async function main() {
   const importResult = await importFromRepo(repoRoot);
 
   const publishable = importResult.articles.filter(
-    (article) => article.contentStatus === "complete" && !article.hasBlockingErrors
+    (article) =>
+      article.contentStatus !== "scaffold" && !article.hasBlockingErrors
+  );
+
+  console.log(
+    `[catalog] DL88 stats: discovered=${importResult.discovered} complete=${importResult.complete} partial=${importResult.partial} scaffold=${importResult.scaffold} publishable=${publishable.length}`
   );
 
   if (publishable.length === 0) {
