@@ -125,6 +125,37 @@ app.get("/health", (c) => {
   });
 });
 
+app.get("/catalog/articles/:file", async (c) => {
+  const file = c.req.param("file");
+  if (/^(dn88|dl88)-/i.test(file)) {
+    return c.json(
+      { error: "Not found" },
+      404,
+      {
+        "Cache-Control": "no-store",
+        "X-Robots-Tag": "noindex",
+      }
+    );
+  }
+
+  const originUrl = new URL(c.req.url);
+  originUrl.hostname = "dn88.pages.dev";
+
+  const response = await fetch(originUrl.toString(), {
+    headers: {
+      Accept: c.req.header("Accept") ?? "application/json",
+    },
+  });
+  const headers = new Headers(response.headers);
+  headers.set("Cache-Control", "public, max-age=0, must-revalidate");
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+});
+
 app.get("/api/me", async (c) => {
   const auth = await getAuthedUser(c);
   if ("error" in auth) {

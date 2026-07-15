@@ -108,6 +108,7 @@ jobs:
           LEGACY_WORKER_NAME: drnote-app-v1
 
       - name: Purge stale Cloudflare cache
+        continue-on-error: true
         run: |
           curl -fsS -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
             -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \

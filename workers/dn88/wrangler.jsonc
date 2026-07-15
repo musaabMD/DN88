@@ -5,6 +5,12 @@
   "compatibility_date": "2026-07-07",
   "account_id": "5000e0a4f0ca6dd90b08bde9dc11ccb9",
   "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "drnote.co/catalog/articles/*",
+      "zone_name": "drnote.co"
+    }
+  ],
   "observability": {
     "enabled": true
   },
