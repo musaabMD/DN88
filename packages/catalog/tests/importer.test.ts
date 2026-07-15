@@ -47,10 +47,10 @@ Body`;
     }
   });
 
-  it("rejects missing required slug", () => {
+  it("accepts missing slug in frontmatter (inferred at import)", () => {
     const raw = `---
 id: test-id
-title: Test
+title: Test Article
 specialty: cardiology
 updated_at: "2026-01-01"
 ---
@@ -58,10 +58,23 @@ updated_at: "2026-01-01"
 Body`;
 
     const result = parseFrontmatter(raw, "invalid.md");
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.errors.some((e) => e.code.includes("slug"))).toBe(true);
-    }
+    expect(result.ok).toBe(true);
+  });
+
+  it("strips unknown frontmatter keys instead of rejecting", () => {
+    const raw = `---
+id: test-id
+title: Test
+slug: test-article
+specialty: cardiology
+updated_at: "2026-01-01"
+custom_field: ignored
+---
+
+Body`;
+
+    const result = parseFrontmatter(raw, "extra-keys.md");
+    expect(result.ok).toBe(true);
   });
 
   it("rejects non-kebab-case slug", () => {
@@ -169,7 +182,7 @@ describe("importArticleRepo", () => {
     expect(hypertension?.ok).toBe(true);
 
     const invalid = result.results.filter((r) => !r.ok);
-    expect(invalid.length).toBeGreaterThanOrEqual(2);
+    expect(invalid.length).toBeGreaterThanOrEqual(1);
 
     const duplicateId = invalid.find((r) =>
       r.errors.some((e) => e.code === "article.duplicate_id")

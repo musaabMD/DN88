@@ -1,3 +1,4 @@
+import { basename, dirname } from "node:path";
 import { readFileSync } from "node:fs";
 import { findArticleMarkdownFiles } from "../discover/find-article-md.js";
 import type {
@@ -8,6 +9,76 @@ import type {
 import { PARSER_VERSION } from "../models/article.js";
 import { parseFrontmatter } from "../parse/frontmatter.js";
 import { parseSectionsFromMarkdown } from "../parse/sections-from-markdown.js";
+import { slugifyHeading } from "../parse/slugify.js";
+
+function deriveSlugFromPath(filePath: string, title: string): string {
+  const topicDir = basename(dirname(filePath));
+  if (topicDir && topicDir !== "content") {
+    const fromDir = slugifyHeading(topicDir);
+    if (fromDir) return fromDir;
+  }
+  return slugifyHeading(title) || "article";
+}
+
+function resolveSpecialtyKeyFromPath(sourcePath: string): string | undefined {
+  const match = sourcePath.match(/content\/([^/]+)\//i);
+  return match?.[1]?.toLowerCase();
+}
+
+function normalizeArticleFields(
+  filePath: string,
+  data: {
+    id: string;
+    title: string;
+    slug?: string;
+    specialty?: string;
+    subspecialty?: string;
+    tags?: string[];
+    updated_at?: string;
+    updated?: string;
+  }
+): { article: ParsedArticle; warnings: ValidationIssue[] } {
+  const warnings: ValidationIssue[] = [];
+  const pathSpecialty = resolveSpecialtyKeyFromPath(filePath);
+  const specialty = data.specialty?.trim() || pathSpecialty || "general";
+
+  if (!data.specialty) {
+    warnings.push({
+      code: "frontmatter.specialty_inferred",
+      severity: "warning",
+      message: `Missing specialty — inferred "${specialty}" from path`,
+      sourcePath: filePath,
+    });
+  }
+
+  const slug = data.slug?.trim() || deriveSlugFromPath(filePath, data.title);
+  if (!data.slug) {
+    warnings.push({
+      code: "frontmatter.slug_inferred",
+      severity: "warning",
+      message: `Missing slug — inferred "${slug}" from path/title`,
+      sourcePath: filePath,
+    });
+  }
+
+  const updatedAt = data.updated_at?.trim() || data.updated?.trim() || new Date().toISOString().slice(0, 10);
+
+  return {
+    article: {
+      id: data.id,
+      title: data.title,
+      slug,
+      specialty,
+      subspecialty: data.subspecialty,
+      tags: data.tags,
+      updatedAt,
+      sourcePath: filePath,
+      sections: [],
+      preambleMarkdown: undefined,
+    },
+    warnings,
+  };
+}
 
 export type ImportRepoResult = {
   parserVersion: string;
@@ -54,15 +125,11 @@ export function importArticleFile(
     ...sectionParse.warnings,
   ];
 
+  const normalized = normalizeArticleFields(filePath, frontmatter.data);
+  warnings.push(...normalized.warnings);
+
   const article: ParsedArticle = {
-    id: frontmatter.data.id,
-    title: frontmatter.data.title,
-    slug: frontmatter.data.slug,
-    specialty: frontmatter.data.specialty,
-    subspecialty: frontmatter.data.subspecialty,
-    tags: frontmatter.data.tags,
-    updatedAt: frontmatter.data.updated_at,
-    sourcePath: filePath,
+    ...normalized.article,
     sections: sectionParse.sections,
     preambleMarkdown: sectionParse.preambleMarkdown,
   };
