@@ -1,5 +1,5 @@
-import ProductHome from "@/components/ProductHome";
+import { DrNoteHome } from "@/components/home/DrNoteHome";
 
 export default function HomePage() {
-  return <ProductHome />;
+  return <DrNoteHome />;
 }
