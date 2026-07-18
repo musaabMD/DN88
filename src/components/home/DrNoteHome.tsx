@@ -128,6 +128,18 @@ function AskChip({ onClick }: { onClick: () => void }) {
   return <button className="dn-askchip" onClick={onClick} title="Ask AI" aria-label="Ask AI"><Sparkles size={16} strokeWidth={2.4} /></button>;
 }
 
+function BkIcon({ saved, size = 18, light = false }: { saved?: boolean; size?: number; light?: boolean }) {
+  return (
+    <Bookmark
+      size={size}
+      strokeWidth={2}
+      fill="none"
+      color={light ? "#fff" : saved ? C.blueDark : C.sub}
+      aria-hidden
+    />
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /*  Styles                                                             */
 /* ------------------------------------------------------------------ */
@@ -154,11 +166,13 @@ const styles = `
 /* main / hero */
 .dn-main { max-width: min(1120px, calc(100% - 36px)); margin: 0 auto; padding: 92px 18px 120px; }
 .dn-hero { text-align: center; margin-bottom: 26px; display: flex; flex-direction: column; align-items: center; }
-.dn-hero-ic { width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center; margin-bottom: 14px; }
+.dn-hero-ic { width: 56px; height: 56px; min-width: 56px; border-radius: 18px; display: grid; place-items: center; margin-bottom: 14px; padding: 0 6px; overflow: hidden; }
+.dn-hero-code { font-size: 22px; font-weight: 900; color: #fff; letter-spacing: -0.5px; line-height: 1; white-space: nowrap; }
 .dn-title { font-size: 40px; font-weight: 900; letter-spacing: -1px; margin: 0 0 8px; color: ${C.ink}; }
 .dn-hero-sub { color: ${C.sub}; font-weight: 700; margin: 0 0 18px; }
-.dn-crumb-back { display: inline-flex; align-items: center; gap: 6px; background: none; border: none; cursor: pointer; color: ${C.sub}; font-weight: 800; font-size: 14px; margin-bottom: 8px; }
+.dn-crumb-back { display: inline-flex; align-items: center; gap: 6px; background: none; border: none; cursor: pointer; color: ${C.sub}; font-weight: 800; font-size: 14px; margin-bottom: 8px; padding: 6px 0; min-height: 44px; }
 .dn-crumb-back:hover { color: ${C.ink}; }
+.dn-exam-main { width: 100%; }
 .dn-search { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 520px; margin: 8px auto 0; background: #fff; border: 2px solid ${C.line}; border-radius: 18px; padding: 14px 16px; transition: border-color .12s, box-shadow .12s; }
 .dn-search:focus-within { border-color: ${C.blue}; box-shadow: 0 0 0 4px #DDF4FF; }
 .dn-search input { flex: 1; min-width: 0; border: none; outline: none; font-size: 16px; font-weight: 700; color: ${C.ink}; background: none; }
@@ -204,6 +218,8 @@ const styles = `
 .dn-row:hover .dn-actions { opacity: 1; transform: none; }
 .dn-icon-btn { border: none; background: ${C.wash}; color: ${C.sub}; cursor: pointer; width: 34px; height: 34px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; transition: background .1s; }
 .dn-icon-btn:hover { background: #ECECEC; }
+.dn-icon-btn.dn-bk.on { background: #EAF7FF; }
+.dn-fs-bk.on { background: #EAF7FF !important; }
 .dn-selbox { flex-shrink: 0; width: 22px; height: 22px; border: 2px solid ${C.line}; border-radius: 7px; display: grid; place-items: center; cursor: pointer; opacity: 0; transition: opacity .12s; }
 .dn-row:hover .dn-selbox, .dn-selbox.on { opacity: 1; }
 .dn-empty { text-align: center; padding: 50px 20px; color: ${C.sub}; font-weight: 700; display: flex; flex-direction: column; align-items: center; gap: 10px; }
@@ -387,14 +403,37 @@ const styles = `
   .dn-chat { width: 100%; border-left: none; }
 }
 @media (max-width: 640px) {
-  .dn-title { font-size: 32px; }
-  .dn-filterbar { flex-direction: column; align-items: stretch; gap: 10px; }
-  .dn-selectall { justify-content: flex-end; }
-  .dn-actions { opacity: 1; transform: none; }
+  .dn-main { max-width: 100%; padding: 72px 14px 110px; }
+  .dn-header-inner { height: 56px; padding: 0 14px; }
+  .dn-crumb-back { font-size: 15px; margin-bottom: 4px; width: 100%; justify-content: flex-start; }
+  .dn-hero { margin-bottom: 18px; }
+  .dn-hero-ic { width: 72px; height: 72px; min-width: 72px; border-radius: 20px; margin-bottom: 12px; }
+  .dn-hero-code { font-size: 20px; }
+  .dn-title { font-size: 28px; margin-bottom: 4px; }
+  .dn-hero-sub { font-size: 15px; margin-bottom: 14px; }
+  .dn-search { max-width: 100%; padding: 12px 14px; border-radius: 14px; margin-top: 4px; }
+  .dn-search input { font-size: 16px; }
+  .dn-filterbar { flex-direction: column; align-items: stretch; gap: 12px; margin-bottom: 14px; }
+  .dn-periods { width: 100%; border-radius: 14px; padding: 3px; -webkit-overflow-scrolling: touch; }
+  .dn-period { padding: 10px 12px; font-size: 13px; min-height: 40px; }
+  .dn-selectall { width: 100%; justify-content: flex-start; min-height: 40px; padding: 4px 0; }
+  .dn-row { flex-wrap: wrap; gap: 10px; padding: 12px; border-radius: 16px; align-items: center; }
+  .dn-upvote { width: 46px; border-radius: 12px; padding: 5px 0; }
+  .dn-upvote b { font-size: 12px; }
+  .dn-file { flex: 1 1 calc(100% - 58px); min-width: 0; }
+  .dn-file-name { font-size: 15px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .dn-actions { opacity: 1; transform: none; order: 3; width: 100%; justify-content: flex-end; gap: 8px; padding-top: 8px; margin-top: 2px; border-top: 1px solid ${C.line}; }
+  .dn-icon-btn { width: 42px; height: 42px; border-radius: 12px; }
+  .dn-selbox { opacity: 1; order: 2; width: 26px; height: 26px; margin-left: auto; }
   .dn-hide-sm { display: none; }
+  .dn-bulk { left: 14px; right: 14px; transform: none; width: auto; flex-wrap: wrap; gap: 10px; padding: 12px 14px; border-radius: 16px; }
+  .dn-bulk-actions { width: 100%; justify-content: space-between; }
   .dn-mode-grid { grid-template-columns: 1fr; }
   .dn-read-col h1 { font-size: 25px; }
   .dn-read-col p, .dn-read-lead { font-size: 16px !important; }
+  .dn-fs-row1 { flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
+  .dn-fs-search { max-width: none; flex: 1 1 100%; order: 3; margin-left: 0; }
+  .dn-fs-bk { width: 42px; height: 42px; border: 2px solid ${C.line}; border-radius: 12px; background: #fff; }
 }
 `;
 
@@ -684,31 +723,36 @@ function ExamPage(props: {
   const per: Exclude<Filter, "bookmarked"> = filter === "bookmarked" ? "all" : filter;
 
   return (
-    <main className="dn-main">
-      <button className="dn-crumb-back" onClick={onBack}><ArrowLeft size={16} strokeWidth={2.6} /> All exams</button>
+    <main className="dn-main dn-exam-main">
+      <button type="button" className="dn-crumb-back" onClick={onBack}><ArrowLeft size={18} strokeWidth={2.6} /> All exams</button>
       <section className="dn-hero">
         <span className="dn-hero-ic" style={{ background: `linear-gradient(135deg, ${exam.from} 0%, ${exam.to} 100%)` }}>
-          <span style={{ fontSize: 24, fontWeight: 900, color: "#fff" }}>{exam.code}</span>
+          <span className="dn-hero-code">{exam.code}</span>
         </span>
         <h1 className="dn-title">{exam.code}</h1>
         <p className="dn-hero-sub">{exam.name}</p>
         <div className="dn-search">
           <Search size={20} color={C.faint} strokeWidth={2.4} />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search an exam or file…" aria-label="Search files" />
-          {query && <button className="dn-search-clear" onClick={() => setQuery("")}><X size={16} strokeWidth={2.6} /></button>}
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search files…" aria-label="Search files" />
+          {query && <button type="button" className="dn-search-clear" onClick={() => setQuery("")}><X size={16} strokeWidth={2.6} /></button>}
         </div>
       </section>
 
       <div className="dn-filterbar">
         <div className="dn-periods">
           {FILTERS.map((p) => (
-            <button key={p.key} onClick={() => setFilter(p.key)} className="dn-period"
+            <button key={p.key} type="button" onClick={() => setFilter(p.key)} className="dn-period"
               style={{ color: filter === p.key ? "#fff" : C.sub, background: filter === p.key ? (p.key === "bookmarked" ? C.blue : C.green) : "transparent", boxShadow: filter === p.key ? `0 3px 0 ${p.key === "bookmarked" ? C.blueDark : C.greenDark}` : "none" }}>
-              {p.key === "bookmarked" && <Bookmark size={13} strokeWidth={2.6} fill={filter === p.key ? "#fff" : "none"} style={{ marginRight: 4, verticalAlign: -1 }} />}{p.label}
+              {p.key === "bookmarked" ? (
+                <span className="dn-inline" style={{ gap: 5 }}>
+                  <BkIcon saved={filter === p.key} size={14} light={filter === p.key} />
+                  Saved
+                </span>
+              ) : p.label}
             </button>
           ))}
         </div>
-        <button className="dn-selectall" onClick={() => setPicked(allPicked ? new Set() : new Set(ranked.map((f) => f.id)))}>
+        <button type="button" className="dn-selectall" onClick={() => setPicked(allPicked ? new Set() : new Set(ranked.map((f) => f.id)))}>
           <span className="dn-check" style={{ borderColor: allPicked ? C.green : C.line, background: allPicked ? C.green : "#fff" }}>{allPicked && <Check size={13} color="#fff" strokeWidth={3.5} />}</span>Select all
         </button>
       </div>
@@ -719,25 +763,25 @@ function ExamPage(props: {
           const count = f.votes[per] + (isVoted ? 1 : 0);
           return (
             <li key={f.id} className="dn-row" style={{ borderColor: isPicked ? C.blue : isSaved ? "#CFE9FF" : C.line, background: isPicked ? "#F0FAFF" : "#fff" }}>
-              <button className="dn-upvote" onClick={() => toggle(voted, f.id, setVoted)} style={{ borderColor: isVoted ? C.green : C.line, background: isVoted ? "#EAFBD9" : "#fff", color: isVoted ? C.greenDark : C.sub }} aria-label="Upvote">
+              <button type="button" className="dn-upvote" onClick={() => toggle(voted, f.id, setVoted)} style={{ borderColor: isVoted ? C.green : C.line, background: isVoted ? "#EAFBD9" : "#fff", color: isVoted ? C.greenDark : C.sub }} aria-label="Upvote">
                 <ChevronUp size={19} strokeWidth={3} /><b>{count.toLocaleString()}</b>
               </button>
-              <button className="dn-file" onClick={() => onOpen(f)}>
+              <button type="button" className="dn-file" onClick={() => onOpen(f)}>
                 <LetterTile name={f.name} color={f.color} />
                 <span className="dn-file-text">
-                  <span className="dn-file-name">{isSaved && <Bookmark size={13} color={C.blue} fill={C.blue} strokeWidth={2} style={{ marginRight: 5, verticalAlign: -1 }} />}{f.name}</span>
+                  <span className="dn-file-name">{f.name}</span>
                   <span className="dn-file-meta">{f.author} · {f.pages} pages</span>
                 </span>
               </button>
               <div className="dn-actions">
-                <button className="dn-icon-btn" onClick={() => onOpen(f)} title="Study"><Play size={16} strokeWidth={2.4} /></button>
-                <button className="dn-icon-btn dn-bk" onClick={() => { toggleSaved(f.id); flash(isSaved ? "Removed bookmark" : "Bookmarked"); }} title={isSaved ? "Remove bookmark" : "Bookmark"} style={{ color: isSaved ? C.blueDark : C.sub }}>
-                  <Bookmark size={16} strokeWidth={2.4} fill={isSaved ? C.blue : "none"} />
+                <button type="button" className="dn-icon-btn" onClick={() => onOpen(f)} title="Study" aria-label="Study"><Play size={18} strokeWidth={2.4} /></button>
+                <button type="button" className={`dn-icon-btn dn-bk${isSaved ? " on" : ""}`} onClick={() => { toggleSaved(f.id); flash(isSaved ? "Removed bookmark" : "Bookmarked"); }} title={isSaved ? "Remove bookmark" : "Bookmark"} aria-label={isSaved ? "Remove bookmark" : "Bookmark"}>
+                  <BkIcon saved={isSaved} size={18} />
                 </button>
-                <button className="dn-icon-btn dn-hide-sm" onClick={() => flash("Share link copied")} title="Share"><Share2 size={16} strokeWidth={2.4} /></button>
-                <button className="dn-icon-btn dn-hide-sm" onClick={() => flash("Link copied")} title="Copy link"><Link2 size={16} strokeWidth={2.4} /></button>
+                <button type="button" className="dn-icon-btn dn-hide-sm" onClick={() => flash("Share link copied")} title="Share" aria-label="Share"><Share2 size={16} strokeWidth={2.4} /></button>
+                <button type="button" className="dn-icon-btn dn-hide-sm" onClick={() => flash("Link copied")} title="Copy link" aria-label="Copy link"><Link2 size={16} strokeWidth={2.4} /></button>
               </div>
-              <button className={`dn-selbox ${isPicked ? "on" : ""}`} onClick={() => toggle(picked, f.id, setPicked)} style={{ borderColor: isPicked ? C.blue : C.line, background: isPicked ? C.blue : "#fff" }} aria-label="Select">
+              <button type="button" className={`dn-selbox ${isPicked ? "on" : ""}`} onClick={() => toggle(picked, f.id, setPicked)} style={{ borderColor: isPicked ? C.blue : C.line, background: isPicked ? C.blue : "#fff" }} aria-label="Select">
                 {isPicked && <Check size={13} color="#fff" strokeWidth={3.5} />}
               </button>
             </li>
@@ -801,8 +845,8 @@ function Study({ file, saved, onToggleSave, onClose, flash }: {
         <div className="dn-fs-row1">
           <button className="dn-fs-close" onClick={onClose} aria-label="Close"><X size={20} strokeWidth={2.8} /></button>
           <LetterTile name={file.name} color={file.color} size={30} />
-          <button className="dn-fs-bk" onClick={onToggleSave} title={saved ? "Bookmarked" : "Bookmark"} style={{ color: saved ? C.blueDark : C.sub }}>
-            <Bookmark size={18} strokeWidth={2.4} fill={saved ? C.blue : "none"} />
+          <button type="button" className={`dn-fs-bk${saved ? " on" : ""}`} onClick={onToggleSave} title={saved ? "Bookmarked" : "Bookmark"} aria-label={saved ? "Remove bookmark" : "Bookmark"}>
+            <BkIcon saved={saved} size={18} />
           </button>
           <div className="dn-fs-search">
             <Search size={18} color={C.faint} strokeWidth={2.4} />
