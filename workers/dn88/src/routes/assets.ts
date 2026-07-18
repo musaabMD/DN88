@@ -42,11 +42,14 @@ assetRoutes.get("/:commitSha/*", async (c) => {
   const object = await c.env.SNAPSHOTS.get(key);
   if (!object) return c.json({ error: "Not found" }, 404);
 
-  let body = await object.arrayBuffer();
+  let body: ArrayBuffer;
   if (ext === ".svg") {
-    const text = new TextDecoder().decode(body);
+    const text = new TextDecoder().decode(await object.arrayBuffer());
     const sanitized = sanitizeSvg(text);
-    body = new TextEncoder().encode(sanitized).buffer;
+    const bytes = new TextEncoder().encode(sanitized);
+    body = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+  } else {
+    body = await object.arrayBuffer();
   }
 
   return new Response(body, {

@@ -1,7 +1,7 @@
 "use client";
 
-import { useAuth } from "@clerk/clerk-react";
 import { useCallback, useState } from "react";
+import { getClerkToken } from "@/lib/clerk-token";
 import {
   fetchCredits,
   sendAiChat,
@@ -12,7 +12,6 @@ import {
 import { useClerkEnabled } from "@/hooks/useClerkEnabled";
 
 export function useMedGeniusCredits() {
-  const { getToken } = useAuth();
   const clerkEnabled = useClerkEnabled();
   const [credits, setCredits] = useState<CreditSummary | null>(null);
   const [loading, setLoading] = useState(false);
@@ -23,7 +22,7 @@ export function useMedGeniusCredits() {
     setLoading(true);
     setError(null);
     try {
-      const token = await getToken();
+      const token = await getClerkToken();
       const data = await fetchCredits(token);
       setCredits(data);
     } catch (err) {
@@ -31,13 +30,12 @@ export function useMedGeniusCredits() {
     } finally {
       setLoading(false);
     }
-  }, [clerkEnabled, getToken]);
+  }, [clerkEnabled]);
 
   return { credits, loading, error, refresh };
 }
 
 export function useMedGeniusChat() {
-  const { getToken } = useAuth();
   const clerkEnabled = useClerkEnabled();
   const [loading, setLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | undefined>();
@@ -54,7 +52,7 @@ export function useMedGeniusChat() {
       if (!clerkEnabled) return null;
       setLoading(true);
       try {
-        const token = await getToken();
+        const token = await getClerkToken();
         const result = await sendAiChat(token, {
           ...params,
           conversationId,
@@ -70,7 +68,7 @@ export function useMedGeniusChat() {
         setLoading(false);
       }
     },
-    [clerkEnabled, conversationId, getToken]
+    [clerkEnabled, conversationId]
   );
 
   return { send, loading, conversationId, resetConversation: () => setConversationId(undefined) };

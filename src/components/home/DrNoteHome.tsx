@@ -8,7 +8,6 @@ import {
   ListChecks, Send, Upload, Command, Maximize2, Minimize2, StickyNote, LayoutList, Columns2, Image as ImageIcon, BarChart2, RotateCcw,
 } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
-import { useAuth } from "@clerk/clerk-react";
 import { askMedGeniusAi } from "@/lib/medgenius/chat";
 import { uploadDocument, MedGeniusApiError } from "@/lib/medgenius/api";
 import { sanitizeUserError } from "@/lib/medgenius/errors";
@@ -20,6 +19,9 @@ import {
   type HomeReadPage,
   type HomeSummary,
 } from "@/lib/medgenius/home-data";
+import { createStudySession, recordAttempt } from "@/lib/medgenius/api";
+import { useHomeAnalytics } from "@/hooks/useHomeAnalytics";
+import { getClerkToken } from "@/lib/clerk-token";
 import { useClerkEnabled } from "@/hooks/useClerkEnabled";
 import { LocaleToggle } from "@/components/LocaleToggle";
 import { HomeLocaleProvider, useHomeLocale } from "@/components/home/HomeLocaleProvider";
@@ -950,7 +952,6 @@ function AddFile({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { getToken } = useAuth();
   const clerkEnabled = useClerkEnabled();
 
   const handleUpload = async () => {
@@ -967,7 +968,7 @@ function AddFile({
     setUploading(true);
     setError(null);
     try {
-      const token = await getToken();
+      const token = await getClerkToken();
       const result = await uploadDocument(token, {
         file,
         name: name.trim(),
@@ -1166,6 +1167,8 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, locale, onTogg
   const flashcards: HomeFlashCard[] = useLive && live.flashcards.length > 0 ? live.flashcards : content.cards;
   const summaries: HomeSummary[] = useLive ? live.summaries : [];
   const processing = useLive && live.status && live.status !== "completed" && live.status !== "failed";
+  const analytics = useHomeAnalytics(useLive);
+  const backendSessionRef = useRef<string | null>(null);
 
   const [tab, setTab] = useState<Tab>("Read");
   const [query, setQuery] = useState("");
@@ -1177,6 +1180,29 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, locale, onTogg
   const [reveal, setReveal] = useState<Reveal>("immediate");
   const [sessions, setSessions] = useState<QuizSession[]>(() => loadSessions(file.id, questions.length));
   const activeSessionRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!useLive || !file.documentId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getClerkToken();
+        if (!token) return;
+        const created = await createStudySession(token, {
+          mode: "quiz",
+          title: file.name,
+          documentId: file.documentId,
+          examId: exam?.id,
+        });
+        if (!cancelled) backendSessionRef.current = created.sessionId;
+      } catch {
+        /* local sessions still work */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [useLive, file.documentId, file.name, exam?.id]);
 
   useEffect(() => {
     localStorage.setItem(`dn-sessions-${file.id}`, JSON.stringify(sessions));
@@ -1366,8 +1392,20 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, locale, onTogg
           </div>
         )}
         {tab === "Read" && <ReadFull file={file} pages={readPages} />}
-        {tab === "Quiz" && <QuizList query={query} questions={questions} answers={answers} setAnswers={setAnswers} flagged={flagged} setFlagged={setFlagged} perPage={perPage} setPerPage={setPerPage} reveal={reveal} setReveal={setReveal} onAsk={openChat} />}
-        {tab === "Review" && <ReviewPane questions={questions} answers={answers} flagged={flagged} setFlagged={setFlagged} sessions={sessions} onResume={resumeSession} onRepeat={repeatSession} onAsk={openChat} />}
+        {tab === "Quiz" && <QuizList query={query} questions={questions} answers={answers} setAnswers={setAnswers} flagged={flagged} setFlagged={setFlagged} perPage={perPage} setPerPage={setPerPage} reveal={reveal} setReveal={setReveal} onAsk={openChat} onAnswer={async (idx, selected) => {
+          const q = questions[idx];
+          const sessionId = backendSessionRef.current;
+          if (!q?.id || !sessionId || !useLive) return;
+          try {
+            const token = await getClerkToken();
+            if (!token) return;
+            await recordAttempt(token, sessionId, {
+              questionId: q.id,
+              selectedAnswer: selected,
+            });
+          } catch { /* ignore */ }
+        }} />}
+        {tab === "Review" && <ReviewPane questions={questions} answers={answers} flagged={flagged} setFlagged={setFlagged} sessions={sessions} onResume={resumeSession} onRepeat={repeatSession} onAsk={openChat} analytics={analytics} />}
         {tab === "Summary" && <SummaryNotion file={file} summaries={summaries} />}
         {tab === "Flashcards" && <FlashcardsQuizlet query={query} cards={flashcards} />}
         {tab === "Custom" && <CustomPane reveal={reveal} setReveal={setReveal} onStart={startCustomSession} flash={flash} />}
@@ -1409,7 +1447,6 @@ function ChatPanel({ documentId, quote, clearQuote, msgs, setMsgs, onClose }: {
   const [sending, setSending] = useState(false);
   const [conversationId, setConversationId] = useState<string | undefined>();
   const endRef = useRef<HTMLDivElement>(null);
-  const { getToken } = useAuth();
   const clerkEnabled = useClerkEnabled();
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
 
@@ -1423,7 +1460,7 @@ function ChatPanel({ documentId, quote, clearQuote, msgs, setMsgs, onClose }: {
     setSending(true);
 
     try {
-      const token = clerkEnabled ? await getToken() : null;
+      const token = clerkEnabled ? await getClerkToken() : null;
       const result = await askMedGeniusAi(
         token,
         {
@@ -1510,10 +1547,11 @@ function ReadFull({ file, pages }: { file: ExamFile; pages: HomeReadPage[] }) {
 }
 
 /* ---- Quiz ---- */
-function QuizList({ query, questions, answers, setAnswers, flagged, setFlagged, perPage, setPerPage, reveal, setReveal, onAsk }: {
+function QuizList({ query, questions, answers, setAnswers, flagged, setFlagged, perPage, setPerPage, reveal, setReveal, onAsk, onAnswer }: {
   query: string; questions: HomeQuestion[]; answers: Record<number, number>; setAnswers: Dispatch<SetStateAction<Record<number, number>>>;
   flagged: Set<number>; setFlagged: Dispatch<SetStateAction<Set<number>>>;
   perPage: number; setPerPage: (n: number) => void; reveal: Reveal; setReveal: (r: Reveal) => void; onAsk: (q: string) => void;
+  onAnswer?: (questionIndex: number, selectedOption: number) => void;
 }) {
   const { m, content } = useHomeLocale();
   const [pageIdx, setPageIdx] = useState(0);
@@ -1553,7 +1591,10 @@ function QuizList({ query, questions, answers, setAnswers, flagged, setFlagged, 
                 {qq.options.map((o, oi) => {
                   const rev = show && oi === qq.correct, wrong = show && picked === oi && oi !== qq.correct, chosen = picked === oi;
                   return (
-                    <button key={oi} className="dn-q-opt" disabled={answered && reveal === "immediate"} onClick={() => setAnswers((a) => ({ ...a, [idx]: oi }))}
+                    <button key={oi} className="dn-q-opt" disabled={answered && reveal === "immediate"} onClick={() => {
+                      setAnswers((a) => ({ ...a, [idx]: oi }));
+                      onAnswer?.(idx, oi);
+                    }}
                       style={{ borderColor: rev ? C.green : wrong ? C.red : chosen ? C.blue : C.line, background: rev ? "#EAFBD9" : wrong ? "#FFECEC" : chosen ? "#EAF7FF" : "#fff", cursor: answered && reveal === "immediate" ? "default" : "pointer" }}>
                       <span className="dn-q-key" style={{ background: rev ? C.green : wrong ? C.red : chosen ? C.blue : C.wash, color: rev || wrong || chosen ? "#fff" : C.sub }}>{String.fromCharCode(65 + oi)}</span>{o}
                     </button>
@@ -1604,7 +1645,7 @@ function QuizList({ query, questions, answers, setAnswers, flagged, setFlagged, 
 }
 
 /* ---- Review ---- */
-function ReviewPane({ questions, answers, flagged, setFlagged, sessions, onResume, onRepeat, onAsk }: {
+function ReviewPane({ questions, answers, flagged, setFlagged, sessions, onResume, onRepeat, onAsk, analytics }: {
   questions: HomeQuestion[];
   answers: Record<number, number>;
   flagged: Set<number>;
@@ -1613,6 +1654,7 @@ function ReviewPane({ questions, answers, flagged, setFlagged, sessions, onResum
   onResume: (s: QuizSession) => void;
   onRepeat: (s: QuizSession) => void;
   onAsk: (q: string) => void;
+  analytics?: { totalAnswered: number; accuracy: number; srsDue: number; weakTopics: Array<{ topic: string; correct: number; incorrect: number }> };
 }) {
   const { m, content, locale } = useHomeLocale();
   type RF = "all" | "correct" | "incorrect" | "flagged" | "sessions";
@@ -1753,6 +1795,13 @@ function ReviewPane({ questions, answers, flagged, setFlagged, sessions, onResum
     <div className="nt-scroll">
       <div className="nt-doc">
         <h1 className="nt-h1 dn-centered-h1">{m.reviewHeading}</h1>
+        {analytics && analytics.totalAnswered > 0 && (
+          <div className="dn-rv-report-grid" style={{ marginBottom: 16 }}>
+            <div className="dn-rv-report-stat"><b>{analytics.totalAnswered}</b><span>Answered</span></div>
+            <div className="dn-rv-report-stat"><b style={{ color: C.greenDark }}>{analytics.accuracy}%</b><span>Accuracy</span></div>
+            <div className="dn-rv-report-stat"><b>{analytics.srsDue}</b><span>SRS due</span></div>
+          </div>
+        )}
         <div className="dn-rv-toolbar">
           <div className="dn-rv-search">
             <Search size={15} color={C.faint} strokeWidth={2.4} />

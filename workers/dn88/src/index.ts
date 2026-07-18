@@ -76,6 +76,22 @@ function resolveOrigin(requestOrigin: string | undefined): string {
   return "https://drnote.co";
 }
 
+function resolveCheckoutPriceId(
+  env: Bindings,
+  plan: "student" | "pro",
+  billing: BillingInterval
+): string | undefined {
+  if (plan === "pro") {
+    return billing === "yearly"
+      ? env.STRIPE_PRICE_PRO_YEARLY ?? env.STRIPE_PRICE_YEARLY
+      : env.STRIPE_PRICE_PRO_MONTHLY ?? env.STRIPE_PRICE_MONTHLY;
+  }
+
+  return billing === "yearly"
+    ? env.STRIPE_PRICE_STUDENT_YEARLY ?? env.STRIPE_PRICE_YEARLY
+    : env.STRIPE_PRICE_STUDENT_MONTHLY ?? env.STRIPE_PRICE_MONTHLY;
+}
+
 async function createStripeCheckoutSession(
   secretKey: string,
   params: {
@@ -208,29 +224,32 @@ app.post("/api/stripe/checkout", async (c) => {
   }
 
   const stripeSecret = c.env.STRIPE_SECRET_KEY;
-  const monthlyPrice = c.env.STRIPE_PRICE_MONTHLY;
-  const yearlyPrice = c.env.STRIPE_PRICE_YEARLY;
 
-  if (!stripeSecret || !monthlyPrice || !yearlyPrice) {
-    return c.json(
-      { error: "Stripe is not configured yet. Add billing keys to DN88." },
-      503
-    );
+  if (!stripeSecret) {
+    return c.json({ error: "Billing is not configured yet." }, 503);
   }
 
   let billing: BillingInterval;
+  let checkoutPlan: "student" | "pro" = "student";
   try {
-    const body = await c.req.json<{ billing?: string }>();
+    const body = await c.req.json<{ billing?: string; plan?: string }>();
     if (body.billing !== "monthly" && body.billing !== "yearly") {
       return c.json({ error: "Invalid billing interval" }, 400);
     }
     billing = body.billing;
+    if (body.plan === "pro" || body.plan === "student") {
+      checkoutPlan = body.plan;
+    }
   } catch {
     return c.json({ error: "Invalid request body" }, 400);
   }
 
+  const priceId = resolveCheckoutPriceId(c.env, checkoutPlan, billing);
+  if (!priceId) {
+    return c.json({ error: "Selected plan is not configured yet." }, 503);
+  }
+
   const origin = resolveOrigin(c.req.header("Origin"));
-  const priceId = billing === "yearly" ? yearlyPrice : monthlyPrice;
 
   try {
     const session = await createStripeCheckoutSession(stripeSecret, {

@@ -1,7 +1,7 @@
 "use client";
 
-import { useAuth } from "@clerk/clerk-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getClerkToken } from "@/lib/clerk-token";
 import { useClerkEnabled } from "@/hooks/useClerkEnabled";
 import {
   fetchDocumentStatus,
@@ -157,7 +157,6 @@ export function markdownToReadPages(markdown: string): HomeReadPage[] {
 }
 
 export function useExamDocuments(examId: string | undefined, refreshKey = 0) {
-  const { getToken } = useAuth();
   const clerkEnabled = useClerkEnabled();
   const [files, setFiles] = useState<HomeExamFile[]>([]);
   const [loading, setLoading] = useState(false);
@@ -170,7 +169,7 @@ export function useExamDocuments(examId: string | undefined, refreshKey = 0) {
     }
     setError(null);
     try {
-      const token = await getToken();
+      const token = await getClerkToken();
       setLoading(true);
       const { documents } = await fetchDocuments(token, examId);
       setFiles(documents.map(documentToExamFile));
@@ -180,7 +179,7 @@ export function useExamDocuments(examId: string | undefined, refreshKey = 0) {
     } finally {
       setLoading(false);
     }
-  }, [clerkEnabled, examId, getToken]);
+  }, [clerkEnabled, examId]);
 
   useEffect(() => {
     if (!clerkEnabled || !examId) return;
@@ -190,7 +189,7 @@ export function useExamDocuments(examId: string | undefined, refreshKey = 0) {
     (async () => {
       setError(null);
       try {
-        const token = await getToken();
+        const token = await getClerkToken();
         if (cancelled) return;
         setLoading(true);
         const { documents } = await fetchDocuments(token, examId);
@@ -208,7 +207,7 @@ export function useExamDocuments(examId: string | undefined, refreshKey = 0) {
     return () => {
       cancelled = true;
     };
-  }, [clerkEnabled, examId, refreshKey, getToken]);
+  }, [clerkEnabled, examId, refreshKey]);
 
   return {
     files: clerkEnabled && examId ? files : [],
@@ -241,7 +240,6 @@ const EMPTY_STUDY: DocumentStudyData = {
 };
 
 export function useDocumentStudy(documentId: string | undefined): DocumentStudyData {
-  const { getToken } = useAuth();
   const clerkEnabled = useClerkEnabled();
   const enabled = clerkEnabled && Boolean(documentId);
   const [questions, setQuestions] = useState<HomeQuestion[]>([]);
@@ -262,7 +260,7 @@ export function useDocumentStudy(documentId: string | undefined): DocumentStudyD
     const loadContent = async () => {
       setError(null);
       try {
-        const token = await getToken();
+        const token = await getClerkToken();
         if (cancelled) return;
         setLoading(true);
         const doc = await fetchDocumentStatus(token, documentId);
@@ -304,7 +302,7 @@ export function useDocumentStudy(documentId: string | undefined): DocumentStudyD
 
     pollRef.current = window.setInterval(async () => {
       try {
-        const token = await getToken();
+        const token = await getClerkToken();
         const doc = await fetchDocumentStatus(token, documentId);
         if (cancelled) return;
         setStatus(doc.status);
@@ -330,7 +328,7 @@ export function useDocumentStudy(documentId: string | undefined): DocumentStudyD
         pollRef.current = null;
       }
     };
-  }, [enabled, documentId, getToken]);
+  }, [enabled, documentId]);
 
   if (!enabled) return EMPTY_STUDY;
 

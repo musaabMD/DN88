@@ -21,6 +21,7 @@
     "catalog:migrate": "npx wrangler d1 execute dn88-catalog --file=migrations/d1/001_initial.sql -c workers/dn88/wrangler.jsonc --remote",
     "medgenius:migrate": "npx wrangler d1 execute dn88-catalog --file=migrations/d1/002_medgenius.sql -c workers/dn88/wrangler.jsonc --remote",
     "medgenius:migrate:local": "npx wrangler d1 execute dn88-catalog --file=migrations/d1/002_medgenius.sql -c workers/dn88/wrangler.jsonc --local",
+    "medgenius:setup": "bash scripts/medgenius-setup.sh",
     "test:catalog": "npm run test --workspace=@dn88/catalog",
     "build:catalog": "npm run build --workspace=@dn88/catalog",
     "deploy": "npm run build && wrangler pages deploy out --project-name=dn88",

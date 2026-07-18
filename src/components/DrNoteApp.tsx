@@ -2,13 +2,13 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { useQbankSets } from "@/hooks/useQbankSets";
 import {
   filterLibraryArticles,
   getSessionItems,
   resolveSessionSetId,
   resolveSessionTab,
   sessionItemCount,
-  SETS_BY_TAB,
   TAB_ITEM_LABEL,
   TAB_SET_LABEL,
   type FlashcardItem,
@@ -1069,6 +1069,8 @@ function TabContent({
   filters: BrowseFilters;
   examId: string;
 }) {
+  const { sets, loading } = useQbankSets(examId, tab as ContentTab);
+
   if (tab === "library") {
     const articles = filterLibraryArticles(search);
     return (
@@ -1089,15 +1091,15 @@ function TabContent({
     );
   }
 
-  const sets = filterSets(SETS_BY_TAB[tab] ?? [], search, filters);
+  const filtered = filterSets(sets, search, filters);
   const sectionLabel = TAB_SET_LABEL[tab] ?? "sets";
   return (
     <>
       <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 px-1">
-        {sets.length} {sectionLabel}
+        {loading ? "Loading sets…" : `${filtered.length} ${sectionLabel}`}
         {search.trim() ? ` matching "${search.trim()}"` : ""}
       </p>
-      {sets.length === 0 ? (
+      {filtered.length === 0 ? (
         <div className="text-center py-16 px-4">
           <p className="font-black text-slate-600 mb-1">No sets found</p>
           <p className="text-sm text-slate-400 font-medium">
@@ -1106,7 +1108,7 @@ function TabContent({
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {sets.map((set) => (
+          {filtered.map((set) => (
             <SetCard key={set.id} set={set} tab={tab} onOpen={() => onOpenSet(set)} />
           ))}
         </div>

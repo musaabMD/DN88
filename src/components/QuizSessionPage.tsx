@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { ContentShell } from "@/components/ContentShell";
 import { SetSessionView } from "@/components/SetSessionView";
-import { getSetById } from "@/lib/mock-data";
+import { useLiveSet } from "@/hooks/useLiveSet";
 import {
   parseQuizSearchParams,
   examTabPath,
@@ -26,11 +26,19 @@ export function QuizSessionPage({
   searchParams: Record<string, string | string[] | undefined>;
 }) {
   const router = useRouter();
-  const set = getSetById(tab, setId);
+  const { set, loading } = useLiveSet(examId, tab, setId);
   const quizParams = useMemo(
     () => parseQuizSearchParams(searchParams),
     [searchParams]
   );
+
+  if (loading) {
+    return (
+      <ContentShell examId={examId} title="Loading…" onBack={() => router.push(examTabPath(examId, tab))}>
+        <div className="py-16 text-center text-sm font-bold text-slate-400">Loading session…</div>
+      </ContentShell>
+    );
+  }
 
   if (!set) {
     return (
