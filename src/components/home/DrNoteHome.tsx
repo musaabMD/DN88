@@ -895,16 +895,6 @@ function Home({ onOpen, onAdd, locale, onToggleLocale }: { onOpen: (e: Exam) => 
 
         <section className="mt-10 sm:mt-12">
           <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:rounded-3xl sm:p-6">
-            <div className="mb-4 flex items-end justify-between gap-3">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">{m.browse}</p>
-                <h2 className="font-display text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">{m.allExams}</h2>
-              </div>
-              {!query.trim() && (
-                <span className="hidden text-sm font-semibold text-slate-500 sm:block">{m.boards(EXAMS.length)}</span>
-              )}
-            </div>
-
             {query.trim() && results.length > 0 && (
               <p className="mb-3 text-sm font-semibold text-slate-500">
                 {m.matchCount(results.length)}
