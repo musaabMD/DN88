@@ -31,16 +31,16 @@ type Tab = "Read" | "Quiz" | "Review" | "Summary" | "Flashcards" | "Custom";
 type Reveal = "immediate" | "later";
 type Msg = { role: "ai" | "user"; text: string };
 
-interface Exam { id: string; name: string; blurb: string; files: number; color: string; icon: ElementType; }
+interface Exam { id: string; name: string; blurb: string; files: number; color: string; accent: string; abbr: string; icon: ElementType; }
 interface ExamFile { id: string; name: string; author: string; pages: number; color: string; votes: Record<Exclude<Filter, "bookmarked">, number>; }
 
 const EXAMS: Exam[] = [
-  { id: "e1", name: "USMLE Step 1", blurb: "Foundations & basic sciences", files: 1284, color: C.purple, icon: Microscope },
-  { id: "e2", name: "USMLE Step 2 CK", blurb: "Clinical knowledge", files: 2041, color: C.green, icon: Stethoscope },
-  { id: "e3", name: "USMLE Step 3", blurb: "Practice & management", files: 612, color: C.blue, icon: Activity },
-  { id: "e4", name: "Shelf Exams", blurb: "Clerkship subject exams", files: 938, color: C.yellow, icon: ClipboardList },
-  { id: "e5", name: "COMLEX Level 1", blurb: "Osteopathic foundations", files: 421, color: C.red, icon: Bone },
-  { id: "e6", name: "COMLEX Level 2", blurb: "Osteopathic clinical", files: 357, color: C.teal, icon: HeartPulse },
+  { id: "smle", name: "SMLE", abbr: "S", blurb: "Saudi Medical Licensing Exam", files: 1284, color: "#E91429", accent: "#AF0F1F", icon: Stethoscope },
+  { id: "sdle", name: "SDLE", abbr: "D", blurb: "Saudi Dental Licensing Exam", files: 612, color: "#1DB954", accent: "#148F42", icon: Activity },
+  { id: "sple", name: "SPLE", abbr: "P", blurb: "Saudi Pharmacy Licensing Exam", files: 489, color: "#8D67AB", accent: "#6B4F86", icon: ClipboardList },
+  { id: "slle", name: "SLLE", abbr: "L", blurb: "Saudi Laboratory Licensing Exam", files: 356, color: "#509BF5", accent: "#2E7AD4", icon: Microscope },
+  { id: "snle", name: "SNLE", abbr: "N", blurb: "Saudi Nursing Licensing Exam", files: 421, color: "#F59B23", accent: "#C97A12", icon: HeartPulse },
+  { id: "fm", name: "Family Medicine", abbr: "F", blurb: "Family medicine boards & clinic exams", files: 938, color: "#477D95", accent: "#356074", icon: Bone },
 ];
 
 const FILES: ExamFile[] = [
@@ -158,16 +158,24 @@ const styles = `
 .dn-search input::placeholder { color: ${C.faint}; font-weight: 600; }
 .dn-search-clear { border: none; background: ${C.wash}; border-radius: 50%; width: 24px; height: 24px; display: grid; place-items: center; cursor: pointer; color: ${C.sub}; flex-shrink: 0; }
 
-/* exam grid */
-.dn-exam-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
-.dn-exam-card { position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; background: #fff; border: 2px solid ${C.line}; border-radius: 20px; padding: 20px; cursor: pointer; transition: transform .06s; }
-.dn-exam-card:hover { transform: translateY(-2px); }
-.dn-exam-card:active { transform: translateY(2px); box-shadow: 0 2px 0 ${C.line} !important; }
-.dn-exam-accent { position: absolute; top: 0; left: 0; right: 0; height: 6px; }
-.dn-exam-ic { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; margin: 10px 0 8px; }
-.dn-exam-name { font-size: 18px; font-weight: 900; color: ${C.ink}; }
-.dn-exam-blurb { font-size: 13px; font-weight: 700; color: ${C.sub}; }
-.dn-exam-stat { margin-top: 8px; font-size: 12px; font-weight: 800; color: ${C.faint}; display: inline-flex; align-items: center; gap: 3px; }
+/* home search + spotify-style exam list */
+.dn-home-panel { width: 100%; background: #fff; border: 1px solid ${C.line}; border-radius: 16px; padding: 28px 24px 22px; margin-bottom: 28px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+.dn-home-search { display: flex; align-items: center; gap: 12px; width: 100%; background: ${C.wash}; border: 1px solid transparent; border-radius: 999px; padding: 14px 18px; transition: background .15s, border-color .15s, box-shadow .15s; }
+.dn-home-search:focus-within { background: #fff; border-color: ${C.line}; box-shadow: 0 8px 24px rgba(0,0,0,.08); }
+.dn-home-search input { flex: 1; min-width: 0; border: none; outline: none; font-size: 16px; font-weight: 600; color: ${C.ink}; background: none; }
+.dn-home-search input::placeholder { color: ${C.faint}; font-weight: 500; }
+.dn-section-label { font-size: 11px; font-weight: 800; letter-spacing: 1.1px; color: ${C.faint}; margin: 0 0 12px; text-transform: uppercase; }
+.dn-exam-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.dn-exam-card { width: 100%; display: flex; align-items: center; gap: 16px; text-align: left; background: #fff; border: 1px solid ${C.line}; border-radius: 12px; padding: 12px 14px; cursor: pointer; transition: background .15s, border-color .15s, transform .15s, box-shadow .15s; }
+.dn-exam-card:hover { background: #fafafa; border-color: #d9d9d9; box-shadow: 0 4px 16px rgba(0,0,0,.06); transform: translateY(-1px); }
+.dn-exam-card:active { transform: translateY(0); box-shadow: none; }
+.dn-exam-art { flex-shrink: 0; width: 52px; height: 52px; border-radius: 10px; display: grid; place-items: center; color: #fff; font-size: 22px; font-weight: 900; letter-spacing: -.5px; box-shadow: inset 0 -12px 24px rgba(0,0,0,.12); }
+.dn-exam-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dn-exam-name { font-size: 16px; font-weight: 800; color: ${C.ink}; line-height: 1.25; }
+.dn-exam-blurb { font-size: 13px; font-weight: 600; color: ${C.sub}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dn-exam-chevron { flex-shrink: 0; color: ${C.faint}; opacity: .85; transition: transform .15s, color .15s; }
+.dn-exam-card:hover .dn-exam-chevron { color: ${C.sub}; transform: translateX(2px); }
+.dn-home-empty { text-align: center; padding: 36px 16px; color: ${C.sub}; font-weight: 700; display: flex; flex-direction: column; align-items: center; gap: 10px; }
 
 /* fab */
 .dn-fab { position: fixed; bottom: 26px; right: 26px; z-index: 45; width: 60px; height: 60px; border-radius: 20px; border: none; cursor: pointer; display: grid; place-items: center; transition: transform .05s; }
@@ -388,7 +396,7 @@ const styles = `
   .dn-chat { width: 100%; border-left: none; }
 }
 @media (max-width: 640px) {
-  .dn-exam-grid { grid-template-columns: 1fr; }
+  .dn-home-panel { padding: 22px 16px 18px; border-radius: 14px; }
   .dn-title { font-size: 32px; }
   .dn-filterbar { flex-direction: column; align-items: stretch; gap: 10px; }
   .dn-selectall { justify-content: flex-end; }
@@ -481,23 +489,71 @@ export function DrNoteHome() {
 /*  Home                                                               */
 /* ------------------------------------------------------------------ */
 function Home({ onOpen, onAdd }: { onOpen: (e: Exam) => void; onAdd: () => void }) {
+  const [homeQuery, setHomeQuery] = useState("");
+
+  const filteredExams = useMemo(() => {
+    const q = homeQuery.trim().toLowerCase();
+    if (!q) return EXAMS;
+    return EXAMS.filter((e) =>
+      e.name.toLowerCase().includes(q)
+      || e.blurb.toLowerCase().includes(q)
+      || e.id.toLowerCase().includes(q),
+    );
+  }, [homeQuery]);
+
   return (
     <main className="dn-main">
-      <section className="dn-hero"><h1 className="dn-title">Choose your exam</h1><p className="dn-hero-sub">Browse the community's top files for each board.</p></section>
-      <div className="dn-exam-grid">
-        {EXAMS.map((e) => {
-          const Icon = e.icon;
-          return (
-            <button key={e.id} className="dn-exam-card" onClick={() => onOpen(e)} style={{ boxShadow: `0 4px 0 ${C.line}` }}>
-              <span className="dn-exam-accent" style={{ background: e.color }} />
-              <span className="dn-exam-ic" style={{ background: e.color }}><Icon size={26} color="#fff" strokeWidth={2.2} /></span>
-              <span className="dn-exam-name">{e.name}</span>
-              <span className="dn-exam-blurb">{e.blurb}</span>
-              <span className="dn-exam-stat">{e.files.toLocaleString()} files<ChevronRight size={15} strokeWidth={2.6} /></span>
+      <section className="dn-hero">
+        <h1 className="dn-title">Pick your exam</h1>
+        <p className="dn-hero-sub">Browse questions, notes, images, and flashcards — Duolingo-style.</p>
+      </section>
+
+      <div className="dn-home-panel">
+        <div className="dn-home-search">
+          <Search size={20} color={C.faint} strokeWidth={2.4} />
+          <input
+            value={homeQuery}
+            onChange={(e) => setHomeQuery(e.target.value)}
+            placeholder="Search exams"
+            aria-label="Search exams"
+          />
+          {homeQuery && (
+            <button type="button" className="dn-search-clear" onClick={() => setHomeQuery("")} aria-label="Clear search">
+              <X size={16} strokeWidth={2.6} />
             </button>
-          );
-        })}
+          )}
+        </div>
       </div>
+
+      <p className="dn-section-label">Medical exams</p>
+      <ul className="dn-exam-list">
+        {filteredExams.map((e) => (
+          <li key={e.id}>
+            <button type="button" className="dn-exam-card" onClick={() => onOpen(e)}>
+              <span
+                className="dn-exam-art"
+                style={{ background: `linear-gradient(135deg, ${e.color} 0%, ${e.accent} 100%)` }}
+                aria-hidden
+              >
+                {e.abbr}
+              </span>
+              <span className="dn-exam-copy">
+                <span className="dn-exam-name">{e.name}</span>
+                <span className="dn-exam-blurb">Tap to browse study sets · {e.files.toLocaleString()} files</span>
+              </span>
+              <ChevronRight className="dn-exam-chevron" size={18} strokeWidth={2.4} />
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      {filteredExams.length === 0 && (
+        <div className="dn-home-empty">
+          <Search size={26} color={C.faint} />
+          <p>No exams match “{homeQuery}”.</p>
+        </div>
+      )}
+
       <button className="dn-fab" onClick={onAdd} title="Add a file" aria-label="Add a file" style={{ background: C.green, boxShadow: `0 5px 0 ${C.greenDark}` }}>
         <Plus size={26} color="#fff" strokeWidth={3} />
       </button>
@@ -528,7 +584,6 @@ function ExamPage(props: {
   picked: Set<string>; setPicked: (s: Set<string>) => void; onBack: () => void; onOpen: (f: ExamFile) => void; flash: (m: string) => void;
 }) {
   const { exam, filter, setFilter, query, setQuery, voted, setVoted, saved, toggleSaved, picked, setPicked, onBack, onOpen, flash } = props;
-  const Icon = exam.icon;
 
   const ranked = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -546,7 +601,9 @@ function ExamPage(props: {
     <main className="dn-main">
       <button className="dn-crumb-back" onClick={onBack}><ArrowLeft size={16} strokeWidth={2.6} /> All exams</button>
       <section className="dn-hero">
-        <span className="dn-hero-ic" style={{ background: exam.color }}><Icon size={26} color="#fff" strokeWidth={2.2} /></span>
+        <span className="dn-hero-ic" style={{ background: `linear-gradient(135deg, ${exam.color} 0%, ${exam.accent} 100%)` }}>
+          <span style={{ fontSize: 24, fontWeight: 900, color: "#fff" }}>{exam.abbr}</span>
+        </span>
         <h1 className="dn-title">{exam.name}</h1>
         <div className="dn-search">
           <Search size={20} color={C.faint} strokeWidth={2.4} />
