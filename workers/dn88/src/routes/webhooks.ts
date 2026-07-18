@@ -6,6 +6,8 @@ import {
   syncClerkUserToMedGenius,
   updateMedGeniusPlan,
   resolvePlanFromStripePrice,
+  getUserIdByStripeCustomerId,
+  updateStripeCustomerId,
 } from "../medgenius/services/clerk-sync";
 import {
   parseStripeEvent,
@@ -81,6 +83,25 @@ export async function handleStripeWebhook(
   const event = parseStripeEvent(body);
   const object = event.data.object;
 
+  async function resolveClerkUserId(): Promise<string | null> {
+    if (typeof object.client_reference_id === "string") {
+      return object.client_reference_id;
+    }
+
+    const metadata = object.metadata as { clerkUserId?: string } | undefined;
+    if (typeof metadata?.clerkUserId === "string") {
+      return metadata.clerkUserId;
+    }
+
+    const customerId =
+      typeof object.customer === "string" ? object.customer : undefined;
+    if (customerId) {
+      return getUserIdByStripeCustomerId(env.DB, customerId);
+    }
+
+    return null;
+  }
+
   async function applyPlan(userId: string, plan: PlanTier) {
     const customerId =
       typeof object.customer === "string" ? object.customer : undefined;
@@ -91,6 +112,9 @@ export async function handleStripeWebhook(
       plan,
       customerId
     );
+    if (customerId) {
+      await updateStripeCustomerId(env.DB, userId, customerId);
+    }
     await syncClerkUserToMedGenius(env.DB, {
       userId,
       email: null,
@@ -99,10 +123,7 @@ export async function handleStripeWebhook(
   }
 
   if (event.type === "checkout.session.completed") {
-    const userId =
-      typeof object.client_reference_id === "string"
-        ? object.client_reference_id
-        : null;
+    const userId = await resolveClerkUserId();
 
     if (userId) {
       const sessionId = typeof object.id === "string" ? object.id : null;
@@ -121,9 +142,14 @@ export async function handleStripeWebhook(
         }
       }
 
+      const metadata = object.metadata as { plan?: string } | undefined;
+      const planFromMetadata =
+        metadata?.plan === "pro" || metadata?.plan === "student"
+          ? metadata.plan
+          : null;
       const plan = priceId
         ? resolvePlanFromStripePrice(priceId, env)
-        : "student";
+        : planFromMetadata ?? "student";
       await applyPlan(userId, plan);
     }
   }
@@ -132,18 +158,24 @@ export async function handleStripeWebhook(
     event.type === "customer.subscription.deleted" ||
     event.type === "customer.subscription.updated"
   ) {
-    const metadata = object.metadata as { clerkUserId?: string } | undefined;
-    const userId = metadata?.clerkUserId;
+    const userId = await resolveClerkUserId();
     const status = object.status;
 
     if (userId) {
       if (event.type === "customer.subscription.deleted" || status === "canceled") {
         await applyPlan(userId, "free");
-      } else if (status === "active") {
+      } else if (status === "active" || status === "trialing") {
         const priceId = (
           object.items as { data?: Array<{ price?: { id?: string } }> } | undefined
         )?.data?.[0]?.price?.id;
-        const plan = priceId ? resolvePlanFromStripePrice(priceId, env) : "student";
+        const subscriptionMetadata = object.metadata as { plan?: string } | undefined;
+        const planFromMetadata =
+          subscriptionMetadata?.plan === "pro" || subscriptionMetadata?.plan === "student"
+            ? subscriptionMetadata.plan
+            : null;
+        const plan = priceId
+          ? resolvePlanFromStripePrice(priceId, env)
+          : planFromMetadata ?? "student";
         await applyPlan(userId, plan);
       }
     }

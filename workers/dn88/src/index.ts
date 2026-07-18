@@ -13,6 +13,44 @@ import { getMedGeniusProfileForUser } from "./medgenius/services/clerk-sync";
 import type { QueueMessage } from "./medgenius/types";
 
 type BillingInterval = "monthly" | "yearly";
+type CheckoutPlan = "student" | "pro";
+
+const CHECKOUT_PRICES: Record<
+  CheckoutPlan,
+  Record<
+    BillingInterval,
+    {
+      productName: string;
+      unitAmount: number;
+      recurringInterval: "month" | "year";
+    }
+  >
+> = {
+  student: {
+    monthly: {
+      productName: "DrNote Student",
+      unitAmount: 2000,
+      recurringInterval: "month",
+    },
+    yearly: {
+      productName: "DrNote Student",
+      unitAmount: 19200,
+      recurringInterval: "year",
+    },
+  },
+  pro: {
+    monthly: {
+      productName: "DrNote Pro",
+      unitAmount: 3000,
+      recurringInterval: "month",
+    },
+    yearly: {
+      productName: "DrNote Pro",
+      unitAmount: 28800,
+      recurringInterval: "year",
+    },
+  },
+};
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -78,7 +116,7 @@ function resolveOrigin(requestOrigin: string | undefined): string {
 
 function resolveCheckoutPriceId(
   env: Bindings,
-  plan: "student" | "pro",
+  plan: CheckoutPlan,
   billing: BillingInterval
 ): string | undefined {
   if (plan === "pro") {
@@ -92,24 +130,67 @@ function resolveCheckoutPriceId(
     : env.STRIPE_PRICE_STUDENT_MONTHLY ?? env.STRIPE_PRICE_MONTHLY;
 }
 
+function resolveCheckoutLineItem(
+  env: Bindings,
+  plan: CheckoutPlan,
+  billing: BillingInterval
+) {
+  const priceId = resolveCheckoutPriceId(env, plan, billing);
+  if (priceId) return { priceId };
+
+  return { priceData: CHECKOUT_PRICES[plan][billing] };
+}
+
 async function createStripeCheckoutSession(
   secretKey: string,
   params: {
-    priceId: string;
+    lineItem:
+      | { priceId: string; priceData?: never }
+      | {
+          priceId?: never;
+          priceData: {
+            productName: string;
+            unitAmount: number;
+            recurringInterval: "month" | "year";
+          };
+        };
     successUrl: string;
     cancelUrl: string;
     customerEmail?: string | null;
+    customerId?: string | null;
     clientReferenceId: string;
+    checkoutPlan: CheckoutPlan;
   }
 ): Promise<{ url: string }> {
   const body = new URLSearchParams();
   body.set("mode", "subscription");
-  body.set("line_items[0][price]", params.priceId);
+  if (params.lineItem.priceId) {
+    body.set("line_items[0][price]", params.lineItem.priceId);
+  } else {
+    const { priceData } = params.lineItem;
+    body.set("line_items[0][price_data][currency]", "usd");
+    body.set("line_items[0][price_data][unit_amount]", String(priceData.unitAmount));
+    body.set(
+      "line_items[0][price_data][recurring][interval]",
+      priceData.recurringInterval
+    );
+    body.set("line_items[0][price_data][product_data][name]", priceData.productName);
+    body.set("line_items[0][price_data][product_data][metadata][app]", "drnote");
+    body.set(
+      "line_items[0][price_data][product_data][metadata][plan]",
+      params.checkoutPlan
+    );
+  }
   body.set("line_items[0][quantity]", "1");
   body.set("success_url", params.successUrl);
   body.set("cancel_url", params.cancelUrl);
   body.set("client_reference_id", params.clientReferenceId);
-  if (params.customerEmail) {
+  body.set("metadata[clerkUserId]", params.clientReferenceId);
+  body.set("subscription_data[metadata][clerkUserId]", params.clientReferenceId);
+  body.set("subscription_data[metadata][plan]", params.checkoutPlan);
+  if (params.customerId) {
+    body.set("customer", params.customerId);
+  } else if (params.customerEmail) {
     body.set("customer_email", params.customerEmail);
   }
 
@@ -133,6 +214,42 @@ async function createStripeCheckoutSession(
 
   if (!payload.url) {
     throw new Error("Stripe did not return a checkout URL");
+  }
+
+  return { url: payload.url };
+}
+
+async function createStripePortalSession(
+  secretKey: string,
+  params: {
+    customerId: string;
+    returnUrl: string;
+  }
+): Promise<{ url: string }> {
+  const body = new URLSearchParams();
+  body.set("customer", params.customerId);
+  body.set("return_url", params.returnUrl);
+
+  const response = await fetch("https://api.stripe.com/v1/billing_portal/sessions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${secretKey}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body,
+  });
+
+  const payload = (await response.json()) as {
+    url?: string;
+    error?: { message?: string };
+  };
+
+  if (!response.ok) {
+    throw new Error(payload.error?.message ?? "Stripe billing portal failed");
+  }
+
+  if (!payload.url) {
+    throw new Error("Stripe did not return a billing portal URL");
   }
 
   return { url: payload.url };
@@ -230,7 +347,7 @@ app.post("/api/stripe/checkout", async (c) => {
   }
 
   let billing: BillingInterval;
-  let checkoutPlan: "student" | "pro" = "student";
+  let checkoutPlan: CheckoutPlan = "student";
   try {
     const body = await c.req.json<{ billing?: string; plan?: string }>();
     if (body.billing !== "monthly" && body.billing !== "yearly") {
@@ -244,26 +361,87 @@ app.post("/api/stripe/checkout", async (c) => {
     return c.json({ error: "Invalid request body" }, 400);
   }
 
-  const priceId = resolveCheckoutPriceId(c.env, checkoutPlan, billing);
-  if (!priceId) {
-    return c.json({ error: "Selected plan is not configured yet." }, 503);
-  }
+  const lineItem = resolveCheckoutLineItem(c.env, checkoutPlan, billing);
 
   const origin = resolveOrigin(c.req.header("Origin"));
 
+  const clerk = createClerkClient({
+    secretKey: c.env.CLERK_SECRET_KEY,
+    publishableKey: c.env.CLERK_PUBLISHABLE_KEY,
+  });
+  const clerkUser = await clerk.users.getUser(auth.user.id);
+  const publicMetadata = (clerkUser.publicMetadata ?? {}) as Record<string, unknown>;
+  const stripeCustomerId =
+    typeof publicMetadata.stripeCustomerId === "string"
+      ? publicMetadata.stripeCustomerId
+      : null;
+
   try {
     const session = await createStripeCheckoutSession(stripeSecret, {
-      priceId,
-      successUrl: `${origin}/upgrade/success/?session_id={CHECKOUT_SESSION_ID}`,
+      lineItem,
+      successUrl: `${origin}/upgrade/success/?session_id={CHECKOUT_SESSION_ID}&plan=${checkoutPlan}`,
       cancelUrl: `${origin}/upgrade/`,
       customerEmail: auth.user.email,
+      customerId: stripeCustomerId,
       clientReferenceId: auth.user.id,
+      checkoutPlan,
     });
 
     return c.json({ url: session.url });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unable to create checkout session";
+    return c.json({ error: message }, 502);
+  }
+});
+
+app.post("/api/stripe/portal", async (c) => {
+  const auth = await getAuthedUser(c);
+  if ("error" in auth) {
+    return c.json({ error: auth.error }, auth.status);
+  }
+
+  const stripeSecret = c.env.STRIPE_SECRET_KEY;
+  if (!stripeSecret) {
+    return c.json({ error: "Billing is not configured yet." }, 503);
+  }
+
+  const clerk = createClerkClient({
+    secretKey: c.env.CLERK_SECRET_KEY,
+    publishableKey: c.env.CLERK_PUBLISHABLE_KEY,
+  });
+  const clerkUser = await clerk.users.getUser(auth.user.id);
+  const publicMetadata = (clerkUser.publicMetadata ?? {}) as Record<string, unknown>;
+  let stripeCustomerId =
+    typeof publicMetadata.stripeCustomerId === "string"
+      ? publicMetadata.stripeCustomerId
+      : null;
+
+  if (!stripeCustomerId) {
+    const row = await c.env.DB.prepare(
+      "SELECT stripe_customer_id FROM medgenius_users WHERE user_id = ?"
+    )
+      .bind(auth.user.id)
+      .first<{ stripe_customer_id: string | null }>();
+    stripeCustomerId = row?.stripe_customer_id ?? null;
+  }
+
+  if (!stripeCustomerId) {
+    return c.json({ error: "No active Stripe subscription found." }, 404);
+  }
+
+  const origin = resolveOrigin(c.req.header("Origin"));
+
+  try {
+    const session = await createStripePortalSession(stripeSecret, {
+      customerId: stripeCustomerId,
+      returnUrl: `${origin}/upgrade/`,
+    });
+
+    return c.json({ url: session.url });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unable to open billing portal";
     return c.json({ error: message }, 502);
   }
 });

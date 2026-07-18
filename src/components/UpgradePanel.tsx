@@ -14,6 +14,7 @@ import { SignInButton } from "@clerk/clerk-react";
 import { BRAND } from "@/lib/brand";
 import {
   createStripeCheckoutSession,
+  createStripePortalSession,
   type BillingInterval,
   type CheckoutPlan,
 } from "@/lib/stripe";
@@ -377,6 +378,7 @@ function UpgradePricingGrid({
 function UpgradePanelClerk() {
   const [billing, setBilling] = useState<BillingInterval>("yearly");
   const [loading, setLoading] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const signedIn = isClerkSignedIn();
   const access = useDrNoteAccess();
@@ -410,17 +412,63 @@ function UpgradePanelClerk() {
     })();
   };
 
+  const handleManageBilling = () => {
+    void (async () => {
+      setError(null);
+
+      if (!signedIn) {
+        setError("Sign in to manage billing.");
+        return;
+      }
+
+      setPortalLoading(true);
+      try {
+        const token = await getClerkToken();
+        if (!token) {
+          throw new Error("Sign in to manage billing.");
+        }
+
+        const url = await createStripePortalSession(token);
+        window.location.assign(url);
+      } catch (portalError) {
+        const message =
+          portalError instanceof Error
+            ? portalError.message
+            : "Unable to open billing portal.";
+        setError(message);
+        setPortalLoading(false);
+      }
+    })();
+  };
+
+  const hasPaidPlan = access.plan === "student" || access.plan === "pro";
+
   return (
-    <UpgradePricingGrid
-      billing={billing}
-      setBilling={setBilling}
-      loading={loading}
-      error={error}
-      signedIn={signedIn}
-      onCheckout={handleCheckout}
-      clerkAuth
-      currentPlan={access.plan}
-    />
+    <>
+      {hasPaidPlan && (
+        <div className="mx-auto mt-6 max-w-3xl text-center">
+          <button
+            type="button"
+            onClick={handleManageBilling}
+            disabled={portalLoading || loading}
+            className="rounded-xl border-2 border-b-4 border-slate-200 bg-white px-4 py-2 text-sm font-extrabold text-slate-700 transition-colors hover:bg-slate-50 active:translate-y-0.5 active:border-b-2 disabled:opacity-60"
+          >
+            {portalLoading ? "Opening billing portal…" : "Manage billing"}
+          </button>
+        </div>
+      )}
+
+      <UpgradePricingGrid
+        billing={billing}
+        setBilling={setBilling}
+        loading={loading}
+        error={error}
+        signedIn={signedIn}
+        onCheckout={handleCheckout}
+        clerkAuth
+        currentPlan={access.plan}
+      />
+    </>
   );
 }
 
