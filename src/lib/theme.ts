@@ -12,9 +12,7 @@ export function getPreferredTheme(): ThemeMode {
   if (typeof window === "undefined") return "light";
   const stored = getStoredTheme();
   if (stored) return stored;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+  return "light";
 }
 
 export function applyTheme(theme: ThemeMode): void {

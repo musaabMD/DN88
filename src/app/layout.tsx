@@ -1,10 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, JetBrains_Mono, Nunito, Source_Serif_4 } from "next/font/google";
+import { Geist, JetBrains_Mono, Noto_Sans_Arabic, Nunito, Source_Serif_4 } from "next/font/google";
 import { ClerkProviderWrapper } from "@/components/providers/ClerkProviderWrapper";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+
+const notoArabic = Noto_Sans_Arabic({
+  subsets: ["arabic"],
+  variable: "--font-arabic",
+  weight: ["400", "600", "700", "800"],
+});
 
 const nunito = Nunito({
   variable: "--font-nunito",
@@ -48,6 +54,7 @@ export default function RootLayout({
       className={cn(
         "h-full",
         nunito.variable,
+        notoArabic.variable,
         "font-sans",
         geist.variable,
         articleSerif.variable,
@@ -67,7 +74,12 @@ export default function RootLayout({
         />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("drnote-theme");var d=t?t==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;if(d){document.documentElement.classList.add("dark");document.documentElement.style.colorScheme="dark";}}catch(e){}})();`,
+            __html: `(function(){try{var l=localStorage.getItem("drnote-locale");var locale=l==="ar"||l==="en"?l:(navigator.language||"").toLowerCase().startsWith("ar")?"ar":"en";document.documentElement.lang=locale;document.documentElement.dir=locale==="ar"?"rtl":"ltr";document.documentElement.classList.toggle("locale-ar",locale==="ar");}catch(e){}})();`,
+          }}
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("drnote-theme");if(t==="dark"){document.documentElement.classList.add("dark");document.documentElement.style.colorScheme="dark";}}catch(e){}})();`,
           }}
         />
       </head>
