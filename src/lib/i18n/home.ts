@@ -45,7 +45,8 @@ const TAB_LABELS: Record<Tab, Record<AppLocale, string>> = {
 const en = {
   heroTitle1: "The fastest way to",
   heroTitle2: "ace your exam.",
-  heroSubtitle: "Questions, notes and flashcards for every Saudi licensing exam.",
+  heroSubtitle:
+    "Turn your files into a question bank—or use shared ones. Test yourself, check your level, and study with summaries and flashcards.",
   searchExamsPlaceholder: "Search SMLE, pharmacy, family medicine…",
   browse: "Browse",
   allExams: "All exams",
@@ -187,8 +188,8 @@ const en = {
 };
 
 const ar = {
-  heroTitle1: "نحو الرخصة المهنية،",
-  heroTitle2: "إنجازٌ يوميّ لا يتوقف.",
+  heroTitle1: "أسرع طريقة",
+  heroTitle2: "للتفوق في اختبارك",
   heroSubtitle:
     "أسئلة وملخصات وبطاقات تعليمية لاختبارات الرخصة المهنية — وفق خارطة الهيئة السعودية للتخصصات الصحية.",
   searchExamsPlaceholder: "ابحث: الطب البشري، الصيدلة، طب الأسنان، طب الأسرة…",
