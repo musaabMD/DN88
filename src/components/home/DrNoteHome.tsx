@@ -648,7 +648,9 @@ const styles = `
 export function DrNoteHome() {
   return (
     <HomeLocaleProvider>
-      <DrNoteHomeInner />
+      <div className="min-h-screen bg-[#F6F7F9] text-slate-900 [color-scheme:light]">
+        <DrNoteHomeInner />
+      </div>
     </HomeLocaleProvider>
   );
 }
@@ -874,19 +876,19 @@ function Home({ onOpen, onAdd, locale, onToggleLocale }: { onOpen: (e: Exam) => 
         </section>
 
         <section className="mt-10 sm:mt-12">
-          <div className="rounded-2xl bg-[#121212] p-4 sm:rounded-3xl sm:p-6">
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:rounded-3xl sm:p-6">
             <div className="mb-4 flex items-end justify-between gap-3">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/45">{m.browse}</p>
-                <h2 className="font-display text-2xl font-extrabold tracking-tight text-white sm:text-3xl">{m.allExams}</h2>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">{m.browse}</p>
+                <h2 className="font-display text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">{m.allExams}</h2>
               </div>
               {!query.trim() && (
-                <span className="hidden text-sm font-semibold text-white/50 sm:block">{m.boards(EXAMS.length)}</span>
+                <span className="hidden text-sm font-semibold text-slate-500 sm:block">{m.boards(EXAMS.length)}</span>
               )}
             </div>
 
             {query.trim() && results.length > 0 && (
-              <p className="mb-3 text-sm font-semibold text-white/45">
+              <p className="mb-3 text-sm font-semibold text-slate-500">
                 {m.matchCount(results.length)}
               </p>
             )}
@@ -898,13 +900,13 @@ function Home({ onOpen, onAdd, locale, onToggleLocale }: { onOpen: (e: Exam) => 
                 ))}
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 py-16 text-center sm:py-20">
-                <p className="font-display text-2xl font-bold text-white">{m.noExamFound}</p>
-                <p className="mt-1 text-white/55">{m.noExamHint}</p>
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-16 text-center sm:py-20">
+                <p className="font-display text-2xl font-bold text-slate-900">{m.noExamFound}</p>
+                <p className="mt-1 text-slate-500">{m.noExamHint}</p>
                 <button
                   type="button"
                   onClick={() => setQuery("")}
-                  className="mt-5 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-white/90"
+                  className="mt-5 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
                 >
                   {m.showAllExams}
                 </button>
