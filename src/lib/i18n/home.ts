@@ -43,8 +43,8 @@ const TAB_LABELS: Record<Tab, Record<AppLocale, string>> = {
 };
 
 const en = {
-  heroTitle1: "Pass the board,",
-  heroTitle2: "one streak at a time.",
+  heroTitle1: "The fastest way to",
+  heroTitle2: "ace your exam.",
   heroSubtitle: "Questions, notes and flashcards for every Saudi licensing exam.",
   searchExamsPlaceholder: "Search SMLE, pharmacy, family medicine…",
   browse: "Browse",
