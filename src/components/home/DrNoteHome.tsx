@@ -1207,7 +1207,6 @@ function ReviewPane({ answers, flagged, setFlagged, onAsk }: {
     <div className="nt-scroll">
       <div className="nt-doc">
         <h1 className="nt-h1">Review</h1>
-        <p className="nt-meta">{attempted.length} attempted · tap one to open</p>
         <div className="dn-rv-toolbar">
           <div className="dn-rv-search">
             <Search size={15} color={C.faint} strokeWidth={2.4} />
