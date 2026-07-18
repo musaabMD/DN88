@@ -168,11 +168,16 @@ const styles = `
 /* main / hero */
 .dn-main { max-width: min(1120px, calc(100% - 36px)); margin: 0 auto; padding: 92px 18px 120px; }
 .dn-hero { text-align: center; margin-bottom: 18px; display: flex; flex-direction: column; align-items: center; }
-.dn-hero-compact { margin-bottom: 14px; }
+.dn-hero-compact { margin-bottom: 12px; align-items: stretch; text-align: left; width: 100%; }
+.dn-hero-row { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 520px; margin: 0 auto 10px; }
+.dn-hero-compact .dn-hero-ic { width: 44px; height: 44px; min-width: 44px; border-radius: 12px; margin-bottom: 0; }
+.dn-hero-compact .dn-hero-code { font-size: 13px; }
+.dn-hero-title { flex: 1; min-width: 0; font-size: 20px; font-weight: 900; letter-spacing: -.4px; margin: 0; color: ${C.ink}; line-height: 1.25; }
 .dn-hero-ic { width: 52px; height: 52px; min-width: 52px; border-radius: 16px; display: grid; place-items: center; margin-bottom: 10px; padding: 0 6px; overflow: hidden; }
 .dn-hero-code { font-size: 18px; font-weight: 900; color: #fff; letter-spacing: -0.5px; line-height: 1; white-space: nowrap; }
 .dn-title { font-size: 34px; font-weight: 900; letter-spacing: -1px; margin: 0 0 4px; color: ${C.ink}; }
 .dn-hero-sub { color: ${C.sub}; font-weight: 700; margin: 0 0 12px; font-size: 15px; }
+.dn-hero-compact .dn-search { margin-top: 0; max-width: 520px; }
 .dn-crumb-back { display: inline-flex; align-items: center; gap: 6px; background: none; border: none; cursor: pointer; color: ${C.sub}; font-weight: 800; font-size: 14px; margin-bottom: 8px; padding: 6px 0; min-height: 44px; }
 .dn-crumb-back:hover { color: ${C.ink}; }
 .dn-exam-main { width: 100%; }
@@ -408,10 +413,11 @@ const styles = `
   .dn-header-inner { height: 52px; padding: 0 12px; }
   .dn-crumb-back { font-size: 13px; margin-bottom: 2px; min-height: 36px; }
   .dn-hero { margin-bottom: 10px; }
-  .dn-hero-ic { width: 44px; height: 44px; min-width: 44px; border-radius: 14px; margin-bottom: 6px; }
-  .dn-hero-code { font-size: 15px; }
-  .dn-title { font-size: 22px; margin-bottom: 2px; }
-  .dn-hero-sub { font-size: 13px; margin-bottom: 8px; }
+  .dn-hero-row { max-width: 100%; margin-bottom: 8px; gap: 8px; }
+  .dn-hero-compact .dn-hero-ic { width: 38px; height: 38px; min-width: 38px; border-radius: 10px; }
+  .dn-hero-compact .dn-hero-code { font-size: 11px; }
+  .dn-hero-title { font-size: 17px; }
+  .dn-hero-compact .dn-search { max-width: 100%; }
   .dn-search { max-width: 100%; padding: 10px 12px; border-radius: 12px; margin-top: 0; border-width: 1px; }
   .dn-search input { font-size: 15px; }
   .dn-filterbar { justify-content: center; gap: 8px; margin-bottom: 8px; }
@@ -736,11 +742,12 @@ function ExamPage(props: {
     <main className="dn-main dn-exam-main">
       <button type="button" className="dn-crumb-back" onClick={onBack}><ArrowLeft size={18} strokeWidth={2.6} /> All exams</button>
       <section className="dn-hero dn-hero-compact">
-        <span className="dn-hero-ic" style={{ background: `linear-gradient(135deg, ${exam.from} 0%, ${exam.to} 100%)` }}>
-          <span className="dn-hero-code">{exam.code}</span>
-        </span>
-        <h1 className="dn-title">{exam.code}</h1>
-        <p className="dn-hero-sub">{exam.name}</p>
+        <div className="dn-hero-row">
+          <span className="dn-hero-ic" style={{ background: `linear-gradient(135deg, ${exam.from} 0%, ${exam.to} 100%)` }} aria-hidden>
+            <span className="dn-hero-code">{exam.code}</span>
+          </span>
+          <h1 className="dn-hero-title">{exam.name}</h1>
+        </div>
         <div className="dn-search">
           <Search size={20} color={C.faint} strokeWidth={2.4} />
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search files…" aria-label="Search files" />
