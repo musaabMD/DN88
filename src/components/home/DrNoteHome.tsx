@@ -790,11 +790,10 @@ function ExamPage(props: {
                 </span>
               </button>
               <div className="dn-actions">
-                <button type="button" className="dn-icon-btn" onClick={() => onOpen(f)} title="Study" aria-label="Study"><Play size={18} strokeWidth={2.4} /></button>
+                <button type="button" className="dn-icon-btn" onClick={() => flash("Share link copied")} title="Share" aria-label="Share"><Share2 size={16} strokeWidth={2.4} /></button>
                 <button type="button" className={`dn-icon-btn dn-bk${isSaved ? " on" : ""}`} onClick={() => { toggleSaved(f.id); flash(isSaved ? "Removed bookmark" : "Bookmarked"); }} title={isSaved ? "Remove bookmark" : "Bookmark"} aria-label={isSaved ? "Remove bookmark" : "Bookmark"}>
                   <BkIcon saved={isSaved} size={15} />
                 </button>
-                <button type="button" className="dn-icon-btn dn-hide-sm" onClick={() => flash("Share link copied")} title="Share" aria-label="Share"><Share2 size={16} strokeWidth={2.4} /></button>
                 <button type="button" className="dn-icon-btn dn-hide-sm" onClick={() => flash("Link copied")} title="Copy link" aria-label="Copy link"><Link2 size={16} strokeWidth={2.4} /></button>
               </div>
               <button type="button" className={`dn-row-select${isPicked ? " on" : ""}`} onClick={() => toggle(picked, f.id, setPicked)} aria-pressed={isPicked} aria-label={isPicked ? "Deselect file" : "Select file"}>
