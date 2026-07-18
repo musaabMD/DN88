@@ -349,7 +349,12 @@ const styles = `
 .dn-sheet .dn-chunky { margin-top: 14px; }
 
 /* review */
-.dn-rv-filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.dn-rv-toolbar { margin-bottom: 14px; }
+.dn-rv-search { max-width: 420px; margin: 0 auto 10px; display: flex; align-items: center; gap: 8px; background: ${C.wash}; border: 1px solid ${C.line}; border-radius: 12px; padding: 8px 12px; transition: border-color .12s, background .12s; }
+.dn-rv-search:focus-within { background: #fff; border-color: ${C.blue}; box-shadow: 0 0 0 3px #DDF4FF; }
+.dn-rv-search input { flex: 1; min-width: 0; border: none; outline: none; background: none; font-size: 14px; font-weight: 700; color: ${C.ink}; }
+.dn-rv-search input::placeholder { color: ${C.faint}; font-weight: 600; }
+.dn-rv-filters { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 .dn-rv-filter { display: inline-flex; align-items: center; gap: 7px; border: 2px solid ${C.line}; border-radius: 13px; padding: 8px 12px; font-weight: 800; font-size: 13.5px; cursor: pointer; transition: all .1s; }
 .dn-rv-count { font-size: 12px; font-weight: 900; padding: 1px 7px; border-radius: 7px; }
 .dn-rv-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -482,6 +487,10 @@ const styles = `
   .dn-fs-fs { width: 32px; height: 32px; }
   .dn-fs-search { padding: 7px 10px; border-radius: 10px; }
   .dn-fs-search input { font-size: 13px; }
+  .dn-rv-search { max-width: 100%; margin-bottom: 8px; padding: 7px 10px; border-radius: 10px; }
+  .dn-rv-search input { font-size: 13px; }
+  .dn-rv-filter { padding: 6px 10px; font-size: 12px; border-radius: 11px; }
+  .dn-rv-count { font-size: 11px; padding: 1px 6px; }
   .dn-tabbar-btn { font-size: 8px; min-width: 46px; padding: 4px 1px; }
   .dn-tabbar-btn svg { width: 20px; height: 20px; }
 }
@@ -1134,7 +1143,9 @@ function ReviewPane({ answers, flagged, setFlagged, onAsk }: {
 }) {
   type RF = "all" | "correct" | "incorrect" | "flagged";
   const [rf, setRf] = useState<RF>("all");
+  const [search, setSearch] = useState("");
   const [open, setOpen] = useState<number | null>(null);
+  const searchQ = search.trim().toLowerCase();
 
   const attempted = QUESTIONS.map((q, i) => ({ ...q, idx: i })).filter((q) => answers[q.idx] !== undefined || flagged.has(q.idx));
   const list = attempted.filter((q) => {
@@ -1143,7 +1154,7 @@ function ReviewPane({ answers, flagged, setFlagged, onAsk }: {
     if (rf === "incorrect") return a !== undefined && a !== q.correct;
     if (rf === "flagged") return flagged.has(q.idx);
     return true;
-  });
+  }).filter((q) => !searchQ || q.stem.toLowerCase().includes(searchQ) || q.explain.toLowerCase().includes(searchQ));
   const counts = {
     all: attempted.length,
     correct: attempted.filter((q) => answers[q.idx] === q.correct).length,
@@ -1197,15 +1208,22 @@ function ReviewPane({ answers, flagged, setFlagged, onAsk }: {
       <div className="nt-doc">
         <h1 className="nt-h1">Review</h1>
         <p className="nt-meta">{attempted.length} attempted · tap one to open</p>
-        <div className="dn-rv-filters">
-          {filters.map((f) => (
-            <button key={f.k} onClick={() => setRf(f.k)} className="dn-rv-filter" style={{ background: rf === f.k ? C.ink : "#fff", color: rf === f.k ? "#fff" : C.sub, borderColor: rf === f.k ? C.ink : C.line }}>
-              {f.label}<span className="dn-rv-count" style={{ background: rf === f.k ? "rgba(255,255,255,.22)" : C.wash, color: rf === f.k ? "#fff" : C.faint }}>{counts[f.k]}</span>
-            </button>
-          ))}
+        <div className="dn-rv-toolbar">
+          <div className="dn-rv-search">
+            <Search size={15} color={C.faint} strokeWidth={2.4} />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search questions…" aria-label="Search review questions" />
+            {search && <button type="button" className="dn-fs-clear" onClick={() => setSearch("")} aria-label="Clear search"><X size={14} strokeWidth={2.8} /></button>}
+          </div>
+          <div className="dn-rv-filters">
+            {filters.map((f) => (
+              <button key={f.k} onClick={() => setRf(f.k)} className="dn-rv-filter" style={{ background: rf === f.k ? C.ink : "#fff", color: rf === f.k ? "#fff" : C.sub, borderColor: rf === f.k ? C.ink : C.line }}>
+                {f.label}<span className="dn-rv-count" style={{ background: rf === f.k ? "rgba(255,255,255,.22)" : C.wash, color: rf === f.k ? "#fff" : C.faint }}>{counts[f.k]}</span>
+              </button>
+            ))}
+          </div>
         </div>
         {list.length === 0 ? (
-          <div className="dn-empty" style={{ paddingTop: 30 }}><ListChecks size={26} color={C.faint} /><p>Nothing here yet — answer or flag questions in the Quiz tab.</p></div>
+          <div className="dn-empty" style={{ paddingTop: 30 }}><ListChecks size={26} color={C.faint} /><p>{searchQ ? `No questions match “${search.trim()}”.` : "Nothing here yet — answer or flag questions in the Quiz tab."}</p></div>
         ) : (
           <ul className="dn-rv-list">
             {list.map((q) => {
