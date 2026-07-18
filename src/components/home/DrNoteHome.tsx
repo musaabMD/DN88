@@ -773,6 +773,8 @@ function ExamCard({ exam, onOpen }: { exam: Exam; onOpen: (e: Exam) => void }) {
     <button
       type="button"
       onClick={() => onOpen(exam)}
+      title={m.examFullName(exam.id)}
+      aria-label={`${m.examFullName(exam.id)} — ${exam.code}`}
       className="group relative h-[9.5rem] w-full overflow-hidden rounded-lg p-4 text-left text-white shadow-md outline-none transition duration-200 hover:scale-[1.03] hover:shadow-xl focus-visible:ring-2 focus-visible:ring-white/40 sm:h-[10.5rem]"
       style={{ backgroundColor: exam.to }}
     >

@@ -6,12 +6,23 @@ type Tab = "Read" | "Quiz" | "Review" | "Summary" | "Flashcards" | "Custom";
 export type HomeMessages = ReturnType<typeof getHomeMessages>;
 
 const EXAM_NAMES: Record<string, Record<AppLocale, string>> = {
-  smle: { en: "Saudi Medical Licensing", ar: "الترخيص الطبي السعودي" },
-  sdle: { en: "Saudi Dental Licensing", ar: "الترخيص السني السعودي" },
-  sple: { en: "Saudi Pharmacy Licensing", ar: "الترخيص الصيدلاني السعودي" },
-  slle: { en: "Saudi Lab Licensing", ar: "الترخيص المخبري السعودي" },
-  snle: { en: "Saudi Nursing Licensing", ar: "الترخيص التمريضي السعودي" },
+  // SCFHS «خارطة اختبارات الرخصة المهنية» specialty labels + official exam titles
+  smle: { en: "Saudi Medical Licensing", ar: "الطب البشري" },
+  sdle: { en: "Saudi Dental Licensing", ar: "طب الأسنان" },
+  sple: { en: "Saudi Pharmacy Licensing", ar: "الصيدلة" },
+  slle: { en: "Saudi Lab Licensing", ar: "المختبرات" },
+  snle: { en: "Saudi Nursing Licensing", ar: "التمريض" },
   fm: { en: "Family Medicine", ar: "طب الأسرة" },
+};
+
+/** Official SCFHS «خارطة اختبارات الرخصة المهنية» specialty + licensure exam titles */
+const EXAM_FULL_NAMES_AR: Record<string, string> = {
+  smle: "اختبار الرخصة الطبية — الطب البشري",
+  sdle: "اختبار رخصة طب الأسنان",
+  sple: "اختبار رخصة الصيدلة",
+  slle: "اختبار رخصة المختبرات",
+  snle: "اختبار رخصة التمريض",
+  fm: "البورد السعودي في طب الأسرة",
 };
 
 const FILTER_LABELS: Record<Filter, Record<AppLocale, string>> = {
@@ -19,7 +30,7 @@ const FILTER_LABELS: Record<Filter, Record<AppLocale, string>> = {
   week: { en: "This week", ar: "هذا الأسبوع" },
   month: { en: "Last month", ar: "الشهر الماضي" },
   all: { en: "All", ar: "الكل" },
-  bookmarked: { en: "Saved", ar: "محفوظ" },
+  bookmarked: { en: "Saved", ar: "المحفوظة" },
 };
 
 const TAB_LABELS: Record<Tab, Record<AppLocale, string>> = {
@@ -27,7 +38,7 @@ const TAB_LABELS: Record<Tab, Record<AppLocale, string>> = {
   Quiz: { en: "Quiz", ar: "اختبار" },
   Review: { en: "Review", ar: "مراجعة" },
   Summary: { en: "Summary", ar: "ملخص" },
-  Flashcards: { en: "Flashcards", ar: "بطاقات" },
+  Flashcards: { en: "Flashcards", ar: "بطاقات تعليمية" },
   Custom: { en: "Custom", ar: "مخصص" },
 };
 
@@ -172,22 +183,23 @@ const en = {
 };
 
 const ar = {
-  heroTitle1: "اجتز الاختبار،",
-  heroTitle2: "سلسلة واحدة في كل مرة.",
-  heroSubtitle: "أسئلة وملاحظات وبطاقات لكل امتحان ترخيص سعودي.",
-  searchExamsPlaceholder: "ابحث عن SMLE، الصيدلة، طب الأسرة…",
-  browse: "تصفح",
-  allExams: "كل الامتحانات",
-  boards: (n: number) => `${n} لوحة`,
+  heroTitle1: "نحو الرخصة المهنية،",
+  heroTitle2: "إنجازٌ يوميّ لا يتوقف.",
+  heroSubtitle:
+    "أسئلة وملخصات وبطاقات تعليمية لاختبارات الرخصة المهنية — وفق خارطة الهيئة السعودية للتخصصات الصحية.",
+  searchExamsPlaceholder: "ابحث: الطب البشري، الصيدلة، طب الأسنان، طب الأسرة…",
+  browse: "تصفّح",
+  allExams: "اختبارات الرخصة المهنية",
+  boards: (n: number) => (n === 1 ? "اختبار واحد" : n === 2 ? "اختباران" : `${n} اختبارات`),
   matchCount: (n: number) => (n === 1 ? "نتيجة واحدة" : n === 2 ? "نتيجتان" : `${n} نتائج`),
-  noExamFound: "لم يُعثر على امتحان",
-  noExamHint: "جرّب اسمًا آخر، أو امسح البحث لعرض كل الامتحانات.",
-  showAllExams: "عرض كل الامتحانات",
-  addExam: "إضافة امتحان",
-  filesCount: (n: number) => `${n.toLocaleString()} ملف`,
+  noExamFound: "لم يُعثر على اختبار",
+  noExamHint: "جرّب اسم تخصص أو رمزًا آخر، أو امسح البحث لعرض كل الاختبارات.",
+  showAllExams: "عرض كل الاختبارات",
+  addExam: "إضافة اختبار",
+  filesCount: (n: number) => (n === 1 ? "ملف واحد" : n === 2 ? "ملفان" : `${n.toLocaleString("ar-SA")} ملف`),
   pagesCount: (n: number) => `${n} صفحة`,
   pgShort: (n: number) => `${n} ص`,
-  allExamsBack: "كل الامتحانات",
+  allExamsBack: "اختبارات الرخصة",
   searchFilesPlaceholder: "ابحث في الملفات…",
   selectAll: "تحديد الكل",
   selected: "محدّد",
@@ -223,7 +235,7 @@ const ar = {
   searchThisFile: "ابحث في هذا الملف…",
   searchTab: (tab: string) => `ابحث في ${tab}…`,
   ask: "اسأل",
-  askAi: "اسأل الذكاء",
+  askAi: "اسأل المساعد الذكي",
   fullScreen: "ملء الشاشة",
   exitFullScreen: "الخروج من ملء الشاشة",
   switchToEnglish: "التبديل إلى الإنجليزية",
@@ -234,7 +246,7 @@ const ar = {
   filterAll: "الكل",
   filterCorrect: "صحيح",
   filterIncorrect: "خطأ",
-  filterFlagged: "معلّم",
+  filterFlagged: "المُعلَّمة",
   filterSessions: "جلسات",
   backToSessions: "العودة للجلسات",
   resume: "متابعة",
@@ -306,7 +318,7 @@ const ar = {
   sessionResumed: "تم استئناف الجلسة",
   sessionStarted: "بدأت جلسة جديدة",
   customSessionStarted: "بدأت جلسة مخصصة",
-  drnoteHome: "الصفحة الرئيسية DrNote",
+  drnoteHome: "DrNote — الرئيسية",
   send: "إرسال",
   clearSearch: "مسح البحث",
 };
@@ -318,6 +330,8 @@ export function getHomeMessages(locale: AppLocale) {
   return {
     ...strings,
     examName: (id: string, fallback: string) => EXAM_NAMES[id]?.[locale] ?? fallback,
+    examFullName: (id: string) =>
+      locale === "ar" ? EXAM_FULL_NAMES_AR[id] ?? EXAM_NAMES[id]?.ar ?? id : EXAM_NAMES[id]?.en ?? id,
     filterLabel: (key: Filter) => FILTER_LABELS[key][locale],
     tabLabel: (key: Tab) => TAB_LABELS[key][locale],
     tabLabelLower: (key: Tab) => TAB_LABELS[key][locale].toLowerCase(),
