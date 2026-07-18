@@ -6,6 +6,9 @@ import { useEffect, useState } from "react";
 import { ChevronRight, GraduationCap, Plus } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { UserAuthControls } from "@/components/UserAuthControls";
+import { MedGeniusCreditsProvider } from "@/lib/medgenius/credits-context";
+import { CreditsUsageCard } from "@/components/medgenius/CreditsUsage";
+import { useClerkEnabled, useClientMounted } from "@/hooks/useClerkEnabled";
 import { saveCurrentExamId } from "@/lib/current-exam";
 import { DASHBOARD_PATH, HOME_PATH, examPath } from "@/lib/routes";
 import { getTileColors } from "@/lib/tile-colors";
@@ -55,14 +58,22 @@ function DashboardExamCard({ exam }: { exam: Exam }) {
 export default function DashboardPage() {
   const router = useRouter();
   const [exams, setExams] = useState<Exam[]>([]);
+  const clerkEnabled = useClerkEnabled();
+  const mounted = useClientMounted();
 
   useEffect(() => {
     setExams(getUserExams());
   }, []);
 
-  return (
+  const body = (
     <main className="mx-auto w-full max-w-4xl bg-white px-4 pb-14 sm:px-6">
       <DashboardHeader />
+
+      {mounted && clerkEnabled && (
+        <div className="mb-6">
+          <CreditsUsageCard />
+        </div>
+      )}
 
       <div className="rounded-3xl border-2 border-b-4 border-slate-200 bg-slate-50 px-6 py-8 sm:px-10">
         <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-slate-500">
@@ -93,4 +104,10 @@ export default function DashboardPage() {
       </button>
     </main>
   );
+
+  if (mounted && clerkEnabled) {
+    return <MedGeniusCreditsProvider>{body}</MedGeniusCreditsProvider>;
+  }
+
+  return body;
 }

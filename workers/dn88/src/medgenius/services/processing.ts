@@ -161,13 +161,23 @@ async function runParseStage(
     fileBytes,
     filename: doc.original_filename,
     mimeType: doc.mime_type,
+    options: {
+      includeLinks: true,
+      includeImages: false,
+      shortenBase64Images: true,
+      useMainContentOnly: false,
+    },
   });
 
-  const parseCost = computeCreditCost("pageParse", parsed.pageCount);
+  const parseCost = parsed.creditsConsumed;
   await spendCredits(env.DB, userId, parseCost, "page_parse", {
     type: "document",
     id: documentId,
-    metadata: { pageCount: parsed.pageCount },
+    metadata: {
+      pageCount: parsed.pageCount,
+      contextDevType: parsed.type,
+      creditsConsumed: parsed.creditsConsumed,
+    },
   });
 
   const keys = buildR2Keys(userId, documentId, doc.original_filename);

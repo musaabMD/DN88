@@ -222,6 +222,7 @@ export type DocumentStudyData = {
   flashcards: HomeFlashCard[];
   readPages: HomeReadPage[];
   summaries: HomeSummary[];
+  rawMarkdown: string | null;
   status: string | null;
   progress: number;
   loading: boolean;
@@ -233,6 +234,7 @@ const EMPTY_STUDY: DocumentStudyData = {
   flashcards: [],
   readPages: [],
   summaries: [],
+  rawMarkdown: null,
   status: null,
   progress: 0,
   loading: false,
@@ -246,6 +248,7 @@ export function useDocumentStudy(documentId: string | undefined): DocumentStudyD
   const [flashcards, setFlashcards] = useState<HomeFlashCard[]>([]);
   const [readPages, setReadPages] = useState<HomeReadPage[]>([]);
   const [summaries, setSummaries] = useState<HomeSummary[]>([]);
+  const [rawMarkdown, setRawMarkdown] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -283,6 +286,7 @@ export function useDocumentStudy(documentId: string | undefined): DocumentStudyD
           try {
             const md = await fetchDocumentMarkdown(token, documentId);
             if (!cancelled && md.markdown) {
+              setRawMarkdown(md.markdown);
               setReadPages(markdownToReadPages(md.markdown));
             }
           } catch {
@@ -332,5 +336,15 @@ export function useDocumentStudy(documentId: string | undefined): DocumentStudyD
 
   if (!enabled) return EMPTY_STUDY;
 
-  return { questions, flashcards, readPages, summaries, status, progress, loading, error };
+  return {
+    questions,
+    flashcards,
+    readPages,
+    summaries,
+    rawMarkdown,
+    status,
+    progress,
+    loading,
+    error,
+  };
 }
