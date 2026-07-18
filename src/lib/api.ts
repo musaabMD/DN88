@@ -11,10 +11,9 @@ function productionApiUrlFromHostname(hostname: string): string | null {
 }
 
 export function getApiBaseUrl(): string {
-  const legacyApiUrlKey = ["NEXT_PUBLIC", "DN", "88", "API_URL"].join("_");
   const configured =
     process.env.NEXT_PUBLIC_API_URL ??
-    process.env[legacyApiUrlKey] ??
+    process.env.NEXT_PUBLIC_DN88_API_URL ??
     null;
 
   if (configured && configured !== "http://localhost:8787") {
