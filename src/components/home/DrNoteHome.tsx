@@ -25,7 +25,6 @@ import { useStudyStreak } from "@/hooks/useStudyStreak";
 import { CollectionsPanel } from "@/components/CollectionsPanel";
 import { getClerkToken } from "@/lib/clerk-token";
 import { useClerkEnabled } from "@/hooks/useClerkEnabled";
-import { LocaleToggle } from "@/components/LocaleToggle";
 import { HomeLocaleProvider, useHomeLocale } from "@/components/home/HomeLocaleProvider";
 import { MedGeniusCreditsProvider } from "@/lib/medgenius/credits-context";
 import { CreditsBadge, CreditsChatHint } from "@/components/medgenius/CreditsUsage";
@@ -669,7 +668,7 @@ export function DrNoteHome() {
 }
 
 function DrNoteHomeInner() {
-  const { locale, toggleLocale, m } = useHomeLocale();
+  const { m } = useHomeLocale();
   const [page, setPage] = useState<"home" | "exam" | "study">("home");
   const [exam, setExam] = useState<Exam | null>(null);
   const [file, setFile] = useState<ExamFile | null>(null);
@@ -714,7 +713,7 @@ function DrNoteHomeInner() {
       <style>{styles}</style>
 
       {page === "home" && (
-        <Home onOpen={openExam} onAdd={() => setAdding(true)} locale={locale} onToggleLocale={toggleLocale} />
+        <Home onOpen={openExam} onAdd={() => setAdding(true)} />
       )}
 
       {page !== "home" && (
@@ -726,7 +725,6 @@ function DrNoteHomeInner() {
                   <DrNoteLogo showWordmark forceWordmark />
                 </button>
                 <div className="dn-header-right">
-                  <LocaleToggle locale={locale} onToggle={toggleLocale} size="sm" />
                   <CreditsBadge />
                   <span className="dn-streak"><Flame size={18} color={C.yellow} fill={C.yellow} strokeWidth={2} /><b>{streakData.streakDays || 0}</b></span>
                   <span className="dn-avatar" style={{ background: C.purple }}>MA</span>
@@ -745,7 +743,7 @@ function DrNoteHomeInner() {
 
           {page === "study" && file && (
             <Study file={file} exam={exam} saved={saved.has(file.id)} onToggleSave={() => { toggleSaved(file.id); flash(saved.has(file.id) ? m.removedBookmark : m.bookmarked); }}
-              onClose={() => setPage("exam")} flash={flash} locale={locale} onToggleLocale={toggleLocale} />
+              onClose={() => setPage("exam")} flash={flash} />
           )}
 
           {toast && <div className="dn-toast"><Check size={16} strokeWidth={3} color={C.green} /> {toast}</div>}
@@ -816,7 +814,7 @@ function ExamCard({ exam, onOpen }: { exam: Exam; onOpen: (e: Exam) => void }) {
   );
 }
 
-function Home({ onOpen, onAdd, locale, onToggleLocale }: { onOpen: (e: Exam) => void; onAdd: () => void; locale: AppLocale; onToggleLocale: () => void }) {
+function Home({ onOpen, onAdd }: { onOpen: (e: Exam) => void; onAdd: () => void }) {
   const { m } = useHomeLocale();
   const [query, setQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
@@ -851,7 +849,6 @@ function Home({ onOpen, onAdd, locale, onToggleLocale }: { onOpen: (e: Exam) => 
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
           <DrNoteLogo showWordmark forceWordmark />
           <div className="flex items-center gap-3">
-            <LocaleToggle locale={locale} onToggle={onToggleLocale} className="ring-1 ring-slate-200/80 bg-white/80" />
             <CreditsBadge />
             <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 ring-1 ring-amber-200/70">
               <Flame className="h-4 w-4 text-amber-500" fill="currentColor" strokeWidth={1.5} />
@@ -1189,9 +1186,8 @@ function ExamPage(props: {
 /* ------------------------------------------------------------------ */
 /*  Study (full screen)                                                */
 /* ------------------------------------------------------------------ */
-function Study({ file, exam, saved, onToggleSave, onClose, flash, locale, onToggleLocale }: {
+function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
   file: ExamFile; exam: Exam | null; saved: boolean; onToggleSave: () => void; onClose: () => void; flash: (m: string) => void;
-  locale: AppLocale; onToggleLocale: () => void;
 }) {
   const { m, content } = useHomeLocale();
   const clerkEnabled = useClerkEnabled();
@@ -1436,7 +1432,6 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, locale, onTogg
               <span className="dn-fs-sub">{subLabel}</span>
             </h1>
           </div>
-          <LocaleToggle locale={locale} onToggle={onToggleLocale} size="sm" className="shrink-0 bg-white ring-1 ring-black/5" />
           <CreditsBadge className="shrink-0" />
           <button type="button" className={`dn-fs-bk${saved ? " on" : ""}`} onClick={onToggleSave} title={saved ? m.bookmarked : m.bookmark} aria-label={saved ? m.removeBookmark : m.bookmark}>
             <BkIcon saved={saved} size={16} />
