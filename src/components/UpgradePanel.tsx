@@ -10,12 +10,15 @@ import {
   Sparkles,
   Zap,
 } from "lucide-react";
-import { useAuth, SignInButton } from "@clerk/clerk-react";
+import { SignInButton } from "@clerk/clerk-react";
 import { BRAND } from "@/lib/brand";
 import {
   createStripeCheckoutSession,
   type BillingInterval,
+  type CheckoutPlan,
 } from "@/lib/stripe";
+import { getClerkToken, isClerkSignedIn } from "@/lib/clerk-token";
+import { useDrNoteAccess } from "@/hooks/useDrNoteAccess";
 import { useClerkEnabled, useClientMounted } from "@/hooks/useClerkEnabled";
 
 const FREE_FEATURES = [
@@ -25,24 +28,40 @@ const FREE_FEATURES = [
   { icon: BookOpen, text: "Library article reading" },
 ] as const;
 
-const PRO_FEATURES = [
-  { icon: FileQuestion, text: "All exams — SMLE, USMLE, and more" },
+const STUDENT_FEATURES = [
+  { icon: FileQuestion, text: "All exams and uploaded document sets" },
   { icon: Layers, text: "Unlimited flashcards & questions" },
-  { icon: Brain, text: "Smart review schedule" },
-  { icon: BarChart3, text: "Detailed progress analytics" },
-  { icon: BookOpen, text: "Full library with rich study modes" },
-  { icon: Zap, text: "High-yield filters & presentation mode" },
+  { icon: Brain, text: "AI tutor on every question" },
+  { icon: BarChart3, text: "Progress analytics" },
+] as const;
+
+const PRO_FEATURES = [
+  { icon: Sparkles, text: "Everything in Student" },
+  { icon: Zap, text: "Priority document processing" },
+  { icon: Brain, text: "AI-generated practice questions" },
+  { icon: BarChart3, text: "Advanced analytics & SRS review" },
+  { icon: BookOpen, text: "Full library study modes" },
 ] as const;
 
 const PRICING: Record<
-  BillingInterval,
-  { amount: string; suffix: string; note?: string }
+  CheckoutPlan,
+  Record<BillingInterval, { amount: string; suffix: string; note?: string }>
 > = {
-  monthly: { amount: "$9.99", suffix: "/ month" },
-  yearly: {
-    amount: "$6.99",
-    suffix: "/ month",
-    note: "Billed annually · save 30%",
+  student: {
+    monthly: { amount: "$20", suffix: "/ month" },
+    yearly: {
+      amount: "$16",
+      suffix: "/ month",
+      note: "Billed annually · save 20%",
+    },
+  },
+  pro: {
+    monthly: { amount: "$30", suffix: "/ month" },
+    yearly: {
+      amount: "$24",
+      suffix: "/ month",
+      note: "Billed annually · save 20%",
+    },
   },
 };
 
@@ -170,22 +189,25 @@ function PlanCard({
   );
 }
 
-function ProCheckoutButton({
+function CheckoutButton({
+  plan,
   billing,
   loading,
   signedIn,
   onCheckout,
   clerkAuth,
 }: {
+  plan: CheckoutPlan;
   billing: BillingInterval;
   loading: boolean;
   signedIn: boolean;
-  onCheckout: () => void;
+  onCheckout: (plan: CheckoutPlan) => void;
   clerkAuth: boolean;
 }) {
+  const price = PRICING[plan][billing];
   const label = loading
     ? "Redirecting to Stripe…"
-    : `Upgrade to Pro — ${PRICING[billing].amount}/mo`;
+    : `Choose ${plan === "pro" ? "Pro" : "Student"} — ${price.amount}/mo`;
 
   if (!signedIn) {
     if (clerkAuth) {
@@ -215,7 +237,7 @@ function ProCheckoutButton({
   return (
     <button
       type="button"
-      onClick={onCheckout}
+      onClick={() => onCheckout(plan)}
       disabled={loading}
       className="mt-6 w-full rounded-xl border-b-4 border-indigo-800 bg-indigo-600 py-3 text-sm font-extrabold text-white transition-colors hover:bg-indigo-500 active:translate-y-0.5 active:border-b-2 disabled:opacity-70"
     >
@@ -232,16 +254,19 @@ function UpgradePricingGrid({
   signedIn,
   onCheckout,
   clerkAuth,
+  currentPlan,
 }: {
   billing: BillingInterval;
   setBilling: (billing: BillingInterval) => void;
   loading: boolean;
   error: string | null;
   signedIn: boolean;
-  onCheckout: () => void;
+  onCheckout: (plan: CheckoutPlan) => void;
   clerkAuth: boolean;
+  currentPlan: string;
 }) {
-  const proPrice = PRICING[billing];
+  const studentPrice = PRICING.student[billing];
+  const proPrice = PRICING.pro[billing];
 
   return (
     <>
@@ -251,7 +276,7 @@ function UpgradePricingGrid({
         disabled={loading}
       />
 
-      <div className="mx-auto mt-8 grid max-w-3xl gap-4 md:grid-cols-2 md:gap-5">
+      <div className="mx-auto mt-8 grid max-w-5xl gap-4 md:grid-cols-3 md:gap-5">
         <PlanCard
           title="Free"
           subtitle="Get started with core study tools"
@@ -265,14 +290,45 @@ function UpgradePricingGrid({
               disabled
               className="mt-6 w-full rounded-xl bg-slate-100 py-3 text-sm font-extrabold text-slate-400"
             >
-              Your current plan
+              {currentPlan === "free" ? "Your current plan" : "Included"}
             </button>
           }
         />
 
         <PlanCard
+          title="Student"
+          subtitle="Full qbank access and AI study tools"
+          price={studentPrice.amount}
+          priceSuffix={studentPrice.suffix}
+          priceNote={studentPrice.note}
+          badge={currentPlan === "student" ? "Current" : undefined}
+          features={STUDENT_FEATURES}
+          accent="indigo"
+          footer={
+            currentPlan === "student" || currentPlan === "pro" ? (
+              <button
+                type="button"
+                disabled
+                className="mt-6 w-full rounded-xl bg-indigo-50 py-3 text-sm font-extrabold text-indigo-600"
+              >
+                Active
+              </button>
+            ) : (
+              <CheckoutButton
+                plan="student"
+                billing={billing}
+                loading={loading}
+                signedIn={signedIn}
+                onCheckout={onCheckout}
+                clerkAuth={clerkAuth}
+              />
+            )
+          }
+        />
+
+        <PlanCard
           title="Pro"
-          subtitle="Unlimited access for serious board prep"
+          subtitle="Maximum AI power for intensive prep"
           price={proPrice.amount}
           priceSuffix={proPrice.suffix}
           priceNote={proPrice.note}
@@ -281,13 +337,24 @@ function UpgradePricingGrid({
           features={PRO_FEATURES}
           accent="indigo"
           footer={
-            <ProCheckoutButton
-              billing={billing}
-              loading={loading}
-              signedIn={signedIn}
-              onCheckout={onCheckout}
-              clerkAuth={clerkAuth}
-            />
+            currentPlan === "pro" ? (
+              <button
+                type="button"
+                disabled
+                className="mt-6 w-full rounded-xl bg-indigo-50 py-3 text-sm font-extrabold text-indigo-600"
+              >
+                Your current plan
+              </button>
+            ) : (
+              <CheckoutButton
+                plan="pro"
+                billing={billing}
+                loading={loading}
+                signedIn={signedIn}
+                onCheckout={onCheckout}
+                clerkAuth={clerkAuth}
+              />
+            )
           }
         />
       </div>
@@ -309,25 +376,26 @@ function UpgradePanelClerk() {
   const [billing, setBilling] = useState<BillingInterval>("yearly");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { getToken, isSignedIn } = useAuth();
+  const signedIn = isClerkSignedIn();
+  const access = useDrNoteAccess();
 
-  const handleCheckout = () => {
+  const handleCheckout = (plan: CheckoutPlan) => {
     void (async () => {
       setError(null);
 
-      if (!isSignedIn) {
+      if (!signedIn) {
         setError("Sign in to continue to secure checkout.");
         return;
       }
 
       setLoading(true);
       try {
-        const token = await getToken();
+        const token = await getClerkToken();
         if (!token) {
           throw new Error("Sign in to continue to secure checkout.");
         }
 
-        const url = await createStripeCheckoutSession(token, billing);
+        const url = await createStripeCheckoutSession(token, billing, plan);
         window.location.assign(url);
       } catch (checkoutError) {
         const message =
@@ -346,9 +414,10 @@ function UpgradePanelClerk() {
       setBilling={setBilling}
       loading={loading}
       error={error}
-      signedIn={Boolean(isSignedIn)}
+      signedIn={signedIn}
       onCheckout={handleCheckout}
       clerkAuth
+      currentPlan={access.plan}
     />
   );
 }
@@ -365,6 +434,7 @@ function UpgradePanelGuest() {
       signedIn={false}
       onCheckout={() => {}}
       clerkAuth={false}
+      currentPlan="free"
     />
   );
 }

@@ -12,9 +12,17 @@ import HYNotesFeed from "@/components/content/HYNotesFeed";
 import { ReportSheet } from "@/components/ReportSheet";
 import { SessionPauseModal } from "@/components/SessionPauseModal";
 import { CitationList } from "@/components/tool-ui/citation";
+import { useSessionItems } from "@/hooks/useSessionItems";
+import { useClerkEnabled } from "@/hooks/useClerkEnabled";
+import { getClerkToken, isClerkSignedIn } from "@/lib/clerk-token";
+import {
+  createStudySession,
+  recordAttempt,
+} from "@/lib/medgenius/api";
+import { isLiveSetId, liveDocumentId } from "@/lib/qbank/live-data";
+import type { QuizSearchParams } from "@/lib/routes";
 import type { StudySet } from "@/lib/set-content";
 import {
-  getSessionItems,
   resolveSessionSetId,
   resolveSessionTab,
   sessionItemCount,
@@ -23,7 +31,6 @@ import {
   type NoteItem,
   type QuestionItem,
 } from "@/lib/set-content";
-import type { QuizSearchParams } from "@/lib/routes";
 import {
   Bookmark,
   ChevronLeft,
@@ -99,7 +106,7 @@ function LessonQuestionView({
   pickOptionRef,
 }: {
   q: QuestionItem;
-  onAnswer: (correct: boolean) => void;
+  onAnswer: (selectedIndex: number) => void;
   pickOptionRef?: React.MutableRefObject<(index: number) => void>;
 }) {
   const [selected, setSelected] = useState<number | null>(null);
@@ -112,7 +119,7 @@ function LessonQuestionView({
       if (answered) return;
       setSelected(index);
       setAnswered(true);
-      onAnswer(index === q.answer);
+      onAnswer(index);
     },
     [answered, onAnswer, q.answer]
   );
@@ -248,7 +255,9 @@ function QuestionsSession({
   onClose: () => void;
   onComplete: () => void;
 }) {
-  const total = sessionItemCount("questions", contentSetId);
+  const clerkEnabled = useClerkEnabled();
+  const backendSessionRef = useRef<string | null>(null);
+  const total = sessionItems.length || sessionItemCount("questions", contentSetId);
   const [page, setPage] = useState(() => initialPage(set, total, quizParams));
   const [answeredPage, setAnsweredPage] = useState<number | null>(null);
   const currentAnswered = answeredPage === page;
@@ -257,6 +266,28 @@ function QuestionsSession({
   const [pauseOpen, setPauseOpen] = useState(false);
   const [questionChats, setQuestionChats] = useState<Record<string, ChatMessage[]>>({});
   const pickOptionRef = useRef<(index: number) => void>(() => {});
+
+  useEffect(() => {
+    if (!clerkEnabled || !isClerkSignedIn() || !isLiveSetId(set.id)) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getClerkToken();
+        if (!token) return;
+        const created = await createStudySession(token, {
+          mode: quizParams.mode ?? "quiz",
+          title: set.title,
+          documentId: liveDocumentId(set.id),
+        });
+        if (!cancelled) backendSessionRef.current = created.sessionId;
+      } catch {
+        /* local session still works */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [clerkEnabled, quizParams.mode, set.id, set.title]);
 
   const idx = Math.min(page, total) - 1;
   const remaining = Math.max(total - page, 0);
@@ -398,8 +429,24 @@ function QuestionsSession({
         key={`${q.id}-${page}`}
         q={q}
         pickOptionRef={pickOptionRef}
-        onAnswer={() => {
+        onAnswer={(selectedIndex) => {
           setAnsweredPage(page);
+          const q = sessionItems[idx];
+          const sessionId = backendSessionRef.current;
+          if (q?.questionId && sessionId && clerkEnabled && isClerkSignedIn()) {
+            void (async () => {
+              try {
+                const token = await getClerkToken();
+                if (!token) return;
+                await recordAttempt(token, sessionId, {
+                  questionId: q.questionId!,
+                  selectedAnswer: selectedIndex,
+                });
+              } catch {
+                /* ignore sync errors */
+              }
+            })();
+          }
         }}
       />
     );
@@ -540,30 +587,36 @@ export function SetSessionView({
 }) {
   const contentTab = resolveSessionTab(tab, set);
   const contentSetId = resolveSessionSetId(tab, set);
-  const sessionItems = getSessionItems(contentTab, contentSetId);
+  const { items, loading, questions, notes, images, flashcards } = useSessionItems(
+    contentTab,
+    contentSetId
+  );
+
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center bg-white text-sm font-bold text-slate-400">
+        Loading content…
+      </div>
+    );
+  }
 
   if (contentTab === "summary") {
-    return <HYNotesFeed notes={sessionItems as NoteItem[]} />;
+    return <HYNotesFeed notes={notes} />;
   }
 
   if (contentTab === "images") {
-    return <HYImages images={sessionItems as ImageItem[]} />;
+    return <HYImages images={images} />;
   }
 
   if (contentTab === "flashcards") {
-    return (
-      <FlashcardStudy
-        cards={sessionItems as FlashcardItem[]}
-        onClose={onClose}
-      />
-    );
+    return <FlashcardStudy cards={flashcards} onClose={onClose} />;
   }
 
   return (
     <QuestionsSession
       set={set}
       contentSetId={contentSetId}
-      sessionItems={sessionItems as QuestionItem[]}
+      sessionItems={questions.length > 0 ? questions : (items as QuestionItem[])}
       quizParams={quizParams}
       onClose={onClose}
       onComplete={onComplete}

@@ -1,4 +1,5 @@
 export type BillingInterval = "monthly" | "yearly";
+export type CheckoutPlan = "student" | "pro";
 
 export type CheckoutSessionResponse = {
   url: string;
@@ -16,7 +17,8 @@ export class StripeCheckoutError extends Error {
 
 export async function createStripeCheckoutSession(
   token: string,
-  billing: BillingInterval
+  billing: BillingInterval,
+  plan: CheckoutPlan = "student"
 ): Promise<string> {
   const { getApiBaseUrl } = await import("@/lib/api");
   const response = await fetch(`${getApiBaseUrl()}/api/stripe/checkout`, {
@@ -25,7 +27,7 @@ export async function createStripeCheckoutSession(
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ billing }),
+    body: JSON.stringify({ billing, plan }),
   });
 
   const payload = (await response.json().catch(() => null)) as

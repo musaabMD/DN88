@@ -35,6 +35,8 @@ export type QuestionItem = {
   status: string;
   explanation: string;
   citations?: SerializableCitation[];
+  /** MedGenius API question id when loaded from backend */
+  questionId?: string;
 };
 
 export type NoteItem = {
