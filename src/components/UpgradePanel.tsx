@@ -20,6 +20,8 @@ import {
 import { getClerkToken, isClerkSignedIn } from "@/lib/clerk-token";
 import { useDrNoteAccess } from "@/hooks/useDrNoteAccess";
 import { useClerkEnabled, useClientMounted } from "@/hooks/useClerkEnabled";
+import { MedGeniusCreditsProvider } from "@/lib/medgenius/credits-context";
+import { CreditsUsageCard } from "@/components/medgenius/CreditsUsage";
 
 const FREE_FEATURES = [
   { icon: FileQuestion, text: "1 exam" },
@@ -443,8 +445,8 @@ export function UpgradePanel() {
   const clerkEnabled = useClerkEnabled();
   const mounted = useClientMounted();
 
-  return (
-    <div className="min-h-full bg-slate-50 px-4 pb-10 pt-6 sm:px-6 sm:pt-10">
+  const content = (
+    <>
       <div className="mx-auto max-w-3xl text-center">
         <div
           className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border-b-4"
@@ -463,10 +465,26 @@ export function UpgradePanel() {
         </p>
       </div>
 
+      {mounted && clerkEnabled && (
+        <div className="mx-auto mt-8 max-w-lg">
+          <CreditsUsageCard />
+        </div>
+      )}
+
       {!mounted || !clerkEnabled ? (
         <UpgradePanelGuest />
       ) : (
         <UpgradePanelClerk />
+      )}
+    </>
+  );
+
+  return (
+    <div className="min-h-full bg-slate-50 px-4 pb-10 pt-6 sm:px-6 sm:pt-10">
+      {mounted && clerkEnabled ? (
+        <MedGeniusCreditsProvider>{content}</MedGeniusCreditsProvider>
+      ) : (
+        content
       )}
     </div>
   );

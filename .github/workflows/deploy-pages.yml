@@ -58,6 +58,27 @@ jobs:
           if [ -n "$OPENAI_API_KEY" ]; then
             printf '%s' "$OPENAI_API_KEY" | npx wrangler secret put OPENAI_API_KEY -c workers/dn88/wrangler.jsonc
           fi
+          if [ -n "$OPENROUTER_API_KEY" ]; then
+            printf '%s' "$OPENROUTER_API_KEY" | npx wrangler secret put OPENROUTER_API_KEY -c workers/dn88/wrangler.jsonc
+          fi
+          if [ -n "$CONTEXT_DEV_API_KEY" ]; then
+            printf '%s' "$CONTEXT_DEV_API_KEY" | npx wrangler secret put CONTEXT_DEV_API_KEY -c workers/dn88/wrangler.jsonc
+          fi
+          if [ -n "$STRIPE_WEBHOOK_SECRET" ]; then
+            printf '%s' "$STRIPE_WEBHOOK_SECRET" | npx wrangler secret put STRIPE_WEBHOOK_SECRET -c workers/dn88/wrangler.jsonc
+          fi
+          if [ -n "$STRIPE_PRICE_STUDENT_MONTHLY" ]; then
+            printf '%s' "$STRIPE_PRICE_STUDENT_MONTHLY" | npx wrangler secret put STRIPE_PRICE_STUDENT_MONTHLY -c workers/dn88/wrangler.jsonc
+          fi
+          if [ -n "$STRIPE_PRICE_STUDENT_YEARLY" ]; then
+            printf '%s' "$STRIPE_PRICE_STUDENT_YEARLY" | npx wrangler secret put STRIPE_PRICE_STUDENT_YEARLY -c workers/dn88/wrangler.jsonc
+          fi
+          if [ -n "$STRIPE_PRICE_PRO_MONTHLY" ]; then
+            printf '%s' "$STRIPE_PRICE_PRO_MONTHLY" | npx wrangler secret put STRIPE_PRICE_PRO_MONTHLY -c workers/dn88/wrangler.jsonc
+          fi
+          if [ -n "$STRIPE_PRICE_PRO_YEARLY" ]; then
+            printf '%s' "$STRIPE_PRICE_PRO_YEARLY" | npx wrangler secret put STRIPE_PRICE_PRO_YEARLY -c workers/dn88/wrangler.jsonc
+          fi
           if [ -n "$ADMIN_BOOTSTRAP_IDS" ]; then
             printf '%s' "$ADMIN_BOOTSTRAP_IDS" | npx wrangler secret put ADMIN_BOOTSTRAP_IDS -c workers/dn88/wrangler.jsonc
           fi
@@ -71,6 +92,13 @@ jobs:
           STRIPE_PRICE_YEARLY: ${{ secrets.STRIPE_PRICE_YEARLY }}
           CATALOG_SYNC_SECRET: ${{ secrets.CATALOG_SYNC_SECRET }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          CONTEXT_DEV_API_KEY: ${{ secrets.CONTEXT_DEV_API_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          STRIPE_PRICE_STUDENT_MONTHLY: ${{ secrets.STRIPE_PRICE_STUDENT_MONTHLY }}
+          STRIPE_PRICE_STUDENT_YEARLY: ${{ secrets.STRIPE_PRICE_STUDENT_YEARLY }}
+          STRIPE_PRICE_PRO_MONTHLY: ${{ secrets.STRIPE_PRICE_PRO_MONTHLY }}
+          STRIPE_PRICE_PRO_YEARLY: ${{ secrets.STRIPE_PRICE_PRO_YEARLY }}
           ADMIN_BOOTSTRAP_IDS: ${{ secrets.ADMIN_BOOTSTRAP_IDS }}
 
       - name: Build
