@@ -243,15 +243,19 @@ const styles = `
 
 /* ============ full-screen study ============ */
 .dn-fs { position: fixed; inset: 0; z-index: 100; background: #fff; display: flex; flex-direction: column; }
-.dn-fs-head { flex-shrink: 0; border-bottom: 2px solid ${C.line}; }
-.dn-fs-row1 { display: flex; align-items: center; gap: 10px; padding: 12px 16px; }
-.dn-fs-close { width: 40px; height: 40px; border-radius: 12px; border: 2px solid ${C.line}; background: #fff; cursor: pointer; display: grid; place-items: center; color: ${C.sub}; flex-shrink: 0; }
+.dn-fs-head { flex-shrink: 0; border-bottom: 1px solid ${C.line}; background: #fff; }
+.dn-fs-row1 { display: flex; align-items: center; gap: 8px; padding: 8px 12px 6px; min-width: 0; }
+.dn-fs-row2 { padding: 0 12px 8px; }
+.dn-fs-close { width: 34px; height: 34px; border-radius: 10px; border: 1px solid ${C.line}; background: #fff; cursor: pointer; display: grid; place-items: center; color: ${C.sub}; flex-shrink: 0; }
 .dn-fs-close:hover { background: ${C.wash}; }
-.dn-fs-bk { width: 36px; height: 36px; border: none; background: none; border-radius: 10px; cursor: pointer; display: grid; place-items: center; flex-shrink: 0; }
+.dn-fs-title-wrap { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
+.dn-fs-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dn-fs-title { flex: 1; min-width: 0; margin: 0; font-size: 15px; font-weight: 800; color: ${C.ink}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+.dn-fs-bk { width: 34px; height: 34px; border: none; background: none; border-radius: 10px; cursor: pointer; display: grid; place-items: center; flex-shrink: 0; }
 .dn-fs-bk:hover { background: ${C.wash}; }
-.dn-fs-search { flex: 1; max-width: 460px; margin-left: auto; display: flex; align-items: center; gap: 8px; background: ${C.wash}; border: 2px solid transparent; border-radius: 14px; padding: 9px 14px; transition: border-color .12s, background .12s; }
-.dn-fs-search:focus-within { background: #fff; border-color: ${C.blue}; }
-.dn-fs-search input { flex: 1; min-width: 0; border: none; outline: none; background: none; font-size: 15px; font-weight: 700; color: ${C.ink}; }
+.dn-fs-search { width: 100%; display: flex; align-items: center; gap: 8px; background: ${C.wash}; border: 1px solid ${C.line}; border-radius: 12px; padding: 8px 12px; transition: border-color .12s, background .12s; }
+.dn-fs-search:focus-within { background: #fff; border-color: ${C.blue}; box-shadow: 0 0 0 3px #DDF4FF; }
+.dn-fs-search input { flex: 1; min-width: 0; border: none; outline: none; background: none; font-size: 14px; font-weight: 700; color: ${C.ink}; }
 .dn-fs-search input::placeholder { color: ${C.faint}; font-weight: 600; }
 .dn-fs-clear { border: none; background: #E5E5E5; border-radius: 50%; width: 22px; height: 22px; display: grid; place-items: center; cursor: pointer; color: ${C.sub}; flex-shrink: 0; }
 .dn-fs-tabs { display: flex; gap: 4px; padding: 0 14px 10px; overflow-x: auto; scrollbar-width: none; }
@@ -456,11 +460,13 @@ const styles = `
   .dn-q-stem { font-size: 14px; margin-bottom: 8px; }
   .dn-q-opt { padding: 8px 10px; font-size: 13px; }
   .dn-quiz-foot { padding: 8px 12px; }
-  .dn-fs-row1 { flex-wrap: nowrap; gap: 6px; padding: 8px 10px; }
-  .dn-fs-close { width: 36px; height: 36px; border-radius: 10px; border-width: 1px; }
-  .dn-fs-search { flex: 1; min-width: 0; order: 0; margin-left: 0; padding: 7px 10px; border-radius: 10px; border-width: 1px; }
-  .dn-fs-search input { font-size: 14px; }
-  .dn-fs-bk { width: 32px; height: 32px; border: 1px solid ${C.line}; border-radius: 9px; background: #fff; }
+  .dn-fs-row1 { gap: 6px; padding: 6px 10px 4px; }
+  .dn-fs-row2 { padding: 0 10px 6px; }
+  .dn-fs-close { width: 32px; height: 32px; border-radius: 9px; }
+  .dn-fs-title { font-size: 14px; }
+  .dn-fs-bk { width: 32px; height: 32px; }
+  .dn-fs-search { padding: 7px 10px; border-radius: 10px; }
+  .dn-fs-search input { font-size: 13px; }
   .dn-tabbar-btn { font-size: 8px; min-width: 46px; padding: 4px 1px; }
   .dn-tabbar-btn svg { width: 20px; height: 20px; }
 }
@@ -865,15 +871,20 @@ function Study({ file, saved, onToggleSave, onClose, flash }: {
     <div className="dn-fs">
       <header className="dn-fs-head">
         <div className="dn-fs-row1">
-          <button className="dn-fs-close" onClick={onClose} aria-label="Close"><X size={20} strokeWidth={2.8} /></button>
-          <LetterTile name={file.name} color={file.color} size={30} />
+          <button className="dn-fs-close" onClick={onClose} aria-label="Close"><X size={18} strokeWidth={2.8} /></button>
+          <div className="dn-fs-title-wrap">
+            <span className="dn-fs-dot" style={{ background: file.color }} aria-hidden />
+            <h1 className="dn-fs-title">{file.name}</h1>
+          </div>
           <button type="button" className={`dn-fs-bk${saved ? " on" : ""}`} onClick={onToggleSave} title={saved ? "Bookmarked" : "Bookmark"} aria-label={saved ? "Remove bookmark" : "Bookmark"}>
-            <BkIcon saved={saved} size={15} />
+            <BkIcon saved={saved} size={16} />
           </button>
+        </div>
+        <div className="dn-fs-row2">
           <div className="dn-fs-search">
-            <Search size={18} color={C.faint} strokeWidth={2.4} />
+            <Search size={16} color={C.faint} strokeWidth={2.4} />
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={searchable ? `Search ${tab.toLowerCase()}…` : "Search this file…"} aria-label="Search" />
-            {query && <button className="dn-fs-clear" onClick={() => setQuery("")}><X size={15} strokeWidth={2.8} /></button>}
+            {query && <button className="dn-fs-clear" onClick={() => setQuery("")}><X size={14} strokeWidth={2.8} /></button>}
           </div>
         </div>
         <nav className="dn-fs-tabs">
