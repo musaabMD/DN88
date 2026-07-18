@@ -130,12 +130,13 @@ function AskChip({ onClick }: { onClick: () => void }) {
 }
 
 function BkIcon({ saved, size = 14, light = false }: { saved?: boolean; size?: number; light?: boolean }) {
+  const color = light ? "#fff" : saved ? C.blueDark : C.sub;
   return (
     <Bookmark
       size={size}
       strokeWidth={2}
-      fill="none"
-      color={light ? "#fff" : saved ? C.blueDark : C.sub}
+      fill={saved ? color : "none"}
+      color={color}
       aria-hidden
     />
   );
@@ -220,8 +221,6 @@ const styles = `
 .dn-row:hover .dn-actions { opacity: 1; transform: none; }
 .dn-icon-btn { border: none; background: ${C.wash}; color: ${C.sub}; cursor: pointer; width: 32px; height: 32px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; transition: background .1s; }
 .dn-icon-btn:hover { background: #ECECEC; }
-.dn-icon-btn.dn-bk.on { background: #EAF7FF; }
-.dn-fs-bk.on { background: #EAF7FF !important; }
 .dn-selbox { flex-shrink: 0; width: 20px; height: 20px; border: 2px solid ${C.line}; border-radius: 6px; display: grid; place-items: center; cursor: pointer; opacity: 0; transition: opacity .12s; }
 .dn-row:hover .dn-selbox, .dn-selbox.on { opacity: 1; }
 .dn-empty { text-align: center; padding: 50px 20px; color: ${C.sub}; font-weight: 700; display: flex; flex-direction: column; align-items: center; gap: 10px; }
