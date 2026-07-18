@@ -214,7 +214,7 @@ function CheckoutButton({
   if (!signedIn) {
     if (clerkAuth) {
       return (
-        <SignInButton mode="modal">
+        <SignInButton mode="redirect" fallbackRedirectUrl="/upgrade/">
           <button
             type="button"
             className="mt-6 w-full rounded-xl border-b-4 border-indigo-800 bg-indigo-600 py-3 text-sm font-extrabold text-white transition-colors hover:bg-indigo-500 active:translate-y-0.5 active:border-b-2"

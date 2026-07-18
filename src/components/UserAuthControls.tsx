@@ -8,6 +8,7 @@ import {
   UserButton,
 } from "@clerk/clerk-react";
 import { useClientMounted, useClerkEnabled } from "@/hooks/useClerkEnabled";
+import { CLERK_USER_PROFILE_URL } from "@/lib/clerk";
 import { DASHBOARD_PATH } from "@/lib/routes";
 import { primaryNavButtonClass, primaryNavLinkClass } from "@/components/ProductSiteNav";
 
@@ -29,6 +30,8 @@ function ClerkUserAuthControls({ compact = false }: { compact?: boolean }) {
           </Link>
         )}
         <UserButton
+          userProfileMode="navigation"
+          userProfileUrl={CLERK_USER_PROFILE_URL}
           appearance={{
             elements: {
               avatarBox: "h-9 w-9",
@@ -37,7 +40,7 @@ function ClerkUserAuthControls({ compact = false }: { compact?: boolean }) {
         />
       </SignedIn>
       <SignedOut>
-        <SignInButton mode="modal">
+        <SignInButton mode="redirect" fallbackRedirectUrl={DASHBOARD_PATH}>
           <button type="button" className={primaryNavButtonClass}>
             Get started
           </button>
