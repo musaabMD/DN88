@@ -339,9 +339,9 @@ const styles = `
 .dn-dot { width: 9px; height: 9px; border-radius: 50%; border: none; cursor: pointer; padding: 0; transition: background .1s; }
 
 /* sheet */
-.dn-sheet-wrap { position: fixed; inset: 0; z-index: 150; background: rgba(0,0,0,.28); display: flex; align-items: flex-end; justify-content: center; }
-.dn-sheet { width: 100%; max-width: 460px; background: #fff; border-radius: 24px 24px 0 0; padding: 12px 22px calc(22px + env(safe-area-inset-bottom)); }
-.dn-sheet-grip { width: 40px; height: 5px; border-radius: 3px; background: ${C.line}; margin: 4px auto 14px; }
+.dn-sheet-wrap { position: fixed; inset: 0; z-index: 150; background: rgba(0,0,0,.28); display: grid; place-items: center; padding: 20px; }
+.dn-sheet { width: 100%; max-width: 400px; background: #fff; border-radius: 22px; padding: 22px; box-shadow: 0 16px 48px rgba(0,0,0,.18); }
+.dn-sheet-grip { display: none; }
 .dn-sheet-title { font-size: 18px; font-weight: 900; display: block; margin-bottom: 14px; }
 .dn-sheet-label, .nt-sub-label { font-size: 13px; font-weight: 800; color: ${C.sub}; margin: 12px 0 8px; }
 .dn-seg { display: flex; gap: 8px; margin-bottom: 8px; }
@@ -1111,9 +1111,8 @@ function QuizList({ query, answers, setAnswers, flagged, setFlagged, perPage, se
 
       {settings && (
         <div className="dn-sheet-wrap" onClick={() => setSettings(false)}>
-          <div className="dn-sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="dn-sheet-grip" />
-            <b className="dn-sheet-title">Quiz settings</b>
+          <div className="dn-sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="quiz-settings-title">
+            <b className="dn-sheet-title" id="quiz-settings-title">Quiz settings</b>
             <p className="dn-sheet-label">Questions per page</p>
             <div className="dn-seg">{[1, 5, 10].map((n) => <button key={n} onClick={() => setPerPage(n)} className="dn-seg-btn" style={{ background: perPage === n ? C.blue : "#fff", color: perPage === n ? "#fff" : C.sub, borderColor: perPage === n ? C.blue : C.line }}>{n}</button>)}</div>
             <p className="dn-sheet-label">Show answers</p>
