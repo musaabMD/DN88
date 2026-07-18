@@ -14,6 +14,7 @@ import {
   type MedGeniusQuestion,
 } from "@/lib/medgenius/api";
 import { SETS_BY_TAB } from "@/lib/set-content";
+import { mapApiQuestion } from "./exam-session";
 
 const LIVE_SET_PREFIX = "doc:";
 
@@ -29,25 +30,8 @@ export function liveSetId(documentId: string): string {
   return `${LIVE_SET_PREFIX}${documentId}`;
 }
 
-function mapQuestion(q: MedGeniusQuestion, index: number): QuestionItem {
-  const options = q.options.length >= 2 ? q.options : ["A", "B", "C", "D"];
-  const answer =
-    q.correctAnswer !== null && q.correctAnswer >= 0 && q.correctAnswer < options.length
-      ? q.correctAnswer
-      : 0;
-
-  return {
-    id: index + 1,
-    subject: q.topic ?? "General",
-    text: q.cleanedText?.trim() || q.originalText,
-    options,
-    answer,
-    tag: q.difficulty ?? "Review",
-    status: "unused",
-    explanation: q.explanation?.trim() || "Review your source material.",
-    citations: [],
-    questionId: q.id,
-  };
+function mapQuestion(q: MedGeniusQuestion, index: number) {
+  return mapApiQuestion(q, index);
 }
 
 function documentToStudySet(

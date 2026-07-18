@@ -299,6 +299,79 @@ export async function fetchDueSrs(token: string | null) {
   return medgeniusFetch<{ questions: MedGeniusQuestion[] }>("/srs/due", token);
 }
 
+export async function recordSrsReview(
+  token: string | null,
+  questionId: string,
+  quality = 3
+): Promise<{ ok: boolean }> {
+  return medgeniusFetch("/srs/review", token, {
+    method: "POST",
+    body: JSON.stringify({ questionId, quality }),
+  });
+}
+
+export async function completeStudySession(
+  token: string | null,
+  sessionId: string,
+  params: { durationSec?: number; correctCount?: number; answeredCount?: number }
+): Promise<{ ok: boolean }> {
+  return medgeniusFetch(`/sessions/${sessionId}/complete`, token, {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+}
+
+export async function fetchStudySessions(token: string | null) {
+  return medgeniusFetch<{
+    sessions: Array<{
+      id: string;
+      mode: string;
+      title: string;
+      status: string;
+      total_questions: number;
+      correct_count: number;
+      answered_count: number;
+      duration_sec: number;
+      started_at: string;
+    }>;
+  }>("/sessions", token);
+}
+
+export async function createCollection(
+  token: string | null,
+  name: string
+): Promise<{ id: string; name: string }> {
+  return medgeniusFetch("/collections", token, {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function addCollectionItem(
+  token: string | null,
+  collectionId: string,
+  documentId: string
+): Promise<{ ok: boolean }> {
+  return medgeniusFetch(`/collections/${collectionId}/items`, token, {
+    method: "POST",
+    body: JSON.stringify({ documentId }),
+  });
+}
+
+export async function fetchCollectionQuestions(
+  token: string | null,
+  collectionId: string
+): Promise<{ questions: MedGeniusQuestion[] }> {
+  return medgeniusFetch(`/collections/${collectionId}/questions`, token);
+}
+
+export async function deleteCollection(
+  token: string | null,
+  collectionId: string
+): Promise<{ ok: boolean }> {
+  return medgeniusFetch(`/collections/${collectionId}`, token, { method: "DELETE" });
+}
+
 export async function fetchDocumentMarkdown(
   token: string | null,
   documentId: string

@@ -87,6 +87,7 @@ export function QuizSessionPage({
           )
         }
         onComplete={() => router.push(resultsPath(examId, tab, setId))}
+        examId={examId}
       />
     </ContentShell>
   );

@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { useQbankSets } from "@/hooks/useQbankSets";
+import { useStudyStreak } from "@/hooks/useStudyStreak";
 import {
   filterLibraryArticles,
   getSessionItems,
@@ -1666,8 +1667,9 @@ export default function DrNoteApp({
     router.push(setPath(examId, activeTab, s.id));
   };
 
-  const streak = 14;
-  const dailyRemaining = DAILY_LIMIT - DAILY_USED;
+  const streakData = useStudyStreak();
+  const streak = streakData.streakDays;
+  const dailyRemaining = Math.max(0, streakData.dailyGoal - streakData.dailyAnswered);
 
   return (
     <div className="min-h-screen bg-white font-sans pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:pb-8">
@@ -1710,8 +1712,8 @@ export default function DrNoteApp({
       )}
       {dailyOpen && (
         <DailyPopup
-          used={DAILY_USED}
-          limit={DAILY_LIMIT}
+          used={streakData.dailyAnswered}
+          limit={streakData.dailyGoal}
           onUpgrade={() => {
             setDailyOpen(false);
             router.push(UPGRADE_PATH);

@@ -4,10 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BottomTabBar } from "@/components/BottomTabBar";
 import { BrowseHeader } from "@/components/BrowseHeader";
+import { useStudyStreak } from "@/hooks/useStudyStreak";
 import {
-  BROWSE_DAILY_LIMIT,
-  BROWSE_DAILY_USED,
-  BROWSE_STREAK,
   DailyPopup,
   StatsPopup,
 } from "@/components/BrowseGamificationPopups";
@@ -58,6 +56,9 @@ const PAGE_SHELL =
 
 export function ExamFiltersClient({ examId }: { examId: string }) {
   const router = useRouter();
+  const streakData = useStudyStreak();
+  const streak = streakData.streakDays;
+  const dailyRemaining = Math.max(0, streakData.dailyGoal - streakData.dailyAnswered);
   const [search, setSearch] = useState("");
   const [statsOpen, setStatsOpen] = useState(false);
   const [dailyOpen, setDailyOpen] = useState(false);
@@ -81,8 +82,6 @@ export function ExamFiltersClient({ examId }: { examId: string }) {
     statuses: [...statuses],
     tags: [...tags],
   });
-
-  const dailyRemaining = BROWSE_DAILY_LIMIT - BROWSE_DAILY_USED;
 
   const toggle = (
     setter: React.Dispatch<React.SetStateAction<Set<string>>>,
@@ -116,7 +115,7 @@ export function ExamFiltersClient({ examId }: { examId: string }) {
         activeTab={DEFAULT_TAB}
         onTabChange={handleTabChange}
         totalFilters={totalFilters}
-        streak={BROWSE_STREAK}
+        streak={streak}
         dailyRemaining={dailyRemaining}
         onStatsOpen={() => setStatsOpen(true)}
         onDailyOpen={() => setDailyOpen(true)}
@@ -163,12 +162,12 @@ export function ExamFiltersClient({ examId }: { examId: string }) {
       <BottomTabBar />
 
       {statsOpen ? (
-        <StatsPopup streak={BROWSE_STREAK} onClose={() => setStatsOpen(false)} />
+        <StatsPopup streak={streak} onClose={() => setStatsOpen(false)} />
       ) : null}
       {dailyOpen ? (
         <DailyPopup
-          used={BROWSE_DAILY_USED}
-          limit={BROWSE_DAILY_LIMIT}
+          used={streakData.dailyAnswered}
+          limit={streakData.dailyGoal}
           onUpgrade={() => {
             setDailyOpen(false);
             router.push(UPGRADE_PATH);

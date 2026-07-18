@@ -13,13 +13,19 @@ import { ReportSheet } from "@/components/ReportSheet";
 import { SessionPauseModal } from "@/components/SessionPauseModal";
 import { CitationList } from "@/components/tool-ui/citation";
 import { useSessionItems } from "@/hooks/useSessionItems";
+import { useExamSession } from "@/hooks/useExamSession";
 import { useClerkEnabled } from "@/hooks/useClerkEnabled";
 import { getClerkToken, isClerkSignedIn } from "@/lib/clerk-token";
 import {
-  createStudySession,
+  bookmarkQuestion,
+  completeStudySession,
   recordAttempt,
 } from "@/lib/medgenius/api";
-import { isLiveSetId, liveDocumentId } from "@/lib/qbank/live-data";
+import { isLiveSetId } from "@/lib/qbank/live-data";
+import {
+  saveSessionReport,
+  type StoredSessionReport,
+} from "@/lib/qbank/session-report";
 import type { QuizSearchParams } from "@/lib/routes";
 import type { StudySet } from "@/lib/set-content";
 import {
@@ -104,10 +110,14 @@ function LessonQuestionView({
   q,
   onAnswer,
   pickOptionRef,
+  deferExplanation = false,
+  onBookmark,
 }: {
   q: QuestionItem;
   onAnswer: (selectedIndex: number) => void;
   pickOptionRef?: React.MutableRefObject<(index: number) => void>;
+  deferExplanation?: boolean;
+  onBookmark?: (bookmarked: boolean) => void;
 }) {
   const [selected, setSelected] = useState<number | null>(null);
   const [answered, setAnswered] = useState(false);
@@ -121,19 +131,25 @@ function LessonQuestionView({
       setAnswered(true);
       onAnswer(index);
     },
-    [answered, onAnswer, q.answer]
+    [answered, onAnswer]
   );
 
   useEffect(() => {
     if (pickOptionRef) pickOptionRef.current = pickOption;
   }, [pickOption, pickOptionRef]);
 
+  const toggleBookmark = () => {
+    const next = !bookmarked;
+    setBookmarked(next);
+    onBookmark?.(next);
+  };
+
   return (
     <div className="flex-1 flex flex-col">
       <div className="flex items-start justify-between gap-3 mb-4">
         <span className="text-xs font-bold text-slate-500">{q.subject}</span>
         <button
-          onClick={() => setBookmarked((prev) => !prev)}
+          onClick={toggleBookmark}
           aria-label={bookmarked ? "Remove bookmark" : "Bookmark question"}
           className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
           style={
@@ -209,7 +225,7 @@ function LessonQuestionView({
         })}
       </div>
 
-      {answered && (
+      {answered && !deferExplanation && (
         <div
           className="rounded-2xl p-5 md:p-6 mb-4 space-y-4"
           style={{ background: "#f0fdf4", border: "2px solid #bbf7d0" }}
@@ -247,6 +263,9 @@ function QuestionsSession({
   quizParams,
   onClose,
   onComplete,
+  examId,
+  backendSessionId,
+  examMeta,
 }: {
   set: StudySet;
   contentSetId: string;
@@ -254,9 +273,16 @@ function QuestionsSession({
   quizParams: QuizSearchParams;
   onClose: () => void;
   onComplete: () => void;
+  examId: string;
+  backendSessionId?: string | null;
+  examMeta?: { timedSeconds?: number; deferExplanation: boolean } | null;
 }) {
   const clerkEnabled = useClerkEnabled();
-  const backendSessionRef = useRef<string | null>(null);
+  const backendSessionRef = useRef<string | null>(backendSessionId ?? null);
+  const startedAtRef = useRef(Date.now());
+  const answerLogRef = useRef<
+    Array<{ subject: string; correct: boolean; prompt: string; id: string }>
+  >([]);
   const total = sessionItems.length || sessionItemCount("questions", contentSetId);
   const [page, setPage] = useState(() => initialPage(set, total, quizParams));
   const [answeredPage, setAnsweredPage] = useState<number | null>(null);
@@ -266,28 +292,34 @@ function QuestionsSession({
   const [pauseOpen, setPauseOpen] = useState(false);
   const [questionChats, setQuestionChats] = useState<Record<string, ChatMessage[]>>({});
   const pickOptionRef = useRef<(index: number) => void>(() => {});
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(
+    examMeta?.timedSeconds ?? null
+  );
 
   useEffect(() => {
-    if (!clerkEnabled || !isClerkSignedIn() || !isLiveSetId(set.id)) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const token = await getClerkToken();
-        if (!token) return;
-        const created = await createStudySession(token, {
-          mode: quizParams.mode ?? "quiz",
-          title: set.title,
-          documentId: liveDocumentId(set.id),
-        });
-        if (!cancelled) backendSessionRef.current = created.sessionId;
-      } catch {
-        /* local session still works */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [clerkEnabled, quizParams.mode, set.id, set.title]);
+    backendSessionRef.current = backendSessionId ?? backendSessionRef.current;
+  }, [backendSessionId]);
+
+  useEffect(() => {
+    if (secondsLeft === null || secondsLeft <= 0) return;
+    const timer = window.setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev === null || prev <= 1) {
+          window.clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [secondsLeft !== null]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (secondsLeft === 0) {
+      void finalizeSession();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [secondsLeft]);
 
   const idx = Math.min(page, total) - 1;
   const remaining = Math.max(total - page, 0);
@@ -309,10 +341,73 @@ function QuestionsSession({
     setQuestionChats((prev) => ({ ...prev, [chatKey]: messages }));
   };
 
-  const finishSession = () => {
+  const finalizeSession = async () => {
     setChatOpen(false);
     setPauseOpen(false);
+
+    const durationSec = Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000));
+    const log = answerLogRef.current;
+    const correctCount = log.filter((e) => e.correct).length;
+    const answeredCount = log.length;
+
+    const subjectMap = log.reduce<Record<string, { correct: number; total: number }>>(
+      (acc, entry) => {
+        const row = acc[entry.subject] ?? { correct: 0, total: 0 };
+        row.total += 1;
+        if (entry.correct) row.correct += 1;
+        acc[entry.subject] = row;
+        return acc;
+      },
+      {}
+    );
+
+    const missedCards = log
+      .filter((e) => !e.correct)
+      .map((e) => ({ id: e.id, prompt: e.prompt, subject: e.subject }));
+
+    const readinessPct =
+      total > 0 ? Math.round((correctCount / Math.max(answeredCount, 1)) * 100) : 0;
+
+    const report: StoredSessionReport = {
+      sessionId: backendSessionRef.current ?? `local-${Date.now()}`,
+      setId: set.id,
+      durationSec,
+      correctCount,
+      answeredCount,
+      totalCount: total,
+      subjects: Object.entries(subjectMap).map(([subject, stats]) => ({
+        subject,
+        ...stats,
+      })),
+      missedCards,
+      streakBest: correctCount,
+      readinessPct,
+      startedAt: startedAtRef.current,
+    };
+
+    saveSessionReport(set.id, report);
+
+    const sessionId = backendSessionRef.current;
+    if (sessionId && clerkEnabled && isClerkSignedIn()) {
+      try {
+        const token = await getClerkToken();
+        if (token) {
+          await completeStudySession(token, sessionId, {
+            durationSec,
+            correctCount,
+            answeredCount,
+          });
+        }
+      } catch {
+        /* report still saved locally */
+      }
+    }
+
     onComplete();
+  };
+
+  const finishSession = () => {
+    void finalizeSession();
   };
 
   const goNext = () => {
@@ -379,7 +474,7 @@ function QuestionsSession({
           setAnsweredPage(null);
         } else {
           setPauseOpen(false);
-          onComplete();
+          void finalizeSession();
         }
         return;
       }
@@ -402,7 +497,7 @@ function QuestionsSession({
           setAnsweredPage(null);
         } else {
           setPauseOpen(false);
-          onComplete();
+          void finalizeSession();
         }
       }
     };
@@ -432,8 +527,18 @@ function QuestionsSession({
         onAnswer={(selectedIndex) => {
           setAnsweredPage(page);
           const q = sessionItems[idx];
+          if (!q) return;
+
+          const isCorrect = selectedIndex === q.answer;
+          answerLogRef.current.push({
+            subject: q.subject,
+            correct: isCorrect,
+            prompt: q.text,
+            id: String(q.questionId ?? q.id),
+          });
+
           const sessionId = backendSessionRef.current;
-          if (q?.questionId && sessionId && clerkEnabled && isClerkSignedIn()) {
+          if (q.questionId && sessionId && clerkEnabled && isClerkSignedIn()) {
             void (async () => {
               try {
                 const token = await getClerkToken();
@@ -447,6 +552,20 @@ function QuestionsSession({
               }
             })();
           }
+        }}
+        deferExplanation={examMeta?.deferExplanation ?? false}
+        onBookmark={(saved) => {
+          const q = sessionItems[idx];
+          if (!q?.questionId || !clerkEnabled || !isClerkSignedIn()) return;
+          void (async () => {
+            try {
+              const token = await getClerkToken();
+              if (!token || !saved) return;
+              await bookmarkQuestion(token, q.questionId!, "bookmark");
+            } catch {
+              /* ignore */
+            }
+          })();
         }}
       />
     );
@@ -474,6 +593,18 @@ function QuestionsSession({
           <span className="shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-extrabold tabular-nums text-slate-400">
             {page} / {total}
           </span>
+          {secondsLeft !== null && (
+            <span
+              className="shrink-0 rounded-lg border px-2.5 py-1 text-xs font-extrabold tabular-nums"
+              style={{
+                borderColor: secondsLeft <= 60 ? "#fecaca" : "#e2e8f0",
+                background: secondsLeft <= 60 ? "#fef2f2" : "#f8fafc",
+                color: secondsLeft <= 60 ? "#dc2626" : "#64748b",
+              }}
+            >
+              {Math.floor(secondsLeft / 60)}:{String(secondsLeft % 60).padStart(2, "0")}
+            </span>
+          )}
         </div>
 
         <div
@@ -578,12 +709,14 @@ export function SetSessionView({
   quizParams,
   onClose,
   onComplete,
+  examId,
 }: {
   set: StudySet;
   tab: string;
   quizParams: QuizSearchParams;
   onClose: () => void;
   onComplete: () => void;
+  examId: string;
 }) {
   const contentTab = resolveSessionTab(tab, set);
   const contentSetId = resolveSessionSetId(tab, set);
@@ -591,11 +724,40 @@ export function SetSessionView({
     contentTab,
     contentSetId
   );
+  const {
+    liveQuestions,
+    sessionId,
+    meta,
+    loading: examLoading,
+    error: examError,
+    isLiveSession,
+  } = useExamSession(set, examId, quizParams);
 
-  if (loading) {
+  const sessionQuestions =
+    isLiveSession && liveQuestions && liveQuestions.length > 0
+      ? liveQuestions
+      : questions.length > 0
+        ? questions
+        : (items as QuestionItem[]);
+
+  if (loading || examLoading) {
     return (
       <div className="flex h-full items-center justify-center bg-white text-sm font-bold text-slate-400">
         Loading content…
+      </div>
+    );
+  }
+
+  if (examError && isLiveSetId(set.id)) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center bg-white px-6 text-center">
+        <p className="text-sm font-bold text-slate-700">{examError}</p>
+        <button
+          onClick={onClose}
+          className="mt-4 text-sm font-semibold text-indigo-600"
+        >
+          Back to set
+        </button>
       </div>
     );
   }
@@ -616,10 +778,13 @@ export function SetSessionView({
     <QuestionsSession
       set={set}
       contentSetId={contentSetId}
-      sessionItems={questions.length > 0 ? questions : (items as QuestionItem[])}
+      sessionItems={sessionQuestions}
       quizParams={quizParams}
       onClose={onClose}
       onComplete={onComplete}
+      examId={examId}
+      backendSessionId={sessionId}
+      examMeta={meta}
     />
   );
 }

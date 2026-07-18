@@ -19,8 +19,11 @@ import {
   type HomeReadPage,
   type HomeSummary,
 } from "@/lib/medgenius/home-data";
-import { createStudySession, recordAttempt } from "@/lib/medgenius/api";
+import { createStudySession, recordAttempt, searchQuestions, fetchDueSrs, recordSrsReview, bookmarkQuestion } from "@/lib/medgenius/api";
 import { useHomeAnalytics } from "@/hooks/useHomeAnalytics";
+import { useStudyStreak } from "@/hooks/useStudyStreak";
+import { MedGeniusCreditsBadge } from "@/components/MedGeniusCreditsBadge";
+import { CollectionsPanel } from "@/components/CollectionsPanel";
 import { getClerkToken } from "@/lib/clerk-token";
 import { useClerkEnabled } from "@/hooks/useClerkEnabled";
 import { LocaleToggle } from "@/components/LocaleToggle";
@@ -663,6 +666,7 @@ function DrNoteHomeInner() {
   const [exam, setExam] = useState<Exam | null>(null);
   const [file, setFile] = useState<ExamFile | null>(null);
   const clerkEnabled = useClerkEnabled();
+  const streakData = useStudyStreak(page !== "home");
   const [docsRefreshKey, setDocsRefreshKey] = useState(0);
 
   const [filter, setFilter] = useState<Filter>("week");
@@ -715,7 +719,8 @@ function DrNoteHomeInner() {
                 </button>
                 <div className="dn-header-right">
                   <LocaleToggle locale={locale} onToggle={toggleLocale} size="sm" />
-                  <span className="dn-streak"><Flame size={18} color={C.yellow} fill={C.yellow} strokeWidth={2} /><b>14</b></span>
+                  {clerkEnabled && <MedGeniusCreditsBadge />}
+                  <span className="dn-streak"><Flame size={18} color={C.yellow} fill={C.yellow} strokeWidth={2} /><b>{streakData.streakDays || 0}</b></span>
                   <span className="dn-avatar" style={{ background: C.purple }}>MA</span>
                 </div>
               </div>
@@ -1032,15 +1037,46 @@ function ExamPage(props: {
   const { exam, filter, setFilter, query, setQuery, voted, setVoted, saved, toggleSaved, picked, setPicked, onBack, onOpen, onAdd, flash, docsRefreshKey, useLiveData } = props;
   const { files: liveFiles, loading: filesLoading } = useExamDocuments(exam.id, docsRefreshKey);
   const { m } = useHomeLocale();
+  const clerkEnabled = useClerkEnabled();
+  const [semanticDocIds, setSemanticDocIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const q = query.trim();
+    if (!useLiveData || !clerkEnabled || q.length < 3) {
+      setSemanticDocIds(new Set());
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getClerkToken();
+        if (!token) return;
+        const { questions } = await searchQuestions(token, q);
+        if (cancelled) return;
+        setSemanticDocIds(new Set(questions.map((item) => item.documentId)));
+      } catch {
+        if (!cancelled) setSemanticDocIds(new Set());
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [query, useLiveData, clerkEnabled]);
 
   const ranked = useMemo(() => {
     const q = query.trim().toLowerCase();
     const source = useLiveData ? liveFiles : FILES;
-    let list = source.filter((f) => !q || f.name.toLowerCase().includes(q) || f.author.toLowerCase().includes(q));
+    let list = source.filter((f) => {
+      if (!q) return true;
+      const textMatch =
+        f.name.toLowerCase().includes(q) || f.author.toLowerCase().includes(q);
+      const semanticMatch = f.documentId ? semanticDocIds.has(f.documentId) : false;
+      return textMatch || semanticMatch;
+    });
     if (filter === "bookmarked") list = list.filter((f) => saved.has(f.id));
     const per: Exclude<Filter, "bookmarked"> = filter === "bookmarked" ? "all" : filter;
     return list.sort((a, b) => b.votes[per] + (voted.has(b.id) ? 1 : 0) - (a.votes[per] + (voted.has(a.id) ? 1 : 0)));
-  }, [query, filter, voted, saved, liveFiles, useLiveData]);
+  }, [query, filter, voted, saved, liveFiles, useLiveData, semanticDocIds]);
 
   const toggle = (set: Set<string>, id: string, fn: (s: Set<string>) => void) => { const n = new Set(set); n.has(id) ? n.delete(id) : n.add(id); fn(n); };
   const allPicked = picked.size > 0 && picked.size === ranked.length;
@@ -1169,6 +1205,15 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, locale, onTogg
   const processing = useLive && live.status && live.status !== "completed" && live.status !== "failed";
   const analytics = useHomeAnalytics(useLive);
   const backendSessionRef = useRef<string | null>(null);
+  const [srsQueue, setSrsQueue] = useState<HomeQuestion[]>([]);
+  const documentContext = useMemo(
+    () =>
+      readPages
+        .map((p) => `${p.h}\n${p.body.join("\n")}`)
+        .join("\n\n")
+        .slice(0, 12000),
+    [readPages]
+  );
 
   const [tab, setTab] = useState<Tab>("Read");
   const [query, setQuery] = useState("");
@@ -1180,6 +1225,41 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, locale, onTogg
   const [reveal, setReveal] = useState<Reveal>("immediate");
   const [sessions, setSessions] = useState<QuizSession[]>(() => loadSessions(file.id, questions.length));
   const activeSessionRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!useLive) {
+      setSrsQueue([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getClerkToken();
+        if (!token) return;
+        const { questions: due } = await fetchDueSrs(token);
+        if (cancelled) return;
+        setSrsQueue(
+          due.slice(0, 20).map((q) => ({
+            id: q.id,
+            stem: q.cleanedText?.trim() || q.originalText,
+            options: q.options.length >= 2 ? q.options : ["A", "B", "C", "D"],
+            correct:
+              q.correctAnswer !== null &&
+              q.correctAnswer >= 0 &&
+              q.correctAnswer < q.options.length
+                ? q.correctAnswer
+                : 0,
+            explain: q.explanation?.trim() || "",
+          }))
+        );
+      } catch {
+        if (!cancelled) setSrsQueue([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [useLive, analytics.srsDue]);
 
   useEffect(() => {
     if (!useLive || !file.documentId) return;
@@ -1405,10 +1485,15 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, locale, onTogg
             });
           } catch { /* ignore */ }
         }} />}
-        {tab === "Review" && <ReviewPane questions={questions} answers={answers} flagged={flagged} setFlagged={setFlagged} sessions={sessions} onResume={resumeSession} onRepeat={repeatSession} onAsk={openChat} analytics={analytics} />}
+        {tab === "Review" && <ReviewPane questions={questions} answers={answers} flagged={flagged} setFlagged={setFlagged} sessions={sessions} onResume={resumeSession} onRepeat={repeatSession} onAsk={openChat} analytics={analytics} srsQueue={srsQueue} clerkEnabled={clerkEnabled} />}
         {tab === "Summary" && <SummaryNotion file={file} summaries={summaries} />}
         {tab === "Flashcards" && <FlashcardsQuizlet query={query} cards={flashcards} />}
-        {tab === "Custom" && <CustomPane reveal={reveal} setReveal={setReveal} onStart={startCustomSession} flash={flash} />}
+        {tab === "Custom" && (
+          <>
+            {useLive && <CollectionsPanel documentId={file.documentId} />}
+            <CustomPane reveal={reveal} setReveal={setReveal} onStart={startCustomSession} flash={flash} />
+          </>
+        )}
       </div>
 
       {/* iOS-style bottom tab bar (mobile / iPad) */}
@@ -1433,14 +1518,14 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, locale, onTogg
         </button>
       )}
 
-      {chatOpen && <ChatPanel documentId={file.documentId} quote={quote} clearQuote={() => setQuote(null)} msgs={msgs} setMsgs={setMsgs} onClose={() => setChatOpen(false)} />}
+      {chatOpen && <ChatPanel documentId={file.documentId} documentContext={documentContext} quote={quote} clearQuote={() => setQuote(null)} msgs={msgs} setMsgs={setMsgs} onClose={() => setChatOpen(false)} />}
     </div>
   );
 }
 
 /* ---- AI chat panel ---- */
-function ChatPanel({ documentId, quote, clearQuote, msgs, setMsgs, onClose }: {
-  documentId?: string; quote: string | null; clearQuote: () => void; msgs: Msg[]; setMsgs: Dispatch<SetStateAction<Msg[]>>; onClose: () => void;
+function ChatPanel({ documentId, documentContext, quote, clearQuote, msgs, setMsgs, onClose }: {
+  documentId?: string; documentContext?: string; quote: string | null; clearQuote: () => void; msgs: Msg[]; setMsgs: Dispatch<SetStateAction<Msg[]>>; onClose: () => void;
 }) {
   const { m, content, locale } = useHomeLocale();
   const [draft, setDraft] = useState("");
@@ -1468,6 +1553,7 @@ function ChatPanel({ documentId, quote, clearQuote, msgs, setMsgs, onClose }: {
           conversationId,
           contextType: documentId ? "document" : "general",
           contextId: documentId,
+          documentContext: documentContext || undefined,
           language: locale === "ar" ? "ar" : "en",
           mode: "explain",
         },
@@ -1645,7 +1731,7 @@ function QuizList({ query, questions, answers, setAnswers, flagged, setFlagged, 
 }
 
 /* ---- Review ---- */
-function ReviewPane({ questions, answers, flagged, setFlagged, sessions, onResume, onRepeat, onAsk, analytics }: {
+function ReviewPane({ questions, answers, flagged, setFlagged, sessions, onResume, onRepeat, onAsk, analytics, srsQueue, clerkEnabled }: {
   questions: HomeQuestion[];
   answers: Record<number, number>;
   flagged: Set<number>;
@@ -1655,6 +1741,8 @@ function ReviewPane({ questions, answers, flagged, setFlagged, sessions, onResum
   onRepeat: (s: QuizSession) => void;
   onAsk: (q: string) => void;
   analytics?: { totalAnswered: number; accuracy: number; srsDue: number; weakTopics: Array<{ topic: string; correct: number; incorrect: number }> };
+  srsQueue?: HomeQuestion[];
+  clerkEnabled?: boolean;
 }) {
   const { m, content, locale } = useHomeLocale();
   type RF = "all" | "correct" | "incorrect" | "flagged" | "sessions";
@@ -1662,6 +1750,27 @@ function ReviewPane({ questions, answers, flagged, setFlagged, sessions, onResum
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState<number | null>(null);
   const [report, setReport] = useState<QuizSession | null>(null);
+  const [srsIndex, setSrsIndex] = useState(0);
+  const [srsAnswer, setSrsAnswer] = useState<number | null>(null);
+
+  const handleSrsAnswer = async (selected: number) => {
+    const q = srsQueue?.[srsIndex];
+    if (!q?.id || !clerkEnabled) return;
+    setSrsAnswer(selected);
+    const quality = selected === q.correct ? 5 : 2;
+    try {
+      const token = await getClerkToken();
+      if (token) await recordSrsReview(token, q.id, quality);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const nextSrs = () => {
+    setSrsAnswer(null);
+    setSrsIndex((i) => i + 1);
+  };
+
   const searchQ = search.trim().toLowerCase();
 
   const attempted = questions.map((q, i) => ({ ...q, idx: i })).filter((q) => answers[q.idx] !== undefined || flagged.has(q.idx));
@@ -1800,6 +1909,47 @@ function ReviewPane({ questions, answers, flagged, setFlagged, sessions, onResum
             <div className="dn-rv-report-stat"><b>{analytics.totalAnswered}</b><span>Answered</span></div>
             <div className="dn-rv-report-stat"><b style={{ color: C.greenDark }}>{analytics.accuracy}%</b><span>Accuracy</span></div>
             <div className="dn-rv-report-stat"><b>{analytics.srsDue}</b><span>SRS due</span></div>
+          </div>
+        )}
+        {srsQueue && srsQueue.length > 0 && srsIndex < srsQueue.length && (
+          <div className="dn-q-card" style={{ marginBottom: 16 }}>
+            <p className="text-xs font-extrabold uppercase tracking-wide text-purple-700 mb-2">
+              Spaced repetition · {srsIndex + 1}/{srsQueue.length}
+            </p>
+            <p className="font-bold mb-3">{srsQueue[srsIndex]?.stem}</p>
+            <div className="flex flex-col gap-2">
+              {srsQueue[srsIndex]?.options.map((opt, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className="dn-q-opt"
+                  disabled={srsAnswer !== null}
+                  onClick={() => void handleSrsAnswer(i)}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+            {srsAnswer !== null && (
+              <div className="mt-3">
+                <p className="text-sm font-semibold mb-2">{srsQueue[srsIndex]?.explain}</p>
+                <Chunky bg={C.purple} shadow={C.purpleDark} onClick={nextSrs}>
+                  {srsIndex + 1 >= srsQueue.length ? "Done" : "Next card"}
+                </Chunky>
+              </div>
+            )}
+          </div>
+        )}
+        {analytics && analytics.weakTopics.length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <h2 className="nt-h2">Weak topics</h2>
+            <ul className="nt-bullets">
+              {analytics.weakTopics.slice(0, 5).map((t) => (
+                <li key={t.topic}>
+                  {t.topic} · {t.incorrect} missed / {t.correct + t.incorrect} seen
+                </li>
+              ))}
+            </ul>
           </div>
         )}
         <div className="dn-rv-toolbar">

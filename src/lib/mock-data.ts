@@ -76,6 +76,7 @@ export type QuizSetScreenData = {
   flaggedCount: number;
   itemLabel: string;
   contentTab: string;
+  readinessPct?: number;
 };
 
 export function toQuizSetScreenData(

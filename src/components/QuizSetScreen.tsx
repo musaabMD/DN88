@@ -297,6 +297,15 @@ export function QuizSetScreen({
           </div>
         </div>
 
+        {data.readinessPct !== undefined && data.readinessPct > 0 && (
+          <p className="mt-3 text-center text-[13px] font-extrabold uppercase tracking-wide text-[#AFAFAF]">
+            Readiness ·{" "}
+            <span style={{ color: progressBarColor(data.readinessPct) }}>
+              {data.readinessPct}%
+            </span>
+          </p>
+        )}
+
         <div className="mt-6">
           <BigButton
             label={data.contentTab === "flashcards" ? "Study cards" : data.contentTab === "summary" ? "Read notes" : data.contentTab === "images" ? "View images" : "Resume"}

@@ -4,10 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { BottomTabBar } from "@/components/BottomTabBar";
 import { BrowseHeader } from "@/components/BrowseHeader";
+import { useStudyStreak } from "@/hooks/useStudyStreak";
 import {
-  BROWSE_DAILY_LIMIT,
-  BROWSE_DAILY_USED,
-  BROWSE_STREAK,
   DailyPopup,
   StatsPopup,
 } from "@/components/BrowseGamificationPopups";
@@ -29,6 +27,7 @@ export function DrNoteShell({
   hideFilterButton?: boolean;
 }) {
   const router = useRouter();
+  const streakData = useStudyStreak();
   const [statsOpen, setStatsOpen] = useState(false);
   const [dailyOpen, setDailyOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -37,7 +36,7 @@ export function DrNoteShell({
     saveCurrentExamId(examId);
   }, [examId]);
 
-  const dailyRemaining = BROWSE_DAILY_LIMIT - BROWSE_DAILY_USED;
+  const dailyRemaining = Math.max(0, streakData.dailyGoal - streakData.dailyAnswered);
 
   return (
     <div className="min-h-screen bg-white font-sans pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:pb-8">
@@ -47,7 +46,7 @@ export function DrNoteShell({
         activeTab={activeTab}
         onTabChange={(tab) => router.push(examTabPath(examId, tab))}
         totalFilters={0}
-        streak={BROWSE_STREAK}
+        streak={streakData.streakDays}
         dailyRemaining={dailyRemaining}
         onStatsOpen={() => setStatsOpen(true)}
         onDailyOpen={() => setDailyOpen(true)}
@@ -61,12 +60,12 @@ export function DrNoteShell({
       <BottomTabBar />
 
       {statsOpen ? (
-        <StatsPopup streak={BROWSE_STREAK} onClose={() => setStatsOpen(false)} />
+        <StatsPopup streak={streakData.streakDays} onClose={() => setStatsOpen(false)} />
       ) : null}
       {dailyOpen ? (
         <DailyPopup
-          used={BROWSE_DAILY_USED}
-          limit={BROWSE_DAILY_LIMIT}
+          used={streakData.dailyAnswered}
+          limit={streakData.dailyGoal}
           onUpgrade={() => {
             setDailyOpen(false);
             router.push(UPGRADE_PATH);
