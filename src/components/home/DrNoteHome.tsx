@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState, useEffect, useRef, useCallback, type ElementType, type ReactNode, type Dispatch, type SetStateAction } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback, type CSSProperties, type ElementType, type ReactNode, type Dispatch, type SetStateAction } from "react";
 import {
   Search, ChevronUp, ChevronRight, ChevronLeft, Bookmark,
   Share2, Link2, Play, Check, Flame, X, ArrowLeft, BookOpen, Brain, FileText,
   Layers, SlidersHorizontal, Clock, Users, Star, Sparkles, Flag, Settings, Plus,
-  ListChecks, Send, Upload, Command, Maximize2, Minimize2,
+  ListChecks, Send, Upload, Command, Maximize2, Minimize2, StickyNote,
 } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 
@@ -387,6 +387,28 @@ const styles = `
 .nt-checks li { display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 8px; font-weight: 700; }
 .nt-checks li:hover { background: ${C.wash}; }
 .nt-check { width: 20px; height: 20px; border: 2px solid; border-radius: 6px; display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
+.nt-block { position: relative; border-radius: 10px; padding: 8px 10px; margin: 0 -10px; transition: background .12s, box-shadow .12s; }
+.nt-block:hover { background: ${C.wash}; }
+.nt-block.hl:hover { background: var(--nt-hl-bg, ${C.wash}); }
+.nt-block-bar { position: absolute; top: 6px; right: 6px; display: flex; align-items: center; gap: 4px; padding: 3px 5px; background: #fff; border: 1px solid ${C.line}; border-radius: 9px; box-shadow: 0 2px 8px rgba(0,0,0,.08); opacity: 0; pointer-events: none; transition: opacity .12s; z-index: 2; }
+.nt-block:hover .nt-block-bar, .nt-block:focus-within .nt-block-bar, .nt-block.editing .nt-block-bar { opacity: 1; pointer-events: auto; }
+.nt-hl-btn { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(0,0,0,.1); cursor: pointer; padding: 0; flex-shrink: 0; transition: transform .08s, box-shadow .08s; }
+.nt-hl-btn.on { box-shadow: 0 0 0 2px ${C.blue}; transform: scale(1.06); }
+.nt-note-btn { border: none; background: ${C.wash}; color: ${C.sub}; width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
+.nt-note-btn.on { background: #FFF3BF; color: ${C.yellowDark}; }
+.nt-block-note { margin-top: 8px; padding: 8px 10px; background: rgba(255,255,255,.85); border-radius: 8px; border: 1px dashed ${C.line}; }
+.nt-block-note textarea { width: 100%; min-height: 56px; border: none; outline: none; resize: vertical; font-family: inherit; font-size: 13px; font-weight: 600; line-height: 1.45; color: ${C.ink}; background: transparent; }
+.nt-block-note p { margin: 0; font-size: 13px; font-weight: 600; line-height: 1.45; color: ${C.sub}; cursor: text; }
+.nt-block-note-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 6px; }
+.nt-block-note-actions button { border: none; background: ${C.wash}; border-radius: 7px; padding: 4px 8px; font-size: 11px; font-weight: 800; color: ${C.sub}; cursor: pointer; }
+.nt-block-note-actions button.save { background: ${C.blue}; color: #fff; }
+.nt-callout.nt-block { display: flex; gap: 12px; margin: 0 0 8px; padding: 14px 16px; }
+.nt-bullets .nt-block { margin: 0; padding: 6px 8px; }
+.nt-checks .nt-block { flex: 1; min-width: 0; margin: 0; padding: 6px 8px; }
+.nt-toggle-head-wrap.nt-block { padding: 0; margin: 0; }
+.nt-toggle-head-wrap.nt-block:hover { background: transparent; }
+.nt-toggle-head-wrap.nt-block .nt-toggle-head { width: 100%; }
+.nt-toggle-body-wrap.nt-block { padding: 2px 8px 12px 20px; margin: 0; }
 
 /* quizlet — list only */
 .ql-scroll { flex: 1; overflow-y: auto; }
@@ -1245,37 +1267,155 @@ function ReviewPane({ answers, flagged, setFlagged, onAsk }: {
 }
 
 /* ---- Summary (Notion-style) ---- */
-function NotionToggle({ title, children }: { title: string; children: ReactNode }) {
+const SUM_HL = {
+  yellow: { bg: "#FFF3BF", dot: "#F5D547" },
+  green: { bg: "#EAFBD9", dot: "#8FD84A" },
+  blue: { bg: "#DDF4FF", dot: "#58CCFF" },
+  pink: { bg: "#FFE8F3", dot: "#FF9EC7" },
+} as const;
+type SumHl = keyof typeof SUM_HL;
+type SumAnno = { highlight: SumHl | null; note: string };
+
+function loadSumAnno(key: string): SumAnno {
+  if (typeof window === "undefined") return { highlight: null, note: "" };
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw) return JSON.parse(raw) as SumAnno;
+  } catch { /* ignore */ }
+  return { highlight: null, note: "" };
+}
+
+function SummaryBlock({ fileId, blockId, className, children }: {
+  fileId: string; blockId: string; className?: string; children: ReactNode;
+}) {
+  const key = `dn-sum-${fileId}-${blockId}`;
+  const [anno, setAnno] = useState<SumAnno>(() => loadSumAnno(key));
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+
+  useEffect(() => {
+    localStorage.setItem(key, JSON.stringify(anno));
+  }, [anno, key]);
+
+  const setHl = (hl: SumHl) => {
+    setAnno((a) => ({ ...a, highlight: a.highlight === hl ? null : hl }));
+  };
+  const openNote = () => {
+    setDraft(anno.note);
+    setEditing(true);
+  };
+  const saveNote = () => {
+    setAnno((a) => ({ ...a, note: draft.trim() }));
+    setEditing(false);
+  };
+  const clearNote = () => {
+    setAnno((a) => ({ ...a, note: "" }));
+    setDraft("");
+    setEditing(false);
+  };
+
+  const hlBg = anno.highlight ? SUM_HL[anno.highlight].bg : undefined;
+
+  return (
+    <div
+      className={`nt-block${anno.highlight ? " hl" : ""}${editing ? " editing" : ""}${className ? ` ${className}` : ""}`}
+      style={hlBg ? ({ ["--nt-hl-bg"]: hlBg, background: hlBg } as CSSProperties) : undefined}
+      tabIndex={0}
+    >
+      <div className="nt-block-bar" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+        {(Object.keys(SUM_HL) as SumHl[]).map((hl) => (
+          <button
+            key={hl}
+            type="button"
+            className={`nt-hl-btn${anno.highlight === hl ? " on" : ""}`}
+            style={{ background: SUM_HL[hl].dot }}
+            onClick={() => setHl(hl)}
+            title={`Highlight ${hl}`}
+            aria-label={`Highlight ${hl}`}
+            aria-pressed={anno.highlight === hl}
+          />
+        ))}
+        <button type="button" className={`nt-note-btn${anno.note ? " on" : ""}`} onClick={openNote} title="Add note" aria-label="Add note">
+          <StickyNote size={12} strokeWidth={2.4} />
+        </button>
+      </div>
+      {children}
+      {(editing || anno.note) && (
+        <div className="nt-block-note" onClick={(e) => e.stopPropagation()}>
+          {editing ? (
+            <>
+              <textarea value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Your note…" autoFocus />
+              <div className="nt-block-note-actions">
+                {anno.note && <button type="button" onClick={clearNote}>Clear</button>}
+                <button type="button" className="save" onClick={saveNote}>Save</button>
+              </div>
+            </>
+          ) : (
+            <p onClick={openNote}>{anno.note}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NotionToggle({ fileId, id, title, children }: { fileId: string; id: string; title: string; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="nt-toggle">
-      <button className="nt-toggle-head" onClick={() => setOpen((o) => !o)}><ChevronRight size={16} strokeWidth={2.6} style={{ transform: open ? "rotate(90deg)" : "none", transition: "transform .15s" }} /><span>{title}</span></button>
-      {open && <div className="nt-toggle-body">{children}</div>}
+      <SummaryBlock fileId={fileId} blockId={`${id}-title`} className="nt-toggle-head-wrap">
+        <button type="button" className="nt-toggle-head" onClick={() => setOpen((o) => !o)}>
+          <ChevronRight size={16} strokeWidth={2.6} style={{ transform: open ? "rotate(90deg)" : "none", transition: "transform .15s" }} />
+          <span>{title}</span>
+        </button>
+      </SummaryBlock>
+      {open && (
+        <SummaryBlock fileId={fileId} blockId={`${id}-body`} className="nt-toggle-body-wrap">
+          <div className="nt-toggle-body">{children}</div>
+        </SummaryBlock>
+      )}
     </div>
   );
 }
 function SummaryNotion({ file }: { file: ExamFile }) {
   const [done, setDone] = useState<Set<number>>(new Set());
+  const bullets = [
+    "ST-elevation localizes by lead group: inferior (II, III, aVF), anterior (V1–V4), lateral (I, aVL, V5–V6).",
+    "PCI within 90 minutes beats fibrinolysis when a cath lab is reachable.",
+    "Dual antiplatelet therapy plus anticoagulation is standard adjunctive care.",
+  ];
   const checks = ["Localize STEMI by lead groups", "Know the 90-minute PCI window", "Recall DAPT + statin for prevention", "Right-sided ECG in inferior MI"];
   return (
     <div className="nt-scroll">
       <div className="nt-doc">
         <div className="nt-pageicon" style={{ background: file.color }}><FileText size={22} color="#fff" strokeWidth={2.2} /></div>
         <h1 className="nt-h1 dn-centered-h1">{file.name} Summary</h1>
-        <div className="nt-callout"><span className="nt-callout-ic" style={{ background: C.yellow }}><Star size={14} color="#fff" fill="#fff" /></span><p>Reperfusion timing is the single highest-yield concept in this set — anchor everything else to it.</p></div>
+        <SummaryBlock fileId={file.id} blockId="callout" className="nt-callout">
+          <span className="nt-callout-ic" style={{ background: C.yellow }}><Star size={14} color="#fff" fill="#fff" /></span>
+          <p>Reperfusion timing is the single highest-yield concept in this set — anchor everything else to it.</p>
+        </SummaryBlock>
         <h2 className="nt-h2">Key takeaways</h2>
         <ul className="nt-bullets">
-          <li>ST-elevation localizes by lead group: inferior (II, III, aVF), anterior (V1–V4), lateral (I, aVL, V5–V6).</li>
-          <li>PCI within 90 minutes beats fibrinolysis when a cath lab is reachable.</li>
-          <li>Dual antiplatelet therapy plus anticoagulation is standard adjunctive care.</li>
+          {bullets.map((text, i) => (
+            <li key={i}><SummaryBlock fileId={file.id} blockId={`bullet-${i}`}>{text}</SummaryBlock></li>
+          ))}
         </ul>
         <h2 className="nt-h2">Expand for detail</h2>
-        <NotionToggle title="STEMI vs NSTEMI — how to tell"><p>STEMI shows persistent ST-elevation and needs emergent reperfusion. NSTEMI shows ST-depression or T-wave changes with positive troponin, managed with early invasive or ischemia-guided strategies.</p></NotionToggle>
-        <NotionToggle title="Adjunctive medications at a glance"><p>Aspirin, a P2Y12 inhibitor, anticoagulation, high-intensity statin, and beta-blockade once stable — plus an ACE inhibitor when EF is reduced.</p></NotionToggle>
+        <NotionToggle fileId={file.id} id="toggle-stemi" title="STEMI vs NSTEMI — how to tell">
+          <p>STEMI shows persistent ST-elevation and needs emergent reperfusion. NSTEMI shows ST-depression or T-wave changes with positive troponin, managed with early invasive or ischemia-guided strategies.</p>
+        </NotionToggle>
+        <NotionToggle fileId={file.id} id="toggle-meds" title="Adjunctive medications at a glance">
+          <p>Aspirin, a P2Y12 inhibitor, anticoagulation, high-intensity statin, and beta-blockade once stable — plus an ACE inhibitor when EF is reduced.</p>
+        </NotionToggle>
         <h2 className="nt-h2">Checklist</h2>
         <ul className="nt-checks">
           {checks.map((c, i) => { const on = done.has(i); return (
-            <li key={i}><button className="nt-check" onClick={() => { const n = new Set(done); on ? n.delete(i) : n.add(i); setDone(n); }} style={{ borderColor: on ? C.green : C.faint, background: on ? C.green : "#fff" }}>{on && <Check size={12} color="#fff" strokeWidth={3.5} />}</button><span style={{ color: on ? C.faint : C.ink, textDecoration: on ? "line-through" : "none" }}>{c}</span></li>
+            <li key={i}>
+              <button type="button" className="nt-check" onClick={() => { const n = new Set(done); on ? n.delete(i) : n.add(i); setDone(n); }} style={{ borderColor: on ? C.green : C.faint, background: on ? C.green : "#fff" }}>{on && <Check size={12} color="#fff" strokeWidth={3.5} />}</button>
+              <SummaryBlock fileId={file.id} blockId={`check-${i}`}>
+                <span style={{ color: on ? C.faint : C.ink, textDecoration: on ? "line-through" : "none" }}>{c}</span>
+              </SummaryBlock>
+            </li>
           ); })}
         </ul>
       </div>
