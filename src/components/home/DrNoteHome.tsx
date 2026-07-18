@@ -8,6 +8,9 @@ import {
   ListChecks, Send, Upload, Command, Maximize2, Minimize2, StickyNote, LayoutList, Columns2, Image as ImageIcon, BarChart2, RotateCcw,
 } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
+import { LocaleToggle } from "@/components/LocaleToggle";
+import { HomeLocaleProvider, useHomeLocale } from "@/components/home/HomeLocaleProvider";
+import type { AppLocale } from "@/lib/locale";
 
 /* ------------------------------------------------------------------ */
 /*  Tokens                                                             */
@@ -61,12 +64,7 @@ const FILES: ExamFile[] = [
   { id: "f8", name: "OME Rapid Review OB/GYN", author: "match_2027", pages: 61, color: C.purple, votes: { today: 33, week: 198, month: 1104, all: 4020 } },
 ];
 
-const FILTERS: { key: Filter; label: string }[] = [
-  { key: "week", label: "This week" },
-  { key: "month", label: "Last month" },
-  { key: "all", label: "All" },
-  { key: "bookmarked", label: "Saved" },
-];
+const FILTER_KEYS: Filter[] = ["week", "month", "all", "bookmarked"];
 
 const TABS: { key: Tab; icon: ElementType }[] = [
   { key: "Read", icon: BookOpen }, { key: "Quiz", icon: Brain }, { key: "Review", icon: ListChecks },
@@ -650,6 +648,15 @@ const styles = `
 /*  Root                                                               */
 /* ------------------------------------------------------------------ */
 export function DrNoteHome() {
+  return (
+    <HomeLocaleProvider>
+      <DrNoteHomeInner />
+    </HomeLocaleProvider>
+  );
+}
+
+function DrNoteHomeInner() {
+  const { locale, toggleLocale, m } = useHomeLocale();
   const [page, setPage] = useState<"home" | "exam" | "study">("home");
   const [exam, setExam] = useState<Exam | null>(null);
   const [file, setFile] = useState<ExamFile | null>(null);
@@ -691,7 +698,7 @@ export function DrNoteHome() {
       <style>{styles}</style>
 
       {page === "home" && (
-        <Home onOpen={openExam} onAdd={() => setAdding(true)} />
+        <Home onOpen={openExam} onAdd={() => setAdding(true)} locale={locale} onToggleLocale={toggleLocale} />
       )}
 
       {page !== "home" && (
@@ -703,6 +710,7 @@ export function DrNoteHome() {
                   <DrNoteLogo showWordmark forceWordmark />
                 </button>
                 <div className="dn-header-right">
+                  <LocaleToggle locale={locale} onToggle={toggleLocale} size="sm" />
                   <span className="dn-streak"><Flame size={18} color={C.yellow} fill={C.yellow} strokeWidth={2} /><b>14</b></span>
                   <span className="dn-avatar" style={{ background: C.purple }}>MA</span>
                 </div>
@@ -714,19 +722,19 @@ export function DrNoteHome() {
             <ExamPage exam={exam} filter={filter} setFilter={setFilter} query={query} setQuery={setQuery}
               voted={voted} setVoted={setVoted} saved={saved} toggleSaved={toggleSaved}
               picked={picked} setPicked={setPicked} onBack={() => setPage("home")} onOpen={openFile}
-              onAdd={() => setAdding(true)} flash={flash} />
+              onAdd={() => setAdding(true)} flash={flash} locale={locale} onToggleLocale={toggleLocale} />
           )}
 
           {page === "study" && file && (
-            <Study file={file} exam={exam} saved={saved.has(file.id)} onToggleSave={() => { toggleSaved(file.id); flash(saved.has(file.id) ? "Removed bookmark" : "Bookmarked"); }}
-              onClose={() => setPage("exam")} flash={flash} />
+            <Study file={file} exam={exam} saved={saved.has(file.id)} onToggleSave={() => { toggleSaved(file.id); flash(saved.has(file.id) ? m.removedBookmark : m.bookmarked); }}
+              onClose={() => setPage("exam")} flash={flash} locale={locale} onToggleLocale={toggleLocale} />
           )}
 
           {toast && <div className="dn-toast"><Check size={16} strokeWidth={3} color={C.green} /> {toast}</div>}
         </div>
       )}
 
-      {adding && <AddFile onClose={() => setAdding(false)} onDone={() => { setAdding(false); flash("File added to review"); }} />}
+      {adding && <AddFile onClose={() => setAdding(false)} onDone={() => { setAdding(false); flash(m.fileAdded); }} />}
       {page === "home" && toast && (
         <div className="fixed bottom-6 right-6 z-[200] flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-900 shadow-lg">
           <Check size={16} strokeWidth={3} className="text-emerald-500" /> {toast}
@@ -747,6 +755,7 @@ const homeFonts = `
 `;
 
 function ExamCard({ exam, onOpen }: { exam: Exam; onOpen: (e: Exam) => void }) {
+  const { m } = useHomeLocale();
   return (
     <button
       type="button"
@@ -756,10 +765,10 @@ function ExamCard({ exam, onOpen }: { exam: Exam; onOpen: (e: Exam) => void }) {
     >
       <div className="relative z-10 max-w-[62%]">
         <h3 className="font-display text-lg font-extrabold leading-tight tracking-tight sm:text-xl">
-          {exam.name}
+          {m.examName(exam.id, exam.name)}
         </h3>
         <p className="mt-1.5 text-xs font-semibold text-white/75 sm:text-sm">
-          {exam.code} · {exam.files.toLocaleString()} files
+          {exam.code} · {m.filesCount(exam.files)}
         </p>
       </div>
       <div
@@ -777,7 +786,8 @@ function ExamCard({ exam, onOpen }: { exam: Exam; onOpen: (e: Exam) => void }) {
   );
 }
 
-function Home({ onOpen, onAdd }: { onOpen: (e: Exam) => void; onAdd: () => void }) {
+function Home({ onOpen, onAdd, locale, onToggleLocale }: { onOpen: (e: Exam) => void; onAdd: () => void; locale: AppLocale; onToggleLocale: () => void }) {
+  const { m } = useHomeLocale();
   const [query, setQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -811,6 +821,7 @@ function Home({ onOpen, onAdd }: { onOpen: (e: Exam) => void; onAdd: () => void 
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
           <DrNoteLogo showWordmark forceWordmark />
           <div className="flex items-center gap-3">
+            <LocaleToggle locale={locale} onToggle={onToggleLocale} className="ring-1 ring-slate-200/80 bg-white/80" />
             <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 ring-1 ring-amber-200/70">
               <Flame className="h-4 w-4 text-amber-500" fill="currentColor" strokeWidth={1.5} />
               <span className="text-sm font-bold text-amber-600">14</span>
@@ -825,14 +836,14 @@ function Home({ onOpen, onAdd }: { onOpen: (e: Exam) => void; onAdd: () => void 
       <main className="mx-auto max-w-6xl px-5 pb-28">
         <section className="flex flex-col items-center pt-16 text-center sm:pt-24">
           <h1 className="max-w-3xl font-display text-5xl font-extrabold leading-[1.02] tracking-tight sm:text-7xl">
-            Pass the board,
+            {m.heroTitle1}
             <br />
             <span className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
-              one streak at a time.
+              {m.heroTitle2}
             </span>
           </h1>
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-slate-500">
-            Questions, notes and flashcards for every Saudi licensing exam.
+            {m.heroSubtitle}
           </p>
 
           <div className="group mt-9 flex w-full max-w-xl items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition-all focus-within:border-slate-900 focus-within:shadow-md">
@@ -841,8 +852,8 @@ function Home({ onOpen, onAdd }: { onOpen: (e: Exam) => void; onAdd: () => void 
               ref={searchRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search SMLE, pharmacy, family medicine…"
-              aria-label="Search exams"
+              placeholder={m.searchExamsPlaceholder}
+              aria-label={m.searchExamsPlaceholder}
               className="w-full bg-transparent text-base font-medium text-slate-900 outline-none placeholder:text-slate-400"
             />
             <kbd className="hidden shrink-0 items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-400 sm:flex">
@@ -855,17 +866,17 @@ function Home({ onOpen, onAdd }: { onOpen: (e: Exam) => void; onAdd: () => void 
           <div className="rounded-2xl bg-[#121212] p-4 sm:rounded-3xl sm:p-6">
             <div className="mb-4 flex items-end justify-between gap-3">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/45">Browse</p>
-                <h2 className="font-display text-2xl font-extrabold tracking-tight text-white sm:text-3xl">All exams</h2>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/45">{m.browse}</p>
+                <h2 className="font-display text-2xl font-extrabold tracking-tight text-white sm:text-3xl">{m.allExams}</h2>
               </div>
               {!query.trim() && (
-                <span className="hidden text-sm font-semibold text-white/50 sm:block">{EXAMS.length} boards</span>
+                <span className="hidden text-sm font-semibold text-white/50 sm:block">{m.boards(EXAMS.length)}</span>
               )}
             </div>
 
             {query.trim() && results.length > 0 && (
               <p className="mb-3 text-sm font-semibold text-white/45">
-                {results.length} match{results.length === 1 ? "" : "es"}
+                {m.matchCount(results.length)}
               </p>
             )}
 
@@ -877,14 +888,14 @@ function Home({ onOpen, onAdd }: { onOpen: (e: Exam) => void; onAdd: () => void 
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 py-16 text-center sm:py-20">
-                <p className="font-display text-2xl font-bold text-white">No exam found</p>
-                <p className="mt-1 text-white/55">Try another name, or clear the search to see all exams.</p>
+                <p className="font-display text-2xl font-bold text-white">{m.noExamFound}</p>
+                <p className="mt-1 text-white/55">{m.noExamHint}</p>
                 <button
                   type="button"
                   onClick={() => setQuery("")}
                   className="mt-5 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-white/90"
                 >
-                  Show all exams
+                  {m.showAllExams}
                 </button>
               </div>
             )}
@@ -896,13 +907,13 @@ function Home({ onOpen, onAdd }: { onOpen: (e: Exam) => void; onAdd: () => void 
         type="button"
         onClick={onAdd}
         className="group fixed bottom-7 right-7 z-30 flex items-center gap-0 rounded-2xl bg-slate-900 py-4 pl-4 pr-4 text-white shadow-xl shadow-slate-900/20 transition-all hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-2xl focus-visible:ring-4 focus-visible:ring-slate-900/20"
-        aria-label="Add exam"
+        aria-label={m.addExam}
       >
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400 text-slate-900">
           <Plus className="h-4 w-4" strokeWidth={3} />
         </span>
         <span className="max-w-0 overflow-hidden whitespace-nowrap text-sm font-semibold opacity-0 transition-all duration-300 group-hover:ml-2.5 group-hover:max-w-[120px] group-hover:opacity-100">
-          Add exam
+          {m.addExam}
         </span>
       </button>
     </div>
@@ -910,14 +921,15 @@ function Home({ onOpen, onAdd }: { onOpen: (e: Exam) => void; onAdd: () => void 
 }
 
 function AddFile({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
+  const { m } = useHomeLocale();
   const [name, setName] = useState("");
   return (
     <div className="dn-modal-wrap" onClick={onClose}>
       <div className="dn-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="dn-modal-head"><b>Add a file</b><button className="dn-fs-close" onClick={onClose}><X size={18} strokeWidth={2.8} /></button></div>
-        <div className="dn-drop"><Upload size={26} color={C.faint} strokeWidth={2.2} /><span>Drop a PDF here or tap to browse</span></div>
-        <input className="dn-modal-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="File name (e.g. March Combined)" />
-        <Chunky bg={C.green} shadow={C.greenDark} full disabled={!name.trim()} onClick={onDone}><span className="dn-inline"><Upload size={16} strokeWidth={2.6} /> Upload file</span></Chunky>
+        <div className="dn-modal-head"><b>{m.addFile}</b><button className="dn-fs-close" onClick={onClose} aria-label={m.close}><X size={18} strokeWidth={2.8} /></button></div>
+        <div className="dn-drop"><Upload size={26} color={C.faint} strokeWidth={2.2} /><span>{m.dropPdf}</span></div>
+        <input className="dn-modal-input" value={name} onChange={(e) => setName(e.target.value)} placeholder={m.fileNamePlaceholder} />
+        <Chunky bg={C.green} shadow={C.greenDark} full disabled={!name.trim()} onClick={onDone}><span className="dn-inline"><Upload size={16} strokeWidth={2.6} /> {m.uploadFile}</span></Chunky>
       </div>
     </div>
   );
@@ -930,9 +942,10 @@ function ExamPage(props: {
   exam: Exam; filter: Filter; setFilter: (f: Filter) => void; query: string; setQuery: (s: string) => void;
   voted: Set<string>; setVoted: (s: Set<string>) => void; saved: Set<string>; toggleSaved: (id: string) => void;
   picked: Set<string>; setPicked: (s: Set<string>) => void; onBack: () => void; onOpen: (f: ExamFile) => void;
-  onAdd: () => void; flash: (m: string) => void;
+  onAdd: () => void; flash: (m: string) => void; locale: AppLocale; onToggleLocale: () => void;
 }) {
-  const { exam, filter, setFilter, query, setQuery, voted, setVoted, saved, toggleSaved, picked, setPicked, onBack, onOpen, onAdd, flash } = props;
+  const { exam, filter, setFilter, query, setQuery, voted, setVoted, saved, toggleSaved, picked, setPicked, onBack, onOpen, onAdd, flash, locale, onToggleLocale } = props;
+  const { m } = useHomeLocale();
 
   const ranked = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -948,36 +961,36 @@ function ExamPage(props: {
 
   return (
     <main className="dn-main dn-exam-main">
-      <button type="button" className="dn-crumb-back" onClick={onBack}><ArrowLeft size={18} strokeWidth={2.6} /> All exams</button>
+      <button type="button" className="dn-crumb-back" onClick={onBack}><ArrowLeft size={18} strokeWidth={2.6} /> {m.allExamsBack}</button>
       <section className="dn-hero dn-hero-compact">
         <div className="dn-hero-row">
           <span className="dn-hero-ic" style={{ background: `linear-gradient(135deg, ${exam.from} 0%, ${exam.to} 100%)` }} aria-hidden>
             <span className="dn-hero-code">{exam.code}</span>
           </span>
-          <h1 className="dn-hero-title">{exam.name}</h1>
+          <h1 className="dn-hero-title">{m.examName(exam.id, exam.name)}</h1>
         </div>
         <div className="dn-search">
           <Search size={20} color={C.faint} strokeWidth={2.4} />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search files…" aria-label="Search files" />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={m.searchFilesPlaceholder} aria-label={m.searchFilesPlaceholder} />
           {query && <button type="button" className="dn-search-clear" onClick={() => setQuery("")}><X size={16} strokeWidth={2.6} /></button>}
         </div>
       </section>
 
       <div className="dn-filterbar">
         <div className="dn-periods">
-          {FILTERS.map((p) => (
-            <button key={p.key} type="button" onClick={() => setFilter(p.key)}
-              className={`dn-period${p.key === "bookmarked" ? " dn-period-icon" : ""}`}
-              aria-label={p.key === "bookmarked" ? "Saved" : p.label}
-              style={{ color: filter === p.key ? "#fff" : C.sub, background: filter === p.key ? (p.key === "bookmarked" ? C.blue : C.green) : "transparent", boxShadow: filter === p.key ? `0 2px 0 ${p.key === "bookmarked" ? C.blueDark : C.greenDark}` : "none" }}>
-              {p.key === "bookmarked" ? (
-                <BkIcon saved={filter === p.key} size={13} light={filter === p.key} />
-              ) : p.label}
+          {FILTER_KEYS.map((key) => (
+            <button key={key} type="button" onClick={() => setFilter(key)}
+              className={`dn-period${key === "bookmarked" ? " dn-period-icon" : ""}`}
+              aria-label={m.filterLabel(key)}
+              style={{ color: filter === key ? "#fff" : C.sub, background: filter === key ? (key === "bookmarked" ? C.blue : C.green) : "transparent", boxShadow: filter === key ? `0 2px 0 ${key === "bookmarked" ? C.blueDark : C.greenDark}` : "none" }}>
+              {key === "bookmarked" ? (
+                <BkIcon saved={filter === key} size={13} light={filter === key} />
+              ) : m.filterLabel(key)}
             </button>
           ))}
         </div>
         <button type="button" className="dn-selectall" onClick={() => setPicked(allPicked ? new Set() : new Set(ranked.map((f) => f.id)))}>
-          <span className="dn-check" style={{ borderColor: allPicked ? C.green : C.line, background: allPicked ? C.green : "#fff" }}>{allPicked && <Check size={11} color="#fff" strokeWidth={3.5} />}</span>Select all
+          <span className="dn-check" style={{ borderColor: allPicked ? C.green : C.line, background: allPicked ? C.green : "#fff" }}>{allPicked && <Check size={11} color="#fff" strokeWidth={3.5} />}</span>{m.selectAll}
         </button>
       </div>
 
@@ -987,48 +1000,48 @@ function ExamPage(props: {
           const count = f.votes[per] + (isVoted ? 1 : 0);
           return (
             <li key={f.id} className="dn-row" style={{ borderColor: isPicked ? C.blue : isSaved ? "#CFE9FF" : C.line, background: isPicked ? "#F0FAFF" : "#fff" }}>
-              <button type="button" className="dn-upvote" onClick={() => toggle(voted, f.id, setVoted)} style={{ borderColor: isVoted ? C.green : C.line, background: isVoted ? "#EAFBD9" : "#fff", color: isVoted ? C.greenDark : C.sub }} aria-label="Upvote">
+              <button type="button" className="dn-upvote" onClick={() => toggle(voted, f.id, setVoted)} style={{ borderColor: isVoted ? C.green : C.line, background: isVoted ? "#EAFBD9" : "#fff", color: isVoted ? C.greenDark : C.sub }} aria-label={m.upvote}>
                 <ChevronUp size={19} strokeWidth={3} /><b>{count.toLocaleString()}</b>
               </button>
               <button type="button" className="dn-file" onClick={() => onOpen(f)}>
                 <LetterTile name={f.name} color={f.color} />
                 <span className="dn-file-text">
                   <span className="dn-file-name">{f.name}</span>
-                  <span className="dn-file-meta">{f.author} · {f.pages} pages</span>
+                  <span className="dn-file-meta">{f.author} · {m.pagesCount(f.pages)}</span>
                 </span>
               </button>
               <div className="dn-actions">
-                <button type="button" className="dn-icon-btn" onClick={() => flash("Share link copied")} title="Share" aria-label="Share"><Share2 size={16} strokeWidth={2.4} /></button>
-                <button type="button" className={`dn-icon-btn dn-bk${isSaved ? " on" : ""}`} onClick={() => { toggleSaved(f.id); flash(isSaved ? "Removed bookmark" : "Bookmarked"); }} title={isSaved ? "Remove bookmark" : "Bookmark"} aria-label={isSaved ? "Remove bookmark" : "Bookmark"}>
+                <button type="button" className="dn-icon-btn" onClick={() => flash(m.shareCopied)} title={m.share} aria-label={m.share}><Share2 size={16} strokeWidth={2.4} /></button>
+                <button type="button" className={`dn-icon-btn dn-bk${isSaved ? " on" : ""}`} onClick={() => { toggleSaved(f.id); flash(isSaved ? m.removedBookmark : m.bookmarked); }} title={isSaved ? m.removeBookmark : m.bookmark} aria-label={isSaved ? m.removeBookmark : m.bookmark}>
                   <BkIcon saved={isSaved} size={15} />
                 </button>
-                <button type="button" className="dn-icon-btn dn-hide-sm" onClick={() => flash("Link copied")} title="Copy link" aria-label="Copy link"><Link2 size={16} strokeWidth={2.4} /></button>
+                <button type="button" className="dn-icon-btn dn-hide-sm" onClick={() => flash(m.linkCopied)} title={m.copyLink} aria-label={m.copyLink}><Link2 size={16} strokeWidth={2.4} /></button>
               </div>
-              <button type="button" className={`dn-row-select${isPicked ? " on" : ""}`} onClick={() => toggle(picked, f.id, setPicked)} aria-pressed={isPicked} aria-label={isPicked ? "Deselect file" : "Select file"}>
+              <button type="button" className={`dn-row-select${isPicked ? " on" : ""}`} onClick={() => toggle(picked, f.id, setPicked)} aria-pressed={isPicked} aria-label={isPicked ? m.deselectFile : m.selectFile}>
                 <span className="dn-check" style={{ borderColor: isPicked ? C.blue : C.line, background: isPicked ? C.blue : "#fff" }}>
                   {isPicked && <Check size={10} color="#fff" strokeWidth={3.5} />}
                 </span>
-                <span className="dn-row-select-label">{isPicked ? "Selected" : "Select"}</span>
+                <span className="dn-row-select-label">{isPicked ? m.selected : m.select}</span>
               </button>
             </li>
           );
         })}
-        {ranked.length === 0 && <div className="dn-empty"><Search size={26} color={C.faint} /><p>{filter === "bookmarked" ? "No bookmarked files yet." : `No files match “${query}”.`}</p></div>}
+        {ranked.length === 0 && <div className="dn-empty"><Search size={26} color={C.faint} /><p>{filter === "bookmarked" ? m.noBookmarkedFiles : m.noFilesMatch(query)}</p></div>}
       </ul>
 
       {picked.size > 0 && (
         <div className="dn-bulk">
-          <span><b>{picked.size}</b> selected</span>
+          <span>{m.bulkSelected(picked.size)}</span>
           <div className="dn-bulk-actions">
-            <button className="dn-bulk-clear" onClick={() => setPicked(new Set())}>Clear</button>
+            <button className="dn-bulk-clear" onClick={() => setPicked(new Set())}>{m.clear}</button>
             <Chunky bg={C.green} shadow={C.greenDark} onClick={() => { const first = ranked.find((f) => picked.has(f.id)); if (first) onOpen(first); }}>
-              <span className="dn-inline"><Play size={16} fill="#fff" strokeWidth={2.6} /> Study selected</span>
+              <span className="dn-inline"><Play size={16} fill="#fff" strokeWidth={2.6} /> {m.studySelected}</span>
             </Chunky>
           </div>
         </div>
       )}
 
-      <button type="button" className="dn-fab" onClick={onAdd} title="Add file" aria-label="Add file" style={{ background: C.green, boxShadow: `0 4px 0 ${C.greenDark}` }}>
+      <button type="button" className="dn-fab" onClick={onAdd} title={m.addFile} aria-label={m.addFile} style={{ background: C.green, boxShadow: `0 4px 0 ${C.greenDark}` }}>
         <Plus size={26} color="#fff" strokeWidth={2.8} />
       </button>
     </main>
@@ -1038,9 +1051,11 @@ function ExamPage(props: {
 /* ------------------------------------------------------------------ */
 /*  Study (full screen)                                                */
 /* ------------------------------------------------------------------ */
-function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
+function Study({ file, exam, saved, onToggleSave, onClose, flash, locale, onToggleLocale }: {
   file: ExamFile; exam: Exam | null; saved: boolean; onToggleSave: () => void; onClose: () => void; flash: (m: string) => void;
+  locale: AppLocale; onToggleLocale: () => void;
 }) {
+  const { m } = useHomeLocale();
   const [tab, setTab] = useState<Tab>("Read");
   const [query, setQuery] = useState("");
 
@@ -1188,13 +1203,13 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
 
   const searchable = tab === "Quiz" || tab === "Flashcards";
 
-  const subLabel = exam ? `${exam.code} · ${file.author}` : `@${file.author} · ${file.pages} pg`;
+  const subLabel = exam ? `${exam.code} · ${file.author}` : `@${file.author} · ${m.pgShort(file.pages)}`;
 
   return (
     <div className={`dn-fs${immersive ? " dn-fs-immersive" : ""}`} ref={fsRef}>
       <header className="dn-fs-head">
         <div className="dn-fs-row1">
-          <button className="dn-fs-close" onClick={onClose} aria-label="Close"><X size={18} strokeWidth={2.8} /></button>
+          <button className="dn-fs-close" onClick={onClose} aria-label={m.close}><X size={18} strokeWidth={2.8} /></button>
           <div className="dn-fs-title-wrap">
             <span className="dn-fs-dot" style={{ background: file.color }} aria-hidden />
             <h1 className="dn-fs-title">
@@ -1202,28 +1217,29 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
               <span className="dn-fs-sub">{subLabel}</span>
             </h1>
           </div>
-          <button type="button" className={`dn-fs-bk${saved ? " on" : ""}`} onClick={onToggleSave} title={saved ? "Bookmarked" : "Bookmark"} aria-label={saved ? "Remove bookmark" : "Bookmark"}>
+          <LocaleToggle locale={locale} onToggle={onToggleLocale} size="sm" className="shrink-0 bg-white ring-1 ring-black/5" />
+          <button type="button" className={`dn-fs-bk${saved ? " on" : ""}`} onClick={onToggleSave} title={saved ? m.bookmarked : m.bookmark} aria-label={saved ? m.removeBookmark : m.bookmark}>
             <BkIcon saved={saved} size={16} />
           </button>
-          <button type="button" className="dn-fs-fs" onClick={() => void toggleFullscreen()} title={immersive ? "Exit full screen" : "Full screen"} aria-label={immersive ? "Exit full screen" : "Full screen"} aria-pressed={immersive}>
+          <button type="button" className="dn-fs-fs" onClick={() => void toggleFullscreen()} title={immersive ? m.exitFullScreen : m.fullScreen} aria-label={immersive ? m.exitFullScreen : m.fullScreen} aria-pressed={immersive}>
             {immersive ? <Minimize2 size={16} strokeWidth={2.4} /> : <Maximize2 size={16} strokeWidth={2.4} />}
           </button>
         </div>
         <div className="dn-fs-row2">
           <div className="dn-fs-search">
             <Search size={16} color={C.faint} strokeWidth={2.4} />
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={searchable ? `Search ${tab.toLowerCase()}…` : "Search this file…"} aria-label="Search" />
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={searchable ? m.searchTab(m.tabLabelLower(tab)) : m.searchThisFile} aria-label={m.searchThisFile} />
             {query && <button className="dn-fs-clear" onClick={() => setQuery("")}><X size={14} strokeWidth={2.8} /></button>}
           </div>
         </div>
         <nav className="dn-fs-tabs">
           {TABS.map(({ key, icon: Icon }) => (
             <button key={key} className="dn-fs-tab" onClick={() => { setTab(key); setChatOpen(false); }} style={{ color: tab === key && !chatOpen ? C.blueDark : C.faint, background: tab === key && !chatOpen ? "#DDF4FF" : "transparent" }}>
-              <Icon size={16} strokeWidth={2.4} /><span>{key}</span>
+              <Icon size={16} strokeWidth={2.4} /><span>{m.tabLabel(key)}</span>
             </button>
           ))}
           <button className="dn-fs-tab" onClick={() => openChat()} style={{ color: chatOpen ? C.purpleDark : C.faint, background: chatOpen ? "#F3E8FF" : "transparent" }}>
-            <Sparkles size={16} strokeWidth={2.4} /><span>Ask</span>
+            <Sparkles size={16} strokeWidth={2.4} /><span>{m.ask}</span>
           </button>
         </nav>
       </header>
@@ -1242,11 +1258,11 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
         <div className="dn-tabbar-inner">
           {TABS.map(({ key, icon: Icon }) => (
             <button key={key} className={`dn-tabbar-btn${tab === key && !chatOpen ? " on" : ""}`} onClick={() => { setTab(key); setChatOpen(false); }} style={{ color: tab === key && !chatOpen ? C.blue : C.faint }}>
-              <Icon size={22} strokeWidth={2.3} /><span>{key}</span>
+              <Icon size={22} strokeWidth={2.3} /><span>{m.tabLabel(key)}</span>
             </button>
           ))}
           <button className={`dn-tabbar-btn dn-tabbar-ask${chatOpen ? " on" : ""}`} onClick={() => openChat()} style={{ color: chatOpen ? C.purpleDark : C.faint }}>
-            <Sparkles size={22} strokeWidth={2.3} /><span>Ask</span>
+            <Sparkles size={22} strokeWidth={2.3} /><span>{m.ask}</span>
           </button>
         </div>
       </nav>
@@ -1255,7 +1271,7 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
       {ask && (
         <button className="dn-ask-pop" style={{ left: ask.x, top: ask.y }} onMouseDown={(e) => e.preventDefault()}
           onClick={() => { openChat(ask.text); setAsk(null); window.getSelection()?.removeAllRanges(); }}>
-          <Sparkles size={14} strokeWidth={2.6} /> Ask AI
+          <Sparkles size={14} strokeWidth={2.6} /> {m.askAi}
         </button>
       )}
 
@@ -1268,6 +1284,7 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
 function ChatPanel({ quote, clearQuote, msgs, setMsgs, onClose }: {
   quote: string | null; clearQuote: () => void; msgs: Msg[]; setMsgs: Dispatch<SetStateAction<Msg[]>>; onClose: () => void;
 }) {
+  const { m } = useHomeLocale();
   const [draft, setDraft] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
@@ -1287,17 +1304,17 @@ function ChatPanel({ quote, clearQuote, msgs, setMsgs, onClose }: {
         <span className="dn-chat-brand">
           <DrNoteLogo showWordmark forceWordmark size="sm" />
           <span className="dn-chat-head-div" aria-hidden>·</span>
-          <span className="dn-inline"><Sparkles size={18} color={C.purple} strokeWidth={2.4} /><b>Ask AI</b></span>
+          <span className="dn-inline"><Sparkles size={18} color={C.purple} strokeWidth={2.4} /><b>{m.askAi}</b></span>
         </span>
-        <button className="dn-fs-close" onClick={onClose} aria-label="Close chat"><X size={18} strokeWidth={2.8} /></button>
+        <button className="dn-fs-close" onClick={onClose} aria-label={m.closeChat}><X size={18} strokeWidth={2.8} /></button>
       </div>
       <div className="dn-chat-body">
-        {msgs.map((m, i) => <div key={i} className={`dn-msg ${m.role}`}>{m.text}</div>)}
+        {msgs.map((msg, i) => <div key={i} className={`dn-msg ${msg.role}`}>{msg.text}</div>)}
         <div ref={endRef} />
       </div>
       {quote && <div className="dn-chat-quote"><span>{quote.length > 90 ? quote.slice(0, 90) + "…" : quote}</span><button onClick={clearQuote}><X size={13} strokeWidth={3} /></button></div>}
       <div className="dn-chat-input">
-        <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder="Ask a follow-up…" />
+        <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={m.askFollowUp} />
         <button className="dn-chat-send" onClick={send} style={{ background: C.purple }} aria-label="Send"><Send size={16} color="#fff" strokeWidth={2.4} /></button>
       </div>
     </aside>
@@ -1306,6 +1323,7 @@ function ChatPanel({ quote, clearQuote, msgs, setMsgs, onClose }: {
 
 /* ---- Read ---- */
 function ReadFull({ file }: { file: ExamFile }) {
+  const { m } = useHomeLocale();
   const [i, setI] = useState(0);
   const p = READ_PAGES[i];
   const pct = ((i + 1) / READ_PAGES.length) * 100;
@@ -1316,20 +1334,20 @@ function ReadFull({ file }: { file: ExamFile }) {
         <article className="dn-read-col">
           <h1>{p.h}</h1>
           <p className="dn-read-lead">{p.body[0]}</p>
-          <div className="dn-callout" style={{ borderColor: file.color }}><b>Key point</b><p>{p.key}</p></div>
+          <div className="dn-callout" style={{ borderColor: file.color }}><b>{m.keyPoint}</b><p>{p.key}</p></div>
           {p.body.slice(1).map((t, k) => <p key={k}>{t}</p>)}
         </article>
       </div>
       <div className="dn-read-foot">
-        <button className="dn-foot-back" disabled={i === 0} onClick={() => setI((v) => v - 1)} aria-label="Previous page">
-          <ChevronLeft size={16} strokeWidth={2.8} /><span className="dn-foot-back-label">Back</span>
+        <button className="dn-foot-back" disabled={i === 0} onClick={() => setI((v) => v - 1)} aria-label={m.back}>
+          <ChevronLeft size={16} strokeWidth={2.8} /><span className="dn-foot-back-label">{m.back}</span>
         </button>
         <span className="dn-foot-count">
-          <span className="dn-foot-count-full">Page {i + 1} of {READ_PAGES.length}</span>
+          <span className="dn-foot-count-full">{m.pageOf(i + 1, READ_PAGES.length)}</span>
           <span className="dn-foot-count-short">{i + 1}/{READ_PAGES.length}</span>
         </span>
         <Chunky sm bg={C.green} shadow={C.greenDark} disabled={i === READ_PAGES.length - 1} onClick={() => setI((v) => v + 1)}>
-          <span className="dn-inline"><span className="dn-foot-next-label">Continue</span><ChevronRight size={14} strokeWidth={2.8} /></span>
+          <span className="dn-inline"><span className="dn-foot-next-label">{m.continueLabel}</span><ChevronRight size={14} strokeWidth={2.8} /></span>
         </Chunky>
       </div>
     </div>
@@ -1342,6 +1360,7 @@ function QuizList({ query, answers, setAnswers, flagged, setFlagged, perPage, se
   flagged: Set<number>; setFlagged: Dispatch<SetStateAction<Set<number>>>;
   perPage: number; setPerPage: (n: number) => void; reveal: Reveal; setReveal: (r: Reveal) => void; onAsk: (q: string) => void;
 }) {
+  const { m } = useHomeLocale();
   const [pageIdx, setPageIdx] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [settings, setSettings] = useState(false);
@@ -1365,14 +1384,14 @@ function QuizList({ query, answers, setAnswers, flagged, setFlagged, perPage, se
   return (
     <div className="dn-quiz-fs">
       <div className="dn-quiz-scroll">
-        {slice.length === 0 && <div className="dn-empty" style={{ paddingTop: 40 }}><Search size={26} color={C.faint} /><p>No questions match “{query}”.</p></div>}
+        {slice.length === 0 && <div className="dn-empty" style={{ paddingTop: 40 }}><Search size={26} color={C.faint} /><p>{m.noQuestionsMatch(query)}</p></div>}
         {slice.map((qq) => {
           const idx = qq.idx, picked = answers[idx], answered = picked !== undefined, show = answered && showResult, isFlag = flagged.has(idx);
           return (
             <div key={idx} className="dn-q-card">
               <div className="dn-q-top">
-                <p className="dn-q-num">Question {idx + 1}</p>
-                <button className="dn-q-flag" onClick={() => toggleFlag(idx)} style={{ color: isFlag ? C.red : C.faint }} title="Flag"><Flag size={16} strokeWidth={2.4} fill={isFlag ? C.red : "none"} /></button>
+                <p className="dn-q-num">{m.questionLabel(idx + 1)}</p>
+                <button className="dn-q-flag" onClick={() => toggleFlag(idx)} style={{ color: isFlag ? C.red : C.faint }} title={m.flag} aria-label={m.flag}><Flag size={16} strokeWidth={2.4} fill={isFlag ? C.red : "none"} /></button>
               </div>
               <h3 className="dn-q-stem">{qq.stem}</h3>
               <div className="dn-q-options">
@@ -1388,7 +1407,7 @@ function QuizList({ query, answers, setAnswers, flagged, setFlagged, perPage, se
               </div>
               {show && (
                 <div className="dn-q-explain">
-                  <p className="dn-q-explain-text"><b style={{ color: picked === qq.correct ? C.greenDark : C.red }}>{picked === qq.correct ? "Correct" : "Not quite"}</b>{qq.explain}</p>
+                  <p className="dn-q-explain-text"><b style={{ color: picked === qq.correct ? C.greenDark : C.red }}>{picked === qq.correct ? m.correct : m.notQuite}</b>{qq.explain}</p>
                   <AskChip sm onClick={() => onAsk(`${qq.stem} — ${qq.explain}`)} />
                 </div>
               )}
@@ -1398,30 +1417,30 @@ function QuizList({ query, answers, setAnswers, flagged, setFlagged, perPage, se
       </div>
 
       {reveal === "later" && !revealed && Object.keys(answers).length > 0 && (
-        <div className="dn-reveal-bar"><Chunky bg={C.green} shadow={C.greenDark} full onClick={() => setRevealed(true)}>Show answers</Chunky></div>
+        <div className="dn-reveal-bar"><Chunky bg={C.green} shadow={C.greenDark} full onClick={() => setRevealed(true)}>{m.showAnswers}</Chunky></div>
       )}
 
       <div className="dn-quiz-foot">
-        <button className="dn-foot-icon" onClick={() => setSettings(true)} title="Quiz settings"><Settings size={20} strokeWidth={2.4} /></button>
+        <button className="dn-foot-icon" onClick={() => setSettings(true)} title={m.quizSettings} aria-label={m.quizSettings}><Settings size={20} strokeWidth={2.4} /></button>
         <div className="dn-dots">{Array.from({ length: pages }).map((_, d) => <button key={d} onClick={() => setPageIdx(d)} className="dn-dot" style={{ background: d === pageIdx ? C.blue : C.line }} aria-label={`Page ${d + 1}`} />)}</div>
         <div className="dn-foot-nav">
           <button className="dn-foot-back" disabled={pageIdx === 0} onClick={() => setPageIdx((p) => p - 1)}><ChevronLeft size={18} strokeWidth={2.8} /></button>
-          <Chunky bg={C.blue} shadow={C.blueDark} disabled={pageIdx === pages - 1} onClick={() => setPageIdx((p) => p + 1)}><span className="dn-inline">Next <ChevronRight size={16} strokeWidth={2.8} /></span></Chunky>
+          <Chunky bg={C.blue} shadow={C.blueDark} disabled={pageIdx === pages - 1} onClick={() => setPageIdx((p) => p + 1)}><span className="dn-inline">{m.next} <ChevronRight size={16} strokeWidth={2.8} /></span></Chunky>
         </div>
       </div>
 
       {settings && (
         <div className="dn-sheet-wrap" onClick={() => setSettings(false)}>
           <div className="dn-sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="quiz-settings-title">
-            <b className="dn-sheet-title" id="quiz-settings-title">Quiz settings</b>
-            <p className="dn-sheet-label">Questions per page</p>
+            <b className="dn-sheet-title" id="quiz-settings-title">{m.quizSettings}</b>
+            <p className="dn-sheet-label">{m.questionsPerPage}</p>
             <div className="dn-seg">{[1, 5, 10].map((n) => <button key={n} onClick={() => setPerPage(n)} className="dn-seg-btn" style={{ background: perPage === n ? C.blue : "#fff", color: perPage === n ? "#fff" : C.sub, borderColor: perPage === n ? C.blue : C.line }}>{n}</button>)}</div>
-            <p className="dn-sheet-label">Show answers</p>
+            <p className="dn-sheet-label">{m.revealMode}</p>
             <div className="dn-seg">
-              <button onClick={() => setReveal("immediate")} className="dn-seg-btn" style={{ background: reveal === "immediate" ? C.green : "#fff", color: reveal === "immediate" ? "#fff" : C.sub, borderColor: reveal === "immediate" ? C.green : C.line }}>Immediately</button>
-              <button onClick={() => setReveal("later")} className="dn-seg-btn" style={{ background: reveal === "later" ? C.green : "#fff", color: reveal === "later" ? "#fff" : C.sub, borderColor: reveal === "later" ? C.green : C.line }}>At the end</button>
+              <button onClick={() => setReveal("immediate")} className="dn-seg-btn" style={{ background: reveal === "immediate" ? C.green : "#fff", color: reveal === "immediate" ? "#fff" : C.sub, borderColor: reveal === "immediate" ? C.green : C.line }}>{m.revealImmediate}</button>
+              <button onClick={() => setReveal("later")} className="dn-seg-btn" style={{ background: reveal === "later" ? C.green : "#fff", color: reveal === "later" ? "#fff" : C.sub, borderColor: reveal === "later" ? C.green : C.line }}>{m.atTheEnd}</button>
             </div>
-            <Chunky bg={C.green} shadow={C.greenDark} full onClick={() => setSettings(false)}>Done</Chunky>
+            <Chunky bg={C.green} shadow={C.greenDark} full onClick={() => setSettings(false)}>{m.done}</Chunky>
           </div>
         </div>
       )}
@@ -1439,6 +1458,7 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
   onRepeat: (s: QuizSession) => void;
   onAsk: (q: string) => void;
 }) {
+  const { m } = useHomeLocale();
   type RF = "all" | "correct" | "incorrect" | "flagged" | "sessions";
   const [rf, setRf] = useState<RF>("all");
   const [search, setSearch] = useState("");
@@ -1461,11 +1481,11 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
     flagged: attempted.filter((q) => flagged.has(q.idx)).length,
   };
   const filters: { k: RF; label: string }[] = [
-    { k: "all", label: "All" },
-    { k: "correct", label: "Correct" },
-    { k: "incorrect", label: "Incorrect" },
-    { k: "flagged", label: "Flagged" },
-    { k: "sessions", label: "Sessions" },
+    { k: "all", label: m.filterAll },
+    { k: "correct", label: m.filterCorrect },
+    { k: "incorrect", label: m.incorrectLabel },
+    { k: "flagged", label: m.filterFlagged },
+    { k: "sessions", label: m.filterSessions },
   ];
   const filterCounts: Record<RF, number> = { ...counts, sessions: sessions.length };
 
@@ -1484,14 +1504,14 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
     return (
       <div className="dn-rv-viewer">
         <div className="dn-rv-vtop">
-          <button className="dn-foot-back" onClick={() => setReport(null)}><ChevronLeft size={18} strokeWidth={2.8} /> Back to sessions</button>
+          <button className="dn-foot-back" onClick={() => setReport(null)}><ChevronLeft size={18} strokeWidth={2.8} /> {m.backToSessions}</button>
           <span className="dn-foot-count">{report.title}</span>
           <span />
         </div>
         <div className="dn-rv-vbody">
           <div className="dn-rv-report">
             <div className="dn-rv-report-head">
-              <span className="dn-rv-session-src">{report.source === "quiz" ? "Quiz" : "Custom"}</span>
+              <span className="dn-rv-session-src">{report.source === "quiz" ? m.quizSource : m.customSource}</span>
               <div className="dn-rv-report-score">{pct}%</div>
               <p className="dn-rv-session-meta" style={{ justifyContent: "center" }}>
                 <span><Clock size={13} strokeWidth={2.2} /> {formatSessionWhen(report.startedAt)}</span>
@@ -1499,9 +1519,9 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
               </p>
             </div>
             <div className="dn-rv-report-grid">
-              <div className="dn-rv-report-stat"><b style={{ color: C.greenDark }}>{sc.correct}</b><span>Correct</span></div>
-              <div className="dn-rv-report-stat"><b style={{ color: C.red }}>{wrong}</b><span>Incorrect</span></div>
-              <div className="dn-rv-report-stat"><b>{skipped}</b><span>Skipped</span></div>
+              <div className="dn-rv-report-stat"><b style={{ color: C.greenDark }}>{sc.correct}</b><span>{m.correct}</span></div>
+              <div className="dn-rv-report-stat"><b style={{ color: C.red }}>{wrong}</b><span>{m.incorrectLabel}</span></div>
+              <div className="dn-rv-report-stat"><b>{skipped}</b><span>{m.skipped}</span></div>
             </div>
             <ul className="dn-rv-list">
               {QUESTIONS.map((q, i) => {
@@ -1521,8 +1541,8 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
               })}
             </ul>
             <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap", justifyContent: "center" }}>
-              {report.status === "in_progress" && <Chunky bg={C.blue} shadow={C.blueDark} onClick={() => { onResume(report); setReport(null); }}><span className="dn-inline"><Play size={14} fill="#fff" /> Resume</span></Chunky>}
-              <Chunky bg={C.green} shadow={C.greenDark} onClick={() => { onRepeat(report); setReport(null); }}><span className="dn-inline"><RotateCcw size={14} /> Repeat</span></Chunky>
+              {report.status === "in_progress" && <Chunky bg={C.blue} shadow={C.blueDark} onClick={() => { onResume(report); setReport(null); }}><span className="dn-inline"><Play size={14} fill="#fff" /> {m.resume}</span></Chunky>}
+              <Chunky bg={C.green} shadow={C.greenDark} onClick={() => { onRepeat(report); setReport(null); }}><span className="dn-inline"><RotateCcw size={14} /> {m.repeat}</span></Chunky>
             </div>
           </div>
         </div>
@@ -1540,13 +1560,13 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
     return (
       <div className="dn-rv-viewer">
         <div className="dn-rv-vtop">
-          <button className="dn-foot-back" onClick={() => setOpen(null)}><ChevronLeft size={18} strokeWidth={2.8} /> Back to list</button>
+          <button className="dn-foot-back" onClick={() => setOpen(null)}><ChevronLeft size={18} strokeWidth={2.8} /> {m.backToList}</button>
           <span className="dn-foot-count">{pos + 1} of {list.length}</span>
           <button className="dn-q-flag" onClick={() => setFlagged((s) => { const n = new Set(s); n.has(cur.idx) ? n.delete(cur.idx) : n.add(cur.idx); return n; })} style={{ color: isFlag ? C.red : C.faint }}><Flag size={18} strokeWidth={2.4} fill={isFlag ? C.red : "none"} /></button>
         </div>
         <div className="dn-rv-vbody">
           <div className="dn-q-card" style={{ maxWidth: 680, margin: "0 auto" }}>
-            <p className="dn-q-num">Question {cur.idx + 1}</p>
+            <p className="dn-q-num">{m.questionLabel(cur.idx + 1)}</p>
             <h3 className="dn-q-stem">{cur.stem}</h3>
             <div className="dn-q-options">
               {cur.options.map((o, oi) => {
@@ -1559,15 +1579,15 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
               })}
             </div>
             <div className="dn-q-explain">
-              <p className="dn-q-explain-text"><b style={{ color: a === cur.correct ? C.greenDark : C.red }}>{a === undefined ? "Not answered" : a === cur.correct ? "Correct" : "Incorrect"}</b>{cur.explain}</p>
+              <p className="dn-q-explain-text"><b style={{ color: a === cur.correct ? C.greenDark : C.red }}>{a === undefined ? m.notAnswered : a === cur.correct ? m.correct : m.incorrectLabel}</b>{cur.explain}</p>
               <AskChip sm onClick={() => onAsk(`${cur.stem} — ${cur.explain}`)} />
             </div>
           </div>
         </div>
         <div className="dn-read-foot">
-          <button className="dn-foot-back" onClick={() => move(-1)}><ChevronLeft size={18} strokeWidth={2.8} /> Prev</button>
-          <span className="dn-foot-count">Browse</span>
-          <Chunky bg={C.blue} shadow={C.blueDark} onClick={() => move(1)}><span className="dn-inline">Next <ChevronRight size={16} strokeWidth={2.8} /></span></Chunky>
+          <button className="dn-foot-back" onClick={() => move(-1)}><ChevronLeft size={18} strokeWidth={2.8} /> {m.prev}</button>
+          <span className="dn-foot-count">{m.browseMode}</span>
+          <Chunky bg={C.blue} shadow={C.blueDark} onClick={() => move(1)}><span className="dn-inline">{m.next} <ChevronRight size={16} strokeWidth={2.8} /></span></Chunky>
         </div>
       </div>
     );
@@ -1576,15 +1596,15 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
   return (
     <div className="nt-scroll">
       <div className="nt-doc">
-        <h1 className="nt-h1 dn-centered-h1">Review</h1>
+        <h1 className="nt-h1 dn-centered-h1">{m.reviewHeading}</h1>
         <div className="dn-rv-toolbar">
           <div className="dn-rv-search">
             <Search size={15} color={C.faint} strokeWidth={2.4} />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={rf === "sessions" ? "Search sessions…" : "Search questions…"}
-              aria-label={rf === "sessions" ? "Search sessions" : "Search review questions"}
+              placeholder={rf === "sessions" ? m.searchSessionsPlaceholder : m.reviewSearchPlaceholder}
+              aria-label={rf === "sessions" ? m.searchSessionsAria : m.searchReviewAria}
             />
             {search && <button type="button" className="dn-fs-clear" onClick={() => setSearch("")} aria-label="Clear search"><X size={14} strokeWidth={2.8} /></button>}
           </div>
@@ -1598,7 +1618,7 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
         </div>
         {rf === "sessions" ? (
           sessionList.length === 0 ? (
-            <div className="dn-empty" style={{ paddingTop: 30 }}><Clock size={26} color={C.faint} /><p>{searchQ ? `No sessions match “${search.trim()}”.` : "No sessions yet — start a quiz or custom exam."}</p></div>
+            <div className="dn-empty" style={{ paddingTop: 30 }}><Clock size={26} color={C.faint} /><p>{searchQ ? m.noSessionsMatch(search.trim()) : m.noSessionsYet}</p></div>
           ) : (
             <ul className="dn-rv-sessions">
               {sessionList.map((s) => {
@@ -1608,7 +1628,7 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
                   <li key={s.id} className="dn-rv-session">
                     <div className="dn-rv-session-top">
                       <div>
-                        <span className="dn-rv-session-src">{s.source === "quiz" ? "Quiz" : "Custom"}</span>
+                        <span className="dn-rv-session-src">{s.source === "quiz" ? m.quizSource : m.customSource}</span>
                         <p className="dn-rv-session-title">{s.title}</p>
                       </div>
                       <div className="dn-rv-session-score">{sc.correct}/{sc.total} <small>({pct}%)</small></div>
@@ -1616,19 +1636,19 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
                     <p className="dn-rv-session-meta">
                       <span><Clock size={13} strokeWidth={2.2} /> {formatSessionWhen(s.startedAt)}</span>
                       <span>{formatDuration(s.durationSec)}</span>
-                      <span>{sc.answered} answered</span>
+                      <span>{sc.answered} {m.answered}</span>
                     </p>
                     <div className="dn-rv-session-actions">
                       {s.status === "in_progress" && (
                         <button type="button" className="dn-rv-session-btn primary" onClick={() => onResume(s)}>
-                          <Play size={12} fill="#fff" strokeWidth={2.4} /> Resume
+                          <Play size={12} fill="#fff" strokeWidth={2.4} /> {m.resume}
                         </button>
                       )}
                       <button type="button" className="dn-rv-session-btn ghost" onClick={() => setReport(s)}>
-                        <BarChart2 size={12} strokeWidth={2.4} /> Report
+                        <BarChart2 size={12} strokeWidth={2.4} /> {m.report}
                       </button>
                       <button type="button" className="dn-rv-session-btn" onClick={() => onRepeat(s)}>
-                        <RotateCcw size={12} strokeWidth={2.4} /> Repeat
+                        <RotateCcw size={12} strokeWidth={2.4} /> {m.repeat}
                       </button>
                     </div>
                   </li>
@@ -1637,7 +1657,7 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
             </ul>
           )
         ) : list.length === 0 ? (
-          <div className="dn-empty" style={{ paddingTop: 30 }}><ListChecks size={26} color={C.faint} /><p>{searchQ ? `No questions match “${search.trim()}”.` : "Nothing here yet — answer or flag questions in the Quiz tab."}</p></div>
+          <div className="dn-empty" style={{ paddingTop: 30 }}><ListChecks size={26} color={C.faint} /><p>{searchQ ? m.noReviewSearch(search.trim()) : m.noReviewItems}</p></div>
         ) : (
           <ul className="dn-rv-list">
             {list.map((q) => {
@@ -1823,6 +1843,7 @@ function CardImage({ src, alt, className }: { src: string; alt: string; classNam
 }
 
 function FlashcardsQuizlet({ query }: { query: string }) {
+  const { m } = useHomeLocale();
   const [open, setOpen] = useState<number | null>(null);
   const [fav, setFav] = useState<Set<number>>(new Set());
   const [view, setView] = useState<QlView>(() => {
@@ -1852,7 +1873,7 @@ function FlashcardsQuizlet({ query }: { query: string }) {
     });
   };
 
-  if (list.length === 0) return <div className="ql-scroll"><div className="ql-wrap"><div className="dn-empty" style={{ paddingTop: 40 }}><Search size={26} color={C.faint} /><p>No cards match “{query}”.</p></div></div></div>;
+  if (list.length === 0) return <div className="ql-scroll"><div className="ql-wrap"><div className="dn-empty" style={{ paddingTop: 40 }}><Search size={26} color={C.faint} /><p>{m.noCardsMatch(query)}</p></div></div></div>;
 
   return (
     <div className="ql-scroll">
@@ -1860,10 +1881,10 @@ function FlashcardsQuizlet({ query }: { query: string }) {
         <div className="ql-head">
           <h3 className="ql-list-h">Terms in this set ({list.length})</h3>
           <div className="ql-view-toggle" role="group" aria-label="Flashcard layout">
-            <button type="button" className={`ql-view-btn${view === "list" ? " on" : ""}`} onClick={() => setView("list")} title="List view" aria-label="List view" aria-pressed={view === "list"}>
+            <button type="button" className={`ql-view-btn${view === "list" ? " on" : ""}`} onClick={() => setView("list")} title={m.flashcardsList} aria-label={m.flashcardsList} aria-pressed={view === "list"}>
               <LayoutList size={16} strokeWidth={2.4} />
             </button>
-            <button type="button" className={`ql-view-btn${view === "split" ? " on" : ""}`} onClick={() => setView("split")} title="Side by side" aria-label="Side by side" aria-pressed={view === "split"}>
+            <button type="button" className={`ql-view-btn${view === "split" ? " on" : ""}`} onClick={() => setView("split")} title={m.flashcardsSplit} aria-label={m.flashcardsSplit} aria-pressed={view === "split"}>
               <Columns2 size={16} strokeWidth={2.4} />
             </button>
           </div>
