@@ -11,6 +11,7 @@ import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { LocaleToggle } from "@/components/LocaleToggle";
 import { HomeLocaleProvider, useHomeLocale } from "@/components/home/HomeLocaleProvider";
 import type { AppLocale } from "@/lib/locale";
+import { QUESTION_CORRECT_INDEX } from "@/lib/i18n/home-content";
 
 /* ------------------------------------------------------------------ */
 /*  Tokens                                                             */
@@ -71,21 +72,6 @@ const TABS: { key: Tab; icon: ElementType }[] = [
   { key: "Summary", icon: FileText }, { key: "Flashcards", icon: Layers }, { key: "Custom", icon: SlidersHorizontal },
 ];
 
-const QUESTIONS = [
-  { stem: "A 58-year-old man has crushing chest pain and 2 mm ST-elevation in II, III, aVF. Best next step?", options: ["Aspirin + PCI within 90 minutes", "Fibrinolysis regardless of PCI access", "Beta-blocker alone", "Serial troponins only"], correct: 0, explain: "Inferior STEMI with timely PCI available → primary PCI plus aspirin." },
-  { stem: "Which ECG finding best localizes an inferior wall MI?", options: ["ST-elevation in V1–V4", "ST-elevation in I and aVL", "ST-elevation in II, III, aVF", "Diffuse ST-depression"], correct: 2, explain: "Leads II, III, aVF face the inferior wall." },
-  { stem: "First-line rate control in stable atrial fibrillation with preserved EF?", options: ["IV adenosine", "Beta-blocker", "Digoxin loading", "Immediate DC cardioversion"], correct: 1, explain: "Beta-blockers (or non-DHP calcium channel blockers) are first-line." },
-  { stem: "Best step for suspected PE with a low pretest probability?", options: ["CT pulmonary angiography", "V/Q scan", "D-dimer", "Empiric heparin"], correct: 2, explain: "Low pretest probability → D-dimer to rule out." },
-  { stem: "Preferred long-term therapy after NSTEMI?", options: ["Aspirin alone", "Dual antiplatelet therapy + high-intensity statin", "Warfarin", "Calcium channel blocker only"], correct: 1, explain: "DAPT plus a high-intensity statin is standard secondary prevention." },
-  { stem: "Classic ECG pattern of acute pericarditis?", options: ["Diffuse ST-elevation with PR depression", "Regional ST-elevation", "Peaked T waves", "Delta wave"], correct: 0, explain: "Diffuse ST-elevation with PR depression is characteristic." },
-  { stem: "Fastest symptom relief for stable angina?", options: ["Sublingual nitroglycerin", "Oral beta-blocker", "Ranolazine", "Aspirin"], correct: 0, explain: "Sublingual nitroglycerin gives rapid relief of anginal symptoms." },
-  { stem: "Warfarin reversal in a patient with major bleeding?", options: ["Vitamin K alone", "4-factor PCC + vitamin K", "Fresh frozen plasma alone", "Protamine"], correct: 1, explain: "Major bleeding → 4-factor PCC plus IV vitamin K." },
-  { stem: "Recommended AAA screening?", options: ["CT in all adults over 50", "One-time ultrasound in men 65–75 who ever smoked", "Annual MRI", "No screening"], correct: 1, explain: "One-time ultrasound for men 65–75 with any smoking history." },
-  { stem: "Murmur that intensifies with the Valsalva maneuver?", options: ["Aortic stenosis", "Mitral regurgitation", "Hypertrophic cardiomyopathy", "Pulmonic stenosis"], correct: 2, explain: "Reduced preload from Valsalva increases the HOCM murmur." },
-  { stem: "First-line antihypertensive in a Black patient without CKD?", options: ["ACE inhibitor", "Thiazide or calcium channel blocker", "Beta-blocker", "Alpha-blocker"], correct: 1, explain: "Thiazides or CCBs are preferred initial agents here." },
-  { stem: "Lipid target strategy for secondary prevention?", options: ["Low-intensity statin", "High-intensity statin", "Fibrate", "Niacin"], correct: 1, explain: "High-intensity statin therapy is used for secondary prevention." },
-];
-
 type SessionSource = "quiz" | "custom";
 type SessionStatus = "in_progress" | "completed";
 
@@ -102,6 +88,8 @@ interface QuizSession {
   status: SessionStatus;
 }
 
+const QUESTION_COUNT = QUESTION_CORRECT_INDEX.length;
+
 function seedSessions(fileId: string): QuizSession[] {
   const now = Date.now();
   return [
@@ -114,7 +102,7 @@ function seedSessions(fileId: string): QuizSession[] {
       durationSec: 18 * 60,
       answers: { 0: 0, 1: 2, 2: 1, 3: 2, 4: 3, 5: 0, 6: 0, 7: 1, 8: 1, 9: 0, 10: 1, 11: 1 },
       flagged: [5],
-      totalQuestions: QUESTIONS.length,
+      totalQuestions: QUESTION_COUNT,
       status: "completed",
     },
     {
@@ -145,40 +133,28 @@ function scoreSession(s: QuizSession) {
   const entries = Object.entries(s.answers);
   let correct = 0;
   for (const [idx, ans] of entries) {
-    if (QUESTIONS[Number(idx)]?.correct === ans) correct++;
+    if (QUESTION_CORRECT_INDEX[Number(idx)] === ans) correct++;
   }
   return { correct, answered: entries.length, total: s.totalQuestions };
 }
 
-function formatDuration(sec: number | null) {
-  if (sec === null) return "In progress";
+function formatDuration(sec: number | null, inProgress: string, fmt: (min: number, s: number) => string) {
+  if (sec === null) return inProgress;
   const m = Math.floor(sec / 60);
   const s = sec % 60;
-  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+  return fmt(m, s);
 }
 
-function formatSessionWhen(ts: number) {
-  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(ts));
+function formatSessionWhen(ts: number, locale: AppLocale) {
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-SA" : "en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(ts));
 }
 
-type FlashCard = { t: string; d: string; img?: string; imgAlt?: string };
-
-const CARDS: FlashCard[] = [
-  { t: "Inferior STEMI — leads?", d: "II, III, aVF", img: "/flashcards/inferior-stemi.svg", imgAlt: "Inferior STEMI ECG with ST elevation in II, III, aVF" },
-  { t: "PCI window vs fibrinolysis", d: "Within 90 minutes", img: "/flashcards/pci-timeline.svg", imgAlt: "PCI within 90 minutes vs fibrinolysis timeline" },
-  { t: "Anterior STEMI — leads?", d: "V1 – V4", img: "/flashcards/anterior-stemi.svg", imgAlt: "Anterior STEMI ECG with ST elevation in V1–V4" },
-  { t: "Warfarin reversal (major bleed)", d: "4-factor PCC + vitamin K" },
-  { t: "Acute pericarditis ECG", d: "Diffuse ST-elevation, PR depression", img: "/flashcards/pericarditis-ecg.svg", imgAlt: "Pericarditis ECG with diffuse ST elevation" },
-  { t: "Valsalva increases which murmur?", d: "Hypertrophic cardiomyopathy" },
-  { t: "AAA screening", d: "Ultrasound, men 65–75 ever-smokers" },
-  { t: "Stable angina — fast relief", d: "Sublingual nitroglycerin" },
-];
-
-const READ_PAGES = [
-  { h: "Chapter 1 · Cardiology", body: ["Acute coronary syndromes span unstable angina, NSTEMI, and STEMI along a continuum of plaque rupture and thrombus formation.", "First-line management prioritizes reperfusion. Where PCI is reachable within 90 minutes, it is preferred over fibrinolysis."], key: "ST-elevation in leads II, III, aVF localizes to the inferior wall — check a right-sided ECG for RV involvement." },
-  { h: "Chapter 2 · Reperfusion", body: ["Primary PCI restores flow fastest and is the standard of care when a catheterization lab is available in time.", "Adjuncts include dual antiplatelet therapy, anticoagulation, and beta-blockade once the patient is hemodynamically stable."], key: "Door-to-balloon under 90 minutes is the benchmark for primary PCI." },
-  { h: "Chapter 3 · Secondary prevention", body: ["After an event, high-intensity statins, DAPT, ACE inhibitors, and beta-blockers reduce recurrence.", "Cardiac rehabilitation and risk-factor control anchor long-term outcomes."], key: "High-intensity statin therapy is standard for secondary prevention." },
-];
+function displaySessionTitle(title: string, content: import("@/lib/i18n/home-content").HomeContent) {
+  if (title === "Quiz practice") return content.sessionQuizTitle;
+  const match = /^Custom · (\d+) questions$/.exec(title);
+  if (match) return content.sessionCustomTitle(Number(match[1]));
+  return title;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Primitives                                                         */
@@ -202,7 +178,8 @@ function LetterTile({ name, color, size = 44 }: { name: string; color: string; s
   return <span className="dn-tile" style={{ background: color, width: size, height: size, fontSize: size * 0.42, borderRadius: size * 0.28 }}>{name.charAt(0).toUpperCase()}</span>;
 }
 function AskChip({ onClick, sm }: { onClick: () => void; sm?: boolean }) {
-  return <button className={`dn-askchip${sm ? " dn-askchip-sm" : ""}`} onClick={onClick} title="Ask AI" aria-label="Ask AI"><Sparkles size={sm ? 13 : 16} strokeWidth={2.4} /></button>;
+  const { m } = useHomeLocale();
+  return <button className={`dn-askchip${sm ? " dn-askchip-sm" : ""}`} onClick={onClick} title={m.askAi} aria-label={m.askAi}><Sparkles size={sm ? 13 : 16} strokeWidth={2.4} /></button>;
 }
 
 function BkIcon({ saved, size = 14, light = false }: { saved?: boolean; size?: number; light?: boolean }) {
@@ -706,7 +683,7 @@ function DrNoteHomeInner() {
           {page !== "study" && (
             <header className="dn-header">
               <div className="dn-header-inner">
-                <button type="button" className="dn-brand" onClick={() => setPage("home")} aria-label="DrNote home">
+                <button type="button" className="dn-brand" onClick={() => setPage("home")} aria-label={m.drnoteHome}>
                   <DrNoteLogo showWordmark forceWordmark />
                 </button>
                 <div className="dn-header-right">
@@ -1055,7 +1032,7 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, locale, onTogg
   file: ExamFile; exam: Exam | null; saved: boolean; onToggleSave: () => void; onClose: () => void; flash: (m: string) => void;
   locale: AppLocale; onToggleLocale: () => void;
 }) {
-  const { m } = useHomeLocale();
+  const { m, content } = useHomeLocale();
   const [tab, setTab] = useState<Tab>("Read");
   const [query, setQuery] = useState("");
 
@@ -1079,7 +1056,7 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, locale, onTogg
       const id = activeSessionRef.current;
       const idx = id ? prev.findIndex((s) => s.id === id) : prev.findIndex((s) => s.status === "in_progress" && s.source === "quiz");
       const elapsed = idx >= 0 ? Math.round((Date.now() - prev[idx].startedAt) / 1000) : 0;
-      const complete = answered >= QUESTIONS.length;
+      const complete = answered >= QUESTION_COUNT;
       const flaggedArr = [...flagged];
 
       if (idx >= 0) {
@@ -1103,7 +1080,7 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, locale, onTogg
         durationSec: complete ? 0 : 0,
         answers: { ...answers },
         flagged: flaggedArr,
-        totalQuestions: QUESTIONS.length,
+        totalQuestions: QUESTION_COUNT,
         status: complete ? "completed" : "in_progress",
       };
       activeSessionRef.current = created.id;
@@ -1116,8 +1093,8 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, locale, onTogg
     setFlagged(new Set(s.flagged));
     activeSessionRef.current = s.id;
     setTab("Quiz");
-    flash("Session resumed");
-  }, [flash]);
+    flash(m.sessionResumed);
+  }, [flash, m.sessionResumed]);
 
   const repeatSession = useCallback((s: QuizSession) => {
     const created: QuizSession = {
@@ -1137,8 +1114,8 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, locale, onTogg
     setAnswers({});
     setFlagged(new Set());
     setTab("Quiz");
-    flash("New session started");
-  }, [file.id, flash]);
+    flash(m.sessionStarted);
+  }, [file.id, flash, m.sessionStarted]);
 
   const startCustomSession = useCallback((count: number) => {
     const created: QuizSession = {
@@ -1158,13 +1135,16 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, locale, onTogg
     setAnswers({});
     setFlagged(new Set());
     setTab("Quiz");
-    flash("Custom session started");
-  }, [file.id, flash]);
+    flash(m.customSessionStarted);
+  }, [file.id, flash, m.customSessionStarted]);
 
   // AI chat
   const [chatOpen, setChatOpen] = useState(false);
   const [quote, setQuote] = useState<string | null>(null);
-  const [msgs, setMsgs] = useState<Msg[]>([{ role: "ai", text: "Hi! Ask anything about this file — highlight text anywhere or type below." }]);
+  const [msgs, setMsgs] = useState<Msg[]>([{ role: "ai", text: content.chatGreeting }]);
+  useEffect(() => {
+    setMsgs((prev) => (prev.length === 1 && prev[0]?.role === "ai" ? [{ role: "ai", text: content.chatGreeting }] : prev));
+  }, [content.chatGreeting]);
   const openChat = (q?: string) => { setQuote(q ?? null); setChatOpen(true); };
 
   const fsRef = useRef<HTMLDivElement>(null);
@@ -1284,18 +1264,17 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, locale, onTogg
 function ChatPanel({ quote, clearQuote, msgs, setMsgs, onClose }: {
   quote: string | null; clearQuote: () => void; msgs: Msg[]; setMsgs: Dispatch<SetStateAction<Msg[]>>; onClose: () => void;
 }) {
-  const { m } = useHomeLocale();
+  const { m, content } = useHomeLocale();
   const [draft, setDraft] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
 
   const send = () => {
     const q = draft.trim(); if (!q && !quote) return;
-    const full = quote ? `“${quote}” — ${q || "explain this"}` : q;
-    setMsgs((m) => [...m, { role: "user", text: full }]);
+    const full = quote ? `“${quote}” — ${q || content.chatExplainThis}` : q;
+    setMsgs((prev) => [...prev, { role: "user", text: full }]);
     setDraft(""); clearQuote();
-    // TODO: replace this mock with a real call to your AI endpoint.
-    setTimeout(() => setMsgs((m) => [...m, { role: "ai", text: "Here's the short version: focus on the highest-yield mechanism first, then the exception. Want me to turn this into a flashcard or a practice question?" }]), 350);
+    setTimeout(() => setMsgs((prev) => [...prev, { role: "ai", text: content.chatMockReply }]), 350);
   };
 
   return (
@@ -1315,7 +1294,7 @@ function ChatPanel({ quote, clearQuote, msgs, setMsgs, onClose }: {
       {quote && <div className="dn-chat-quote"><span>{quote.length > 90 ? quote.slice(0, 90) + "…" : quote}</span><button onClick={clearQuote}><X size={13} strokeWidth={3} /></button></div>}
       <div className="dn-chat-input">
         <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={m.askFollowUp} />
-        <button className="dn-chat-send" onClick={send} style={{ background: C.purple }} aria-label="Send"><Send size={16} color="#fff" strokeWidth={2.4} /></button>
+        <button className="dn-chat-send" onClick={send} style={{ background: C.purple }} aria-label={m.send}><Send size={16} color="#fff" strokeWidth={2.4} /></button>
       </div>
     </aside>
   );
@@ -1323,10 +1302,10 @@ function ChatPanel({ quote, clearQuote, msgs, setMsgs, onClose }: {
 
 /* ---- Read ---- */
 function ReadFull({ file }: { file: ExamFile }) {
-  const { m } = useHomeLocale();
+  const { m, content } = useHomeLocale();
   const [i, setI] = useState(0);
-  const p = READ_PAGES[i];
-  const pct = ((i + 1) / READ_PAGES.length) * 100;
+  const p = content.readPages[i];
+  const pct = ((i + 1) / content.readPages.length) * 100;
   return (
     <div className="dn-read-fs">
       <div className="dn-progress"><span style={{ width: `${pct}%`, background: C.green }} /></div>
@@ -1343,10 +1322,10 @@ function ReadFull({ file }: { file: ExamFile }) {
           <ChevronLeft size={16} strokeWidth={2.8} /><span className="dn-foot-back-label">{m.back}</span>
         </button>
         <span className="dn-foot-count">
-          <span className="dn-foot-count-full">{m.pageOf(i + 1, READ_PAGES.length)}</span>
-          <span className="dn-foot-count-short">{i + 1}/{READ_PAGES.length}</span>
+          <span className="dn-foot-count-full">{m.pageOf(i + 1, content.readPages.length)}</span>
+          <span className="dn-foot-count-short">{i + 1}/{content.readPages.length}</span>
         </span>
-        <Chunky sm bg={C.green} shadow={C.greenDark} disabled={i === READ_PAGES.length - 1} onClick={() => setI((v) => v + 1)}>
+        <Chunky sm bg={C.green} shadow={C.greenDark} disabled={i === content.readPages.length - 1} onClick={() => setI((v) => v + 1)}>
           <span className="dn-inline"><span className="dn-foot-next-label">{m.continueLabel}</span><ChevronRight size={14} strokeWidth={2.8} /></span>
         </Chunky>
       </div>
@@ -1360,13 +1339,13 @@ function QuizList({ query, answers, setAnswers, flagged, setFlagged, perPage, se
   flagged: Set<number>; setFlagged: Dispatch<SetStateAction<Set<number>>>;
   perPage: number; setPerPage: (n: number) => void; reveal: Reveal; setReveal: (r: Reveal) => void; onAsk: (q: string) => void;
 }) {
-  const { m } = useHomeLocale();
+  const { m, content } = useHomeLocale();
   const [pageIdx, setPageIdx] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [settings, setSettings] = useState(false);
 
   const q = query.trim().toLowerCase();
-  const list = useMemo(() => QUESTIONS.map((qq, i) => ({ ...qq, idx: i })).filter((qq) => !q || qq.stem.toLowerCase().includes(q)), [q]);
+  const list = useMemo(() => content.questions.map((qq, i) => ({ ...qq, idx: i })).filter((qq) => !q || qq.stem.toLowerCase().includes(q)), [q, content.questions]);
   const filterKey = `${q}\0${perPage}\0${reveal}`;
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
   if (filterKey !== prevFilterKey) {
@@ -1458,7 +1437,7 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
   onRepeat: (s: QuizSession) => void;
   onAsk: (q: string) => void;
 }) {
-  const { m } = useHomeLocale();
+  const { m, content, locale } = useHomeLocale();
   type RF = "all" | "correct" | "incorrect" | "flagged" | "sessions";
   const [rf, setRf] = useState<RF>("all");
   const [search, setSearch] = useState("");
@@ -1466,7 +1445,7 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
   const [report, setReport] = useState<QuizSession | null>(null);
   const searchQ = search.trim().toLowerCase();
 
-  const attempted = QUESTIONS.map((q, i) => ({ ...q, idx: i })).filter((q) => answers[q.idx] !== undefined || flagged.has(q.idx));
+  const attempted = content.questions.map((q, i) => ({ ...q, idx: i })).filter((q) => answers[q.idx] !== undefined || flagged.has(q.idx));
   const list = attempted.filter((q) => {
     const a = answers[q.idx];
     if (rf === "correct") return a === q.correct;
@@ -1505,7 +1484,7 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
       <div className="dn-rv-viewer">
         <div className="dn-rv-vtop">
           <button className="dn-foot-back" onClick={() => setReport(null)}><ChevronLeft size={18} strokeWidth={2.8} /> {m.backToSessions}</button>
-          <span className="dn-foot-count">{report.title}</span>
+          <span className="dn-foot-count">{displaySessionTitle(report.title, content)}</span>
           <span />
         </div>
         <div className="dn-rv-vbody">
@@ -1514,8 +1493,8 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
               <span className="dn-rv-session-src">{report.source === "quiz" ? m.quizSource : m.customSource}</span>
               <div className="dn-rv-report-score">{pct}%</div>
               <p className="dn-rv-session-meta" style={{ justifyContent: "center" }}>
-                <span><Clock size={13} strokeWidth={2.2} /> {formatSessionWhen(report.startedAt)}</span>
-                <span>{formatDuration(report.durationSec)}</span>
+                <span><Clock size={13} strokeWidth={2.2} /> {formatSessionWhen(report.startedAt, locale)}</span>
+                <span>{formatDuration(report.durationSec, content.inProgress, m.durationMinSec)}</span>
               </p>
             </div>
             <div className="dn-rv-report-grid">
@@ -1524,7 +1503,7 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
               <div className="dn-rv-report-stat"><b>{skipped}</b><span>{m.skipped}</span></div>
             </div>
             <ul className="dn-rv-list">
-              {QUESTIONS.map((q, i) => {
+              {content.questions.map((q, i) => {
                 const a = report.answers[i];
                 const right = a === q.correct;
                 return (
@@ -1606,7 +1585,7 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
               placeholder={rf === "sessions" ? m.searchSessionsPlaceholder : m.reviewSearchPlaceholder}
               aria-label={rf === "sessions" ? m.searchSessionsAria : m.searchReviewAria}
             />
-            {search && <button type="button" className="dn-fs-clear" onClick={() => setSearch("")} aria-label="Clear search"><X size={14} strokeWidth={2.8} /></button>}
+            {search && <button type="button" className="dn-fs-clear" onClick={() => setSearch("")} aria-label={m.clearSearch}><X size={14} strokeWidth={2.8} /></button>}
           </div>
           <div className="dn-rv-filters">
             {filters.map((f) => (
@@ -1629,13 +1608,13 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
                     <div className="dn-rv-session-top">
                       <div>
                         <span className="dn-rv-session-src">{s.source === "quiz" ? m.quizSource : m.customSource}</span>
-                        <p className="dn-rv-session-title">{s.title}</p>
+                        <p className="dn-rv-session-title">{displaySessionTitle(s.title, content)}</p>
                       </div>
                       <div className="dn-rv-session-score">{sc.correct}/{sc.total} <small>({pct}%)</small></div>
                     </div>
                     <p className="dn-rv-session-meta">
-                      <span><Clock size={13} strokeWidth={2.2} /> {formatSessionWhen(s.startedAt)}</span>
-                      <span>{formatDuration(s.durationSec)}</span>
+                      <span><Clock size={13} strokeWidth={2.2} /> {formatSessionWhen(s.startedAt, locale)}</span>
+                      <span>{formatDuration(s.durationSec, content.inProgress, m.durationMinSec)}</span>
                       <span>{sc.answered} {m.answered}</span>
                     </p>
                     <div className="dn-rv-session-actions">
@@ -1700,6 +1679,7 @@ function loadSumAnno(key: string): SumAnno {
 function SummaryBlock({ fileId, blockId, className, children }: {
   fileId: string; blockId: string; className?: string; children: ReactNode;
 }) {
+  const { m, content } = useHomeLocale();
   const key = `dn-sum-${fileId}-${blockId}`;
   const [anno, setAnno] = useState<SumAnno>(() => loadSumAnno(key));
   const [editing, setEditing] = useState(false);
@@ -1742,12 +1722,12 @@ function SummaryBlock({ fileId, blockId, className, children }: {
             className={`nt-hl-btn${anno.highlight === hl ? " on" : ""}`}
             style={{ background: SUM_HL[hl].dot }}
             onClick={() => setHl(hl)}
-            title={`Highlight ${hl}`}
-            aria-label={`Highlight ${hl}`}
+            title={content.highlightColor(hl)}
+            aria-label={content.highlightColor(hl)}
             aria-pressed={anno.highlight === hl}
           />
         ))}
-        <button type="button" className={`nt-note-btn${anno.note ? " on" : ""}`} onClick={openNote} title="Add note" aria-label="Add note">
+        <button type="button" className={`nt-note-btn${anno.note ? " on" : ""}`} onClick={openNote} title={content.addNote} aria-label={content.addNote}>
           <StickyNote size={12} strokeWidth={2.4} />
         </button>
       </div>
@@ -1756,10 +1736,10 @@ function SummaryBlock({ fileId, blockId, className, children }: {
         <div className="nt-block-note" onClick={(e) => e.stopPropagation()}>
           {editing ? (
             <>
-              <textarea value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Your note…" autoFocus />
+              <textarea value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={content.yourNote} autoFocus />
               <div className="nt-block-note-actions">
-                {anno.note && <button type="button" onClick={clearNote}>Clear</button>}
-                <button type="button" className="save" onClick={saveNote}>Save</button>
+                {anno.note && <button type="button" onClick={clearNote}>{m.clearNote}</button>}
+                <button type="button" className="save" onClick={saveNote}>{m.save}</button>
               </div>
             </>
           ) : (
@@ -1790,38 +1770,33 @@ function NotionToggle({ fileId, id, title, children }: { fileId: string; id: str
   );
 }
 function SummaryNotion({ file }: { file: ExamFile }) {
+  const { content } = useHomeLocale();
+  const { summary } = content;
   const [done, setDone] = useState<Set<number>>(new Set());
-  const bullets = [
-    "ST-elevation localizes by lead group: inferior (II, III, aVF), anterior (V1–V4), lateral (I, aVL, V5–V6).",
-    "PCI within 90 minutes beats fibrinolysis when a cath lab is reachable.",
-    "Dual antiplatelet therapy plus anticoagulation is standard adjunctive care.",
-  ];
-  const checks = ["Localize STEMI by lead groups", "Know the 90-minute PCI window", "Recall DAPT + statin for prevention", "Right-sided ECG in inferior MI"];
   return (
     <div className="nt-scroll">
       <div className="nt-doc">
         <div className="nt-pageicon" style={{ background: file.color }}><FileText size={22} color="#fff" strokeWidth={2.2} /></div>
-        <h1 className="nt-h1 dn-centered-h1">{file.name} Summary</h1>
+        <h1 className="nt-h1 dn-centered-h1">{file.name} {summary.titleSuffix}</h1>
         <SummaryBlock fileId={file.id} blockId="callout" className="nt-callout">
           <span className="nt-callout-ic" style={{ background: C.yellow }}><Star size={14} color="#fff" fill="#fff" /></span>
-          <p>Reperfusion timing is the single highest-yield concept in this set — anchor everything else to it.</p>
+          <p>{summary.callout}</p>
         </SummaryBlock>
-        <h2 className="nt-h2">Key takeaways</h2>
+        <h2 className="nt-h2">{summary.keyTakeaways}</h2>
         <ul className="nt-bullets">
-          {bullets.map((text, i) => (
+          {summary.bullets.map((text, i) => (
             <li key={i}><SummaryBlock fileId={file.id} blockId={`bullet-${i}`}>{text}</SummaryBlock></li>
           ))}
         </ul>
-        <h2 className="nt-h2">Expand for detail</h2>
-        <NotionToggle fileId={file.id} id="toggle-stemi" title="STEMI vs NSTEMI — how to tell">
-          <p>STEMI shows persistent ST-elevation and needs emergent reperfusion. NSTEMI shows ST-depression or T-wave changes with positive troponin, managed with early invasive or ischemia-guided strategies.</p>
-        </NotionToggle>
-        <NotionToggle fileId={file.id} id="toggle-meds" title="Adjunctive medications at a glance">
-          <p>Aspirin, a P2Y12 inhibitor, anticoagulation, high-intensity statin, and beta-blockade once stable — plus an ACE inhibitor when EF is reduced.</p>
-        </NotionToggle>
-        <h2 className="nt-h2">Checklist</h2>
+        <h2 className="nt-h2">{summary.expandDetail}</h2>
+        {summary.toggles.map((toggle) => (
+          <NotionToggle key={toggle.id} fileId={file.id} id={toggle.id} title={toggle.title}>
+            <p>{toggle.body}</p>
+          </NotionToggle>
+        ))}
+        <h2 className="nt-h2">{summary.checklist}</h2>
         <ul className="nt-checks">
-          {checks.map((c, i) => { const on = done.has(i); return (
+          {summary.checks.map((c, i) => { const on = done.has(i); return (
             <li key={i}>
               <button type="button" className="nt-check" onClick={() => { const n = new Set(done); on ? n.delete(i) : n.add(i); setDone(n); }} style={{ borderColor: on ? C.green : C.faint, background: on ? C.green : "#fff" }}>{on && <Check size={12} color="#fff" strokeWidth={3.5} />}</button>
               <SummaryBlock fileId={file.id} blockId={`check-${i}`}>
@@ -1843,7 +1818,7 @@ function CardImage({ src, alt, className }: { src: string; alt: string; classNam
 }
 
 function FlashcardsQuizlet({ query }: { query: string }) {
-  const { m } = useHomeLocale();
+  const { m, content } = useHomeLocale();
   const [open, setOpen] = useState<number | null>(null);
   const [fav, setFav] = useState<Set<number>>(new Set());
   const [view, setView] = useState<QlView>(() => {
@@ -1852,11 +1827,11 @@ function FlashcardsQuizlet({ query }: { query: string }) {
     return saved === "split" ? "split" : "list";
   });
   const q = query.trim().toLowerCase();
-  const list = useMemo(() => CARDS.map((c, orig) => ({ ...c, orig })).filter((c) => {
+  const list = useMemo(() => content.cards.map((c, orig) => ({ ...c, orig })).filter((c) => {
     if (!q) return true;
     const hay = `${c.t} ${c.d} ${c.imgAlt ?? ""}`.toLowerCase();
     return hay.includes(q);
-  }), [q]);
+  }), [q, content.cards]);
   const resetKey = `${q}\0${view}`;
   const [prevResetKey, setPrevResetKey] = useState(resetKey);
   if (resetKey !== prevResetKey) {
@@ -1879,8 +1854,8 @@ function FlashcardsQuizlet({ query }: { query: string }) {
     <div className="ql-scroll">
       <div className="ql-wrap">
         <div className="ql-head">
-          <h3 className="ql-list-h">Terms in this set ({list.length})</h3>
-          <div className="ql-view-toggle" role="group" aria-label="Flashcard layout">
+          <h3 className="ql-list-h">{content.termsInSet(list.length)}</h3>
+          <div className="ql-view-toggle" role="group" aria-label={content.flashcardLayout}>
             <button type="button" className={`ql-view-btn${view === "list" ? " on" : ""}`} onClick={() => setView("list")} title={m.flashcardsList} aria-label={m.flashcardsList} aria-pressed={view === "list"}>
               <LayoutList size={16} strokeWidth={2.4} />
             </button>
@@ -1902,7 +1877,7 @@ function FlashcardsQuizlet({ query }: { query: string }) {
                       {c.img && <ImageIcon size={14} strokeWidth={2.2} className="ql-img-badge" aria-hidden />}
                       <ChevronRight size={18} color={C.faint} strokeWidth={2.6} style={{ flexShrink: 0, transform: expanded ? "rotate(90deg)" : "none", transition: "transform .15s" }} />
                     </button>
-                    <button type="button" className="ql-fav" onClick={() => toggleFav(c.orig)} style={{ color: on ? C.yellowDark : C.faint }} aria-label="Favorite">
+                    <button type="button" className="ql-fav" onClick={() => toggleFav(c.orig)} style={{ color: on ? C.yellowDark : C.faint }} aria-label={content.favorite}>
                       <Star size={16} strokeWidth={2.2} fill={on ? C.yellow : "none"} />
                     </button>
                   </div>
@@ -1930,7 +1905,7 @@ function FlashcardsQuizlet({ query }: { query: string }) {
                     </div>
                   </div>
                   <div className="ql-split-fav">
-                    <button type="button" className="ql-fav" onClick={() => toggleFav(c.orig)} style={{ color: on ? C.yellowDark : C.faint }} aria-label="Favorite">
+                    <button type="button" className="ql-fav" onClick={() => toggleFav(c.orig)} style={{ color: on ? C.yellowDark : C.faint }} aria-label={content.favorite}>
                       <Star size={16} strokeWidth={2.2} fill={on ? C.yellow : "none"} />
                     </button>
                   </div>
@@ -1948,30 +1923,31 @@ function FlashcardsQuizlet({ query }: { query: string }) {
 function CustomPane({ reveal, setReveal, onStart, flash }: {
   reveal: Reveal; setReveal: (r: Reveal) => void; onStart: (count: number) => void; flash: (m: string) => void;
 }) {
-  const modes = [{ k: "Quiz", icon: Brain, c: C.blue }, { k: "Flashcards", icon: Layers, c: C.purple }, { k: "Summary", icon: FileText, c: C.yellow }];
+  const { m } = useHomeLocale();
+  const modes: { k: Tab; icon: ElementType; c: string }[] = [{ k: "Quiz", icon: Brain, c: C.blue }, { k: "Flashcards", icon: Layers, c: C.purple }, { k: "Summary", icon: FileText, c: C.yellow }];
   const [on, setOn] = useState<Set<string>>(new Set(["Quiz"]));
   const [count, setCount] = useState(20);
   const [timed, setTimed] = useState(true);
   return (
     <div className="nt-scroll">
       <div className="dn-custom">
-        <h2 className="nt-h2" style={{ marginTop: 0 }}>Build a session</h2>
+        <h2 className="nt-h2" style={{ marginTop: 0 }}>{m.buildSession}</h2>
         <div className="dn-mode-grid">
           {modes.map(({ k, icon: Icon, c }) => { const active = on.has(k); return (
             <button key={k} className="dn-mode" onClick={() => { const n = new Set(on); n.has(k) ? n.delete(k) : n.add(k); setOn(n); }} style={{ borderColor: active ? c : C.line, background: active ? "#fff" : C.wash }}>
-              <span className="dn-mode-ic" style={{ background: c }}><Icon size={18} color="#fff" strokeWidth={2.4} /></span>{k}
+              <span className="dn-mode-ic" style={{ background: c }}><Icon size={18} color="#fff" strokeWidth={2.4} /></span>{m.tabLabel(k)}
               <span className="dn-mode-check" style={{ borderColor: active ? c : C.line, background: active ? c : "#fff" }}>{active && <Check size={12} color="#fff" strokeWidth={3.5} />}</span>
             </button>
           ); })}
         </div>
-        <p className="nt-sub-label">Show answers</p>
+        <p className="nt-sub-label">{m.customReveal}</p>
         <div className="dn-seg" style={{ marginBottom: 4 }}>
-          <button onClick={() => setReveal("immediate")} className="dn-seg-btn" style={{ background: reveal === "immediate" ? C.green : "#fff", color: reveal === "immediate" ? "#fff" : C.sub, borderColor: reveal === "immediate" ? C.green : C.line }}>Directly</button>
-          <button onClick={() => setReveal("later")} className="dn-seg-btn" style={{ background: reveal === "later" ? C.green : "#fff", color: reveal === "later" ? "#fff" : C.sub, borderColor: reveal === "later" ? C.green : C.line }}>Later</button>
+          <button onClick={() => setReveal("immediate")} className="dn-seg-btn" style={{ background: reveal === "immediate" ? C.green : "#fff", color: reveal === "immediate" ? "#fff" : C.sub, borderColor: reveal === "immediate" ? C.green : C.line }}>{m.directly}</button>
+          <button onClick={() => setReveal("later")} className="dn-seg-btn" style={{ background: reveal === "later" ? C.green : "#fff", color: reveal === "later" ? "#fff" : C.sub, borderColor: reveal === "later" ? C.green : C.line }}>{m.later}</button>
         </div>
-        <div className="dn-row-field"><span><Users size={16} strokeWidth={2.4} /> Questions</span><div className="dn-stepper"><button onClick={() => setCount((c) => Math.max(5, c - 5))}>−</button><b>{count}</b><button onClick={() => setCount((c) => Math.min(60, c + 5))}>+</button></div></div>
-        <div className="dn-row-field"><span><Clock size={16} strokeWidth={2.4} /> Timed mode</span><button className="dn-switch" onClick={() => setTimed((t) => !t)} style={{ background: timed ? C.green : C.line }}><span style={{ transform: timed ? "translateX(20px)" : "translateX(0)" }} /></button></div>
-        <Chunky bg={C.green} shadow={C.greenDark} full disabled={on.size === 0} onClick={() => onStart(count)}><span className="dn-inline"><Play size={16} fill="#fff" strokeWidth={2.6} /> Start session</span></Chunky>
+        <div className="dn-row-field"><span><Users size={16} strokeWidth={2.4} /> {m.questionsLabel}</span><div className="dn-stepper"><button onClick={() => setCount((c) => Math.max(5, c - 5))}>−</button><b>{count}</b><button onClick={() => setCount((c) => Math.min(60, c + 5))}>+</button></div></div>
+        <div className="dn-row-field"><span><Clock size={16} strokeWidth={2.4} /> {m.timedMode}</span><button className="dn-switch" onClick={() => setTimed((t) => !t)} style={{ background: timed ? C.green : C.line }}><span style={{ transform: timed ? "translateX(20px)" : "translateX(0)" }} /></button></div>
+        <Chunky bg={C.green} shadow={C.greenDark} full disabled={on.size === 0} onClick={() => onStart(count)}><span className="dn-inline"><Play size={16} fill="#fff" strokeWidth={2.6} /> {m.customStart}</span></Chunky>
       </div>
     </div>
   );

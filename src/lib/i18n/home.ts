@@ -148,6 +148,18 @@ const en = {
   clearNote: "Clear",
   backToList: "Back to list",
   skipped: "Skipped",
+  buildSession: "Build a session",
+  directly: "Directly",
+  later: "Later",
+  questionsLabel: "Questions",
+  timedMode: "Timed mode",
+  sessionResumed: "Session resumed",
+  sessionStarted: "New session started",
+  customSessionStarted: "Custom session started",
+  drnoteHome: "DrNote home",
+  send: "Send",
+  clearSearch: "Clear search",
+  durationMinSec: (min: number, sec: number) => (min > 0 ? `${min}m ${sec}s` : `${sec}s`),
 };
 
 const ar = {
@@ -267,6 +279,18 @@ const ar = {
   clearNote: "مسح",
   backToList: "العودة للقائمة",
   skipped: "تم التخطي",
+  durationMinSec: (min: number, sec: number) => (min > 0 ? `${min} د ${sec} ث` : `${sec} ث`),
+  buildSession: "إنشاء جلسة",
+  directly: "مباشرة",
+  later: "لاحقًا",
+  questionsLabel: "الأسئلة",
+  timedMode: "وضع مؤقت",
+  sessionResumed: "تم استئناف الجلسة",
+  sessionStarted: "بدأت جلسة جديدة",
+  customSessionStarted: "بدأت جلسة مخصصة",
+  drnoteHome: "الصفحة الرئيسية DrNote",
+  send: "إرسال",
+  clearSearch: "مسح البحث",
 };
 
 const COPY: Record<AppLocale, typeof en> = { en, ar };
