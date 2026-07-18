@@ -5,7 +5,7 @@ import {
   Search, ChevronUp, ChevronRight, ChevronLeft, Bookmark,
   Share2, Link2, Play, Check, Flame, X, ArrowLeft, BookOpen, Brain, FileText,
   Layers, SlidersHorizontal, Clock, Users, Star, Sparkles, Flag, Settings, Plus,
-  ListChecks, Send, Upload, Command, Maximize2, Minimize2, StickyNote, LayoutList, Columns2, Image as ImageIcon,
+  ListChecks, Send, Upload, Command, Maximize2, Minimize2, StickyNote, LayoutList, Columns2, Image as ImageIcon, BarChart2, RotateCcw,
 } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 
@@ -87,6 +87,81 @@ const QUESTIONS = [
   { stem: "First-line antihypertensive in a Black patient without CKD?", options: ["ACE inhibitor", "Thiazide or calcium channel blocker", "Beta-blocker", "Alpha-blocker"], correct: 1, explain: "Thiazides or CCBs are preferred initial agents here." },
   { stem: "Lipid target strategy for secondary prevention?", options: ["Low-intensity statin", "High-intensity statin", "Fibrate", "Niacin"], correct: 1, explain: "High-intensity statin therapy is used for secondary prevention." },
 ];
+
+type SessionSource = "quiz" | "custom";
+type SessionStatus = "in_progress" | "completed";
+
+interface QuizSession {
+  id: string;
+  source: SessionSource;
+  title: string;
+  startedAt: number;
+  endedAt: number | null;
+  durationSec: number | null;
+  answers: Record<number, number>;
+  flagged: number[];
+  totalQuestions: number;
+  status: SessionStatus;
+}
+
+function seedSessions(fileId: string): QuizSession[] {
+  const now = Date.now();
+  return [
+    {
+      id: `${fileId}-demo-1`,
+      source: "quiz",
+      title: "Quiz practice",
+      startedAt: now - 86400000 * 2,
+      endedAt: now - 86400000 * 2 + 18 * 60 * 1000,
+      durationSec: 18 * 60,
+      answers: { 0: 0, 1: 2, 2: 1, 3: 2, 4: 3, 5: 0, 6: 0, 7: 1, 8: 1, 9: 0, 10: 1, 11: 1 },
+      flagged: [5],
+      totalQuestions: QUESTIONS.length,
+      status: "completed",
+    },
+    {
+      id: `${fileId}-demo-2`,
+      source: "custom",
+      title: "Custom · 20 questions",
+      startedAt: now - 5 * 3600000,
+      endedAt: now - 5 * 3600000 + 12 * 60 * 1000,
+      durationSec: 12 * 60,
+      answers: { 0: 0, 2: 1, 4: 3, 6: 0, 8: 1, 10: 0, 11: 2 },
+      flagged: [],
+      totalQuestions: 20,
+      status: "completed",
+    },
+  ];
+}
+
+function loadSessions(fileId: string): QuizSession[] {
+  if (typeof window === "undefined") return seedSessions(fileId);
+  try {
+    const raw = localStorage.getItem(`dn-sessions-${fileId}`);
+    if (raw) return JSON.parse(raw) as QuizSession[];
+  } catch { /* ignore */ }
+  return seedSessions(fileId);
+}
+
+function scoreSession(s: QuizSession) {
+  const entries = Object.entries(s.answers);
+  let correct = 0;
+  for (const [idx, ans] of entries) {
+    if (QUESTIONS[Number(idx)]?.correct === ans) correct++;
+  }
+  return { correct, answered: entries.length, total: s.totalQuestions };
+}
+
+function formatDuration(sec: number | null) {
+  if (sec === null) return "In progress";
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
+
+function formatSessionWhen(ts: number) {
+  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(ts));
+}
 
 type FlashCard = { t: string; d: string; img?: string; imgAlt?: string };
 
@@ -370,6 +445,26 @@ const styles = `
 .dn-rv-viewer { position: fixed; inset: 0; z-index: 120; background: #fff; display: flex; flex-direction: column; }
 .dn-rv-vtop { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-bottom: 2px solid ${C.line}; }
 .dn-rv-vbody { flex: 1; overflow-y: auto; padding: 22px 24px; }
+.dn-rv-sessions { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.dn-rv-session { background: #fff; border: 2px solid ${C.line}; border-radius: 14px; padding: 12px 14px; }
+.dn-rv-session-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.dn-rv-session-title { font-weight: 800; font-size: 14px; color: ${C.ink}; margin: 0; line-height: 1.3; }
+.dn-rv-session-src { display: block; font-size: 10px; font-weight: 800; color: ${C.faint}; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px; }
+.dn-rv-session-score { font-size: 18px; font-weight: 900; color: ${C.ink}; white-space: nowrap; }
+.dn-rv-session-score small { font-size: 12px; font-weight: 700; color: ${C.faint}; }
+.dn-rv-session-meta { font-size: 12px; font-weight: 600; color: ${C.sub}; margin: 0 0 10px; display: flex; flex-wrap: wrap; gap: 6px 12px; }
+.dn-rv-session-meta span { display: inline-flex; align-items: center; gap: 4px; }
+.dn-rv-session-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.dn-rv-session-btn { border: none; border-radius: 9px; padding: 6px 10px; font-size: 11px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; background: ${C.wash}; color: ${C.sub}; }
+.dn-rv-session-btn.primary { background: ${C.blue}; color: #fff; }
+.dn-rv-session-btn.ghost { background: #fff; border: 1px solid ${C.line}; }
+.dn-rv-report { max-width: 680px; margin: 0 auto; }
+.dn-rv-report-head { text-align: center; margin-bottom: 18px; }
+.dn-rv-report-score { font-size: 42px; font-weight: 900; color: ${C.ink}; line-height: 1; margin: 8px 0; }
+.dn-rv-report-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+.dn-rv-report-stat { background: ${C.wash}; border-radius: 12px; padding: 10px; text-align: center; }
+.dn-rv-report-stat b { display: block; font-size: 18px; font-weight: 900; color: ${C.ink}; }
+.dn-rv-report-stat span { font-size: 11px; font-weight: 700; color: ${C.faint}; }
 
 /* notion */
 .nt-scroll { flex: 1; overflow-y: auto; }
@@ -920,6 +1015,102 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
   const [flagged, setFlagged] = useState<Set<number>>(new Set([5]));
   const [perPage, setPerPage] = useState(1);
   const [reveal, setReveal] = useState<Reveal>("immediate");
+  const [sessions, setSessions] = useState<QuizSession[]>(() => loadSessions(file.id));
+  const activeSessionRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem(`dn-sessions-${file.id}`, JSON.stringify(sessions));
+  }, [sessions, file.id]);
+
+  useEffect(() => {
+    const answered = Object.keys(answers).length;
+    if (answered === 0) return;
+
+    setSessions((prev) => {
+      const id = activeSessionRef.current;
+      const idx = id ? prev.findIndex((s) => s.id === id) : prev.findIndex((s) => s.status === "in_progress" && s.source === "quiz");
+      const elapsed = idx >= 0 ? Math.round((Date.now() - prev[idx].startedAt) / 1000) : 0;
+      const complete = answered >= QUESTIONS.length;
+      const flaggedArr = [...flagged];
+
+      if (idx >= 0) {
+        activeSessionRef.current = prev[idx].id;
+        return prev.map((s, i) => i === idx ? {
+          ...s,
+          answers: { ...answers },
+          flagged: flaggedArr,
+          status: complete ? "completed" : "in_progress",
+          endedAt: complete ? Date.now() : null,
+          durationSec: complete ? elapsed : elapsed,
+        } : s);
+      }
+
+      const created: QuizSession = {
+        id: `${file.id}-${Date.now()}`,
+        source: "quiz",
+        title: "Quiz practice",
+        startedAt: Date.now(),
+        endedAt: complete ? Date.now() : null,
+        durationSec: complete ? 0 : 0,
+        answers: { ...answers },
+        flagged: flaggedArr,
+        totalQuestions: QUESTIONS.length,
+        status: complete ? "completed" : "in_progress",
+      };
+      activeSessionRef.current = created.id;
+      return [created, ...prev];
+    });
+  }, [answers, flagged, file.id]);
+
+  const resumeSession = useCallback((s: QuizSession) => {
+    setAnswers(s.answers);
+    setFlagged(new Set(s.flagged));
+    activeSessionRef.current = s.id;
+    setTab("Quiz");
+    flash("Session resumed");
+  }, [flash]);
+
+  const repeatSession = useCallback((s: QuizSession) => {
+    const created: QuizSession = {
+      id: `${file.id}-${Date.now()}`,
+      source: s.source,
+      title: s.title,
+      startedAt: Date.now(),
+      endedAt: null,
+      durationSec: null,
+      answers: {},
+      flagged: [],
+      totalQuestions: s.totalQuestions,
+      status: "in_progress",
+    };
+    activeSessionRef.current = created.id;
+    setSessions((prev) => [created, ...prev]);
+    setAnswers({});
+    setFlagged(new Set());
+    setTab("Quiz");
+    flash("New session started");
+  }, [file.id, flash]);
+
+  const startCustomSession = useCallback((count: number) => {
+    const created: QuizSession = {
+      id: `${file.id}-custom-${Date.now()}`,
+      source: "custom",
+      title: `Custom · ${count} questions`,
+      startedAt: Date.now(),
+      endedAt: null,
+      durationSec: null,
+      answers: {},
+      flagged: [],
+      totalQuestions: count,
+      status: "in_progress",
+    };
+    activeSessionRef.current = created.id;
+    setSessions((prev) => [created, ...prev]);
+    setAnswers({});
+    setFlagged(new Set());
+    setTab("Quiz");
+    flash("Custom session started");
+  }, [file.id, flash]);
 
   // AI chat
   const [chatOpen, setChatOpen] = useState(false);
@@ -1006,10 +1197,10 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
       <div className="dn-fs-body" onMouseUp={onBodyMouseUp}>
         {tab === "Read" && <ReadFull file={file} />}
         {tab === "Quiz" && <QuizList query={query} answers={answers} setAnswers={setAnswers} flagged={flagged} setFlagged={setFlagged} perPage={perPage} setPerPage={setPerPage} reveal={reveal} setReveal={setReveal} onAsk={openChat} />}
-        {tab === "Review" && <ReviewPane answers={answers} flagged={flagged} setFlagged={setFlagged} onAsk={openChat} />}
+        {tab === "Review" && <ReviewPane answers={answers} flagged={flagged} setFlagged={setFlagged} sessions={sessions} onResume={resumeSession} onRepeat={repeatSession} onAsk={openChat} />}
         {tab === "Summary" && <SummaryNotion file={file} />}
         {tab === "Flashcards" && <FlashcardsQuizlet query={query} />}
-        {tab === "Custom" && <CustomPane reveal={reveal} setReveal={setReveal} flash={flash} />}
+        {tab === "Custom" && <CustomPane reveal={reveal} setReveal={setReveal} onStart={startCustomSession} flash={flash} />}
       </div>
 
       {/* iOS-style bottom tab bar (mobile / iPad) */}
@@ -1192,13 +1383,20 @@ function QuizList({ query, answers, setAnswers, flagged, setFlagged, perPage, se
 }
 
 /* ---- Review ---- */
-function ReviewPane({ answers, flagged, setFlagged, onAsk }: {
-  answers: Record<number, number>; flagged: Set<number>; setFlagged: Dispatch<SetStateAction<Set<number>>>; onAsk: (q: string) => void;
+function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat, onAsk }: {
+  answers: Record<number, number>;
+  flagged: Set<number>;
+  setFlagged: Dispatch<SetStateAction<Set<number>>>;
+  sessions: QuizSession[];
+  onResume: (s: QuizSession) => void;
+  onRepeat: (s: QuizSession) => void;
+  onAsk: (q: string) => void;
 }) {
-  type RF = "all" | "correct" | "incorrect" | "flagged";
+  type RF = "all" | "correct" | "incorrect" | "flagged" | "sessions";
   const [rf, setRf] = useState<RF>("all");
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState<number | null>(null);
+  const [report, setReport] = useState<QuizSession | null>(null);
   const searchQ = search.trim().toLowerCase();
 
   const attempted = QUESTIONS.map((q, i) => ({ ...q, idx: i })).filter((q) => answers[q.idx] !== undefined || flagged.has(q.idx));
@@ -1215,7 +1413,75 @@ function ReviewPane({ answers, flagged, setFlagged, onAsk }: {
     incorrect: attempted.filter((q) => answers[q.idx] !== undefined && answers[q.idx] !== q.correct).length,
     flagged: attempted.filter((q) => flagged.has(q.idx)).length,
   };
-  const filters: { k: RF; label: string }[] = [{ k: "all", label: "All" }, { k: "correct", label: "Correct" }, { k: "incorrect", label: "Incorrect" }, { k: "flagged", label: "Flagged" }];
+  const filters: { k: RF; label: string }[] = [
+    { k: "all", label: "All" },
+    { k: "correct", label: "Correct" },
+    { k: "incorrect", label: "Incorrect" },
+    { k: "flagged", label: "Flagged" },
+    { k: "sessions", label: "Sessions" },
+  ];
+  const filterCounts: Record<RF, number> = { ...counts, sessions: sessions.length };
+
+  const sessionList = useMemo(() => sessions.filter((s) => {
+    if (!searchQ) return true;
+    const hay = `${s.title} ${s.source}`.toLowerCase();
+    return hay.includes(searchQ);
+  }), [sessions, searchQ]);
+
+  // session report
+  if (report) {
+    const sc = scoreSession(report);
+    const pct = sc.total > 0 ? Math.round((sc.correct / sc.total) * 100) : 0;
+    const skipped = sc.total - sc.answered;
+    const wrong = sc.answered - sc.correct;
+    return (
+      <div className="dn-rv-viewer">
+        <div className="dn-rv-vtop">
+          <button className="dn-foot-back" onClick={() => setReport(null)}><ChevronLeft size={18} strokeWidth={2.8} /> Back to sessions</button>
+          <span className="dn-foot-count">{report.title}</span>
+          <span />
+        </div>
+        <div className="dn-rv-vbody">
+          <div className="dn-rv-report">
+            <div className="dn-rv-report-head">
+              <span className="dn-rv-session-src">{report.source === "quiz" ? "Quiz" : "Custom"}</span>
+              <div className="dn-rv-report-score">{pct}%</div>
+              <p className="dn-rv-session-meta" style={{ justifyContent: "center" }}>
+                <span><Clock size={13} strokeWidth={2.2} /> {formatSessionWhen(report.startedAt)}</span>
+                <span>{formatDuration(report.durationSec)}</span>
+              </p>
+            </div>
+            <div className="dn-rv-report-grid">
+              <div className="dn-rv-report-stat"><b style={{ color: C.greenDark }}>{sc.correct}</b><span>Correct</span></div>
+              <div className="dn-rv-report-stat"><b style={{ color: C.red }}>{wrong}</b><span>Incorrect</span></div>
+              <div className="dn-rv-report-stat"><b>{skipped}</b><span>Skipped</span></div>
+            </div>
+            <ul className="dn-rv-list">
+              {QUESTIONS.map((q, i) => {
+                const a = report.answers[i];
+                const right = a === q.correct;
+                return (
+                  <li key={i}>
+                    <button type="button" className="dn-rv-item" onClick={() => { setReport(null); setOpen(i); setRf("all"); }}>
+                      <span className="dn-rv-badge" style={{ background: a === undefined ? C.faint : right ? C.green : C.red }}>
+                        {a === undefined ? "—" : right ? <Check size={14} color="#fff" strokeWidth={3.5} /> : <X size={14} color="#fff" strokeWidth={3.5} />}
+                      </span>
+                      <span className="dn-rv-stem">{q.stem}</span>
+                      <ChevronRight size={17} color={C.faint} strokeWidth={2.6} style={{ flexShrink: 0 }} />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap", justifyContent: "center" }}>
+              {report.status === "in_progress" && <Chunky bg={C.blue} shadow={C.blueDark} onClick={() => { onResume(report); setReport(null); }}><span className="dn-inline"><Play size={14} fill="#fff" /> Resume</span></Chunky>}
+              <Chunky bg={C.green} shadow={C.greenDark} onClick={() => { onRepeat(report); setReport(null); }}><span className="dn-inline"><RotateCcw size={14} /> Repeat</span></Chunky>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // full-screen viewer
   if (open !== null) {
@@ -1264,18 +1530,63 @@ function ReviewPane({ answers, flagged, setFlagged, onAsk }: {
         <div className="dn-rv-toolbar">
           <div className="dn-rv-search">
             <Search size={15} color={C.faint} strokeWidth={2.4} />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search questions…" aria-label="Search review questions" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={rf === "sessions" ? "Search sessions…" : "Search questions…"}
+              aria-label={rf === "sessions" ? "Search sessions" : "Search review questions"}
+            />
             {search && <button type="button" className="dn-fs-clear" onClick={() => setSearch("")} aria-label="Clear search"><X size={14} strokeWidth={2.8} /></button>}
           </div>
           <div className="dn-rv-filters">
             {filters.map((f) => (
               <button key={f.k} onClick={() => setRf(f.k)} className="dn-rv-filter" style={{ background: rf === f.k ? C.ink : "#fff", color: rf === f.k ? "#fff" : C.sub, borderColor: rf === f.k ? C.ink : C.line }}>
-                {f.label}<span className="dn-rv-count" style={{ background: rf === f.k ? "rgba(255,255,255,.22)" : C.wash, color: rf === f.k ? "#fff" : C.faint }}>{counts[f.k]}</span>
+                {f.label}<span className="dn-rv-count" style={{ background: rf === f.k ? "rgba(255,255,255,.22)" : C.wash, color: rf === f.k ? "#fff" : C.faint }}>{filterCounts[f.k]}</span>
               </button>
             ))}
           </div>
         </div>
-        {list.length === 0 ? (
+        {rf === "sessions" ? (
+          sessionList.length === 0 ? (
+            <div className="dn-empty" style={{ paddingTop: 30 }}><Clock size={26} color={C.faint} /><p>{searchQ ? `No sessions match “${search.trim()}”.` : "No sessions yet — start a quiz or custom exam."}</p></div>
+          ) : (
+            <ul className="dn-rv-sessions">
+              {sessionList.map((s) => {
+                const sc = scoreSession(s);
+                const pct = sc.total > 0 ? Math.round((sc.correct / sc.total) * 100) : 0;
+                return (
+                  <li key={s.id} className="dn-rv-session">
+                    <div className="dn-rv-session-top">
+                      <div>
+                        <span className="dn-rv-session-src">{s.source === "quiz" ? "Quiz" : "Custom"}</span>
+                        <p className="dn-rv-session-title">{s.title}</p>
+                      </div>
+                      <div className="dn-rv-session-score">{sc.correct}/{sc.total} <small>({pct}%)</small></div>
+                    </div>
+                    <p className="dn-rv-session-meta">
+                      <span><Clock size={13} strokeWidth={2.2} /> {formatSessionWhen(s.startedAt)}</span>
+                      <span>{formatDuration(s.durationSec)}</span>
+                      <span>{sc.answered} answered</span>
+                    </p>
+                    <div className="dn-rv-session-actions">
+                      {s.status === "in_progress" && (
+                        <button type="button" className="dn-rv-session-btn primary" onClick={() => onResume(s)}>
+                          <Play size={12} fill="#fff" strokeWidth={2.4} /> Resume
+                        </button>
+                      )}
+                      <button type="button" className="dn-rv-session-btn ghost" onClick={() => setReport(s)}>
+                        <BarChart2 size={12} strokeWidth={2.4} /> Report
+                      </button>
+                      <button type="button" className="dn-rv-session-btn" onClick={() => onRepeat(s)}>
+                        <RotateCcw size={12} strokeWidth={2.4} /> Repeat
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )
+        ) : list.length === 0 ? (
           <div className="dn-empty" style={{ paddingTop: 30 }}><ListChecks size={26} color={C.faint} /><p>{searchQ ? `No questions match “${search.trim()}”.` : "Nothing here yet — answer or flag questions in the Quiz tab."}</p></div>
         ) : (
           <ul className="dn-rv-list">
@@ -1558,7 +1869,9 @@ function FlashcardsQuizlet({ query }: { query: string }) {
 }
 
 /* ---- Custom ---- */
-function CustomPane({ reveal, setReveal, flash }: { reveal: Reveal; setReveal: (r: Reveal) => void; flash: (m: string) => void }) {
+function CustomPane({ reveal, setReveal, onStart, flash }: {
+  reveal: Reveal; setReveal: (r: Reveal) => void; onStart: (count: number) => void; flash: (m: string) => void;
+}) {
   const modes = [{ k: "Quiz", icon: Brain, c: C.blue }, { k: "Flashcards", icon: Layers, c: C.purple }, { k: "Summary", icon: FileText, c: C.yellow }];
   const [on, setOn] = useState<Set<string>>(new Set(["Quiz"]));
   const [count, setCount] = useState(20);
@@ -1582,7 +1895,7 @@ function CustomPane({ reveal, setReveal, flash }: { reveal: Reveal; setReveal: (
         </div>
         <div className="dn-row-field"><span><Users size={16} strokeWidth={2.4} /> Questions</span><div className="dn-stepper"><button onClick={() => setCount((c) => Math.max(5, c - 5))}>−</button><b>{count}</b><button onClick={() => setCount((c) => Math.min(60, c + 5))}>+</button></div></div>
         <div className="dn-row-field"><span><Clock size={16} strokeWidth={2.4} /> Timed mode</span><button className="dn-switch" onClick={() => setTimed((t) => !t)} style={{ background: timed ? C.green : C.line }}><span style={{ transform: timed ? "translateX(20px)" : "translateX(0)" }} /></button></div>
-        <Chunky bg={C.green} shadow={C.greenDark} full disabled={on.size === 0} onClick={() => flash("Custom session started")}><span className="dn-inline"><Play size={16} fill="#fff" strokeWidth={2.6} /> Start session</span></Chunky>
+        <Chunky bg={C.green} shadow={C.greenDark} full disabled={on.size === 0} onClick={() => onStart(count)}><span className="dn-inline"><Play size={16} fill="#fff" strokeWidth={2.6} /> Start session</span></Chunky>
       </div>
     </div>
   );
