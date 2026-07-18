@@ -747,12 +747,28 @@ function ExamCard({ exam, onOpen }: { exam: Exam; onOpen: (e: Exam) => void }) {
     <button
       type="button"
       onClick={() => onOpen(exam)}
-      className="group relative flex h-[4.5rem] w-full items-end overflow-hidden rounded-md p-3 text-left text-white shadow-sm outline-none transition duration-200 hover:scale-[1.02] hover:shadow-md focus-visible:ring-2 focus-visible:ring-slate-900/20 sm:h-20"
-      style={{ backgroundImage: `linear-gradient(135deg, ${exam.from} 0%, ${exam.to} 100%)` }}
+      className="group relative h-[9.5rem] w-full overflow-hidden rounded-lg p-4 text-left text-white shadow-md outline-none transition duration-200 hover:scale-[1.03] hover:shadow-xl focus-visible:ring-2 focus-visible:ring-white/40 sm:h-[10.5rem]"
+      style={{ backgroundColor: exam.to }}
     >
-      <span className="relative z-10 line-clamp-2 text-[13px] font-bold leading-snug tracking-tight sm:text-sm">
-        {exam.name}
-      </span>
+      <div className="relative z-10 max-w-[62%]">
+        <h3 className="font-display text-lg font-extrabold leading-tight tracking-tight sm:text-xl">
+          {exam.name}
+        </h3>
+        <p className="mt-1.5 text-xs font-semibold text-white/75 sm:text-sm">
+          {exam.code} · {exam.files.toLocaleString()} files
+        </p>
+      </div>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-5 -right-5 h-[5.5rem] w-[5.5rem] rotate-[24deg] rounded-md shadow-[0_10px_24px_rgba(0,0,0,.35)] transition duration-200 group-hover:rotate-[20deg] group-hover:scale-105 sm:h-[6.25rem] sm:w-[6.25rem]"
+        style={{ backgroundImage: `linear-gradient(145deg, ${exam.from} 0%, ${exam.to} 100%)` }}
+      >
+        <div className="flex h-full w-full items-center justify-center rounded-md bg-white/95">
+          <span className="-rotate-[24deg] font-display text-lg font-black tracking-tight text-slate-900 sm:text-xl">
+            {exam.code}
+          </span>
+        </div>
+      </div>
     </button>
   );
 }
@@ -832,31 +848,43 @@ function Home({ onOpen, onAdd }: { onOpen: (e: Exam) => void; onAdd: () => void 
         </section>
 
         <section className="mt-10 sm:mt-12">
-          {query.trim() && results.length > 0 && (
-            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.14em] text-slate-400">
-              {results.length} match{results.length === 1 ? "" : "es"}
-            </p>
-          )}
+          <div className="rounded-2xl bg-[#121212] p-4 sm:rounded-3xl sm:p-6">
+            <div className="mb-4 flex items-end justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/45">Browse</p>
+                <h2 className="font-display text-2xl font-extrabold tracking-tight text-white sm:text-3xl">All exams</h2>
+              </div>
+              {!query.trim() && (
+                <span className="hidden text-sm font-semibold text-white/50 sm:block">{EXAMS.length} boards</span>
+              )}
+            </div>
 
-          {results.length > 0 ? (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4">
-              {results.map((exam) => (
-                <ExamCard key={exam.id} exam={exam} onOpen={onOpen} />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-3xl border border-dashed border-slate-300 bg-white py-20 text-center">
-              <p className="font-display text-2xl font-bold text-slate-900">No exam found</p>
-              <p className="mt-1 text-slate-500">Try another name, or clear the search to see all exams.</p>
-              <button
-                type="button"
-                onClick={() => setQuery("")}
-                className="mt-5 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
-              >
-                Show all exams
-              </button>
-            </div>
-          )}
+            {query.trim() && results.length > 0 && (
+              <p className="mb-3 text-sm font-semibold text-white/45">
+                {results.length} match{results.length === 1 ? "" : "es"}
+              </p>
+            )}
+
+            {results.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+                {results.map((exam) => (
+                  <ExamCard key={exam.id} exam={exam} onOpen={onOpen} />
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 py-16 text-center sm:py-20">
+                <p className="font-display text-2xl font-bold text-white">No exam found</p>
+                <p className="mt-1 text-white/55">Try another name, or clear the search to see all exams.</p>
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  className="mt-5 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-white/90"
+                >
+                  Show all exams
+                </button>
+              </div>
+            )}
+          </div>
         </section>
       </main>
 
