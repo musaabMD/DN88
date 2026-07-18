@@ -505,7 +505,7 @@ function Home({ onOpen, onAdd }: { onOpen: (e: Exam) => void; onAdd: () => void 
     <main className="dn-main">
       <section className="dn-hero">
         <h1 className="dn-title">Pick your exam</h1>
-        <p className="dn-hero-sub">Browse questions, notes, images, and flashcards — Duolingo-style.</p>
+        <p className="dn-hero-sub">Questions, notes and flashcards for every Saudi licensing exam.</p>
       </section>
 
       <div className="dn-home-panel">
