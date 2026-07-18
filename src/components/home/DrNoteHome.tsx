@@ -558,27 +558,12 @@ function ExamCard({ exam, onOpen }: { exam: Exam; onOpen: (e: Exam) => void }) {
     <button
       type="button"
       onClick={() => onOpen(exam)}
-      className="group relative flex aspect-[4/3] w-full flex-col justify-between overflow-hidden rounded-3xl p-6 text-left text-white shadow-sm outline-none transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl focus-visible:ring-4 focus-visible:ring-slate-900/10"
-      style={{ backgroundImage: `linear-gradient(150deg, ${exam.from}, ${exam.to})` }}
+      className="group relative flex h-[4.5rem] w-full items-end overflow-hidden rounded-md p-3 text-left text-white shadow-sm outline-none transition duration-200 hover:scale-[1.02] hover:shadow-md focus-visible:ring-2 focus-visible:ring-slate-900/20 sm:h-20"
+      style={{ backgroundImage: `linear-gradient(135deg, ${exam.from} 0%, ${exam.to} 100%)` }}
     >
-      <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/25 blur-2xl" />
-      <div className="relative flex items-center justify-between">
-        <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold tracking-wide backdrop-blur-sm">
-          {exam.files.toLocaleString()} files
-        </span>
-        <span className="flex h-11 w-11 translate-y-1 items-center justify-center rounded-full bg-white text-slate-900 opacity-0 shadow-lg transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-          <ArrowUpRight className="h-5 w-5" strokeWidth={2.5} />
-        </span>
-      </div>
-      <div className="relative">
-        <div
-          className="font-display text-5xl font-extrabold leading-none tracking-tight sm:text-6xl"
-          style={{ textShadow: "0 2px 20px rgba(0,0,0,0.18)" }}
-        >
-          {exam.code}
-        </div>
-        <div className="mt-2 text-sm font-medium text-white/85">{exam.name}</div>
-      </div>
+      <span className="relative z-10 line-clamp-2 text-[13px] font-bold leading-snug tracking-tight sm:text-sm">
+        {exam.name}
+      </span>
     </button>
   );
 }
@@ -657,15 +642,15 @@ function Home({ onOpen, onAdd }: { onOpen: (e: Exam) => void; onAdd: () => void 
           </div>
         </section>
 
-        <section className="mt-14">
+        <section className="mt-10 sm:mt-12">
           {query.trim() && results.length > 0 && (
-            <p className="mb-5 text-center text-sm font-semibold uppercase tracking-[0.14em] text-slate-400">
+            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.14em] text-slate-400">
               {results.length} match{results.length === 1 ? "" : "es"}
             </p>
           )}
 
           {results.length > 0 ? (
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4">
               {results.map((exam) => (
                 <ExamCard key={exam.id} exam={exam} onOpen={onOpen} />
               ))}
