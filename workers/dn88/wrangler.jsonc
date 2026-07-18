@@ -7,6 +7,14 @@
   "workers_dev": true,
   "routes": [
     {
+      "pattern": "api.drnote.co/*",
+      "zone_name": "drnote.co"
+    },
+    {
+      "pattern": "drnote.co/api/*",
+      "zone_name": "drnote.co"
+    },
+    {
       "pattern": "drnote.co/catalog/articles/*",
       "zone_name": "drnote.co"
     }
