@@ -359,7 +359,7 @@ const styles = `
 /* ai fab removed — Ask lives in tab bar */
 .dn-ask-pop { position: fixed; z-index: 130; transform: translate(-50%, -100%); background: ${C.ink}; color: #fff; border: none; border-radius: 12px; padding: 8px 12px; font-weight: 800; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
 .dn-chat { position: fixed; top: 0; right: 0; bottom: 0; z-index: 140; width: 380px; max-width: 100%; background: #fff; border-left: 2px solid ${C.line}; display: flex; flex-direction: column; box-shadow: -10px 0 40px rgba(0,0,0,.12); }
-.dn-chat-head { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 2px solid ${C.line}; }
+.dn-chat-head { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; }
 .dn-chat-brand { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .dn-chat-head-div { color: ${C.faint}; font-weight: 800; font-size: 14px; flex-shrink: 0; }
 .dn-chat-head b { font-size: 16px; font-weight: 900; }
