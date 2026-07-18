@@ -285,11 +285,10 @@ const styles = `
 .dn-modal-input:focus { border-color: ${C.blue}; }
 
 /* filter bar */
-.dn-filterbar { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
-.dn-periods { display: inline-flex; gap: 2px; background: #fff; border: 1px solid ${C.line}; border-radius: 10px; padding: 2px; flex-shrink: 0; }
-.dn-period { border: none; cursor: pointer; padding: 4px 8px; border-radius: 7px; font-size: 11px; font-weight: 800; transition: all .1s; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 3px; line-height: 1; }
-.dn-period-icon { padding: 4px 6px; min-width: 28px; }
-.dn-selectall { display: inline-flex; align-items: center; gap: 5px; font-weight: 800; font-size: 11px; color: ${C.sub}; cursor: pointer; background: none; border: none; white-space: nowrap; flex-shrink: 0; }
+.dn-filterbar { display: flex; align-items: center; justify-content: flex-start; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.dn-periods { display: inline-flex; gap: 4px; background: #fff; border: 1px solid ${C.line}; border-radius: 14px; padding: 4px; flex-shrink: 0; }
+.dn-period { border: none; cursor: pointer; padding: 8px 14px; border-radius: 10px; font-size: 14px; font-weight: 800; transition: all .1s; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 4px; line-height: 1.2; min-height: 36px; }
+.dn-period-icon { padding: 8px 10px; min-width: 36px; }
 .dn-check { width: 16px; height: 16px; border: 2px solid ${C.line}; border-radius: 4px; display: grid; place-items: center; transition: all .1s; }
 
 /* rows */
@@ -588,11 +587,10 @@ const styles = `
   .dn-hero-compact .dn-search { max-width: 100%; }
   .dn-search { max-width: 100%; padding: 10px 12px; border-radius: 12px; margin-top: 0; border-width: 1px; }
   .dn-search input { font-size: 15px; }
-  .dn-filterbar { justify-content: center; gap: 8px; margin-bottom: 8px; }
-  .dn-periods { border-radius: 9px; padding: 2px; }
-  .dn-period { padding: 4px 7px; font-size: 10px; }
-  .dn-period-icon { padding: 4px 5px; min-width: 26px; }
-  .dn-selectall { font-size: 10px; gap: 4px; }
+  .dn-filterbar { justify-content: flex-start; gap: 10px; margin-bottom: 12px; }
+  .dn-periods { border-radius: 12px; padding: 3px; }
+  .dn-period { padding: 7px 12px; font-size: 13px; min-height: 34px; }
+  .dn-period-icon { padding: 7px 9px; min-width: 34px; }
   .dn-check { width: 14px; height: 14px; }
   .dn-row { flex-wrap: nowrap; gap: 8px; padding: 8px; border-radius: 12px; align-items: center; }
   .dn-upvote { width: 38px; border-radius: 9px; padding: 3px 0; }
@@ -1075,7 +1073,6 @@ function ExamPage(props: {
   }, [query, filter, voted, saved, liveFiles, useLiveData, semanticDocIds]);
 
   const toggle = (set: Set<string>, id: string, fn: (s: Set<string>) => void) => { const n = new Set(set); n.has(id) ? n.delete(id) : n.add(id); fn(n); };
-  const allPicked = picked.size > 0 && picked.size === ranked.length;
   const per: Exclude<Filter, "bookmarked"> = filter === "bookmarked" ? "all" : filter;
 
   return (
@@ -1108,9 +1105,6 @@ function ExamPage(props: {
             </button>
           ))}
         </div>
-        <button type="button" className="dn-selectall" onClick={() => setPicked(allPicked ? new Set() : new Set(ranked.map((f) => f.id)))}>
-          <span className="dn-check" style={{ borderColor: allPicked ? C.green : C.line, background: allPicked ? C.green : "#fff" }}>{allPicked && <Check size={11} color="#fff" strokeWidth={3.5} />}</span>{m.selectAll}
-        </button>
       </div>
 
       <ul className="dn-list">
