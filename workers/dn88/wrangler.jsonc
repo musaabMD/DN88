@@ -25,6 +25,25 @@
     {
       "binding": "SNAPSHOTS",
       "bucket_name": "dn88-catalog-snapshots"
+    },
+    {
+      "binding": "USER_CONTENT",
+      "bucket_name": "dn88-user-content"
     }
-  ]
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "PROCESSING_QUEUE",
+        "queue": "medgenius-processing"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "medgenius-processing",
+        "max_batch_size": 1,
+        "max_retries": 3
+      }
+    ]
+  }
 }

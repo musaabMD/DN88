@@ -6,6 +6,9 @@ import { catalogPublicRoutes } from "./routes/catalog-public";
 import { catalogAdminRoutes } from "./routes/catalog-admin";
 import { assetRoutes } from "./routes/assets";
 import { syncRoutes } from "./routes/sync";
+import { medgeniusRoutes } from "./medgenius/routes/index";
+import { handleMedGeniusQueue } from "./medgenius/queue/processor";
+import type { QueueMessage } from "./medgenius/types";
 
 type BillingInterval = "monthly" | "yearly";
 
@@ -26,7 +29,7 @@ app.use(
       return allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
     },
     allowHeaders: ["Authorization", "Content-Type", "X-Catalog-Sync-Secret"],
-    allowMethods: ["GET", "POST", "OPTIONS"],
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   })
 );
 
@@ -231,7 +234,15 @@ app.route("/api/catalog", catalogPublicRoutes);
 app.route("/api/admin", catalogAdminRoutes);
 app.route("/api/dl88-assets", assetRoutes);
 app.route("/api/admin/sync", syncRoutes);
+app.route("/api/medgenius", medgeniusRoutes);
 
 app.notFound((c) => c.json({ error: "Not found" }, 404));
 
-export default app;
+const worker = {
+  fetch: app.fetch,
+  async queue(batch: MessageBatch<QueueMessage>, env: Bindings) {
+    await handleMedGeniusQueue(batch, env);
+  },
+};
+
+export default worker;

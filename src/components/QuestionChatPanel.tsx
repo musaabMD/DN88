@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useAuth } from "@clerk/clerk-react";
 import { Bot, Send, X } from "lucide-react";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import {
@@ -22,6 +23,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { cn } from "@/lib/utils";
+import { askMedGeniusAi } from "@/lib/medgenius/chat";
+import { useClerkEnabled } from "@/hooks/useClerkEnabled";
 
 export type ChatMessage = {
   id: string;
@@ -57,26 +60,54 @@ export function QuestionChatPanel({
   onMessagesChange: (messages: ChatMessage[]) => void;
 }) {
   const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const [conversationId, setConversationId] = useState<string | undefined>();
+  const { getToken } = useAuth();
+  const clerkEnabled = useClerkEnabled();
 
   if (!open) return null;
 
-  const send = () => {
+  const send = async () => {
     const text = draft.trim();
-    if (!text) return;
+    if (!text || sending) return;
 
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
       role: "user",
       content: text,
     };
-    const assistantMessage: ChatMessage = {
-      id: `assistant-${Date.now() + 1}`,
-      role: "assistant",
-      content: mockAssistantReply(questionText, text),
-    };
 
-    onMessagesChange([...messages, userMessage, assistantMessage]);
+    const pending = [...messages, userMessage];
+    onMessagesChange(pending);
     setDraft("");
+    setSending(true);
+
+    try {
+      const token = clerkEnabled ? await getToken() : null;
+      const result = await askMedGeniusAi(
+        token,
+        {
+          message: text,
+          conversationId,
+          contextType: "question",
+          questionText,
+          mode: "explain",
+        },
+        () => mockAssistantReply(questionText, text)
+      );
+
+      setConversationId(result.conversationId || conversationId);
+
+      const assistantMessage: ChatMessage = {
+        id: `assistant-${Date.now() + 1}`,
+        role: "assistant",
+        content: result.reply,
+      };
+
+      onMessagesChange([...pending, assistantMessage]);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (

@@ -23,7 +23,11 @@ export type Bindings = {
   STRIPE_PRICE_YEARLY?: string;
   DB: D1Database;
   SNAPSHOTS: R2Bucket;
+  USER_CONTENT: R2Bucket;
+  PROCESSING_QUEUE: Queue;
   OPENAI_API_KEY?: string;
+  OPENROUTER_API_KEY?: string;
+  CONTEXT_DEV_API_KEY?: string;
   ADMIN_BOOTSTRAP_IDS?: string;
   CATALOG_SYNC_SECRET?: string;
 };

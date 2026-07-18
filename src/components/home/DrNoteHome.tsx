@@ -8,6 +8,10 @@ import {
   ListChecks, Send, Upload, Command, Maximize2, Minimize2, StickyNote, LayoutList, Columns2, Image as ImageIcon, BarChart2, RotateCcw,
 } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
+import { useAuth } from "@clerk/clerk-react";
+import { askMedGeniusAi } from "@/lib/medgenius/chat";
+import { uploadDocument, MedGeniusApiError } from "@/lib/medgenius/api";
+import { useClerkEnabled } from "@/hooks/useClerkEnabled";
 
 /* ------------------------------------------------------------------ */
 /*  Tokens                                                             */
@@ -726,7 +730,16 @@ export function DrNoteHome() {
         </div>
       )}
 
-      {adding && <AddFile onClose={() => setAdding(false)} onDone={() => { setAdding(false); flash("File added to review"); }} />}
+      {adding && (
+        <AddFile
+          examId={exam?.id}
+          onClose={() => setAdding(false)}
+          onDone={(message) => {
+            setAdding(false);
+            flash(message ?? "File uploaded — processing started");
+          }}
+        />
+      )}
       {page === "home" && toast && (
         <div className="fixed bottom-6 right-6 z-[200] flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-900 shadow-lg">
           <Check size={16} strokeWidth={3} className="text-emerald-500" /> {toast}
@@ -909,15 +922,85 @@ function Home({ onOpen, onAdd }: { onOpen: (e: Exam) => void; onAdd: () => void 
   );
 }
 
-function AddFile({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
+function AddFile({
+  examId,
+  onClose,
+  onDone,
+}: {
+  examId?: string;
+  onClose: () => void;
+  onDone: (message?: string) => void;
+}) {
   const [name, setName] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { getToken } = useAuth();
+  const clerkEnabled = useClerkEnabled();
+
+  const handleUpload = async () => {
+    if (!name.trim() || uploading) return;
+    if (!file) {
+      inputRef.current?.click();
+      return;
+    }
+    if (!clerkEnabled) {
+      onDone("File added to review");
+      return;
+    }
+
+    setUploading(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      const result = await uploadDocument(token, {
+        file,
+        name: name.trim(),
+        examId,
+      });
+      onDone(
+        result.duplicate
+          ? "This file was already processed"
+          : "Upload complete — AI is processing your document"
+      );
+    } catch (err) {
+      const message =
+        err instanceof MedGeniusApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Upload failed";
+      setError(message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="dn-modal-wrap" onClick={onClose}>
       <div className="dn-modal" onClick={(e) => e.stopPropagation()}>
         <div className="dn-modal-head"><b>Add a file</b><button className="dn-fs-close" onClick={onClose}><X size={18} strokeWidth={2.8} /></button></div>
-        <div className="dn-drop"><Upload size={26} color={C.faint} strokeWidth={2.2} /><span>Drop a PDF here or tap to browse</span></div>
+        <button type="button" className="dn-drop" onClick={() => inputRef.current?.click()}>
+          <Upload size={26} color={C.faint} strokeWidth={2.2} />
+          <span>{file ? file.name : "Drop a PDF here or tap to browse"}</span>
+        </button>
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.md,image/*"
+          className="sr-only"
+          onChange={(e) => {
+            const picked = e.target.files?.[0] ?? null;
+            setFile(picked);
+            if (picked && !name.trim()) setName(picked.name.replace(/\.[^.]+$/, ""));
+          }}
+        />
         <input className="dn-modal-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="File name (e.g. March Combined)" />
-        <Chunky bg={C.green} shadow={C.greenDark} full disabled={!name.trim()} onClick={onDone}><span className="dn-inline"><Upload size={16} strokeWidth={2.6} /> Upload file</span></Chunky>
+        {error && <p className="px-1 text-sm font-semibold text-red-500">{error}</p>}
+        <Chunky bg={C.green} shadow={C.greenDark} full disabled={!name.trim() || uploading} onClick={handleUpload}>
+          <span className="dn-inline"><Upload size={16} strokeWidth={2.6} /> {uploading ? "Uploading…" : file ? "Upload file" : "Choose file"}</span>
+        </Chunky>
       </div>
     </div>
   );
@@ -1269,16 +1352,40 @@ function ChatPanel({ quote, clearQuote, msgs, setMsgs, onClose }: {
   quote: string | null; clearQuote: () => void; msgs: Msg[]; setMsgs: Dispatch<SetStateAction<Msg[]>>; onClose: () => void;
 }) {
   const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const [conversationId, setConversationId] = useState<string | undefined>();
   const endRef = useRef<HTMLDivElement>(null);
+  const { getToken } = useAuth();
+  const clerkEnabled = useClerkEnabled();
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
 
-  const send = () => {
-    const q = draft.trim(); if (!q && !quote) return;
-    const full = quote ? `“${quote}” — ${q || "explain this"}` : q;
+  const send = async () => {
+    const q = draft.trim();
+    if ((!q && !quote) || sending) return;
+    const full = quote ? `"${quote}" — ${q || "explain this"}` : q;
     setMsgs((m) => [...m, { role: "user", text: full }]);
-    setDraft(""); clearQuote();
-    // TODO: replace this mock with a real call to your AI endpoint.
-    setTimeout(() => setMsgs((m) => [...m, { role: "ai", text: "Here's the short version: focus on the highest-yield mechanism first, then the exception. Want me to turn this into a flashcard or a practice question?" }]), 350);
+    setDraft("");
+    clearQuote();
+    setSending(true);
+
+    try {
+      const token = clerkEnabled ? await getToken() : null;
+      const result = await askMedGeniusAi(
+        token,
+        {
+          message: full,
+          conversationId,
+          contextType: "general",
+          mode: "explain",
+        },
+        () =>
+          "Here's the short version: focus on the highest-yield mechanism first, then the exception. Want me to turn this into a flashcard or a practice question?"
+      );
+      setConversationId(result.conversationId || conversationId);
+      setMsgs((m) => [...m, { role: "ai", text: result.reply }]);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (

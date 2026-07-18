@@ -48,6 +48,9 @@ import {
 import { sectionSlug } from "@/components/content/ArticleTableOfContents";
 import { cn } from "@/lib/utils";
 import type { LibraryArticle } from "@/lib/set-content";
+import { useAuth } from "@clerk/clerk-react";
+import { askMedGeniusAi } from "@/lib/medgenius/chat";
+import { useClerkEnabled } from "@/hooks/useClerkEnabled";
 
 export type AskMessage = {
   id: string;
@@ -317,9 +320,12 @@ export function ArticleAskBar({
   const [chatDraft, setChatDraft] = useState("");
   const [messages, setMessages] = useState<AskMessage[]>([]);
   const [streamingId, setStreamingId] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | undefined>();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
   const streamTimerRef = useRef<number | null>(null);
+  const { getToken } = useAuth();
+  const clerkEnabled = useClerkEnabled();
 
   useEffect(() => {
     setMessages(loadChat(article.id));
@@ -404,7 +410,7 @@ export function ArticleAskBar({
     setSearchOpen(true);
   };
 
-  const submitChat = (e?: FormEvent) => {
+  const submitChat = async (e?: FormEvent) => {
     e?.preventDefault();
     const text = chatDraft.trim();
     if (!text) return;
@@ -425,11 +431,24 @@ export function ArticleAskBar({
     setMessages(nextMessages);
     setChatDraft("");
     setChatOpen(true);
-    streamAssistantReply(
-      assistantId,
-      mockArticleReply(article, text),
-      nextMessages
+
+    const token = clerkEnabled ? await getToken() : null;
+    const articleContext = article.sections.map((s) => `${s.heading}\n${s.body}`).join("\n\n");
+    const result = await askMedGeniusAi(
+      token,
+      {
+        message: text,
+        conversationId,
+        contextType: "document",
+        contextId: article.id,
+        questionText: articleContext.slice(0, 8000),
+        mode: "explain",
+      },
+      () => mockArticleReply(article, text)
     );
+
+    setConversationId(result.conversationId || conversationId);
+    streamAssistantReply(assistantId, result.reply, nextMessages);
   };
 
   const clearChat = () => {
