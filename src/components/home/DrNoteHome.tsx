@@ -29,7 +29,6 @@ import { HomeLocaleProvider, useHomeLocale } from "@/components/home/HomeLocaleP
 import { MedGeniusCreditsProvider } from "@/lib/medgenius/credits-context";
 import { CreditsBadge, CreditsChatHint } from "@/components/medgenius/CreditsUsage";
 import { useMedGeniusCreditsContext } from "@/lib/medgenius/credits-context";
-import type { AppLocale } from "@/lib/locale";
 
 /* ------------------------------------------------------------------ */
 /*  Tokens                                                             */
@@ -172,8 +171,8 @@ function formatDuration(sec: number | null, inProgress: string, fmt: (min: numbe
   return fmt(m, s);
 }
 
-function formatSessionWhen(ts: number, locale: AppLocale) {
-  return new Intl.DateTimeFormat(locale === "ar" ? "ar-SA" : "en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(ts));
+function formatSessionWhen(ts: number) {
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(ts));
 }
 
 function displaySessionTitle(title: string, content: import("@/lib/i18n/home-content").HomeContent) {
@@ -1554,7 +1553,7 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
 function ChatPanel({ documentId, documentContext, quote, clearQuote, msgs, setMsgs, onClose }: {
   documentId?: string; documentContext?: string; quote: string | null; clearQuote: () => void; msgs: Msg[]; setMsgs: Dispatch<SetStateAction<Msg[]>>; onClose: () => void;
 }) {
-  const { m, content, locale } = useHomeLocale();
+  const { m, content } = useHomeLocale();
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [conversationId, setConversationId] = useState<string | undefined>();
@@ -1583,7 +1582,7 @@ function ChatPanel({ documentId, documentContext, quote, clearQuote, msgs, setMs
           contextType: documentId ? "document" : "general",
           contextId: documentId,
           documentContext: documentContext || undefined,
-          language: locale === "ar" ? "ar" : "en",
+          language: "en",
           mode: "explain",
         },
         () => content.chatMockReply
@@ -1819,7 +1818,7 @@ function ReviewPane({ questions, answers, flagged, setFlagged, sessions, onResum
   srsQueue?: HomeQuestion[];
   clerkEnabled?: boolean;
 }) {
-  const { m, content, locale } = useHomeLocale();
+  const { m, content } = useHomeLocale();
   type RF = "all" | "correct" | "incorrect" | "flagged" | "sessions";
   const [rf, setRf] = useState<RF>("all");
   const [search, setSearch] = useState("");
@@ -1896,7 +1895,7 @@ function ReviewPane({ questions, answers, flagged, setFlagged, sessions, onResum
               <span className="dn-rv-session-src">{report.source === "quiz" ? m.quizSource : m.customSource}</span>
               <div className="dn-rv-report-score">{pct}%</div>
               <p className="dn-rv-session-meta" style={{ justifyContent: "center" }}>
-                <span><Clock size={13} strokeWidth={2.2} /> {formatSessionWhen(report.startedAt, locale)}</span>
+                <span><Clock size={13} strokeWidth={2.2} /> {formatSessionWhen(report.startedAt)}</span>
                 <span>{formatDuration(report.durationSec, content.inProgress, m.durationMinSec)}</span>
               </p>
             </div>
@@ -2064,7 +2063,7 @@ function ReviewPane({ questions, answers, flagged, setFlagged, sessions, onResum
                       <div className="dn-rv-session-score">{sc.correct}/{sc.total} <small>({pct}%)</small></div>
                     </div>
                     <p className="dn-rv-session-meta">
-                      <span><Clock size={13} strokeWidth={2.2} /> {formatSessionWhen(s.startedAt, locale)}</span>
+                      <span><Clock size={13} strokeWidth={2.2} /> {formatSessionWhen(s.startedAt)}</span>
                       <span>{formatDuration(s.durationSec, content.inProgress, m.durationMinSec)}</span>
                       <span>{sc.answered} {m.answered}</span>
                     </p>

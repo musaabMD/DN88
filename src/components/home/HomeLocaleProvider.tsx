@@ -1,14 +1,11 @@
 "use client";
 
-import { createContext, useContext, useMemo, type ReactNode } from "react";
-import { useLocale } from "@/hooks/useLocale";
+import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
 import { getHomeMessages, type HomeMessages } from "@/lib/i18n/home";
 import { getHomeContent, type HomeContent } from "@/lib/i18n/home-content";
-import type { AppLocale } from "@/lib/locale";
+import { applyEnglishLocale } from "@/lib/locale";
 
 type HomeLocaleContextValue = {
-  locale: AppLocale;
-  toggleLocale: () => void;
   m: HomeMessages;
   content: HomeContent;
 };
@@ -16,12 +13,15 @@ type HomeLocaleContextValue = {
 const HomeLocaleContext = createContext<HomeLocaleContextValue | null>(null);
 
 export function HomeLocaleProvider({ children }: { children: ReactNode }) {
-  const { locale, toggleLocale } = useLocale();
-  const m = useMemo(() => getHomeMessages(locale), [locale]);
-  const content = useMemo(() => getHomeContent(locale), [locale]);
+  const m = useMemo(() => getHomeMessages(), []);
+  const content = useMemo(() => getHomeContent(), []);
+
+  useEffect(() => {
+    applyEnglishLocale();
+  }, []);
 
   return (
-    <HomeLocaleContext.Provider value={{ locale, toggleLocale, m, content }}>
+    <HomeLocaleContext.Provider value={{ m, content }}>
       {children}
     </HomeLocaleContext.Provider>
   );
