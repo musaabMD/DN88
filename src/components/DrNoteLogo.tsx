@@ -1,5 +1,3 @@
-import { BRAND } from "@/lib/brand";
-
 export function DrNoteLogo({
   size = "md",
   showWordmark = false,
@@ -14,19 +12,16 @@ export function DrNoteLogo({
   lightWordmark?: boolean;
 }) {
   const box = size === "sm" ? "h-8 w-8 rounded-lg" : "h-9 w-9 rounded-xl";
-  const letter = size === "sm" ? "text-sm" : "text-base";
 
   return (
     <div className="flex shrink-0 items-center gap-2.5">
-      <div
-        className={`flex ${box} shrink-0 items-center justify-center`}
-        style={{
-          background: `linear-gradient(135deg,${BRAND.logoFrom},${BRAND.logoTo})`,
-          boxShadow: `0 2px 0 ${BRAND.logoShadow}`,
-        }}
-      >
-        <span className={`${letter} font-black leading-none text-white`}>D</span>
-      </div>
+      <img
+        src="/favicon.ico"
+        alt="DrNote"
+        width={size === "sm" ? 32 : 36}
+        height={size === "sm" ? 32 : 36}
+        className={`${box} shrink-0 object-contain`}
+      />
       {showWordmark ? (
         <span
           className={`truncate text-lg font-extrabold tracking-tight ${lightWordmark ? "text-white" : "text-slate-900"} ${forceWordmark ? "block" : "hidden sm:block"}`}
