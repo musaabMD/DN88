@@ -110,3 +110,30 @@ export function resolvePlanFromStripePrice(
   }
   return "student";
 }
+
+export async function getUserIdByStripeCustomerId(
+  db: D1Database,
+  stripeCustomerId: string
+): Promise<string | null> {
+  const row = await db
+    .prepare("SELECT user_id FROM medgenius_users WHERE stripe_customer_id = ?")
+    .bind(stripeCustomerId)
+    .first<{ user_id: string }>();
+
+  return row?.user_id ?? null;
+}
+
+export async function updateStripeCustomerId(
+  db: D1Database,
+  userId: string,
+  stripeCustomerId: string
+): Promise<void> {
+  await db
+    .prepare(
+      `UPDATE medgenius_users
+       SET stripe_customer_id = ?, updated_at = datetime('now')
+       WHERE user_id = ?`
+    )
+    .bind(stripeCustomerId, userId)
+    .run();
+}

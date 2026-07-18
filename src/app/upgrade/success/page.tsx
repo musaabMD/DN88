@@ -1,10 +1,22 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 import { HOME_PATH, UPGRADE_PATH } from "@/lib/routes";
+import type { CheckoutPlan } from "@/lib/stripe";
+
+function resolvePlanLabel(plan: string | null): string {
+  if (plan === "pro") return "Pro";
+  if (plan === "student") return "Student";
+  return "DrNote";
+}
 
 export default function UpgradeSuccessPage() {
+  const searchParams = useSearchParams();
+  const plan = searchParams.get("plan") as CheckoutPlan | null;
+  const planLabel = resolvePlanLabel(plan);
+
   return (
     <main className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-white px-4 text-center">
       <CheckCircle2
@@ -14,10 +26,10 @@ export default function UpgradeSuccessPage() {
         aria-hidden
       />
       <h1 className="mt-4 text-2xl font-black text-slate-900">
-        Welcome to Drnote Pro
+        Welcome to DrNote {planLabel}
       </h1>
       <p className="mt-2 max-w-sm text-sm font-medium text-slate-500">
-        Your Stripe subscription is active. Pro features unlock as soon as
+        Your Stripe subscription is active. {planLabel} features unlock as soon as
         payment confirmation completes.
       </p>
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
