@@ -2,11 +2,10 @@
 
 import { useMemo, useState, useEffect, useRef, useCallback, type ElementType, type ReactNode, type Dispatch, type SetStateAction } from "react";
 import {
-Search, ChevronUp, ChevronRight, ChevronLeft, Bookmark,
+  Search, ChevronUp, ChevronRight, ChevronLeft, Bookmark,
   Share2, Link2, Play, Check, Flame, X, ArrowLeft, BookOpen, Brain, FileText,
-  Layers, SlidersHorizontal, Clock, Users, Star, Stethoscope, Microscope,
-  Activity, Bone, HeartPulse, ClipboardList, Sparkles, Flag, Settings, Plus,
-  ListChecks, Send, Upload,
+  Layers, SlidersHorizontal, Clock, Users, Star, Sparkles, Flag, Settings, Plus,
+  ListChecks, Send, Upload, ArrowUpRight, Command,
 } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 
@@ -31,16 +30,24 @@ type Tab = "Read" | "Quiz" | "Review" | "Summary" | "Flashcards" | "Custom";
 type Reveal = "immediate" | "later";
 type Msg = { role: "ai" | "user"; text: string };
 
-interface Exam { id: string; name: string; blurb: string; files: number; color: string; accent: string; abbr: string; icon: ElementType; }
+interface Exam {
+  id: string;
+  code: string;
+  name: string;
+  files: number;
+  from: string;
+  to: string;
+  tags: string[];
+}
 interface ExamFile { id: string; name: string; author: string; pages: number; color: string; votes: Record<Exclude<Filter, "bookmarked">, number>; }
 
 const EXAMS: Exam[] = [
-  { id: "smle", name: "SMLE", abbr: "S", blurb: "Saudi Medical Licensing Exam", files: 1284, color: "#E91429", accent: "#AF0F1F", icon: Stethoscope },
-  { id: "sdle", name: "SDLE", abbr: "D", blurb: "Saudi Dental Licensing Exam", files: 612, color: "#1DB954", accent: "#148F42", icon: Activity },
-  { id: "sple", name: "SPLE", abbr: "P", blurb: "Saudi Pharmacy Licensing Exam", files: 489, color: "#8D67AB", accent: "#6B4F86", icon: ClipboardList },
-  { id: "slle", name: "SLLE", abbr: "L", blurb: "Saudi Laboratory Licensing Exam", files: 356, color: "#509BF5", accent: "#2E7AD4", icon: Microscope },
-  { id: "snle", name: "SNLE", abbr: "N", blurb: "Saudi Nursing Licensing Exam", files: 421, color: "#F59B23", accent: "#C97A12", icon: HeartPulse },
-  { id: "fm", name: "Family Medicine", abbr: "F", blurb: "Family medicine boards & clinic exams", files: 938, color: "#477D95", accent: "#356074", icon: Bone },
+  { id: "smle", code: "SMLE", name: "Saudi Medical Licensing", files: 1284, from: "#FF6B6B", to: "#E11D48", tags: ["medical", "smle", "doctor"] },
+  { id: "sdle", code: "SDLE", name: "Saudi Dental Licensing", files: 612, from: "#34D399", to: "#059669", tags: ["dental", "sdle", "dentist"] },
+  { id: "sple", code: "SPLE", name: "Saudi Pharmacy Licensing", files: 489, from: "#A78BFA", to: "#7C3AED", tags: ["pharmacy", "sple", "pharmacist"] },
+  { id: "slle", code: "SLLE", name: "Saudi Lab Licensing", files: 356, from: "#38BDF8", to: "#2563EB", tags: ["lab", "slle", "laboratory"] },
+  { id: "snle", code: "SNLE", name: "Saudi Nursing Licensing", files: 421, from: "#FBBF24", to: "#F97316", tags: ["nursing", "snle", "nurse"] },
+  { id: "fm", code: "FM", name: "Family Medicine", files: 938, from: "#2DD4BF", to: "#0F766E", tags: ["family", "medicine", "board"] },
 ];
 
 const FILES: ExamFile[] = [
@@ -159,22 +166,6 @@ const styles = `
 .dn-search-clear { border: none; background: ${C.wash}; border-radius: 50%; width: 24px; height: 24px; display: grid; place-items: center; cursor: pointer; color: ${C.sub}; flex-shrink: 0; }
 
 /* home search + spotify-style exam list */
-.dn-home-panel { width: 100%; background: #fff; border: 1px solid ${C.line}; border-radius: 16px; padding: 28px 24px 22px; margin-bottom: 28px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
-.dn-home-search { display: flex; align-items: center; gap: 12px; width: 100%; background: ${C.wash}; border: 1px solid transparent; border-radius: 999px; padding: 14px 18px; transition: background .15s, border-color .15s, box-shadow .15s; }
-.dn-home-search:focus-within { background: #fff; border-color: ${C.line}; box-shadow: 0 8px 24px rgba(0,0,0,.08); }
-.dn-home-search input { flex: 1; min-width: 0; border: none; outline: none; font-size: 16px; font-weight: 600; color: ${C.ink}; background: none; }
-.dn-home-search input::placeholder { color: ${C.faint}; font-weight: 500; }
-.dn-section-label { font-size: 11px; font-weight: 800; letter-spacing: 1.1px; color: ${C.faint}; margin: 0 0 12px; text-transform: uppercase; }
-.dn-exam-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.dn-exam-card { width: 100%; display: flex; align-items: center; gap: 16px; text-align: left; background: #fff; border: 1px solid ${C.line}; border-radius: 12px; padding: 12px 14px; cursor: pointer; transition: background .15s, border-color .15s, transform .15s, box-shadow .15s; }
-.dn-exam-card:hover { background: #fafafa; border-color: #d9d9d9; box-shadow: 0 4px 16px rgba(0,0,0,.06); transform: translateY(-1px); }
-.dn-exam-card:active { transform: translateY(0); box-shadow: none; }
-.dn-exam-art { flex-shrink: 0; width: 52px; height: 52px; border-radius: 10px; display: grid; place-items: center; color: #fff; font-size: 22px; font-weight: 900; letter-spacing: -.5px; box-shadow: inset 0 -12px 24px rgba(0,0,0,.12); }
-.dn-exam-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.dn-exam-name { font-size: 16px; font-weight: 800; color: ${C.ink}; line-height: 1.25; }
-.dn-exam-blurb { font-size: 13px; font-weight: 600; color: ${C.sub}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dn-exam-chevron { flex-shrink: 0; color: ${C.faint}; opacity: .85; transition: transform .15s, color .15s; }
-.dn-exam-card:hover .dn-exam-chevron { color: ${C.sub}; transform: translateX(2px); }
 .dn-home-empty { text-align: center; padding: 36px 16px; color: ${C.sub}; font-weight: 700; display: flex; flex-direction: column; align-items: center; gap: 10px; }
 
 /* fab */
@@ -396,7 +387,6 @@ const styles = `
   .dn-chat { width: 100%; border-left: none; }
 }
 @media (max-width: 640px) {
-  .dn-home-panel { padding: 22px 16px 18px; border-radius: 14px; }
   .dn-title { font-size: 32px; }
   .dn-filterbar { flex-direction: column; align-items: stretch; gap: 10px; }
   .dn-selectall { justify-content: flex-end; }
@@ -449,115 +439,211 @@ export function DrNoteHome() {
   const toggleSaved = (id: string) => { const n = new Set(saved); n.has(id) ? n.delete(id) : n.add(id); setSaved(n); };
 
   return (
-    <div className="dn-root" style={{ background: C.wash, color: C.ink, minHeight: "100vh" }}>
+    <>
       <style>{styles}</style>
 
-      {page !== "study" && (
-        <header className="dn-header">
-          <div className="dn-header-inner">
-            <button type="button" className="dn-brand" onClick={() => setPage("home")} aria-label="DrNote home">
-              <DrNoteLogo showWordmark forceWordmark />
-            </button>
-            <div className="dn-header-right">
-              <span className="dn-streak"><Flame size={18} color={C.yellow} fill={C.yellow} strokeWidth={2} /><b>14</b></span>
-              <span className="dn-avatar" style={{ background: C.purple }}>MA</span>
-            </div>
-          </div>
-        </header>
+      {page === "home" && (
+        <Home onOpen={openExam} onAdd={() => setAdding(true)} />
       )}
 
-      {page === "home" && <Home onOpen={openExam} onAdd={() => setAdding(true)} />}
+      {page !== "home" && (
+        <div className="dn-root" style={{ background: C.wash, color: C.ink, minHeight: "100vh" }}>
+          {page !== "study" && (
+            <header className="dn-header">
+              <div className="dn-header-inner">
+                <button type="button" className="dn-brand" onClick={() => setPage("home")} aria-label="DrNote home">
+                  <DrNoteLogo showWordmark forceWordmark />
+                </button>
+                <div className="dn-header-right">
+                  <span className="dn-streak"><Flame size={18} color={C.yellow} fill={C.yellow} strokeWidth={2} /><b>14</b></span>
+                  <span className="dn-avatar" style={{ background: C.purple }}>MA</span>
+                </div>
+              </div>
+            </header>
+          )}
 
-      {page === "exam" && exam && (
-        <ExamPage exam={exam} filter={filter} setFilter={setFilter} query={query} setQuery={setQuery}
-          voted={voted} setVoted={setVoted} saved={saved} toggleSaved={toggleSaved}
-          picked={picked} setPicked={setPicked} onBack={() => setPage("home")} onOpen={openFile} flash={flash} />
-      )}
+          {page === "exam" && exam && (
+            <ExamPage exam={exam} filter={filter} setFilter={setFilter} query={query} setQuery={setQuery}
+              voted={voted} setVoted={setVoted} saved={saved} toggleSaved={toggleSaved}
+              picked={picked} setPicked={setPicked} onBack={() => setPage("home")} onOpen={openFile} flash={flash} />
+          )}
 
-      {page === "study" && file && (
-        <Study file={file} saved={saved.has(file.id)} onToggleSave={() => { toggleSaved(file.id); flash(saved.has(file.id) ? "Removed bookmark" : "Bookmarked"); }}
-          onClose={() => setPage("exam")} flash={flash} />
+          {page === "study" && file && (
+            <Study file={file} saved={saved.has(file.id)} onToggleSave={() => { toggleSaved(file.id); flash(saved.has(file.id) ? "Removed bookmark" : "Bookmarked"); }}
+              onClose={() => setPage("exam")} flash={flash} />
+          )}
+
+          {toast && <div className="dn-toast"><Check size={16} strokeWidth={3} color={C.green} /> {toast}</div>}
+        </div>
       )}
 
       {adding && <AddFile onClose={() => setAdding(false)} onDone={() => { setAdding(false); flash("File added to review"); }} />}
-      {toast && <div className="dn-toast"><Check size={16} strokeWidth={3} color={C.green} /> {toast}</div>}
-    </div>
+      {page === "home" && toast && (
+        <div className="fixed bottom-6 right-6 z-[200] flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-900 shadow-lg">
+          <Check size={16} strokeWidth={3} className="text-emerald-500" /> {toast}
+        </div>
+      )}
+    </>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/*  Home                                                               */
+/*  Home — shared Spotify-tile design                                  */
 /* ------------------------------------------------------------------ */
-function Home({ onOpen, onAdd }: { onOpen: (e: Exam) => void; onAdd: () => void }) {
-  const [homeQuery, setHomeQuery] = useState("");
 
-  const filteredExams = useMemo(() => {
-    const q = homeQuery.trim().toLowerCase();
+const homeFonts = `
+  @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap');
+  .font-display { font-family: 'Bricolage Grotesque', system-ui, sans-serif; }
+  .font-body { font-family: 'Inter', system-ui, sans-serif; }
+`;
+
+function ExamCard({ exam, onOpen }: { exam: Exam; onOpen: (e: Exam) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(exam)}
+      className="group relative flex aspect-[4/3] w-full flex-col justify-between overflow-hidden rounded-3xl p-6 text-left text-white shadow-sm outline-none transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl focus-visible:ring-4 focus-visible:ring-slate-900/10"
+      style={{ backgroundImage: `linear-gradient(150deg, ${exam.from}, ${exam.to})` }}
+    >
+      <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/25 blur-2xl" />
+      <div className="relative flex items-center justify-between">
+        <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold tracking-wide backdrop-blur-sm">
+          {exam.files.toLocaleString()} files
+        </span>
+        <span className="flex h-11 w-11 translate-y-1 items-center justify-center rounded-full bg-white text-slate-900 opacity-0 shadow-lg transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+          <ArrowUpRight className="h-5 w-5" strokeWidth={2.5} />
+        </span>
+      </div>
+      <div className="relative">
+        <div
+          className="font-display text-5xl font-extrabold leading-none tracking-tight sm:text-6xl"
+          style={{ textShadow: "0 2px 20px rgba(0,0,0,0.18)" }}
+        >
+          {exam.code}
+        </div>
+        <div className="mt-2 text-sm font-medium text-white/85">{exam.name}</div>
+      </div>
+    </button>
+  );
+}
+
+function Home({ onOpen, onAdd }: { onOpen: (e: Exam) => void; onAdd: () => void }) {
+  const [query, setQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase();
     if (!q) return EXAMS;
-    return EXAMS.filter((e) =>
-      e.name.toLowerCase().includes(q)
-      || e.blurb.toLowerCase().includes(q)
-      || e.id.toLowerCase().includes(q),
+    return EXAMS.filter(
+      (e) =>
+        e.code.toLowerCase().includes(q)
+        || e.name.toLowerCase().includes(q)
+        || e.tags.some((t) => t.includes(q)),
     );
-  }, [homeQuery]);
+  }, [query]);
 
   return (
-    <main className="dn-main">
-      <section className="dn-hero">
-        <h1 className="dn-title">Pick your exam</h1>
-        <p className="dn-hero-sub">Questions, notes and flashcards for every Saudi licensing exam.</p>
-      </section>
+    <div className="min-h-screen w-full bg-[#F6F7F9] font-body text-slate-900 antialiased">
+      <style>{homeFonts}</style>
 
-      <div className="dn-home-panel">
-        <div className="dn-home-search">
-          <Search size={20} color={C.faint} strokeWidth={2.4} />
-          <input
-            value={homeQuery}
-            onChange={(e) => setHomeQuery(e.target.value)}
-            placeholder="Search exams"
-            aria-label="Search exams"
-          />
-          {homeQuery && (
-            <button type="button" className="dn-search-clear" onClick={() => setHomeQuery("")} aria-label="Clear search">
-              <X size={16} strokeWidth={2.6} />
-            </button>
+      <header className="sticky top-0 z-20 border-b border-slate-200/70 bg-[#F6F7F9]/80 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
+          <DrNoteLogo showWordmark forceWordmark />
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 ring-1 ring-amber-200/70">
+              <Flame className="h-4 w-4 text-amber-500" fill="currentColor" strokeWidth={1.5} />
+              <span className="text-sm font-bold text-amber-600">14</span>
+            </div>
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-xs font-bold text-white ring-2 ring-white">
+              MA
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-6xl px-5 pb-28">
+        <section className="flex flex-col items-center pt-16 text-center sm:pt-24">
+          <h1 className="max-w-3xl font-display text-5xl font-extrabold leading-[1.02] tracking-tight sm:text-7xl">
+            Pass the board,
+            <br />
+            <span className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
+              one streak at a time.
+            </span>
+          </h1>
+          <p className="mt-5 max-w-xl text-lg leading-relaxed text-slate-500">
+            Questions, notes and flashcards for every Saudi licensing exam.
+          </p>
+
+          <div className="group mt-9 flex w-full max-w-xl items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition-all focus-within:border-slate-900 focus-within:shadow-md">
+            <Search className="h-5 w-5 shrink-0 text-slate-400 transition-colors group-focus-within:text-slate-900" strokeWidth={2.25} />
+            <input
+              ref={searchRef}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search SMLE, pharmacy, family medicine…"
+              aria-label="Search exams"
+              className="w-full bg-transparent text-base font-medium text-slate-900 outline-none placeholder:text-slate-400"
+            />
+            <kbd className="hidden shrink-0 items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-400 sm:flex">
+              <Command className="h-3 w-3" strokeWidth={2.5} />K
+            </kbd>
+          </div>
+        </section>
+
+        <section className="mt-14">
+          {query.trim() && results.length > 0 && (
+            <p className="mb-5 text-center text-sm font-semibold uppercase tracking-[0.14em] text-slate-400">
+              {results.length} match{results.length === 1 ? "" : "es"}
+            </p>
           )}
-        </div>
-      </div>
 
-      <p className="dn-section-label">Medical exams</p>
-      <ul className="dn-exam-list">
-        {filteredExams.map((e) => (
-          <li key={e.id}>
-            <button type="button" className="dn-exam-card" onClick={() => onOpen(e)}>
-              <span
-                className="dn-exam-art"
-                style={{ background: `linear-gradient(135deg, ${e.color} 0%, ${e.accent} 100%)` }}
-                aria-hidden
+          {results.length > 0 ? (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {results.map((exam) => (
+                <ExamCard key={exam.id} exam={exam} onOpen={onOpen} />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-3xl border border-dashed border-slate-300 bg-white py-20 text-center">
+              <p className="font-display text-2xl font-bold text-slate-900">No exam found</p>
+              <p className="mt-1 text-slate-500">Try another name, or clear the search to see all exams.</p>
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                className="mt-5 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
               >
-                {e.abbr}
-              </span>
-              <span className="dn-exam-copy">
-                <span className="dn-exam-name">{e.name}</span>
-                <span className="dn-exam-blurb">Tap to browse study sets · {e.files.toLocaleString()} files</span>
-              </span>
-              <ChevronRight className="dn-exam-chevron" size={18} strokeWidth={2.4} />
-            </button>
-          </li>
-        ))}
-      </ul>
+                Show all exams
+              </button>
+            </div>
+          )}
+        </section>
+      </main>
 
-      {filteredExams.length === 0 && (
-        <div className="dn-home-empty">
-          <Search size={26} color={C.faint} />
-          <p>No exams match “{homeQuery}”.</p>
-        </div>
-      )}
-
-      <button className="dn-fab" onClick={onAdd} title="Add a file" aria-label="Add a file" style={{ background: C.green, boxShadow: `0 5px 0 ${C.greenDark}` }}>
-        <Plus size={26} color="#fff" strokeWidth={3} />
+      <button
+        type="button"
+        onClick={onAdd}
+        className="group fixed bottom-7 right-7 z-30 flex items-center gap-0 rounded-2xl bg-slate-900 py-4 pl-4 pr-4 text-white shadow-xl shadow-slate-900/20 transition-all hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-2xl focus-visible:ring-4 focus-visible:ring-slate-900/20"
+        aria-label="Add exam"
+      >
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400 text-slate-900">
+          <Plus className="h-4 w-4" strokeWidth={3} />
+        </span>
+        <span className="max-w-0 overflow-hidden whitespace-nowrap text-sm font-semibold opacity-0 transition-all duration-300 group-hover:ml-2.5 group-hover:max-w-[120px] group-hover:opacity-100">
+          Add exam
+        </span>
       </button>
-    </main>
+    </div>
   );
 }
 
@@ -601,10 +687,11 @@ function ExamPage(props: {
     <main className="dn-main">
       <button className="dn-crumb-back" onClick={onBack}><ArrowLeft size={16} strokeWidth={2.6} /> All exams</button>
       <section className="dn-hero">
-        <span className="dn-hero-ic" style={{ background: `linear-gradient(135deg, ${exam.color} 0%, ${exam.accent} 100%)` }}>
-          <span style={{ fontSize: 24, fontWeight: 900, color: "#fff" }}>{exam.abbr}</span>
+        <span className="dn-hero-ic" style={{ background: `linear-gradient(135deg, ${exam.from} 0%, ${exam.to} 100%)` }}>
+          <span style={{ fontSize: 24, fontWeight: 900, color: "#fff" }}>{exam.code}</span>
         </span>
-        <h1 className="dn-title">{exam.name}</h1>
+        <h1 className="dn-title">{exam.code}</h1>
+        <p className="dn-hero-sub">{exam.name}</p>
         <div className="dn-search">
           <Search size={20} color={C.faint} strokeWidth={2.4} />
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search an exam or file…" aria-label="Search files" />
