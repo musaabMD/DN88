@@ -128,7 +128,7 @@ function AskChip({ onClick }: { onClick: () => void }) {
   return <button className="dn-askchip" onClick={onClick} title="Ask AI" aria-label="Ask AI"><Sparkles size={16} strokeWidth={2.4} /></button>;
 }
 
-function BkIcon({ saved, size = 18, light = false }: { saved?: boolean; size?: number; light?: boolean }) {
+function BkIcon({ saved, size = 14, light = false }: { saved?: boolean; size?: number; light?: boolean }) {
   return (
     <Bookmark
       size={size}
@@ -165,11 +165,12 @@ const styles = `
 
 /* main / hero */
 .dn-main { max-width: min(1120px, calc(100% - 36px)); margin: 0 auto; padding: 92px 18px 120px; }
-.dn-hero { text-align: center; margin-bottom: 26px; display: flex; flex-direction: column; align-items: center; }
-.dn-hero-ic { width: 56px; height: 56px; min-width: 56px; border-radius: 18px; display: grid; place-items: center; margin-bottom: 14px; padding: 0 6px; overflow: hidden; }
-.dn-hero-code { font-size: 22px; font-weight: 900; color: #fff; letter-spacing: -0.5px; line-height: 1; white-space: nowrap; }
-.dn-title { font-size: 40px; font-weight: 900; letter-spacing: -1px; margin: 0 0 8px; color: ${C.ink}; }
-.dn-hero-sub { color: ${C.sub}; font-weight: 700; margin: 0 0 18px; }
+.dn-hero { text-align: center; margin-bottom: 18px; display: flex; flex-direction: column; align-items: center; }
+.dn-hero-compact { margin-bottom: 14px; }
+.dn-hero-ic { width: 52px; height: 52px; min-width: 52px; border-radius: 16px; display: grid; place-items: center; margin-bottom: 10px; padding: 0 6px; overflow: hidden; }
+.dn-hero-code { font-size: 18px; font-weight: 900; color: #fff; letter-spacing: -0.5px; line-height: 1; white-space: nowrap; }
+.dn-title { font-size: 34px; font-weight: 900; letter-spacing: -1px; margin: 0 0 4px; color: ${C.ink}; }
+.dn-hero-sub { color: ${C.sub}; font-weight: 700; margin: 0 0 12px; font-size: 15px; }
 .dn-crumb-back { display: inline-flex; align-items: center; gap: 6px; background: none; border: none; cursor: pointer; color: ${C.sub}; font-weight: 800; font-size: 14px; margin-bottom: 8px; padding: 6px 0; min-height: 44px; }
 .dn-crumb-back:hover { color: ${C.ink}; }
 .dn-exam-main { width: 100%; }
@@ -196,31 +197,31 @@ const styles = `
 .dn-modal-input:focus { border-color: ${C.blue}; }
 
 /* filter bar */
-.dn-filterbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
-.dn-periods { display: flex; gap: 4px; background: #fff; border: 2px solid ${C.line}; border-radius: 16px; padding: 4px; overflow-x: auto; scrollbar-width: none; }
+.dn-filterbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.dn-periods { display: flex; gap: 3px; background: #fff; border: 1px solid ${C.line}; border-radius: 12px; padding: 3px; overflow-x: auto; scrollbar-width: none; flex: 1; min-width: 0; }
 .dn-periods::-webkit-scrollbar { display: none; }
-.dn-period { border: none; cursor: pointer; padding: 8px 14px; border-radius: 12px; font-size: 13.5px; font-weight: 800; transition: all .1s; white-space: nowrap; }
-.dn-selectall { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13.5px; color: ${C.sub}; cursor: pointer; background: none; border: none; white-space: nowrap; flex-shrink: 0; }
-.dn-check { width: 20px; height: 20px; border: 2px solid ${C.line}; border-radius: 6px; display: grid; place-items: center; transition: all .1s; }
+.dn-period { border: none; cursor: pointer; padding: 6px 10px; border-radius: 9px; font-size: 12px; font-weight: 800; transition: all .1s; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+.dn-selectall { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; font-size: 12px; color: ${C.sub}; cursor: pointer; background: none; border: none; white-space: nowrap; flex-shrink: 0; }
+.dn-check { width: 18px; height: 18px; border: 2px solid ${C.line}; border-radius: 5px; display: grid; place-items: center; transition: all .1s; }
 
 /* rows */
-.dn-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-.dn-row { position: relative; display: flex; align-items: center; gap: 14px; border: 2px solid ${C.line}; border-radius: 18px; padding: 12px 14px; background: #fff; transition: border-color .12s, background .12s, box-shadow .12s; }
-.dn-row:hover { box-shadow: 0 4px 14px rgba(0,0,0,.05); }
-.dn-upvote { flex-shrink: 0; width: 54px; border: 2px solid ${C.line}; border-radius: 14px; background: #fff; cursor: pointer; display: flex; flex-direction: column; align-items: center; padding: 6px 0; transition: all .1s; }
+.dn-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.dn-row { position: relative; display: flex; align-items: center; gap: 10px; border: 1px solid ${C.line}; border-radius: 14px; padding: 8px 10px; background: #fff; transition: border-color .12s, background .12s, box-shadow .12s; }
+.dn-row:hover { box-shadow: 0 2px 10px rgba(0,0,0,.04); }
+.dn-upvote { flex-shrink: 0; width: 44px; border: 1px solid ${C.line}; border-radius: 10px; background: #fff; cursor: pointer; display: flex; flex-direction: column; align-items: center; padding: 4px 0; transition: all .1s; }
 .dn-upvote:hover { border-color: ${C.green}; }
-.dn-upvote b { font-size: 13px; font-weight: 900; }
-.dn-file { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; background: none; border: none; cursor: pointer; text-align: left; padding: 0; }
-.dn-file-text { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.dn-file-name { font-weight: 800; font-size: 16px; color: ${C.ink}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dn-file-meta { font-size: 12.5px; color: ${C.faint}; font-weight: 700; }
-.dn-actions { display: flex; align-items: center; gap: 4px; opacity: 0; transform: translateX(6px); transition: opacity .14s, transform .14s; flex-shrink: 0; }
+.dn-upvote b { font-size: 11px; font-weight: 900; }
+.dn-file { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; background: none; border: none; cursor: pointer; text-align: left; padding: 0; }
+.dn-file-text { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dn-file-name { font-weight: 800; font-size: 14px; color: ${C.ink}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dn-file-meta { font-size: 11px; color: ${C.faint}; font-weight: 700; }
+.dn-actions { display: flex; align-items: center; gap: 3px; opacity: 0; transform: translateX(4px); transition: opacity .14s, transform .14s; flex-shrink: 0; }
 .dn-row:hover .dn-actions { opacity: 1; transform: none; }
-.dn-icon-btn { border: none; background: ${C.wash}; color: ${C.sub}; cursor: pointer; width: 34px; height: 34px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; transition: background .1s; }
+.dn-icon-btn { border: none; background: ${C.wash}; color: ${C.sub}; cursor: pointer; width: 32px; height: 32px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; transition: background .1s; }
 .dn-icon-btn:hover { background: #ECECEC; }
 .dn-icon-btn.dn-bk.on { background: #EAF7FF; }
 .dn-fs-bk.on { background: #EAF7FF !important; }
-.dn-selbox { flex-shrink: 0; width: 22px; height: 22px; border: 2px solid ${C.line}; border-radius: 7px; display: grid; place-items: center; cursor: pointer; opacity: 0; transition: opacity .12s; }
+.dn-selbox { flex-shrink: 0; width: 20px; height: 20px; border: 2px solid ${C.line}; border-radius: 6px; display: grid; place-items: center; cursor: pointer; opacity: 0; transition: opacity .12s; }
 .dn-row:hover .dn-selbox, .dn-selbox.on { opacity: 1; }
 .dn-empty { text-align: center; padding: 50px 20px; color: ${C.sub}; font-weight: 700; display: flex; flex-direction: column; align-items: center; gap: 10px; }
 
@@ -251,12 +252,14 @@ const styles = `
 .dn-fs-body { flex: 1; min-height: 0; display: flex; position: relative; }
 
 /* bottom tab bar (mobile/ipad) */
-.dn-tabbar { display: none; flex-shrink: 0; border-top: 2px solid ${C.line}; background: #fff; padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); }
-.dn-tabbar-btn { flex: 1; background: none; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 2px; font-size: 10px; font-weight: 800; border-radius: 12px; }
+.dn-tabbar { display: none; flex-shrink: 0; border-top: 2px solid ${C.line}; background: #fff; padding: 4px 2px calc(4px + env(safe-area-inset-bottom)); overflow-x: auto; scrollbar-width: none; }
+.dn-tabbar::-webkit-scrollbar { display: none; }
+.dn-tabbar-inner { display: flex; min-width: min-content; width: 100%; }
+.dn-tabbar-btn { flex: 1; min-width: 52px; background: none; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 2px; font-size: 9px; font-weight: 800; border-radius: 10px; }
+.dn-tabbar-btn.on { background: #DDF4FF; }
+.dn-tabbar-ask.on { background: #F3E8FF !important; }
 
-/* ai fab + chat */
-.dn-ai-fab { position: fixed; right: 22px; bottom: 22px; z-index: 110; width: 54px; height: 54px; border-radius: 18px; border: none; cursor: pointer; display: grid; place-items: center; transition: transform .05s; }
-.dn-ai-fab:active { transform: translateY(3px); }
+/* ai fab removed — Ask lives in tab bar */
 .dn-ask-pop { position: fixed; z-index: 130; transform: translate(-50%, -100%); background: ${C.ink}; color: #fff; border: none; border-radius: 12px; padding: 8px 12px; font-weight: 800; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
 .dn-chat { position: fixed; top: 0; right: 0; bottom: 0; z-index: 140; width: 380px; max-width: 100%; background: #fff; border-left: 2px solid ${C.line}; display: flex; flex-direction: column; box-shadow: -10px 0 40px rgba(0,0,0,.12); }
 .dn-chat-head { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 2px solid ${C.line}; }
@@ -278,36 +281,37 @@ const styles = `
 .dn-progress { height: 8px; background: ${C.wash}; }
 .dn-progress span { display: block; height: 100%; border-radius: 0 6px 6px 0; transition: width .3s; }
 .dn-read-scroll { flex: 1; overflow-y: auto; }
-.dn-read-col { max-width: 680px; margin: 0 auto; padding: 44px 24px; }
-.dn-read-col h1 { font-size: 30px; font-weight: 900; letter-spacing: -.6px; margin: 0 0 20px; color: ${C.ink}; }
-.dn-read-col p { font-size: 18px; line-height: 1.7; font-weight: 600; color: ${C.ink}; margin: 0 0 18px; }
-.dn-read-lead { font-size: 19px !important; }
-.dn-callout { border-left: 5px solid; background: ${C.wash}; border-radius: 12px; padding: 16px 18px; margin: 0 0 18px; }
-.dn-callout b { display: block; font-size: 12px; letter-spacing: .5px; color: ${C.sub}; margin-bottom: 4px; }
-.dn-callout p { font-size: 17px !important; margin: 0 !important; }
-.dn-read-foot { flex-shrink: 0; border-top: 2px solid ${C.line}; display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; gap: 14px; max-width: 728px; margin: 0 auto; width: 100%; }
-.dn-foot-back { display: inline-flex; align-items: center; gap: 4px; border: 2px solid ${C.line}; background: #fff; border-radius: 14px; padding: 11px 16px; font-weight: 800; color: ${C.sub}; cursor: pointer; }
+.dn-read-col { max-width: 680px; margin: 0 auto; padding: 24px 18px 16px; }
+.dn-read-col h1 { font-size: 24px; font-weight: 900; letter-spacing: -.6px; margin: 0 0 12px; color: ${C.ink}; }
+.dn-read-col p { font-size: 16px; line-height: 1.6; font-weight: 600; color: ${C.ink}; margin: 0 0 12px; }
+.dn-read-lead { font-size: 16px !important; }
+.dn-callout { border-left: 4px solid; background: ${C.wash}; border-radius: 10px; padding: 12px 14px; margin: 0 0 12px; }
+.dn-callout b { display: block; font-size: 11px; letter-spacing: .4px; color: ${C.sub}; margin-bottom: 4px; }
+.dn-callout p { font-size: 15px !important; margin: 0 !important; }
 .dn-foot-back:disabled { opacity: .4; cursor: not-allowed; }
-.dn-foot-count { font-weight: 800; color: ${C.faint}; font-size: 14px; }
-.dn-foot-icon { width: 44px; height: 44px; border-radius: 14px; border: 2px solid ${C.line}; background: #fff; cursor: pointer; display: grid; place-items: center; color: ${C.sub}; flex-shrink: 0; }
 .dn-foot-nav { display: flex; align-items: center; gap: 8px; }
+.dn-read-foot { flex-shrink: 0; border-top: 2px solid ${C.line}; display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; gap: 10px; max-width: 728px; margin: 0 auto; width: 100%; }
+.dn-foot-back { display: inline-flex; align-items: center; gap: 4px; border: 2px solid ${C.line}; background: #fff; border-radius: 12px; padding: 8px 12px; font-weight: 800; font-size: 13px; color: ${C.sub}; cursor: pointer; }
+.dn-foot-count { font-weight: 800; color: ${C.faint}; font-size: 12px; }
+.dn-foot-icon { width: 38px; height: 38px; border-radius: 12px; border: 2px solid ${C.line}; background: #fff; cursor: pointer; display: grid; place-items: center; color: ${C.sub}; flex-shrink: 0; }
+.dn-chunky-sm { border: none; border-radius: 12px; font-weight: 800; font-size: 13px; padding: 8px 14px; letter-spacing: .2px; transition: transform .04s, box-shadow .04s; }
 
 /* quiz */
 .dn-quiz-fs { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.dn-quiz-scroll { flex: 1; overflow-y: auto; padding: 22px 24px; }
-.dn-q-card { max-width: 680px; margin: 0 auto 18px; border: 2px solid ${C.line}; border-radius: 18px; padding: 20px; }
+.dn-quiz-scroll { flex: 1; overflow-y: auto; padding: 14px 16px; }
+.dn-q-card { max-width: 680px; margin: 0 auto 12px; border: 1px solid ${C.line}; border-radius: 14px; padding: 14px; }
 .dn-q-top { display: flex; align-items: center; justify-content: space-between; }
-.dn-q-num { font-size: 12px; font-weight: 900; letter-spacing: 1px; color: ${C.faint}; margin: 0 0 8px; }
+.dn-q-num { font-size: 11px; font-weight: 900; letter-spacing: .8px; color: ${C.faint}; margin: 0 0 6px; }
 .dn-q-flag { border: none; background: none; cursor: pointer; padding: 4px; }
-.dn-q-stem { font-size: 17px; font-weight: 800; line-height: 1.45; color: ${C.ink}; margin: 0 0 16px; }
-.dn-q-options { display: flex; flex-direction: column; gap: 10px; }
-.dn-q-opt { display: flex; align-items: center; gap: 12px; text-align: left; border: 2px solid ${C.line}; border-radius: 14px; padding: 12px 14px; font-weight: 700; font-size: 15px; color: ${C.ink}; background: #fff; transition: all .1s; }
-.dn-q-key { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; font-weight: 900; font-size: 13px; flex-shrink: 0; }
-.dn-q-explain { margin-top: 14px; background: ${C.wash}; border-radius: 12px; padding: 12px 14px; }
+.dn-q-stem { font-size: 15px; font-weight: 800; line-height: 1.4; color: ${C.ink}; margin: 0 0 10px; }
+.dn-q-options { display: flex; flex-direction: column; gap: 8px; }
+.dn-q-opt { display: flex; align-items: center; gap: 10px; text-align: left; border: 1px solid ${C.line}; border-radius: 12px; padding: 10px 12px; font-weight: 700; font-size: 14px; color: ${C.ink}; background: #fff; transition: all .1s; }
+.dn-q-key { width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; font-weight: 900; font-size: 12px; flex-shrink: 0; }
+.dn-q-explain { margin-top: 10px; background: ${C.wash}; border-radius: 10px; padding: 10px 12px; }
 .dn-q-explain-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
-.dn-q-explain span { font-weight: 600; line-height: 1.5; color: ${C.ink}; }
-.dn-reveal-bar { flex-shrink: 0; padding: 12px 24px; border-top: 2px solid ${C.line}; max-width: 728px; margin: 0 auto; width: 100%; }
-.dn-quiz-foot { flex-shrink: 0; border-top: 2px solid ${C.line}; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 24px; max-width: 728px; margin: 0 auto; width: 100%; }
+.dn-q-explain span { font-weight: 600; line-height: 1.45; color: ${C.ink}; font-size: 14px; }
+.dn-reveal-bar { flex-shrink: 0; padding: 10px 14px; border-top: 2px solid ${C.line}; max-width: 728px; margin: 0 auto; width: 100%; }
+.dn-quiz-foot { flex-shrink: 0; border-top: 2px solid ${C.line}; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; max-width: 728px; margin: 0 auto; width: 100%; }
 .dn-dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
 .dn-dot { width: 9px; height: 9px; border-radius: 50%; border: none; cursor: pointer; padding: 0; transition: background .1s; }
 
@@ -355,26 +359,17 @@ const styles = `
 .nt-checks li:hover { background: ${C.wash}; }
 .nt-check { width: 20px; height: 20px; border: 2px solid; border-radius: 6px; display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
 
-/* quizlet */
+/* quizlet — list only */
 .ql-scroll { flex: 1; overflow-y: auto; }
-.ql-wrap { max-width: 680px; margin: 0 auto; padding: 32px 24px 90px; }
-.ql-card { position: relative; width: 100%; height: 260px; border: none; background: none; cursor: pointer; perspective: 1400px; margin-bottom: 16px; }
-.ql-face { position: absolute; inset: 0; border-radius: 22px; display: grid; place-items: center; padding: 28px; font-size: 24px; font-weight: 800; text-align: center; backface-visibility: hidden; transition: transform .5s; }
-.ql-face.front { background: #fff; border: 2px solid ${C.line}; color: ${C.ink}; }
-.ql-face.back { color: #fff; transform: rotateY(180deg); }
-.ql-card.flipped .front { transform: rotateY(180deg); }
-.ql-card.flipped .back { transform: rotateY(360deg); }
-.ql-tag { position: absolute; top: 18px; left: 0; right: 0; font-size: 11px; font-weight: 900; letter-spacing: 1.5px; color: ${C.faint}; }
-.ql-controls { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 34px; }
-.ql-count { font-weight: 900; color: ${C.sub}; font-size: 15px; }
-.dn-ghost { width: 46px; height: 46px; border-radius: 14px; border: 2px solid ${C.line}; background: #fff; cursor: pointer; display: grid; place-items: center; color: ${C.ink}; }
-.ql-list-h { font-size: 18px; font-weight: 900; margin: 0 0 14px; color: ${C.ink}; }
-.ql-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-.ql-row { display: flex; align-items: center; gap: 18px; background: #fff; border: 2px solid ${C.line}; border-radius: 14px; padding: 16px 18px; }
-.ql-term { width: 42%; font-weight: 800; color: ${C.ink}; font-size: 15px; }
-.ql-div { width: 2px; align-self: stretch; background: ${C.line}; }
-.ql-def { flex: 1; font-weight: 600; color: ${C.sub}; font-size: 15px; }
-.ql-fav { border: none; background: none; cursor: pointer; flex-shrink: 0; }
+.ql-wrap { max-width: 680px; margin: 0 auto; padding: 14px 16px calc(16px + env(safe-area-inset-bottom)); }
+.ql-list-h { font-size: 15px; font-weight: 900; margin: 0 0 10px; color: ${C.ink}; }
+.ql-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ql-row { display: flex; flex-direction: column; gap: 0; background: #fff; border: 1px solid ${C.line}; border-radius: 12px; overflow: hidden; }
+.ql-row-head { display: flex; align-items: center; gap: 8px; padding: 0 6px 0 0; }
+.ql-row-toggle { flex: 1; display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: none; border: none; cursor: pointer; padding: 12px 8px 12px 14px; }
+.ql-term { flex: 1; font-weight: 800; color: ${C.ink}; font-size: 14px; line-height: 1.35; }
+.ql-def { padding: 0 14px 12px; font-weight: 600; color: ${C.sub}; font-size: 13px; line-height: 1.45; border-top: 1px solid ${C.line}; padding-top: 10px; margin: 0 14px 12px; }
+.ql-fav { border: none; background: none; cursor: pointer; flex-shrink: 0; padding: 4px; }
 
 /* custom */
 .dn-custom { max-width: 560px; margin: 0 auto; padding: 40px 24px 90px; }
@@ -399,41 +394,62 @@ const styles = `
 @media (max-width: 1024px) {
   .dn-fs-tabs { display: none; }
   .dn-tabbar { display: flex; }
-  .dn-ai-fab { bottom: 84px; }
   .dn-chat { width: 100%; border-left: none; }
+  .dn-fs-body { padding-bottom: 0; }
+  .nt-doc { padding: 20px 16px 24px; }
+  .dn-custom { padding: 20px 16px 24px; }
 }
 @media (max-width: 640px) {
-  .dn-main { max-width: 100%; padding: 72px 14px 110px; }
-  .dn-header-inner { height: 56px; padding: 0 14px; }
-  .dn-crumb-back { font-size: 15px; margin-bottom: 4px; width: 100%; justify-content: flex-start; }
-  .dn-hero { margin-bottom: 18px; }
-  .dn-hero-ic { width: 72px; height: 72px; min-width: 72px; border-radius: 20px; margin-bottom: 12px; }
-  .dn-hero-code { font-size: 20px; }
-  .dn-title { font-size: 28px; margin-bottom: 4px; }
-  .dn-hero-sub { font-size: 15px; margin-bottom: 14px; }
-  .dn-search { max-width: 100%; padding: 12px 14px; border-radius: 14px; margin-top: 4px; }
-  .dn-search input { font-size: 16px; }
-  .dn-filterbar { flex-direction: column; align-items: stretch; gap: 12px; margin-bottom: 14px; }
-  .dn-periods { width: 100%; border-radius: 14px; padding: 3px; -webkit-overflow-scrolling: touch; }
-  .dn-period { padding: 10px 12px; font-size: 13px; min-height: 40px; }
-  .dn-selectall { width: 100%; justify-content: flex-start; min-height: 40px; padding: 4px 0; }
-  .dn-row { flex-wrap: wrap; gap: 10px; padding: 12px; border-radius: 16px; align-items: center; }
-  .dn-upvote { width: 46px; border-radius: 12px; padding: 5px 0; }
-  .dn-upvote b { font-size: 12px; }
-  .dn-file { flex: 1 1 calc(100% - 58px); min-width: 0; }
-  .dn-file-name { font-size: 15px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .dn-actions { opacity: 1; transform: none; order: 3; width: 100%; justify-content: flex-end; gap: 8px; padding-top: 8px; margin-top: 2px; border-top: 1px solid ${C.line}; }
-  .dn-icon-btn { width: 42px; height: 42px; border-radius: 12px; }
-  .dn-selbox { opacity: 1; order: 2; width: 26px; height: 26px; margin-left: auto; }
+  .dn-main { max-width: 100%; padding: 64px 12px 100px; }
+  .dn-header-inner { height: 52px; padding: 0 12px; }
+  .dn-crumb-back { font-size: 13px; margin-bottom: 2px; min-height: 36px; }
+  .dn-hero { margin-bottom: 10px; }
+  .dn-hero-ic { width: 44px; height: 44px; min-width: 44px; border-radius: 14px; margin-bottom: 6px; }
+  .dn-hero-code { font-size: 15px; }
+  .dn-title { font-size: 22px; margin-bottom: 2px; }
+  .dn-hero-sub { font-size: 13px; margin-bottom: 8px; }
+  .dn-search { max-width: 100%; padding: 10px 12px; border-radius: 12px; margin-top: 0; border-width: 1px; }
+  .dn-search input { font-size: 15px; }
+  .dn-filterbar { flex-direction: row; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .dn-periods { border-radius: 10px; padding: 2px; -webkit-overflow-scrolling: touch; }
+  .dn-period { padding: 5px 8px; font-size: 11px; min-height: 0; }
+  .dn-selectall { font-size: 11px; gap: 4px; }
+  .dn-check { width: 16px; height: 16px; }
+  .dn-row { flex-wrap: nowrap; gap: 8px; padding: 8px; border-radius: 12px; align-items: center; }
+  .dn-upvote { width: 38px; border-radius: 9px; padding: 3px 0; }
+  .dn-upvote b { font-size: 10px; }
+  .dn-upvote svg { width: 16px; height: 16px; }
+  .dn-file { flex: 1; min-width: 0; gap: 8px; }
+  .dn-tile { width: 36px !important; height: 36px !important; font-size: 15px !important; border-radius: 10px !important; }
+  .dn-file-name { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dn-file-meta { font-size: 10px; }
+  .dn-actions { opacity: 1; transform: none; gap: 2px; }
+  .dn-icon-btn { width: 28px; height: 28px; border-radius: 8px; }
+  .dn-icon-btn svg { width: 15px; height: 15px; }
+  .dn-selbox { opacity: 1; width: 18px; height: 18px; flex-shrink: 0; }
   .dn-hide-sm { display: none; }
-  .dn-bulk { left: 14px; right: 14px; transform: none; width: auto; flex-wrap: wrap; gap: 10px; padding: 12px 14px; border-radius: 16px; }
+  .dn-fab { bottom: 18px; right: 18px; width: 52px; height: 52px; border-radius: 16px; }
+  .dn-bulk { left: 12px; right: 12px; transform: none; width: auto; flex-wrap: wrap; gap: 8px; padding: 10px 12px; border-radius: 14px; }
   .dn-bulk-actions { width: 100%; justify-content: space-between; }
   .dn-mode-grid { grid-template-columns: 1fr; }
-  .dn-read-col h1 { font-size: 25px; }
-  .dn-read-col p, .dn-read-lead { font-size: 16px !important; }
-  .dn-fs-row1 { flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
-  .dn-fs-search { max-width: none; flex: 1 1 100%; order: 3; margin-left: 0; }
-  .dn-fs-bk { width: 42px; height: 42px; border: 2px solid ${C.line}; border-radius: 12px; background: #fff; }
+  .dn-read-col { padding: 16px 14px 8px; }
+  .dn-read-col h1 { font-size: 20px; margin-bottom: 8px; }
+  .dn-read-col p, .dn-read-lead { font-size: 15px !important; margin-bottom: 10px; }
+  .dn-read-foot { padding: 8px 12px; }
+  .dn-foot-back { padding: 7px 10px; font-size: 12px; }
+  .dn-chunky { font-size: 13px; padding: 8px 14px; border-radius: 12px; }
+  .dn-quiz-scroll { padding: 10px 12px; }
+  .dn-q-card { padding: 12px; margin-bottom: 8px; }
+  .dn-q-stem { font-size: 14px; margin-bottom: 8px; }
+  .dn-q-opt { padding: 8px 10px; font-size: 13px; }
+  .dn-quiz-foot { padding: 8px 12px; }
+  .dn-fs-row1 { flex-wrap: nowrap; gap: 6px; padding: 8px 10px; }
+  .dn-fs-close { width: 36px; height: 36px; border-radius: 10px; border-width: 1px; }
+  .dn-fs-search { flex: 1; min-width: 0; order: 0; margin-left: 0; padding: 7px 10px; border-radius: 10px; border-width: 1px; }
+  .dn-fs-search input { font-size: 14px; }
+  .dn-fs-bk { width: 32px; height: 32px; border: 1px solid ${C.line}; border-radius: 9px; background: #fff; }
+  .dn-tabbar-btn { font-size: 8px; min-width: 46px; padding: 4px 1px; }
+  .dn-tabbar-btn svg { width: 20px; height: 20px; }
 }
 `;
 
@@ -504,7 +520,8 @@ export function DrNoteHome() {
           {page === "exam" && exam && (
             <ExamPage exam={exam} filter={filter} setFilter={setFilter} query={query} setQuery={setQuery}
               voted={voted} setVoted={setVoted} saved={saved} toggleSaved={toggleSaved}
-              picked={picked} setPicked={setPicked} onBack={() => setPage("home")} onOpen={openFile} flash={flash} />
+              picked={picked} setPicked={setPicked} onBack={() => setPage("home")} onOpen={openFile}
+              onAdd={() => setAdding(true)} flash={flash} />
           )}
 
           {page === "study" && file && (
@@ -706,9 +723,10 @@ function AddFile({ onClose, onDone }: { onClose: () => void; onDone: () => void 
 function ExamPage(props: {
   exam: Exam; filter: Filter; setFilter: (f: Filter) => void; query: string; setQuery: (s: string) => void;
   voted: Set<string>; setVoted: (s: Set<string>) => void; saved: Set<string>; toggleSaved: (id: string) => void;
-  picked: Set<string>; setPicked: (s: Set<string>) => void; onBack: () => void; onOpen: (f: ExamFile) => void; flash: (m: string) => void;
+  picked: Set<string>; setPicked: (s: Set<string>) => void; onBack: () => void; onOpen: (f: ExamFile) => void;
+  onAdd: () => void; flash: (m: string) => void;
 }) {
-  const { exam, filter, setFilter, query, setQuery, voted, setVoted, saved, toggleSaved, picked, setPicked, onBack, onOpen, flash } = props;
+  const { exam, filter, setFilter, query, setQuery, voted, setVoted, saved, toggleSaved, picked, setPicked, onBack, onOpen, onAdd, flash } = props;
 
   const ranked = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -725,7 +743,7 @@ function ExamPage(props: {
   return (
     <main className="dn-main dn-exam-main">
       <button type="button" className="dn-crumb-back" onClick={onBack}><ArrowLeft size={18} strokeWidth={2.6} /> All exams</button>
-      <section className="dn-hero">
+      <section className="dn-hero dn-hero-compact">
         <span className="dn-hero-ic" style={{ background: `linear-gradient(135deg, ${exam.from} 0%, ${exam.to} 100%)` }}>
           <span className="dn-hero-code">{exam.code}</span>
         </span>
@@ -744,8 +762,8 @@ function ExamPage(props: {
             <button key={p.key} type="button" onClick={() => setFilter(p.key)} className="dn-period"
               style={{ color: filter === p.key ? "#fff" : C.sub, background: filter === p.key ? (p.key === "bookmarked" ? C.blue : C.green) : "transparent", boxShadow: filter === p.key ? `0 3px 0 ${p.key === "bookmarked" ? C.blueDark : C.greenDark}` : "none" }}>
               {p.key === "bookmarked" ? (
-                <span className="dn-inline" style={{ gap: 5 }}>
-                  <BkIcon saved={filter === p.key} size={14} light={filter === p.key} />
+                <span className="dn-inline" style={{ gap: 4 }}>
+                  <BkIcon saved={filter === p.key} size={12} light={filter === p.key} />
                   Saved
                 </span>
               ) : p.label}
@@ -776,7 +794,7 @@ function ExamPage(props: {
               <div className="dn-actions">
                 <button type="button" className="dn-icon-btn" onClick={() => onOpen(f)} title="Study" aria-label="Study"><Play size={18} strokeWidth={2.4} /></button>
                 <button type="button" className={`dn-icon-btn dn-bk${isSaved ? " on" : ""}`} onClick={() => { toggleSaved(f.id); flash(isSaved ? "Removed bookmark" : "Bookmarked"); }} title={isSaved ? "Remove bookmark" : "Bookmark"} aria-label={isSaved ? "Remove bookmark" : "Bookmark"}>
-                  <BkIcon saved={isSaved} size={18} />
+                  <BkIcon saved={isSaved} size={15} />
                 </button>
                 <button type="button" className="dn-icon-btn dn-hide-sm" onClick={() => flash("Share link copied")} title="Share" aria-label="Share"><Share2 size={16} strokeWidth={2.4} /></button>
                 <button type="button" className="dn-icon-btn dn-hide-sm" onClick={() => flash("Link copied")} title="Copy link" aria-label="Copy link"><Link2 size={16} strokeWidth={2.4} /></button>
@@ -801,6 +819,10 @@ function ExamPage(props: {
           </div>
         </div>
       )}
+
+      <button type="button" className="dn-fab" onClick={onAdd} title="Add file" aria-label="Add file" style={{ background: C.green, boxShadow: `0 4px 0 ${C.greenDark}` }}>
+        <Plus size={26} color="#fff" strokeWidth={2.8} />
+      </button>
     </main>
   );
 }
@@ -846,7 +868,7 @@ function Study({ file, saved, onToggleSave, onClose, flash }: {
           <button className="dn-fs-close" onClick={onClose} aria-label="Close"><X size={20} strokeWidth={2.8} /></button>
           <LetterTile name={file.name} color={file.color} size={30} />
           <button type="button" className={`dn-fs-bk${saved ? " on" : ""}`} onClick={onToggleSave} title={saved ? "Bookmarked" : "Bookmark"} aria-label={saved ? "Remove bookmark" : "Bookmark"}>
-            <BkIcon saved={saved} size={18} />
+            <BkIcon saved={saved} size={15} />
           </button>
           <div className="dn-fs-search">
             <Search size={18} color={C.faint} strokeWidth={2.4} />
@@ -856,10 +878,13 @@ function Study({ file, saved, onToggleSave, onClose, flash }: {
         </div>
         <nav className="dn-fs-tabs">
           {TABS.map(({ key, icon: Icon }) => (
-            <button key={key} className="dn-fs-tab" onClick={() => setTab(key)} style={{ color: tab === key ? C.blueDark : C.faint, background: tab === key ? "#DDF4FF" : "transparent" }}>
+            <button key={key} className="dn-fs-tab" onClick={() => { setTab(key); setChatOpen(false); }} style={{ color: tab === key && !chatOpen ? C.blueDark : C.faint, background: tab === key && !chatOpen ? "#DDF4FF" : "transparent" }}>
               <Icon size={16} strokeWidth={2.4} /><span>{key}</span>
             </button>
           ))}
+          <button className="dn-fs-tab" onClick={() => openChat()} style={{ color: chatOpen ? C.purpleDark : C.faint, background: chatOpen ? "#F3E8FF" : "transparent" }}>
+            <Sparkles size={16} strokeWidth={2.4} /><span>Ask</span>
+          </button>
         </nav>
       </header>
 
@@ -874,15 +899,17 @@ function Study({ file, saved, onToggleSave, onClose, flash }: {
 
       {/* iOS-style bottom tab bar (mobile / iPad) */}
       <nav className="dn-tabbar">
-        {TABS.map(({ key, icon: Icon }) => (
-          <button key={key} className="dn-tabbar-btn" onClick={() => setTab(key)} style={{ color: tab === key ? C.blue : C.faint }}>
-            <Icon size={22} strokeWidth={2.3} /><span>{key}</span>
+        <div className="dn-tabbar-inner">
+          {TABS.map(({ key, icon: Icon }) => (
+            <button key={key} className={`dn-tabbar-btn${tab === key && !chatOpen ? " on" : ""}`} onClick={() => { setTab(key); setChatOpen(false); }} style={{ color: tab === key && !chatOpen ? C.blue : C.faint }}>
+              <Icon size={22} strokeWidth={2.3} /><span>{key}</span>
+            </button>
+          ))}
+          <button className={`dn-tabbar-btn dn-tabbar-ask${chatOpen ? " on" : ""}`} onClick={() => openChat()} style={{ color: chatOpen ? C.purpleDark : C.faint }}>
+            <Sparkles size={22} strokeWidth={2.3} /><span>Ask</span>
           </button>
-        ))}
+        </div>
       </nav>
-
-      {/* Ask-AI floating button (all content) */}
-      {!chatOpen && <button className="dn-ai-fab" onClick={() => openChat()} title="Ask AI" aria-label="Ask AI" style={{ background: C.purple, boxShadow: `0 4px 0 ${C.purpleDark}` }}><Sparkles size={22} color="#fff" strokeWidth={2.4} /></button>}
 
       {/* highlight-to-ask popover */}
       {ask && (
@@ -1181,32 +1208,36 @@ function SummaryNotion({ file }: { file: ExamFile }) {
   );
 }
 
-/* ---- Flashcards (Quizlet-style) ---- */
+/* ---- Flashcards (list-only, tap to expand) ---- */
 function FlashcardsQuizlet({ query }: { query: string }) {
-  const [i, setI] = useState(0);
-  const [flipped, setFlipped] = useState(false);
+  const [open, setOpen] = useState<number | null>(null);
   const [fav, setFav] = useState<Set<number>>(new Set());
   const q = query.trim().toLowerCase();
   const list = useMemo(() => CARDS.map((c, orig) => ({ ...c, orig })).filter((c) => !q || c.t.toLowerCase().includes(q) || c.d.toLowerCase().includes(q)), [q]);
-  useEffect(() => { setI(0); setFlipped(false); }, [q]);
-  if (list.length === 0) return <div className="ql-scroll"><div className="ql-wrap"><div className="dn-empty" style={{ paddingTop: 60 }}><Search size={26} color={C.faint} /><p>No cards match “{query}”.</p></div></div></div>;
-  const cur = list[Math.min(i, list.length - 1)];
-  const next = (d: number) => { setFlipped(false); setI((v) => (v + d + list.length) % list.length); };
+  useEffect(() => { setOpen(null); }, [q]);
+  if (list.length === 0) return <div className="ql-scroll"><div className="ql-wrap"><div className="dn-empty" style={{ paddingTop: 40 }}><Search size={26} color={C.faint} /><p>No cards match “{query}”.</p></div></div></div>;
   return (
     <div className="ql-scroll">
       <div className="ql-wrap">
-        <button className={`ql-card ${flipped ? "flipped" : ""}`} onClick={() => setFlipped((f) => !f)}>
-          <span className="ql-face front"><span className="ql-tag">TERM</span>{cur.t}</span>
-          <span className="ql-face back" style={{ background: C.green }}><span className="ql-tag" style={{ color: "#DFFFC2" }}>DEFINITION</span>{cur.d}</span>
-        </button>
-        <div className="ql-controls"><button className="dn-ghost" onClick={() => next(-1)}><ChevronLeft size={20} strokeWidth={2.6} /></button><span className="ql-count">{Math.min(i, list.length - 1) + 1} / {list.length}</span><button className="dn-ghost" onClick={() => next(1)}><ChevronRight size={20} strokeWidth={2.6} /></button></div>
         <h3 className="ql-list-h">Terms in this set ({list.length})</h3>
         <ul className="ql-list">
-          {list.map((c) => { const on = fav.has(c.orig); return (
-            <li key={c.orig} className="ql-row"><span className="ql-term">{c.t}</span><span className="ql-div" /><span className="ql-def">{c.d}</span>
-              <button className="ql-fav" onClick={() => { const n = new Set(fav); on ? n.delete(c.orig) : n.add(c.orig); setFav(n); }} style={{ color: on ? C.yellowDark : C.faint }} aria-label="Favorite"><Star size={17} strokeWidth={2.2} fill={on ? C.yellow : "none"} /></button>
-            </li>
-          ); })}
+          {list.map((c) => {
+            const on = fav.has(c.orig), expanded = open === c.orig;
+            return (
+              <li key={c.orig} className="ql-row">
+                <div className="ql-row-head">
+                  <button type="button" className="ql-row-toggle" onClick={() => setOpen(expanded ? null : c.orig)} aria-expanded={expanded}>
+                    <span className="ql-term">{c.t}</span>
+                    <ChevronRight size={18} color={C.faint} strokeWidth={2.6} style={{ flexShrink: 0, transform: expanded ? "rotate(90deg)" : "none", transition: "transform .15s" }} />
+                  </button>
+                  <button type="button" className="ql-fav" onClick={() => { const n = new Set(fav); on ? n.delete(c.orig) : n.add(c.orig); setFav(n); }} style={{ color: on ? C.yellowDark : C.faint }} aria-label="Favorite">
+                    <Star size={16} strokeWidth={2.2} fill={on ? C.yellow : "none"} />
+                  </button>
+                </div>
+                {expanded && <p className="ql-def">{c.d}</p>}
+              </li>
+            );
+          })}
         </ul>
       </div>
     </div>
