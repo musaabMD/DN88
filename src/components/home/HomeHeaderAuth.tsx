@@ -23,6 +23,9 @@ import { DASHBOARD_PATH } from "@/lib/routes";
 const loginButtonClass =
   "rounded-xl px-3 py-2 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900";
 
+const dashboardLinkClass =
+  "rounded-xl px-3 py-2 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900";
+
 function GuestAuthButtons() {
   return (
     <div className="flex items-center gap-2">
@@ -62,11 +65,20 @@ function StreakBadge({ days }: { days: number }) {
   );
 }
 
+function DashboardLink() {
+  return (
+    <Link href={DASHBOARD_PATH} className={dashboardLinkClass}>
+      Dashboard
+    </Link>
+  );
+}
+
 function ClerkUserMenu({ streakDays }: { streakDays: number }) {
   return (
     <>
       <CreditsBadge />
       <StreakBadge days={streakDays} />
+      <DashboardLink />
       <UserButton
         userProfileMode="navigation"
         userProfileUrl={CLERK_USER_PROFILE_URL}
@@ -106,6 +118,7 @@ export function HomeHeaderAuth({ variant = "modern" }: { variant?: "modern" | "l
             <Flame size={18} color="#FFC800" fill="#FFC800" strokeWidth={2} />
             <b>{streakDays}</b>
           </span>
+          <DashboardLink />
           <UserButton
             userProfileMode="navigation"
             userProfileUrl={CLERK_USER_PROFILE_URL}

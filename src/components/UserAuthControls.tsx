@@ -46,11 +46,9 @@ function ClerkUserAuthControls({ compact = false }: { compact?: boolean }) {
   return (
     <>
       <SignedIn>
-        {!compact && (
-          <Link href={DASHBOARD_PATH} className={primaryNavLinkClass}>
-            Dashboard
-          </Link>
-        )}
+        <Link href={DASHBOARD_PATH} className={primaryNavLinkClass}>
+          Dashboard
+        </Link>
         <UserButton
           userProfileMode="navigation"
           userProfileUrl={CLERK_USER_PROFILE_URL}
