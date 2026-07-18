@@ -239,6 +239,9 @@ const styles = `
 /* header */
 .dn-header { position: fixed; top: 0; left: 0; right: 0; z-index: 40; background: #fff; border-bottom: 2px solid ${C.line}; }
 .dn-header-inner { max-width: 1200px; margin: 0 auto; height: 66px; padding: 0 18px; display: flex; align-items: center; }
+.dn-header-left { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.dn-header-back { width: 40px; height: 40px; border-radius: 10px; border: none; background: none; cursor: pointer; display: grid; place-items: center; color: ${C.sub}; flex-shrink: 0; }
+.dn-header-back:hover { background: ${C.wash}; color: ${C.ink}; }
 .dn-brand { display: flex; align-items: center; gap: 10px; background: none; border: none; cursor: pointer; }
 .dn-logo { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; }
 .dn-brand-name { font-size: 21px; font-weight: 900; color: ${C.green}; letter-spacing: -.5px; }
@@ -259,8 +262,6 @@ const styles = `
 .dn-title { font-size: 34px; font-weight: 900; letter-spacing: -1px; margin: 0 0 4px; color: ${C.ink}; }
 .dn-hero-sub { color: ${C.sub}; font-weight: 700; margin: 0 0 12px; font-size: 15px; }
 .dn-hero-compact .dn-search { margin-top: 0; max-width: 520px; }
-.dn-crumb-back { display: inline-flex; align-items: center; gap: 6px; background: none; border: none; cursor: pointer; color: ${C.sub}; font-weight: 800; font-size: 14px; margin-bottom: 8px; padding: 6px 0; min-height: 44px; }
-.dn-crumb-back:hover { color: ${C.ink}; }
 .dn-exam-main { width: 100%; }
 .dn-search { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 520px; margin: 8px auto 0; background: #fff; border: 2px solid ${C.line}; border-radius: 18px; padding: 14px 16px; transition: border-color .12s, box-shadow .12s; }
 .dn-search:focus-within { border-color: ${C.blue}; box-shadow: 0 0 0 4px #DDF4FF; }
@@ -578,7 +579,7 @@ const styles = `
 @media (max-width: 640px) {
   .dn-main { max-width: 100%; padding: 64px 12px 100px; }
   .dn-header-inner { height: 52px; padding: 0 12px; }
-  .dn-crumb-back { font-size: 13px; margin-bottom: 2px; min-height: 36px; }
+  .dn-header-back { width: 36px; height: 36px; border-radius: 9px; }
   .dn-hero { margin-bottom: 10px; }
   .dn-hero-row { max-width: 100%; margin-bottom: 8px; gap: 8px; }
   .dn-hero-compact .dn-hero-ic { width: 38px; height: 38px; min-width: 38px; border-radius: 10px; }
@@ -719,9 +720,21 @@ function DrNoteHomeInner() {
           {page !== "study" && (
             <header className="dn-header">
               <div className="dn-header-inner">
-                <button type="button" className="dn-brand" onClick={() => setPage("home")} aria-label={m.drnoteHome}>
-                  <DrNoteLogo showWordmark forceWordmark />
-                </button>
+                <div className="dn-header-left">
+                  {page === "exam" && (
+                    <button
+                      type="button"
+                      className="dn-header-back"
+                      onClick={() => setPage("home")}
+                      aria-label={m.allExamsBack}
+                    >
+                      <ArrowLeft size={20} strokeWidth={2.5} />
+                    </button>
+                  )}
+                  <button type="button" className="dn-brand" onClick={() => setPage("home")} aria-label={m.drnoteHome}>
+                    <DrNoteLogo showWordmark forceWordmark />
+                  </button>
+                </div>
                 <div className="dn-header-right">
                   <CreditsBadge />
                   <span className="dn-streak"><Flame size={18} color={C.yellow} fill={C.yellow} strokeWidth={2} /><b>{streakData.streakDays || 0}</b></span>
@@ -734,7 +747,7 @@ function DrNoteHomeInner() {
           {page === "exam" && exam && (
             <ExamPage exam={exam} filter={filter} setFilter={setFilter} query={query} setQuery={setQuery}
               voted={voted} setVoted={setVoted} saved={saved} toggleSaved={toggleSaved}
-              picked={picked} setPicked={setPicked} onBack={() => setPage("home")} onOpen={openFile}
+              picked={picked} setPicked={setPicked} onOpen={openFile}
               onAdd={() => setAdding(true)} flash={flash}
               docsRefreshKey={docsRefreshKey} useLiveData={clerkEnabled} />
           )}
@@ -1024,11 +1037,11 @@ function AddFile({
 function ExamPage(props: {
   exam: Exam; filter: Filter; setFilter: (f: Filter) => void; query: string; setQuery: (s: string) => void;
   voted: Set<string>; setVoted: (s: Set<string>) => void; saved: Set<string>; toggleSaved: (id: string) => void;
-  picked: Set<string>; setPicked: (s: Set<string>) => void; onBack: () => void; onOpen: (f: ExamFile) => void;
+  picked: Set<string>; setPicked: (s: Set<string>) => void; onOpen: (f: ExamFile) => void;
   onAdd: () => void; flash: (m: string) => void;
   docsRefreshKey: number; useLiveData: boolean;
 }) {
-  const { exam, filter, setFilter, query, setQuery, voted, setVoted, saved, toggleSaved, picked, setPicked, onBack, onOpen, onAdd, flash, docsRefreshKey, useLiveData } = props;
+  const { exam, filter, setFilter, query, setQuery, voted, setVoted, saved, toggleSaved, picked, setPicked, onOpen, onAdd, flash, docsRefreshKey, useLiveData } = props;
   const { files: liveFiles, loading: filesLoading } = useExamDocuments(exam.id, docsRefreshKey);
   const { m } = useHomeLocale();
   const clerkEnabled = useClerkEnabled();
@@ -1077,7 +1090,6 @@ function ExamPage(props: {
 
   return (
     <main className="dn-main dn-exam-main">
-      <button type="button" className="dn-crumb-back" onClick={onBack}><ArrowLeft size={18} strokeWidth={2.6} /> {m.allExamsBack}</button>
       <section className="dn-hero dn-hero-compact">
         <div className="dn-hero-row">
           <span className="dn-hero-ic" style={{ background: `linear-gradient(135deg, ${exam.from} 0%, ${exam.to} 100%)` }} aria-hidden>
