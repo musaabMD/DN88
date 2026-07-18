@@ -108,16 +108,17 @@ const READ_PAGES = [
 /* ------------------------------------------------------------------ */
 /*  Primitives                                                         */
 /* ------------------------------------------------------------------ */
-function Chunky({ children, bg, shadow, fg = "#fff", onClick, full, disabled }: {
-  children: ReactNode; bg: string; shadow: string; fg?: string; onClick?: () => void; full?: boolean; disabled?: boolean;
+function Chunky({ children, bg, shadow, fg = "#fff", onClick, full, disabled, sm }: {
+  children: ReactNode; bg: string; shadow: string; fg?: string; onClick?: () => void; full?: boolean; disabled?: boolean; sm?: boolean;
 }) {
   const [down, setDown] = useState(false);
+  const lift = sm ? 2 : 4;
   return (
     <button onClick={onClick} disabled={disabled}
       onMouseDown={() => setDown(true)} onMouseUp={() => setDown(false)} onMouseLeave={() => setDown(false)}
-      className="dn-chunky"
+      className={`dn-chunky${sm ? " dn-chunky-sm" : ""}`}
       style={{ width: full ? "100%" : undefined, background: disabled ? "#E5E5E5" : bg, color: disabled ? "#AFAFAF" : fg,
-        boxShadow: disabled ? "0 4px 0 #CFCFCF" : `0 ${down ? 2 : 4}px 0 ${shadow}`, transform: down ? "translateY(2px)" : "none", cursor: disabled ? "not-allowed" : "pointer" }}>
+        boxShadow: disabled ? `0 ${lift}px 0 #CFCFCF` : `0 ${down ? 1 : lift}px 0 ${shadow}`, transform: down ? "translateY(1px)" : "none", cursor: disabled ? "not-allowed" : "pointer" }}>
       {children}
     </button>
   );
@@ -303,11 +304,16 @@ const styles = `
 .dn-callout p { font-size: 15px !important; margin: 0 !important; }
 .dn-foot-back:disabled { opacity: .4; cursor: not-allowed; }
 .dn-foot-nav { display: flex; align-items: center; gap: 8px; }
-.dn-read-foot { flex-shrink: 0; border-top: 2px solid ${C.line}; display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; gap: 10px; max-width: 728px; margin: 0 auto; width: 100%; }
+.dn-read-foot { flex-shrink: 0; border-top: 1px solid ${C.line}; display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; gap: 8px; max-width: 728px; margin: 0 auto; width: 100%; background: #fff; }
+.dn-read-foot .dn-foot-back { padding: 6px 10px; font-size: 12px; border-width: 1px; border-radius: 10px; gap: 3px; }
+.dn-read-foot .dn-foot-count { font-size: 11px; flex-shrink: 0; }
+.dn-foot-count-short { display: none; }
+.dn-foot-back-label { display: inline; }
+.dn-foot-next-label { display: inline; }
 .dn-foot-back { display: inline-flex; align-items: center; gap: 4px; border: 2px solid ${C.line}; background: #fff; border-radius: 12px; padding: 8px 12px; font-weight: 800; font-size: 13px; color: ${C.sub}; cursor: pointer; }
 .dn-foot-count { font-weight: 800; color: ${C.faint}; font-size: 12px; }
 .dn-foot-icon { width: 38px; height: 38px; border-radius: 12px; border: 2px solid ${C.line}; background: #fff; cursor: pointer; display: grid; place-items: center; color: ${C.sub}; flex-shrink: 0; }
-.dn-chunky-sm { border: none; border-radius: 12px; font-weight: 800; font-size: 13px; padding: 8px 14px; letter-spacing: .2px; transition: transform .04s, box-shadow .04s; }
+.dn-chunky-sm { border: none; border-radius: 10px; font-weight: 800; font-size: 12px; padding: 6px 12px; letter-spacing: .2px; transition: transform .04s, box-shadow .04s; }
 
 /* quiz */
 .dn-quiz-fs { flex: 1; min-height: 0; display: flex; flex-direction: column; }
@@ -452,9 +458,13 @@ const styles = `
   .dn-read-col { padding: 16px 14px 8px; }
   .dn-read-col h1 { font-size: 20px; margin-bottom: 8px; }
   .dn-read-col p, .dn-read-lead { font-size: 15px !important; margin-bottom: 10px; }
-  .dn-read-foot { padding: 8px 12px; }
-  .dn-foot-back { padding: 7px 10px; font-size: 12px; }
-  .dn-chunky { font-size: 13px; padding: 8px 14px; border-radius: 12px; }
+  .dn-read-foot { padding: 4px 8px calc(4px + env(safe-area-inset-bottom)); gap: 6px; }
+  .dn-read-foot .dn-foot-back { padding: 5px 7px; min-width: 30px; justify-content: center; }
+  .dn-foot-back-label { display: none; }
+  .dn-foot-count-full { display: none; }
+  .dn-foot-count-short { display: inline; font-size: 10px; }
+  .dn-foot-next-label { display: none; }
+  .dn-read-foot .dn-chunky-sm { padding: 5px 10px; font-size: 11px; border-radius: 9px; }
   .dn-quiz-scroll { padding: 10px 12px; }
   .dn-q-card { padding: 12px; margin-bottom: 8px; }
   .dn-q-stem { font-size: 14px; margin-bottom: 8px; }
@@ -985,9 +995,16 @@ function ReadFull({ file }: { file: ExamFile }) {
         </article>
       </div>
       <div className="dn-read-foot">
-        <button className="dn-foot-back" disabled={i === 0} onClick={() => setI((v) => v - 1)}><ChevronLeft size={18} strokeWidth={2.8} /> Back</button>
-        <span className="dn-foot-count">Page {i + 1} of {READ_PAGES.length}</span>
-        <Chunky bg={C.green} shadow={C.greenDark} disabled={i === READ_PAGES.length - 1} onClick={() => setI((v) => v + 1)}><span className="dn-inline">Continue <ChevronRight size={16} strokeWidth={2.8} /></span></Chunky>
+        <button className="dn-foot-back" disabled={i === 0} onClick={() => setI((v) => v - 1)} aria-label="Previous page">
+          <ChevronLeft size={16} strokeWidth={2.8} /><span className="dn-foot-back-label">Back</span>
+        </button>
+        <span className="dn-foot-count">
+          <span className="dn-foot-count-full">Page {i + 1} of {READ_PAGES.length}</span>
+          <span className="dn-foot-count-short">{i + 1}/{READ_PAGES.length}</span>
+        </span>
+        <Chunky sm bg={C.green} shadow={C.greenDark} disabled={i === READ_PAGES.length - 1} onClick={() => setI((v) => v + 1)}>
+          <span className="dn-inline"><span className="dn-foot-next-label">Continue</span><ChevronRight size={14} strokeWidth={2.8} /></span>
+        </Chunky>
       </div>
     </div>
   );
