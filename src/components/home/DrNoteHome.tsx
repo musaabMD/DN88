@@ -126,8 +126,8 @@ function Chunky({ children, bg, shadow, fg = "#fff", onClick, full, disabled, sm
 function LetterTile({ name, color, size = 44 }: { name: string; color: string; size?: number }) {
   return <span className="dn-tile" style={{ background: color, width: size, height: size, fontSize: size * 0.42, borderRadius: size * 0.28 }}>{name.charAt(0).toUpperCase()}</span>;
 }
-function AskChip({ onClick }: { onClick: () => void }) {
-  return <button className="dn-askchip" onClick={onClick} title="Ask AI" aria-label="Ask AI"><Sparkles size={16} strokeWidth={2.4} /></button>;
+function AskChip({ onClick, sm }: { onClick: () => void; sm?: boolean }) {
+  return <button className={`dn-askchip${sm ? " dn-askchip-sm" : ""}`} onClick={onClick} title="Ask AI" aria-label="Ask AI"><Sparkles size={sm ? 13 : 16} strokeWidth={2.4} /></button>;
 }
 
 function BkIcon({ saved, size = 14, light = false }: { saved?: boolean; size?: number; light?: boolean }) {
@@ -154,6 +154,7 @@ const styles = `
 .dn-inline { display: inline-flex; align-items: center; gap: 8px; }
 .dn-tile { flex-shrink: 0; display: grid; place-items: center; color: #fff; font-weight: 900; }
 .dn-askchip { border: none; background: #F3E8FF; color: ${C.purple}; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
+.dn-askchip-sm { width: 24px; height: 24px; border-radius: 7px; }
 .dn-askchip:hover { background: #EAD9FF; }
 
 /* header */
@@ -330,9 +331,9 @@ const styles = `
 .dn-q-options { display: flex; flex-direction: column; gap: 8px; }
 .dn-q-opt { display: flex; align-items: center; gap: 10px; text-align: left; border: 1px solid ${C.line}; border-radius: 12px; padding: 10px 12px; font-weight: 700; font-size: 14px; color: ${C.ink}; background: #fff; transition: all .1s; }
 .dn-q-key { width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; font-weight: 900; font-size: 12px; flex-shrink: 0; }
-.dn-q-explain { margin-top: 10px; background: ${C.wash}; border-radius: 10px; padding: 10px 12px; }
-.dn-q-explain-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
-.dn-q-explain span { font-weight: 600; line-height: 1.45; color: ${C.ink}; font-size: 14px; }
+.dn-q-explain { margin-top: 8px; background: ${C.wash}; border-radius: 8px; padding: 7px 9px; display: flex; align-items: flex-start; gap: 6px; }
+.dn-q-explain-text { flex: 1; min-width: 0; margin: 0; font-weight: 500; line-height: 1.35; color: ${C.sub}; font-size: 13px; }
+.dn-q-explain-text b { font-weight: 800; font-size: 12px; margin-right: 5px; }
 .dn-reveal-bar { flex-shrink: 0; padding: 10px 14px; border-top: 2px solid ${C.line}; max-width: 728px; margin: 0 auto; width: 100%; }
 .dn-quiz-foot { flex-shrink: 0; border-top: 2px solid ${C.line}; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; max-width: 728px; margin: 0 auto; width: 100%; }
 .dn-dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
@@ -473,6 +474,9 @@ const styles = `
   .dn-q-card { padding: 12px; margin-bottom: 8px; }
   .dn-q-stem { font-size: 14px; margin-bottom: 8px; }
   .dn-q-opt { padding: 8px 10px; font-size: 13px; }
+  .dn-q-explain { margin-top: 6px; padding: 5px 7px; gap: 5px; border-radius: 7px; }
+  .dn-q-explain-text { font-size: 12px; line-height: 1.3; }
+  .dn-q-explain-text b { font-size: 11px; margin-right: 4px; }
   .dn-quiz-foot { padding: 8px 12px; }
   .dn-fs-row1 { gap: 6px; padding: 6px 10px 4px; }
   .dn-fs-row2 { padding: 0 10px 6px; }
@@ -1087,8 +1091,8 @@ function QuizList({ query, answers, setAnswers, flagged, setFlagged, perPage, se
               </div>
               {show && (
                 <div className="dn-q-explain">
-                  <div className="dn-q-explain-top"><b style={{ color: picked === qq.correct ? C.greenDark : C.red }}>{picked === qq.correct ? "Correct" : "Not quite"}</b><AskChip onClick={() => onAsk(`${qq.stem} — ${qq.explain}`)} /></div>
-                  <span>{qq.explain}</span>
+                  <p className="dn-q-explain-text"><b style={{ color: picked === qq.correct ? C.greenDark : C.red }}>{picked === qq.correct ? "Correct" : "Not quite"}</b>{qq.explain}</p>
+                  <AskChip sm onClick={() => onAsk(`${qq.stem} — ${qq.explain}`)} />
                 </div>
               )}
             </div>
@@ -1180,7 +1184,10 @@ function ReviewPane({ answers, flagged, setFlagged, onAsk }: {
                 );
               })}
             </div>
-            <div className="dn-q-explain"><div className="dn-q-explain-top"><b style={{ color: a === cur.correct ? C.greenDark : C.red }}>{a === undefined ? "Not answered" : a === cur.correct ? "You got it right" : "You missed this"}</b><AskChip onClick={() => onAsk(`${cur.stem} — ${cur.explain}`)} /></div><span>{cur.explain}</span></div>
+            <div className="dn-q-explain">
+              <p className="dn-q-explain-text"><b style={{ color: a === cur.correct ? C.greenDark : C.red }}>{a === undefined ? "Not answered" : a === cur.correct ? "Correct" : "Incorrect"}</b>{cur.explain}</p>
+              <AskChip sm onClick={() => onAsk(`${cur.stem} — ${cur.explain}`)} />
+            </div>
           </div>
         </div>
         <div className="dn-read-foot">
