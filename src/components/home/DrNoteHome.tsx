@@ -1348,7 +1348,13 @@ function QuizList({ query, answers, setAnswers, flagged, setFlagged, perPage, se
 
   const q = query.trim().toLowerCase();
   const list = useMemo(() => QUESTIONS.map((qq, i) => ({ ...qq, idx: i })).filter((qq) => !q || qq.stem.toLowerCase().includes(q)), [q]);
-  useEffect(() => { setPageIdx(0); setRevealed(false); }, [q, perPage, reveal]);
+  const filterKey = `${q}\0${perPage}\0${reveal}`;
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey);
+    setPageIdx(0);
+    setRevealed(false);
+  }
 
   const pages = Math.max(1, Math.ceil(list.length / perPage));
   const start = pageIdx * perPage;
@@ -1463,11 +1469,11 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
   ];
   const filterCounts: Record<RF, number> = { ...counts, sessions: sessions.length };
 
-  const sessionList = useMemo(() => sessions.filter((s) => {
+  const sessionList = sessions.filter((s) => {
     if (!searchQ) return true;
     const hay = `${s.title} ${s.source}`.toLowerCase();
     return hay.includes(searchQ);
-  }), [sessions, searchQ]);
+  });
 
   // session report
   if (report) {
@@ -1830,7 +1836,12 @@ function FlashcardsQuizlet({ query }: { query: string }) {
     const hay = `${c.t} ${c.d} ${c.imgAlt ?? ""}`.toLowerCase();
     return hay.includes(q);
   }), [q]);
-  useEffect(() => { setOpen(null); }, [q, view]);
+  const resetKey = `${q}\0${view}`;
+  const [prevResetKey, setPrevResetKey] = useState(resetKey);
+  if (resetKey !== prevResetKey) {
+    setPrevResetKey(resetKey);
+    setOpen(null);
+  }
   useEffect(() => { localStorage.setItem("dn-flashcards-view", view); }, [view]);
 
   const toggleFav = (orig: number) => {
