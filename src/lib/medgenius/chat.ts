@@ -1,4 +1,5 @@
 import { sendAiChat, MedGeniusApiError } from "./api";
+import { sanitizeUserError } from "./errors";
 
 export type AskAiParams = {
   message: string;
@@ -50,7 +51,14 @@ export async function askMedGeniusAi(
   } catch (error) {
     if (error instanceof MedGeniusApiError && error.status === 402) {
       return {
-        reply: `${error.message} Upgrade your plan to continue using AI features.`,
+        reply: sanitizeUserError(error.message, "credits"),
+        conversationId: params.conversationId ?? "",
+        fromApi: false,
+      };
+    }
+    if (error instanceof MedGeniusApiError) {
+      return {
+        reply: sanitizeUserError(error.message, "ai"),
         conversationId: params.conversationId ?? "",
         fromApi: false,
       };

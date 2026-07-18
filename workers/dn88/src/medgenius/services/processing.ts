@@ -24,6 +24,7 @@ import {
   generateDocumentSummary,
   generateFlashcardsFromQuestion,
 } from "./openrouter";
+import { sanitizeUserError } from "./user-errors";
 import type { Bindings } from "../../types";
 import type { ProcessingStage, QueueMessage } from "../types";
 
@@ -119,7 +120,10 @@ export async function processQueueMessage(
         await completeJob(env, jobId);
     }
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Processing failed";
+    const errorMessage = sanitizeUserError(
+      error instanceof Error ? error.message : "Processing failed",
+      "processing"
+    );
     await env.DB.prepare(
       "UPDATE medgenius_processing_jobs SET status = 'failed', error_message = ?, finished_at = datetime('now') WHERE id = ?"
     )
@@ -204,7 +208,7 @@ async function runExtractQuestionsStage(
   jobId: string
 ): Promise<void> {
   if (!env.OPENROUTER_API_KEY) {
-    throw new Error("OPENROUTER_API_KEY not configured");
+    throw new Error(sanitizeUserError("AI is not configured", "ai"));
   }
 
   await updateDocumentStatus(env.DB, documentId, "extracting", 50);

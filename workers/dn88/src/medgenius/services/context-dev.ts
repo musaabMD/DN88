@@ -1,3 +1,5 @@
+import { sanitizeUserError } from "./user-errors";
+
 export type ContextDevParseResult = {
   markdown: string;
   pageCount: number;
@@ -11,8 +13,8 @@ export type ContextDevParseResult = {
 };
 
 /**
- * Parse a document via Context.dev (called once per upload, never again).
- * Falls back to plain-text extraction when Context.dev is not configured.
+ * Parse uploaded document content (called once per upload).
+ * Falls back to plain-text extraction when advanced parsing is unavailable.
  */
 export async function parseDocumentWithContextDev(
   apiKey: string | undefined,
@@ -44,8 +46,7 @@ export async function parseDocumentWithContextDev(
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Context.dev parse failed: ${errorText.slice(0, 500)}`);
+    throw new Error(sanitizeUserError("Document parse failed", "parse"));
   }
 
   const payload = (await response.json()) as {
@@ -56,7 +57,7 @@ export async function parseDocumentWithContextDev(
   };
 
   if (!payload.markdown) {
-    throw new Error("Context.dev returned no markdown content");
+    throw new Error(sanitizeUserError("Document parse returned no content", "parse"));
   }
 
   return {
@@ -76,12 +77,10 @@ async function fallbackParse(params: {
   const cleaned = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "").trim();
 
   if (cleaned.length < 50 && params.mimeType !== "text/plain") {
-    throw new Error(
-      "Context.dev API key not configured. Binary documents require Context.dev for OCR and parsing."
-    );
+    throw new Error(sanitizeUserError("Could not extract text from this file", "parse"));
   }
 
-  const markdown = `# ${params.filename}\n\n${cleaned || "_No extractable text. Configure CONTEXT_DEV_API_KEY for PDF/OCR support._"}`;
+  const markdown = `# ${params.filename}\n\n${cleaned || "_No extractable text in this file._"}`;
   return {
     markdown,
     pageCount: estimatePageCount(markdown),

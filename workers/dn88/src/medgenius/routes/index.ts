@@ -45,6 +45,7 @@ import {
   detectAnswerConflicts,
   generateBoardQuestion,
 } from "../services/conflicts";
+import { sanitizeUserError } from "../services/user-errors";
 
 export const medgeniusRoutes = new Hono<{ Bindings: Bindings }>();
 
@@ -94,7 +95,7 @@ medgeniusRoutes.get("/documents", async (c) => {
       pageCount: d.page_count,
       status: d.processing_status,
       progress: d.processing_progress,
-      error: d.processing_error,
+      error: d.processing_error ? sanitizeUserError(d.processing_error, "processing") : null,
       processedAt: d.processed_at,
       createdAt: d.created_at,
     })),
@@ -115,7 +116,7 @@ medgeniusRoutes.get("/documents/:id", async (c) => {
     pageCount: doc.page_count,
     status: doc.processing_status,
     progress: doc.processing_progress,
-    error: doc.processing_error,
+    error: doc.processing_error ? sanitizeUserError(doc.processing_error, "processing") : null,
     processedAt: doc.processed_at,
     createdAt: doc.created_at,
   });
@@ -208,7 +209,10 @@ medgeniusRoutes.post("/documents/upload", async (c) => {
       credits: getCreditSummary(updatedUser),
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Upload failed";
+    const message = sanitizeUserError(
+      error instanceof Error ? error.message : "Upload failed",
+      "upload"
+    );
     return c.json({ error: message }, 500);
   }
 });
@@ -345,8 +349,11 @@ medgeniusRoutes.post("/ai/chat", async (c) => {
 
     return c.json(result);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "AI chat failed";
-    const status = message.includes("credit") || message.includes("limit") ? 402 : 500;
+    const message = sanitizeUserError(
+      error instanceof Error ? error.message : "AI chat failed",
+      "ai"
+    );
+    const status = message.includes("plan limit") || message.includes("credit") ? 402 : 500;
     return c.json({ error: message }, status);
   }
 });

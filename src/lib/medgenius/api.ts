@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from "@/lib/api";
+import { sanitizeUserError } from "./errors";
 
 export type CreditSummary = {
   plan: "free" | "starter" | "student" | "pro";
@@ -86,8 +87,16 @@ async function medgeniusFetch<T>(
   const payload = (await response.json()) as T & { error?: string; code?: string };
 
   if (!response.ok) {
+    const kind =
+      response.status === 402
+        ? "credits"
+        : path.includes("upload")
+          ? "upload"
+          : path.includes("ai/chat")
+            ? "ai"
+            : "default";
     throw new MedGeniusApiError(
-      payload.error ?? "Request failed",
+      sanitizeUserError(payload.error ?? "Request failed", kind),
       response.status,
       payload.code
     );
@@ -288,4 +297,11 @@ export async function fetchSummaries(token: string | null, documentId: string) {
 
 export async function fetchDueSrs(token: string | null) {
   return medgeniusFetch<{ questions: MedGeniusQuestion[] }>("/srs/due", token);
+}
+
+export async function fetchDocumentMarkdown(
+  token: string | null,
+  documentId: string
+): Promise<{ markdown: string; pageCount: number }> {
+  return medgeniusFetch(`/documents/${documentId}/markdown`, token);
 }

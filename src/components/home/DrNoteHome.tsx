@@ -11,6 +11,15 @@ import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { useAuth } from "@clerk/clerk-react";
 import { askMedGeniusAi } from "@/lib/medgenius/chat";
 import { uploadDocument, MedGeniusApiError } from "@/lib/medgenius/api";
+import { sanitizeUserError } from "@/lib/medgenius/errors";
+import {
+  useExamDocuments,
+  useDocumentStudy,
+  type HomeFlashCard,
+  type HomeQuestion,
+  type HomeReadPage,
+  type HomeSummary,
+} from "@/lib/medgenius/home-data";
 import { useClerkEnabled } from "@/hooks/useClerkEnabled";
 
 /* ------------------------------------------------------------------ */
@@ -43,7 +52,18 @@ interface Exam {
   to: string;
   tags: string[];
 }
-interface ExamFile { id: string; name: string; author: string; pages: number; color: string; votes: Record<Exclude<Filter, "bookmarked">, number>; }
+interface ExamFile {
+  id: string;
+  name: string;
+  author: string;
+  pages: number;
+  color: string;
+  votes: Record<Exclude<Filter, "bookmarked">, number>;
+  documentId?: string;
+  status?: string;
+  progress?: number;
+  isLive?: boolean;
+}
 
 const EXAMS: Exam[] = [
   { id: "smle", code: "SMLE", name: "Saudi Medical Licensing", files: 1284, from: "#FF6B6B", to: "#E11D48", tags: ["medical", "smle", "doctor"] },
@@ -108,7 +128,7 @@ interface QuizSession {
   status: SessionStatus;
 }
 
-function seedSessions(fileId: string): QuizSession[] {
+function seedSessions(fileId: string, totalQuestions: number): QuizSession[] {
   const now = Date.now();
   return [
     {
@@ -120,7 +140,7 @@ function seedSessions(fileId: string): QuizSession[] {
       durationSec: 18 * 60,
       answers: { 0: 0, 1: 2, 2: 1, 3: 2, 4: 3, 5: 0, 6: 0, 7: 1, 8: 1, 9: 0, 10: 1, 11: 1 },
       flagged: [5],
-      totalQuestions: QUESTIONS.length,
+      totalQuestions,
       status: "completed",
     },
     {
@@ -138,20 +158,20 @@ function seedSessions(fileId: string): QuizSession[] {
   ];
 }
 
-function loadSessions(fileId: string): QuizSession[] {
-  if (typeof window === "undefined") return seedSessions(fileId);
+function loadSessions(fileId: string, totalQuestions: number): QuizSession[] {
+  if (typeof window === "undefined") return seedSessions(fileId, totalQuestions);
   try {
     const raw = localStorage.getItem(`dn-sessions-${fileId}`);
     if (raw) return JSON.parse(raw) as QuizSession[];
   } catch { /* ignore */ }
-  return seedSessions(fileId);
+  return seedSessions(fileId, totalQuestions);
 }
 
-function scoreSession(s: QuizSession) {
+function scoreSession(s: QuizSession, questions: HomeQuestion[]) {
   const entries = Object.entries(s.answers);
   let correct = 0;
   for (const [idx, ans] of entries) {
-    if (QUESTIONS[Number(idx)]?.correct === ans) correct++;
+    if (questions[Number(idx)]?.correct === ans) correct++;
   }
   return { correct, answered: entries.length, total: s.totalQuestions };
 }
@@ -657,6 +677,8 @@ export function DrNoteHome() {
   const [page, setPage] = useState<"home" | "exam" | "study">("home");
   const [exam, setExam] = useState<Exam | null>(null);
   const [file, setFile] = useState<ExamFile | null>(null);
+  const clerkEnabled = useClerkEnabled();
+  const [docsRefreshKey, setDocsRefreshKey] = useState(0);
 
   const [filter, setFilter] = useState<Filter>("week");
   const [query, setQuery] = useState("");
@@ -718,7 +740,8 @@ export function DrNoteHome() {
             <ExamPage exam={exam} filter={filter} setFilter={setFilter} query={query} setQuery={setQuery}
               voted={voted} setVoted={setVoted} saved={saved} toggleSaved={toggleSaved}
               picked={picked} setPicked={setPicked} onBack={() => setPage("home")} onOpen={openFile}
-              onAdd={() => setAdding(true)} flash={flash} />
+              onAdd={() => setAdding(true)} flash={flash}
+              docsRefreshKey={docsRefreshKey} useLiveData={clerkEnabled} />
           )}
 
           {page === "study" && file && (
@@ -736,6 +759,7 @@ export function DrNoteHome() {
           onClose={() => setAdding(false)}
           onDone={(message) => {
             setAdding(false);
+            setDocsRefreshKey((k) => k + 1);
             flash(message ?? "File uploaded — processing started");
           }}
         />
@@ -968,9 +992,7 @@ function AddFile({
       const message =
         err instanceof MedGeniusApiError
           ? err.message
-          : err instanceof Error
-            ? err.message
-            : "Upload failed";
+          : sanitizeUserError(err instanceof Error ? err.message : "Upload failed", "upload");
       setError(message);
     } finally {
       setUploading(false);
@@ -1014,16 +1036,19 @@ function ExamPage(props: {
   voted: Set<string>; setVoted: (s: Set<string>) => void; saved: Set<string>; toggleSaved: (id: string) => void;
   picked: Set<string>; setPicked: (s: Set<string>) => void; onBack: () => void; onOpen: (f: ExamFile) => void;
   onAdd: () => void; flash: (m: string) => void;
+  docsRefreshKey: number; useLiveData: boolean;
 }) {
-  const { exam, filter, setFilter, query, setQuery, voted, setVoted, saved, toggleSaved, picked, setPicked, onBack, onOpen, onAdd, flash } = props;
+  const { exam, filter, setFilter, query, setQuery, voted, setVoted, saved, toggleSaved, picked, setPicked, onBack, onOpen, onAdd, flash, docsRefreshKey, useLiveData } = props;
+  const { files: liveFiles, loading: filesLoading } = useExamDocuments(exam.id, docsRefreshKey);
 
   const ranked = useMemo(() => {
     const q = query.trim().toLowerCase();
-    let list = FILES.filter((f) => !q || f.name.toLowerCase().includes(q) || f.author.toLowerCase().includes(q));
+    const source = useLiveData ? liveFiles : FILES;
+    let list = source.filter((f) => !q || f.name.toLowerCase().includes(q) || f.author.toLowerCase().includes(q));
     if (filter === "bookmarked") list = list.filter((f) => saved.has(f.id));
     const per: Exclude<Filter, "bookmarked"> = filter === "bookmarked" ? "all" : filter;
     return list.sort((a, b) => b.votes[per] + (voted.has(b.id) ? 1 : 0) - (a.votes[per] + (voted.has(a.id) ? 1 : 0)));
-  }, [query, filter, voted, saved]);
+  }, [query, filter, voted, saved, liveFiles, useLiveData]);
 
   const toggle = (set: Set<string>, id: string, fn: (s: Set<string>) => void) => { const n = new Set(set); n.has(id) ? n.delete(id) : n.add(id); fn(n); };
   const allPicked = picked.size > 0 && picked.size === ranked.length;
@@ -1065,6 +1090,9 @@ function ExamPage(props: {
       </div>
 
       <ul className="dn-list">
+        {filesLoading && useLiveData && ranked.length === 0 && (
+          <li className="dn-empty"><p>Loading your files…</p></li>
+        )}
         {ranked.map((f) => {
           const isVoted = voted.has(f.id), isSaved = saved.has(f.id), isPicked = picked.has(f.id);
           const count = f.votes[per] + (isVoted ? 1 : 0);
@@ -1096,7 +1124,7 @@ function ExamPage(props: {
             </li>
           );
         })}
-        {ranked.length === 0 && <div className="dn-empty"><Search size={26} color={C.faint} /><p>{filter === "bookmarked" ? "No bookmarked files yet." : `No files match “${query}”.`}</p></div>}
+        {ranked.length === 0 && !filesLoading && <div className="dn-empty"><Search size={26} color={C.faint} /><p>{useLiveData ? (filter === "bookmarked" ? "No bookmarked files yet." : "No files yet — tap + to upload.") : filter === "bookmarked" ? "No bookmarked files yet." : `No files match “${query}”.`}</p></div>}
       </ul>
 
       {picked.size > 0 && (
@@ -1124,6 +1152,15 @@ function ExamPage(props: {
 function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
   file: ExamFile; exam: Exam | null; saved: boolean; onToggleSave: () => void; onClose: () => void; flash: (m: string) => void;
 }) {
+  const clerkEnabled = useClerkEnabled();
+  const live = useDocumentStudy(clerkEnabled && file.documentId ? file.documentId : undefined);
+  const useLive = Boolean(clerkEnabled && file.documentId);
+  const questions: HomeQuestion[] = useLive ? live.questions : QUESTIONS;
+  const readPages: HomeReadPage[] = useLive && live.readPages.length > 0 ? live.readPages : READ_PAGES;
+  const flashcards: HomeFlashCard[] = useLive && live.flashcards.length > 0 ? live.flashcards : CARDS;
+  const summaries: HomeSummary[] = useLive ? live.summaries : [];
+  const processing = useLive && live.status && live.status !== "completed" && live.status !== "failed";
+
   const [tab, setTab] = useState<Tab>("Read");
   const [query, setQuery] = useState("");
 
@@ -1132,7 +1169,7 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
   const [flagged, setFlagged] = useState<Set<number>>(new Set([5]));
   const [perPage, setPerPage] = useState(1);
   const [reveal, setReveal] = useState<Reveal>("immediate");
-  const [sessions, setSessions] = useState<QuizSession[]>(() => loadSessions(file.id));
+  const [sessions, setSessions] = useState<QuizSession[]>(() => loadSessions(file.id, questions.length));
   const activeSessionRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -1147,7 +1184,7 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
       const id = activeSessionRef.current;
       const idx = id ? prev.findIndex((s) => s.id === id) : prev.findIndex((s) => s.status === "in_progress" && s.source === "quiz");
       const elapsed = idx >= 0 ? Math.round((Date.now() - prev[idx].startedAt) / 1000) : 0;
-      const complete = answered >= QUESTIONS.length;
+      const complete = answered >= questions.length;
       const flaggedArr = [...flagged];
 
       if (idx >= 0) {
@@ -1171,13 +1208,13 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
         durationSec: complete ? 0 : 0,
         answers: { ...answers },
         flagged: flaggedArr,
-        totalQuestions: QUESTIONS.length,
+        totalQuestions: questions.length,
         status: complete ? "completed" : "in_progress",
       };
       activeSessionRef.current = created.id;
       return [created, ...prev];
     });
-  }, [answers, flagged, file.id]);
+  }, [answers, flagged, file.id, questions.length]);
 
   const resumeSession = useCallback((s: QuizSession) => {
     setAnswers(s.answers);
@@ -1312,11 +1349,17 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
       </header>
 
       <div className="dn-fs-body" onMouseUp={onBodyMouseUp}>
-        {tab === "Read" && <ReadFull file={file} />}
-        {tab === "Quiz" && <QuizList query={query} answers={answers} setAnswers={setAnswers} flagged={flagged} setFlagged={setFlagged} perPage={perPage} setPerPage={setPerPage} reveal={reveal} setReveal={setReveal} onAsk={openChat} />}
-        {tab === "Review" && <ReviewPane answers={answers} flagged={flagged} setFlagged={setFlagged} sessions={sessions} onResume={resumeSession} onRepeat={repeatSession} onAsk={openChat} />}
-        {tab === "Summary" && <SummaryNotion file={file} />}
-        {tab === "Flashcards" && <FlashcardsQuizlet query={query} />}
+        {processing && (
+          <div className="dn-empty" style={{ padding: "24px 16px" }}>
+            <Sparkles size={26} color={C.purple} />
+            <p>Preparing your study materials… {live.progress > 0 ? `${live.progress}%` : ""}</p>
+          </div>
+        )}
+        {tab === "Read" && <ReadFull file={file} pages={readPages} />}
+        {tab === "Quiz" && <QuizList query={query} questions={questions} answers={answers} setAnswers={setAnswers} flagged={flagged} setFlagged={setFlagged} perPage={perPage} setPerPage={setPerPage} reveal={reveal} setReveal={setReveal} onAsk={openChat} />}
+        {tab === "Review" && <ReviewPane questions={questions} answers={answers} flagged={flagged} setFlagged={setFlagged} sessions={sessions} onResume={resumeSession} onRepeat={repeatSession} onAsk={openChat} />}
+        {tab === "Summary" && <SummaryNotion file={file} summaries={summaries} />}
+        {tab === "Flashcards" && <FlashcardsQuizlet query={query} cards={flashcards} />}
         {tab === "Custom" && <CustomPane reveal={reveal} setReveal={setReveal} onStart={startCustomSession} flash={flash} />}
       </div>
 
@@ -1342,14 +1385,14 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
         </button>
       )}
 
-      {chatOpen && <ChatPanel quote={quote} clearQuote={() => setQuote(null)} msgs={msgs} setMsgs={setMsgs} onClose={() => setChatOpen(false)} />}
+      {chatOpen && <ChatPanel documentId={file.documentId} quote={quote} clearQuote={() => setQuote(null)} msgs={msgs} setMsgs={setMsgs} onClose={() => setChatOpen(false)} />}
     </div>
   );
 }
 
 /* ---- AI chat panel ---- */
-function ChatPanel({ quote, clearQuote, msgs, setMsgs, onClose }: {
-  quote: string | null; clearQuote: () => void; msgs: Msg[]; setMsgs: Dispatch<SetStateAction<Msg[]>>; onClose: () => void;
+function ChatPanel({ documentId, quote, clearQuote, msgs, setMsgs, onClose }: {
+  documentId?: string; quote: string | null; clearQuote: () => void; msgs: Msg[]; setMsgs: Dispatch<SetStateAction<Msg[]>>; onClose: () => void;
 }) {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
@@ -1375,7 +1418,8 @@ function ChatPanel({ quote, clearQuote, msgs, setMsgs, onClose }: {
         {
           message: full,
           conversationId,
-          contextType: "general",
+          contextType: documentId ? "document" : "general",
+          contextId: documentId,
           mode: "explain",
         },
         () =>
@@ -1412,10 +1456,17 @@ function ChatPanel({ quote, clearQuote, msgs, setMsgs, onClose }: {
 }
 
 /* ---- Read ---- */
-function ReadFull({ file }: { file: ExamFile }) {
+function ReadFull({ file, pages }: { file: ExamFile; pages: HomeReadPage[] }) {
   const [i, setI] = useState(0);
-  const p = READ_PAGES[i];
-  const pct = ((i + 1) / READ_PAGES.length) * 100;
+  if (pages.length === 0) {
+    return (
+      <div className="dn-read-fs">
+        <div className="dn-empty" style={{ paddingTop: 48 }}><BookOpen size={26} color={C.faint} /><p>Reading content will appear when processing finishes.</p></div>
+      </div>
+    );
+  }
+  const p = pages[i] ?? pages[0];
+  const pct = ((i + 1) / pages.length) * 100;
   return (
     <div className="dn-read-fs">
       <div className="dn-progress"><span style={{ width: `${pct}%`, background: C.green }} /></div>
@@ -1432,10 +1483,10 @@ function ReadFull({ file }: { file: ExamFile }) {
           <ChevronLeft size={16} strokeWidth={2.8} /><span className="dn-foot-back-label">Back</span>
         </button>
         <span className="dn-foot-count">
-          <span className="dn-foot-count-full">Page {i + 1} of {READ_PAGES.length}</span>
-          <span className="dn-foot-count-short">{i + 1}/{READ_PAGES.length}</span>
+          <span className="dn-foot-count-full">Page {i + 1} of {pages.length}</span>
+          <span className="dn-foot-count-short">{i + 1}/{pages.length}</span>
         </span>
-        <Chunky sm bg={C.green} shadow={C.greenDark} disabled={i === READ_PAGES.length - 1} onClick={() => setI((v) => v + 1)}>
+        <Chunky sm bg={C.green} shadow={C.greenDark} disabled={i === pages.length - 1} onClick={() => setI((v) => v + 1)}>
           <span className="dn-inline"><span className="dn-foot-next-label">Continue</span><ChevronRight size={14} strokeWidth={2.8} /></span>
         </Chunky>
       </div>
@@ -1444,8 +1495,8 @@ function ReadFull({ file }: { file: ExamFile }) {
 }
 
 /* ---- Quiz ---- */
-function QuizList({ query, answers, setAnswers, flagged, setFlagged, perPage, setPerPage, reveal, setReveal, onAsk }: {
-  query: string; answers: Record<number, number>; setAnswers: Dispatch<SetStateAction<Record<number, number>>>;
+function QuizList({ query, questions, answers, setAnswers, flagged, setFlagged, perPage, setPerPage, reveal, setReveal, onAsk }: {
+  query: string; questions: HomeQuestion[]; answers: Record<number, number>; setAnswers: Dispatch<SetStateAction<Record<number, number>>>;
   flagged: Set<number>; setFlagged: Dispatch<SetStateAction<Set<number>>>;
   perPage: number; setPerPage: (n: number) => void; reveal: Reveal; setReveal: (r: Reveal) => void; onAsk: (q: string) => void;
 }) {
@@ -1454,7 +1505,7 @@ function QuizList({ query, answers, setAnswers, flagged, setFlagged, perPage, se
   const [settings, setSettings] = useState(false);
 
   const q = query.trim().toLowerCase();
-  const list = useMemo(() => QUESTIONS.map((qq, i) => ({ ...qq, idx: i })).filter((qq) => !q || qq.stem.toLowerCase().includes(q)), [q]);
+  const list = useMemo(() => questions.map((qq, i) => ({ ...qq, idx: i })).filter((qq) => !q || qq.stem.toLowerCase().includes(q)), [q, questions]);
   const filterKey = `${q}\0${perPage}\0${reveal}`;
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
   if (filterKey !== prevFilterKey) {
@@ -1537,7 +1588,8 @@ function QuizList({ query, answers, setAnswers, flagged, setFlagged, perPage, se
 }
 
 /* ---- Review ---- */
-function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat, onAsk }: {
+function ReviewPane({ questions, answers, flagged, setFlagged, sessions, onResume, onRepeat, onAsk }: {
+  questions: HomeQuestion[];
   answers: Record<number, number>;
   flagged: Set<number>;
   setFlagged: Dispatch<SetStateAction<Set<number>>>;
@@ -1553,7 +1605,7 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
   const [report, setReport] = useState<QuizSession | null>(null);
   const searchQ = search.trim().toLowerCase();
 
-  const attempted = QUESTIONS.map((q, i) => ({ ...q, idx: i })).filter((q) => answers[q.idx] !== undefined || flagged.has(q.idx));
+  const attempted = questions.map((q, i) => ({ ...q, idx: i })).filter((q) => answers[q.idx] !== undefined || flagged.has(q.idx));
   const list = attempted.filter((q) => {
     const a = answers[q.idx];
     if (rf === "correct") return a === q.correct;
@@ -1584,7 +1636,7 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
 
   // session report
   if (report) {
-    const sc = scoreSession(report);
+    const sc = scoreSession(report, questions);
     const pct = sc.total > 0 ? Math.round((sc.correct / sc.total) * 100) : 0;
     const skipped = sc.total - sc.answered;
     const wrong = sc.answered - sc.correct;
@@ -1611,7 +1663,7 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
               <div className="dn-rv-report-stat"><b>{skipped}</b><span>Skipped</span></div>
             </div>
             <ul className="dn-rv-list">
-              {QUESTIONS.map((q, i) => {
+              {questions.map((q, i) => {
                 const a = report.answers[i];
                 const right = a === q.correct;
                 return (
@@ -1709,7 +1761,7 @@ function ReviewPane({ answers, flagged, setFlagged, sessions, onResume, onRepeat
           ) : (
             <ul className="dn-rv-sessions">
               {sessionList.map((s) => {
-                const sc = scoreSession(s);
+                const sc = scoreSession(s, questions);
                 const pct = sc.total > 0 ? Math.round((sc.correct / sc.total) * 100) : 0;
                 return (
                   <li key={s.id} className="dn-rv-session">
@@ -1876,9 +1928,12 @@ function NotionToggle({ fileId, id, title, children }: { fileId: string; id: str
     </div>
   );
 }
-function SummaryNotion({ file }: { file: ExamFile }) {
+function SummaryNotion({ file, summaries }: { file: ExamFile; summaries: HomeSummary[] }) {
   const [done, setDone] = useState<Set<number>>(new Set());
-  const bullets = [
+  const primary = summaries.find((s) => s.type === "summary") ?? summaries[0];
+  const bullets = primary
+    ? primary.content.split("\n").filter((l) => l.trim().startsWith("- ") || l.trim().startsWith("* ")).map((l) => l.replace(/^[-*]\s*/, "").trim()).slice(0, 6)
+    : [
     "ST-elevation localizes by lead group: inferior (II, III, aVF), anterior (V1–V4), lateral (I, aVL, V5–V6).",
     "PCI within 90 minutes beats fibrinolysis when a cath lab is reachable.",
     "Dual antiplatelet therapy plus anticoagulation is standard adjunctive care.",
@@ -1889,10 +1944,17 @@ function SummaryNotion({ file }: { file: ExamFile }) {
       <div className="nt-doc">
         <div className="nt-pageicon" style={{ background: file.color }}><FileText size={22} color="#fff" strokeWidth={2.2} /></div>
         <h1 className="nt-h1 dn-centered-h1">{file.name} Summary</h1>
+        {primary && (
+          <SummaryBlock fileId={file.id} blockId="live-summary" className="nt-callout">
+            <p>{primary.content.split("\n").find((l) => l.trim() && !l.startsWith("#"))?.trim() ?? "AI-generated summary from your document."}</p>
+          </SummaryBlock>
+        )}
+        {!primary && (
         <SummaryBlock fileId={file.id} blockId="callout" className="nt-callout">
           <span className="nt-callout-ic" style={{ background: C.yellow }}><Star size={14} color="#fff" fill="#fff" /></span>
           <p>Reperfusion timing is the single highest-yield concept in this set — anchor everything else to it.</p>
         </SummaryBlock>
+        )}
         <h2 className="nt-h2">Key takeaways</h2>
         <ul className="nt-bullets">
           {bullets.map((text, i) => (
@@ -1929,7 +1991,7 @@ function CardImage({ src, alt, className }: { src: string; alt: string; classNam
   return <img src={src} alt={alt} className={className} loading="lazy" decoding="async" />;
 }
 
-function FlashcardsQuizlet({ query }: { query: string }) {
+function FlashcardsQuizlet({ query, cards }: { query: string; cards: HomeFlashCard[] }) {
   const [open, setOpen] = useState<number | null>(null);
   const [fav, setFav] = useState<Set<number>>(new Set());
   const [view, setView] = useState<QlView>(() => {
@@ -1938,11 +2000,11 @@ function FlashcardsQuizlet({ query }: { query: string }) {
     return saved === "split" ? "split" : "list";
   });
   const q = query.trim().toLowerCase();
-  const list = useMemo(() => CARDS.map((c, orig) => ({ ...c, orig })).filter((c) => {
+  const list = useMemo(() => cards.map((c, orig) => ({ ...c, orig })).filter((c) => {
     if (!q) return true;
     const hay = `${c.t} ${c.d} ${c.imgAlt ?? ""}`.toLowerCase();
     return hay.includes(q);
-  }), [q]);
+  }), [q, cards]);
   const resetKey = `${q}\0${view}`;
   const [prevResetKey, setPrevResetKey] = useState(resetKey);
   if (resetKey !== prevResetKey) {

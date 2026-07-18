@@ -1,4 +1,5 @@
 import type { OpenRouterMessage } from "../types";
+import { sanitizeUserError } from "./user-errors";
 
 export type OpenRouterResult = {
   content: string;
@@ -50,7 +51,7 @@ export async function chatCompletion(
   };
 
   if (!response.ok) {
-    throw new Error(payload.error?.message ?? "OpenRouter request failed");
+    throw new Error(sanitizeUserError(payload.error?.message ?? "AI request failed", "ai"));
   }
 
   const content = payload.choices?.[0]?.message?.content ?? "";
