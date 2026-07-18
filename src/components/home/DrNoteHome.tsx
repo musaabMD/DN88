@@ -221,8 +221,12 @@ const styles = `
 .dn-row:hover .dn-actions { opacity: 1; transform: none; }
 .dn-icon-btn { border: none; background: ${C.wash}; color: ${C.sub}; cursor: pointer; width: 32px; height: 32px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; transition: background .1s; }
 .dn-icon-btn:hover { background: #ECECEC; }
-.dn-selbox { flex-shrink: 0; width: 20px; height: 20px; border: 2px solid ${C.line}; border-radius: 6px; display: grid; place-items: center; cursor: pointer; opacity: 0; transition: opacity .12s; }
-.dn-row:hover .dn-selbox, .dn-selbox.on { opacity: 1; }
+.dn-row-select { flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; border: 1px solid ${C.line}; border-radius: 8px; padding: 4px 7px 4px 5px; background: #fff; cursor: pointer; transition: border-color .12s, background .12s; }
+.dn-row-select:hover { border-color: ${C.blue}; background: #F8FCFF; }
+.dn-row-select.on { border-color: ${C.blue}; background: #F0FAFF; }
+.dn-row-select-label { font-size: 10px; font-weight: 800; color: ${C.sub}; line-height: 1; white-space: nowrap; }
+.dn-row-select.on .dn-row-select-label { color: ${C.blueDark}; }
+.dn-row-select .dn-check { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; }
 .dn-empty { text-align: center; padding: 50px 20px; color: ${C.sub}; font-weight: 700; display: flex; flex-direction: column; align-items: center; gap: 10px; }
 
 /* bulk + toast */
@@ -427,7 +431,9 @@ const styles = `
   .dn-actions { opacity: 1; transform: none; gap: 2px; }
   .dn-icon-btn { width: 28px; height: 28px; border-radius: 8px; }
   .dn-icon-btn svg { width: 15px; height: 15px; }
-  .dn-selbox { opacity: 1; width: 18px; height: 18px; flex-shrink: 0; }
+  .dn-row-select { padding: 3px 6px 3px 4px; border-radius: 7px; }
+  .dn-row-select-label { font-size: 9px; }
+  .dn-row-select .dn-check { width: 13px; height: 13px; }
   .dn-hide-sm { display: none; }
   .dn-fab { bottom: 18px; right: 18px; width: 52px; height: 52px; border-radius: 16px; }
   .dn-bulk { left: 12px; right: 12px; transform: none; width: auto; flex-wrap: wrap; gap: 8px; padding: 10px 12px; border-radius: 14px; }
@@ -784,8 +790,11 @@ function ExamPage(props: {
                 <button type="button" className="dn-icon-btn dn-hide-sm" onClick={() => flash("Share link copied")} title="Share" aria-label="Share"><Share2 size={16} strokeWidth={2.4} /></button>
                 <button type="button" className="dn-icon-btn dn-hide-sm" onClick={() => flash("Link copied")} title="Copy link" aria-label="Copy link"><Link2 size={16} strokeWidth={2.4} /></button>
               </div>
-              <button type="button" className={`dn-selbox ${isPicked ? "on" : ""}`} onClick={() => toggle(picked, f.id, setPicked)} style={{ borderColor: isPicked ? C.blue : C.line, background: isPicked ? C.blue : "#fff" }} aria-label="Select">
-                {isPicked && <Check size={13} color="#fff" strokeWidth={3.5} />}
+              <button type="button" className={`dn-row-select${isPicked ? " on" : ""}`} onClick={() => toggle(picked, f.id, setPicked)} aria-pressed={isPicked} aria-label={isPicked ? "Deselect file" : "Select file"}>
+                <span className="dn-check" style={{ borderColor: isPicked ? C.blue : C.line, background: isPicked ? C.blue : "#fff" }}>
+                  {isPicked && <Check size={10} color="#fff" strokeWidth={3.5} />}
+                </span>
+                <span className="dn-row-select-label">{isPicked ? "Selected" : "Select"}</span>
               </button>
             </li>
           );
