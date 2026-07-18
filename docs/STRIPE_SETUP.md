@@ -23,6 +23,8 @@ Copy each **Price ID** (`price_...`).
 
 Legacy env vars `STRIPE_PRICE_MONTHLY` / `STRIPE_PRICE_YEARLY` still work as fallbacks for Student pricing.
 
+If a Price ID is missing, the Worker can still start Checkout with inline recurring price data that matches the table above. Configure real Stripe Price IDs for production anyway so the Dashboard catalog and Customer Portal plan-switching stay explicit.
+
 ## 2. Configure Worker secrets
 
 Set these in `.env.local` (local) and GitHub Actions secrets (CI deploy):
@@ -34,6 +36,14 @@ STRIPE_PRICE_STUDENT_MONTHLY=price_...
 STRIPE_PRICE_STUDENT_YEARLY=price_...
 STRIPE_PRICE_PRO_MONTHLY=price_...
 STRIPE_PRICE_PRO_YEARLY=price_...
+```
+
+Minimum production setup for the Student monthly plan:
+
+```bash
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PRICE_STUDENT_MONTHLY=price_... # $20/month
 ```
 
 Push to production:

@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
@@ -12,7 +13,7 @@ function resolvePlanLabel(plan: string | null): string {
   return "DrNote";
 }
 
-export default function UpgradeSuccessPage() {
+function UpgradeSuccessContent() {
   const searchParams = useSearchParams();
   const plan = searchParams.get("plan") as CheckoutPlan | null;
   const planLabel = resolvePlanLabel(plan);
@@ -47,5 +48,13 @@ export default function UpgradeSuccessPage() {
         </Link>
       </div>
     </main>
+  );
+}
+
+export default function UpgradeSuccessPage() {
+  return (
+    <Suspense fallback={null}>
+      <UpgradeSuccessContent />
+    </Suspense>
   );
 }
