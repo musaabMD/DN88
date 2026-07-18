@@ -246,10 +246,10 @@ const styles = `
 
 /* ============ full-screen study ============ */
 .dn-fs { position: fixed; inset: 0; z-index: 100; background: #fff; display: flex; flex-direction: column; }
-.dn-fs-head { flex-shrink: 0; border-bottom: 1px solid ${C.line}; background: #fff; }
+.dn-fs-head { flex-shrink: 0; background: #fff; }
 .dn-fs-row1 { display: flex; align-items: center; gap: 8px; padding: 8px 12px 6px; min-width: 0; }
 .dn-fs-row2 { padding: 0 12px 8px; }
-.dn-fs-close { width: 34px; height: 34px; border-radius: 10px; border: 1px solid ${C.line}; background: #fff; cursor: pointer; display: grid; place-items: center; color: ${C.sub}; flex-shrink: 0; }
+.dn-fs-close { width: 34px; height: 34px; border-radius: 10px; border: none; background: none; cursor: pointer; display: grid; place-items: center; color: ${C.sub}; flex-shrink: 0; }
 .dn-fs-close:hover { background: ${C.wash}; }
 .dn-fs-title-wrap { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
 .dn-fs-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
