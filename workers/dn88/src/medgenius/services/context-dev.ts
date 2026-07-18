@@ -10,11 +10,14 @@ export type ContextDevParseResult = {
     alt?: string;
   }>;
   jobId: string;
+  creditsConsumed?: number;
+  creditsRemaining?: number;
 };
 
 /**
  * Parse uploaded document content (called once per upload).
- * Falls back to plain-text extraction when advanced parsing is unavailable.
+ * Uses Context.dev POST /parse with raw bytes per OpenAPI spec.
+ * Falls back to plain-text extraction when the API key is unavailable.
  */
 export async function parseDocumentWithContextDev(
   apiKey: string | undefined,
@@ -28,44 +31,57 @@ export async function parseDocumentWithContextDev(
     return fallbackParse(params);
   }
 
-  const formData = new FormData();
-  formData.append(
-    "file",
-    new Blob([params.fileBytes], { type: params.mimeType }),
-    params.filename
-  );
-  formData.append("output_format", "markdown");
-  formData.append("ocr", "auto");
+  const extension = extractExtension(params.filename);
+  const url = new URL("https://api.context.dev/v1/parse");
+  url.searchParams.set("extension", extension);
+  url.searchParams.set("includeLinks", "true");
+  url.searchParams.set("ocr", "true");
+  url.searchParams.set("client", "drnote");
 
-  const response = await fetch("https://api.context.dev/v1/parse", {
+  const response = await fetch(url.toString(), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/octet-stream",
     },
-    body: formData,
+    body: params.fileBytes,
   });
 
-  if (!response.ok) {
-    throw new Error(sanitizeUserError("Document parse failed", "parse"));
-  }
-
   const payload = (await response.json()) as {
-    job_id?: string;
+    success?: boolean;
     markdown?: string;
-    page_count?: number;
-    images?: Array<{ url: string; page: number; type?: string; alt?: string }>;
+    type?: string;
+    message?: string;
+    key_metadata?: {
+      credits_consumed?: number;
+      credits_remaining?: number;
+    };
   };
 
-  if (!payload.markdown) {
-    throw new Error(sanitizeUserError("Document parse returned no content", "parse"));
+  if (!response.ok || !payload.markdown) {
+    throw new Error(
+      sanitizeUserError(
+        payload.message ?? "Document parse failed",
+        "parse"
+      )
+    );
   }
 
+  const markdown = payload.markdown;
   return {
-    markdown: payload.markdown,
-    pageCount: payload.page_count ?? estimatePageCount(payload.markdown),
-    images: payload.images ?? [],
-    jobId: payload.job_id ?? crypto.randomUUID(),
+    markdown,
+    pageCount: estimatePageCount(markdown),
+    images: [],
+    jobId: crypto.randomUUID(),
+    creditsConsumed: payload.key_metadata?.credits_consumed,
+    creditsRemaining: payload.key_metadata?.credits_remaining,
   };
+}
+
+function extractExtension(filename: string): string {
+  const dot = filename.lastIndexOf(".");
+  if (dot === -1 || dot === filename.length - 1) return "txt";
+  return filename.slice(dot + 1).toLowerCase();
 }
 
 async function fallbackParse(params: {
