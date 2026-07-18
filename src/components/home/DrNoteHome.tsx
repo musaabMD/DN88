@@ -894,7 +894,6 @@ function Home({ onOpen, onAdd, locale, onToggleLocale }: { onOpen: (e: Exam) => 
         </section>
 
         <section className="mt-10 sm:mt-12">
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:rounded-3xl sm:p-6">
             {query.trim() && results.length > 0 && (
               <p className="mb-3 text-sm font-semibold text-slate-500">
                 {m.matchCount(results.length)}
@@ -920,7 +919,6 @@ function Home({ onOpen, onAdd, locale, onToggleLocale }: { onOpen: (e: Exam) => 
                 </button>
               </div>
             )}
-          </div>
         </section>
       </main>
 
