@@ -5,7 +5,7 @@ import {
   Search, ChevronUp, ChevronRight, ChevronLeft, Bookmark,
   Share2, Link2, Play, Check, Flame, X, ArrowLeft, BookOpen, Brain, FileText,
   Layers, SlidersHorizontal, Clock, Users, Star, Sparkles, Flag, Settings, Plus,
-  ListChecks, Send, Upload, Command,
+  ListChecks, Send, Upload, Command, Maximize2, Minimize2,
 } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 
@@ -254,6 +254,10 @@ const styles = `
 .dn-fs-title { flex: 1; min-width: 0; margin: 0; font-size: 15px; font-weight: 800; color: ${C.ink}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
 .dn-fs-bk { width: 34px; height: 34px; border: none; background: none; border-radius: 10px; cursor: pointer; display: grid; place-items: center; flex-shrink: 0; }
 .dn-fs-bk:hover { background: ${C.wash}; }
+.dn-fs-fs { width: 34px; height: 34px; border: none; background: none; border-radius: 10px; cursor: pointer; display: grid; place-items: center; flex-shrink: 0; color: ${C.sub}; }
+.dn-fs-fs:hover { background: ${C.wash}; }
+.dn-fs-immersive .dn-fs-tabs { display: none !important; }
+.dn-fs-immersive .dn-tabbar { display: flex !important; }
 .dn-fs-search { width: 100%; display: flex; align-items: center; gap: 8px; background: ${C.wash}; border: 1px solid ${C.line}; border-radius: 12px; padding: 8px 12px; transition: border-color .12s, background .12s; }
 .dn-fs-search:focus-within { background: #fff; border-color: ${C.blue}; box-shadow: 0 0 0 3px #DDF4FF; }
 .dn-fs-search input { flex: 1; min-width: 0; border: none; outline: none; background: none; font-size: 14px; font-weight: 700; color: ${C.ink}; }
@@ -475,6 +479,7 @@ const styles = `
   .dn-fs-close { width: 32px; height: 32px; border-radius: 9px; }
   .dn-fs-title { font-size: 14px; }
   .dn-fs-bk { width: 32px; height: 32px; }
+  .dn-fs-fs { width: 32px; height: 32px; }
   .dn-fs-search { padding: 7px 10px; border-radius: 10px; }
   .dn-fs-search input { font-size: 13px; }
   .dn-tabbar-btn { font-size: 8px; min-width: 46px; padding: 4px 1px; }
@@ -864,6 +869,29 @@ function Study({ file, saved, onToggleSave, onClose, flash }: {
   const [msgs, setMsgs] = useState<Msg[]>([{ role: "ai", text: "Hi! Ask anything about this file — highlight text anywhere or type below." }]);
   const openChat = (q?: string) => { setQuote(q ?? null); setChatOpen(true); };
 
+  const fsRef = useRef<HTMLDivElement>(null);
+  const [immersive, setImmersive] = useState(false);
+
+  useEffect(() => {
+    const sync = () => setImmersive(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", sync);
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, []);
+
+  const toggleFullscreen = useCallback(async () => {
+    const el = fsRef.current;
+    if (!el) return;
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await el.requestFullscreen();
+      }
+    } catch {
+      setImmersive((v) => !v);
+    }
+  }, []);
+
   // highlight-to-ask
   const [ask, setAsk] = useState<{ x: number; y: number; text: string } | null>(null);
   const onBodyMouseUp = () => {
@@ -878,7 +906,7 @@ function Study({ file, saved, onToggleSave, onClose, flash }: {
   const searchable = tab === "Quiz" || tab === "Flashcards";
 
   return (
-    <div className="dn-fs">
+    <div className={`dn-fs${immersive ? " dn-fs-immersive" : ""}`} ref={fsRef}>
       <header className="dn-fs-head">
         <div className="dn-fs-row1">
           <button className="dn-fs-close" onClick={onClose} aria-label="Close"><X size={18} strokeWidth={2.8} /></button>
@@ -888,6 +916,9 @@ function Study({ file, saved, onToggleSave, onClose, flash }: {
           </div>
           <button type="button" className={`dn-fs-bk${saved ? " on" : ""}`} onClick={onToggleSave} title={saved ? "Bookmarked" : "Bookmark"} aria-label={saved ? "Remove bookmark" : "Bookmark"}>
             <BkIcon saved={saved} size={16} />
+          </button>
+          <button type="button" className="dn-fs-fs" onClick={() => void toggleFullscreen()} title={immersive ? "Exit full screen" : "Full screen"} aria-label={immersive ? "Exit full screen" : "Full screen"} aria-pressed={immersive}>
+            {immersive ? <Minimize2 size={16} strokeWidth={2.4} /> : <Maximize2 size={16} strokeWidth={2.4} />}
           </button>
         </div>
         <div className="dn-fs-row2">
