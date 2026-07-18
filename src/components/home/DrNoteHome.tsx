@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect, useRef, useCallback, type CSSProperties, type ElementType, type ReactNode, type Dispatch, type SetStateAction } from "react";
 import {
   Search, ChevronUp, ChevronRight, ChevronLeft, Bookmark,
-  Share2, Link2, Play, Check, Flame, X, ArrowLeft, BookOpen, Brain, FileText,
+  Share2, Link2, Play, Check, X, ArrowLeft, BookOpen, Brain, FileText,
   Layers, SlidersHorizontal, Clock, Users, Star, Sparkles, Flag, Settings, Plus,
   ListChecks, Send, Upload, Command, Maximize2, Minimize2, StickyNote, LayoutList, Columns2, Image as ImageIcon, BarChart2, RotateCcw,
 } from "lucide-react";
@@ -21,12 +21,12 @@ import {
 } from "@/lib/medgenius/home-data";
 import { createStudySession, recordAttempt, searchQuestions, fetchDueSrs, recordSrsReview, bookmarkQuestion } from "@/lib/medgenius/api";
 import { useHomeAnalytics } from "@/hooks/useHomeAnalytics";
-import { useStudyStreak } from "@/hooks/useStudyStreak";
 import { CollectionsPanel } from "@/components/CollectionsPanel";
 import { getClerkToken } from "@/lib/clerk-token";
 import { useClerkEnabled } from "@/hooks/useClerkEnabled";
 import { HomeLocaleProvider, useHomeLocale } from "@/components/home/HomeLocaleProvider";
 import { MedGeniusCreditsProvider } from "@/lib/medgenius/credits-context";
+import { HomeHeaderAuth } from "@/components/home/HomeHeaderAuth";
 import { CreditsBadge, CreditsChatHint } from "@/components/medgenius/CreditsUsage";
 import { useMedGeniusCreditsContext } from "@/lib/medgenius/credits-context";
 import type { AppLocale } from "@/lib/locale";
@@ -673,7 +673,6 @@ function DrNoteHomeInner() {
   const [exam, setExam] = useState<Exam | null>(null);
   const [file, setFile] = useState<ExamFile | null>(null);
   const clerkEnabled = useClerkEnabled();
-  const streakData = useStudyStreak(page !== "home");
   const [docsRefreshKey, setDocsRefreshKey] = useState(0);
 
   const [filter, setFilter] = useState<Filter>("week");
@@ -724,11 +723,7 @@ function DrNoteHomeInner() {
                 <button type="button" className="dn-brand" onClick={() => setPage("home")} aria-label={m.drnoteHome}>
                   <DrNoteLogo showWordmark forceWordmark />
                 </button>
-                <div className="dn-header-right">
-                  <CreditsBadge />
-                  <span className="dn-streak"><Flame size={18} color={C.yellow} fill={C.yellow} strokeWidth={2} /><b>{streakData.streakDays || 0}</b></span>
-                  <span className="dn-avatar" style={{ background: C.purple }}>MA</span>
-                </div>
+                <HomeHeaderAuth variant="legacy" />
               </div>
             </header>
           )}
@@ -848,16 +843,7 @@ function Home({ onOpen, onAdd }: { onOpen: (e: Exam) => void; onAdd: () => void 
       <header className="sticky top-0 z-20 border-b border-slate-200/70 bg-[#F6F7F9]/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
           <DrNoteLogo showWordmark forceWordmark />
-          <div className="flex items-center gap-3">
-            <CreditsBadge />
-            <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 ring-1 ring-amber-200/70">
-              <Flame className="h-4 w-4 text-amber-500" fill="currentColor" strokeWidth={1.5} />
-              <span className="text-sm font-bold text-amber-600">14</span>
-            </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-xs font-bold text-white ring-2 ring-white">
-              MA
-            </div>
-          </div>
+          <HomeHeaderAuth />
         </div>
       </header>
 
