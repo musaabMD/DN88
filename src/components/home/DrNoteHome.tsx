@@ -5,7 +5,7 @@ import {
   Search, ChevronUp, ChevronRight, ChevronLeft, Bookmark,
   Share2, Link2, Play, Check, Flame, X, ArrowLeft, BookOpen, Brain, FileText,
   Layers, SlidersHorizontal, Clock, Users, Star, Sparkles, Flag, Settings, Plus,
-  ListChecks, Send, Upload, Command, Maximize2, Minimize2, StickyNote,
+  ListChecks, Send, Upload, Command, Maximize2, Minimize2, StickyNote, LayoutList, Columns2,
 } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 
@@ -414,6 +414,12 @@ const styles = `
 .ql-scroll { flex: 1; overflow-y: auto; }
 .ql-wrap { max-width: 680px; margin: 0 auto; padding: 14px 16px calc(16px + env(safe-area-inset-bottom)); }
 .ql-list-h { font-size: 15px; font-weight: 900; margin: 0 0 10px; color: ${C.ink}; }
+.ql-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.ql-head .ql-list-h { margin: 0; flex: 1; min-width: 0; }
+.ql-view-toggle { display: flex; gap: 3px; padding: 3px; background: ${C.wash}; border-radius: 10px; flex-shrink: 0; }
+.ql-view-btn { border: none; background: transparent; width: 34px; height: 30px; border-radius: 8px; display: grid; place-items: center; cursor: pointer; color: ${C.faint}; transition: background .1s, color .1s, box-shadow .1s; }
+.ql-view-btn.on { background: #fff; color: ${C.ink}; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+.ql-view-btn span { display: none; }
 .ql-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .ql-row { display: flex; flex-direction: column; gap: 0; background: #fff; border: 1px solid ${C.line}; border-radius: 12px; overflow: hidden; }
 .ql-row-head { display: flex; align-items: center; gap: 8px; padding: 0 6px 0 0; }
@@ -421,6 +427,11 @@ const styles = `
 .ql-term { flex: 1; font-weight: 800; color: ${C.ink}; font-size: 14px; line-height: 1.35; }
 .ql-def { padding: 0 14px 12px; font-weight: 600; color: ${C.sub}; font-size: 13px; line-height: 1.45; border-top: 1px solid ${C.line}; padding-top: 10px; margin: 0 14px 12px; }
 .ql-fav { border: none; background: none; cursor: pointer; flex-shrink: 0; padding: 4px; }
+.ql-split-row { display: grid; grid-template-columns: 1fr 1fr auto; align-items: stretch; background: #fff; border: 1px solid ${C.line}; border-radius: 12px; overflow: hidden; }
+.ql-split-term, .ql-split-def { padding: 12px 14px; font-size: 14px; line-height: 1.35; }
+.ql-split-term { font-weight: 800; color: ${C.ink}; border-right: 1px solid ${C.line}; }
+.ql-split-def { font-weight: 600; color: ${C.sub}; }
+.ql-split-fav { display: flex; align-items: center; justify-content: center; padding: 0 8px; border-left: 1px solid ${C.line}; background: #fff; }
 
 /* custom */
 .dn-custom { max-width: 560px; margin: 0 auto; padding: 40px 24px 90px; }
@@ -516,6 +527,8 @@ const styles = `
   .dn-rv-count { font-size: 11px; padding: 1px 6px; }
   .dn-tabbar-btn { font-size: 8px; min-width: 46px; padding: 4px 1px; }
   .dn-tabbar-btn svg { width: 20px; height: 20px; }
+  .ql-split-term, .ql-split-def { padding: 10px 10px; font-size: 12px; }
+  .ql-view-btn { width: 30px; height: 28px; }
 }
 `;
 
@@ -1423,37 +1436,84 @@ function SummaryNotion({ file }: { file: ExamFile }) {
   );
 }
 
-/* ---- Flashcards (list-only, tap to expand) ---- */
+/* ---- Flashcards (list or side-by-side) ---- */
+type QlView = "list" | "split";
+
 function FlashcardsQuizlet({ query }: { query: string }) {
   const [open, setOpen] = useState<number | null>(null);
   const [fav, setFav] = useState<Set<number>>(new Set());
+  const [view, setView] = useState<QlView>(() => {
+    if (typeof window === "undefined") return "list";
+    const saved = localStorage.getItem("dn-flashcards-view");
+    return saved === "split" ? "split" : "list";
+  });
   const q = query.trim().toLowerCase();
   const list = useMemo(() => CARDS.map((c, orig) => ({ ...c, orig })).filter((c) => !q || c.t.toLowerCase().includes(q) || c.d.toLowerCase().includes(q)), [q]);
-  useEffect(() => { setOpen(null); }, [q]);
+  useEffect(() => { setOpen(null); }, [q, view]);
+  useEffect(() => { localStorage.setItem("dn-flashcards-view", view); }, [view]);
+
+  const toggleFav = (orig: number) => {
+    setFav((prev) => {
+      const n = new Set(prev);
+      n.has(orig) ? n.delete(orig) : n.add(orig);
+      return n;
+    });
+  };
+
   if (list.length === 0) return <div className="ql-scroll"><div className="ql-wrap"><div className="dn-empty" style={{ paddingTop: 40 }}><Search size={26} color={C.faint} /><p>No cards match “{query}”.</p></div></div></div>;
+
   return (
     <div className="ql-scroll">
       <div className="ql-wrap">
-        <h3 className="ql-list-h">Terms in this set ({list.length})</h3>
-        <ul className="ql-list">
-          {list.map((c) => {
-            const on = fav.has(c.orig), expanded = open === c.orig;
-            return (
-              <li key={c.orig} className="ql-row">
-                <div className="ql-row-head">
-                  <button type="button" className="ql-row-toggle" onClick={() => setOpen(expanded ? null : c.orig)} aria-expanded={expanded}>
-                    <span className="ql-term">{c.t}</span>
-                    <ChevronRight size={18} color={C.faint} strokeWidth={2.6} style={{ flexShrink: 0, transform: expanded ? "rotate(90deg)" : "none", transition: "transform .15s" }} />
-                  </button>
-                  <button type="button" className="ql-fav" onClick={() => { const n = new Set(fav); on ? n.delete(c.orig) : n.add(c.orig); setFav(n); }} style={{ color: on ? C.yellowDark : C.faint }} aria-label="Favorite">
-                    <Star size={16} strokeWidth={2.2} fill={on ? C.yellow : "none"} />
-                  </button>
-                </div>
-                {expanded && <p className="ql-def">{c.d}</p>}
-              </li>
-            );
-          })}
-        </ul>
+        <div className="ql-head">
+          <h3 className="ql-list-h">Terms in this set ({list.length})</h3>
+          <div className="ql-view-toggle" role="group" aria-label="Flashcard layout">
+            <button type="button" className={`ql-view-btn${view === "list" ? " on" : ""}`} onClick={() => setView("list")} title="List view" aria-label="List view" aria-pressed={view === "list"}>
+              <LayoutList size={16} strokeWidth={2.4} />
+            </button>
+            <button type="button" className={`ql-view-btn${view === "split" ? " on" : ""}`} onClick={() => setView("split")} title="Side by side" aria-label="Side by side" aria-pressed={view === "split"}>
+              <Columns2 size={16} strokeWidth={2.4} />
+            </button>
+          </div>
+        </div>
+        {view === "list" ? (
+          <ul className="ql-list">
+            {list.map((c) => {
+              const on = fav.has(c.orig), expanded = open === c.orig;
+              return (
+                <li key={c.orig} className="ql-row">
+                  <div className="ql-row-head">
+                    <button type="button" className="ql-row-toggle" onClick={() => setOpen(expanded ? null : c.orig)} aria-expanded={expanded}>
+                      <span className="ql-term">{c.t}</span>
+                      <ChevronRight size={18} color={C.faint} strokeWidth={2.6} style={{ flexShrink: 0, transform: expanded ? "rotate(90deg)" : "none", transition: "transform .15s" }} />
+                    </button>
+                    <button type="button" className="ql-fav" onClick={() => toggleFav(c.orig)} style={{ color: on ? C.yellowDark : C.faint }} aria-label="Favorite">
+                      <Star size={16} strokeWidth={2.2} fill={on ? C.yellow : "none"} />
+                    </button>
+                  </div>
+                  {expanded && <p className="ql-def">{c.d}</p>}
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <ul className="ql-list">
+            {list.map((c) => {
+              const on = fav.has(c.orig);
+              return (
+                <li key={c.orig} className="ql-split-row">
+                  <div className="ql-split-term">{c.t}</div>
+                  <div className="ql-split-def">{c.d}</div>
+                  <div className="ql-split-fav">
+                    <button type="button" className="ql-fav" onClick={() => toggleFav(c.orig)} style={{ color: on ? C.yellowDark : C.faint }} aria-label="Favorite">
+                      <Star size={16} strokeWidth={2.2} fill={on ? C.yellow : "none"} />
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
     </div>
   );
