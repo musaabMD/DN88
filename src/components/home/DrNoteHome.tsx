@@ -5,7 +5,7 @@ import {
   Search, ChevronUp, ChevronRight, ChevronLeft, Bookmark,
   Share2, Link2, Play, Check, Flame, X, ArrowLeft, BookOpen, Brain, FileText,
   Layers, SlidersHorizontal, Clock, Users, Star, Sparkles, Flag, Settings, Plus,
-  ListChecks, Send, Upload, Command, Maximize2, Minimize2, StickyNote, LayoutList, Columns2,
+  ListChecks, Send, Upload, Command, Maximize2, Minimize2, StickyNote, LayoutList, Columns2, Image as ImageIcon,
 } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 
@@ -88,12 +88,14 @@ const QUESTIONS = [
   { stem: "Lipid target strategy for secondary prevention?", options: ["Low-intensity statin", "High-intensity statin", "Fibrate", "Niacin"], correct: 1, explain: "High-intensity statin therapy is used for secondary prevention." },
 ];
 
-const CARDS = [
-  { t: "Inferior STEMI — leads?", d: "II, III, aVF" },
-  { t: "PCI window vs fibrinolysis", d: "Within 90 minutes" },
-  { t: "Anterior STEMI — leads?", d: "V1 – V4" },
+type FlashCard = { t: string; d: string; img?: string; imgAlt?: string };
+
+const CARDS: FlashCard[] = [
+  { t: "Inferior STEMI — leads?", d: "II, III, aVF", img: "/flashcards/inferior-stemi.svg", imgAlt: "Inferior STEMI ECG with ST elevation in II, III, aVF" },
+  { t: "PCI window vs fibrinolysis", d: "Within 90 minutes", img: "/flashcards/pci-timeline.svg", imgAlt: "PCI within 90 minutes vs fibrinolysis timeline" },
+  { t: "Anterior STEMI — leads?", d: "V1 – V4", img: "/flashcards/anterior-stemi.svg", imgAlt: "Anterior STEMI ECG with ST elevation in V1–V4" },
   { t: "Warfarin reversal (major bleed)", d: "4-factor PCC + vitamin K" },
-  { t: "Acute pericarditis ECG", d: "Diffuse ST-elevation, PR depression" },
+  { t: "Acute pericarditis ECG", d: "Diffuse ST-elevation, PR depression", img: "/flashcards/pericarditis-ecg.svg", imgAlt: "Pericarditis ECG with diffuse ST elevation" },
   { t: "Valsalva increases which murmur?", d: "Hypertrophic cardiomyopathy" },
   { t: "AAA screening", d: "Ultrasound, men 65–75 ever-smokers" },
   { t: "Stable angina — fast relief", d: "Sublingual nitroglycerin" },
@@ -425,8 +427,15 @@ const styles = `
 .ql-row-head { display: flex; align-items: center; gap: 8px; padding: 0 6px 0 0; }
 .ql-row-toggle { flex: 1; display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: none; border: none; cursor: pointer; padding: 12px 8px 12px 14px; }
 .ql-term { flex: 1; font-weight: 800; color: ${C.ink}; font-size: 14px; line-height: 1.35; }
+.ql-thumb { width: 44px; height: 32px; border-radius: 6px; object-fit: cover; border: 1px solid ${C.line}; flex-shrink: 0; background: ${C.wash}; }
+.ql-img-badge { flex-shrink: 0; color: ${C.faint}; }
+.ql-card-img { display: block; width: calc(100% - 28px); max-height: 220px; object-fit: contain; border-radius: 10px; border: 1px solid ${C.line}; background: #fff; margin: 0 14px 10px; }
 .ql-def { padding: 0 14px 12px; font-weight: 600; color: ${C.sub}; font-size: 13px; line-height: 1.45; border-top: 1px solid ${C.line}; padding-top: 10px; margin: 0 14px 12px; }
+.ql-def.no-border { border-top: none; margin-top: 0; padding-top: 0; }
 .ql-fav { border: none; background: none; cursor: pointer; flex-shrink: 0; padding: 4px; }
+.ql-split-row.has-img { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) auto; }
+.ql-split-def-inner { display: flex; flex-direction: column; gap: 8px; }
+.ql-split-media { width: 100%; max-height: 120px; object-fit: contain; border-radius: 8px; border: 1px solid ${C.line}; background: #fff; }
 .ql-split-row { display: grid; grid-template-columns: 1fr 1fr auto; align-items: stretch; background: #fff; border: 1px solid ${C.line}; border-radius: 12px; overflow: hidden; }
 .ql-split-term, .ql-split-def { padding: 12px 14px; font-size: 14px; line-height: 1.35; }
 .ql-split-term { font-weight: 800; color: ${C.ink}; border-right: 1px solid ${C.line}; }
@@ -528,6 +537,7 @@ const styles = `
   .dn-tabbar-btn { font-size: 8px; min-width: 46px; padding: 4px 1px; }
   .dn-tabbar-btn svg { width: 20px; height: 20px; }
   .ql-split-term, .ql-split-def { padding: 10px 10px; font-size: 12px; }
+  .ql-split-media { max-height: 96px; }
   .ql-view-btn { width: 30px; height: 28px; }
 }
 `;
@@ -1439,6 +1449,10 @@ function SummaryNotion({ file }: { file: ExamFile }) {
 /* ---- Flashcards (list or side-by-side) ---- */
 type QlView = "list" | "split";
 
+function CardImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  return <img src={src} alt={alt} className={className} loading="lazy" decoding="async" />;
+}
+
 function FlashcardsQuizlet({ query }: { query: string }) {
   const [open, setOpen] = useState<number | null>(null);
   const [fav, setFav] = useState<Set<number>>(new Set());
@@ -1448,7 +1462,11 @@ function FlashcardsQuizlet({ query }: { query: string }) {
     return saved === "split" ? "split" : "list";
   });
   const q = query.trim().toLowerCase();
-  const list = useMemo(() => CARDS.map((c, orig) => ({ ...c, orig })).filter((c) => !q || c.t.toLowerCase().includes(q) || c.d.toLowerCase().includes(q)), [q]);
+  const list = useMemo(() => CARDS.map((c, orig) => ({ ...c, orig })).filter((c) => {
+    if (!q) return true;
+    const hay = `${c.t} ${c.d} ${c.imgAlt ?? ""}`.toLowerCase();
+    return hay.includes(q);
+  }), [q]);
   useEffect(() => { setOpen(null); }, [q, view]);
   useEffect(() => { localStorage.setItem("dn-flashcards-view", view); }, [view]);
 
@@ -1481,17 +1499,24 @@ function FlashcardsQuizlet({ query }: { query: string }) {
             {list.map((c) => {
               const on = fav.has(c.orig), expanded = open === c.orig;
               return (
-                <li key={c.orig} className="ql-row">
+                <li key={c.orig} className={`ql-row${c.img ? " has-img" : ""}`}>
                   <div className="ql-row-head">
                     <button type="button" className="ql-row-toggle" onClick={() => setOpen(expanded ? null : c.orig)} aria-expanded={expanded}>
+                      {c.img && <CardImage src={c.img} alt="" className="ql-thumb" />}
                       <span className="ql-term">{c.t}</span>
+                      {c.img && <ImageIcon size={14} strokeWidth={2.2} className="ql-img-badge" aria-hidden />}
                       <ChevronRight size={18} color={C.faint} strokeWidth={2.6} style={{ flexShrink: 0, transform: expanded ? "rotate(90deg)" : "none", transition: "transform .15s" }} />
                     </button>
                     <button type="button" className="ql-fav" onClick={() => toggleFav(c.orig)} style={{ color: on ? C.yellowDark : C.faint }} aria-label="Favorite">
                       <Star size={16} strokeWidth={2.2} fill={on ? C.yellow : "none"} />
                     </button>
                   </div>
-                  {expanded && <p className="ql-def">{c.d}</p>}
+                  {expanded && (
+                    <>
+                      {c.img && <CardImage src={c.img} alt={c.imgAlt ?? c.t} className="ql-card-img" />}
+                      <p className={`ql-def${c.img ? " no-border" : ""}`}>{c.d}</p>
+                    </>
+                  )}
                 </li>
               );
             })}
@@ -1501,9 +1526,14 @@ function FlashcardsQuizlet({ query }: { query: string }) {
             {list.map((c) => {
               const on = fav.has(c.orig);
               return (
-                <li key={c.orig} className="ql-split-row">
+                <li key={c.orig} className={`ql-split-row${c.img ? " has-img" : ""}`}>
                   <div className="ql-split-term">{c.t}</div>
-                  <div className="ql-split-def">{c.d}</div>
+                  <div className="ql-split-def">
+                    <div className="ql-split-def-inner">
+                      <span>{c.d}</span>
+                      {c.img && <CardImage src={c.img} alt={c.imgAlt ?? c.t} className="ql-split-media" />}
+                    </div>
+                  </div>
                   <div className="ql-split-fav">
                     <button type="button" className="ql-fav" onClick={() => toggleFav(c.orig)} style={{ color: on ? C.yellowDark : C.faint }} aria-label="Favorite">
                       <Star size={16} strokeWidth={2.2} fill={on ? C.yellow : "none"} />
