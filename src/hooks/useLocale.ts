@@ -10,12 +10,13 @@ import {
 } from "@/lib/locale";
 
 export function useLocale() {
-  const [locale, setLocaleState] = useState<AppLocale>("en");
+  const [locale, setLocaleState] = useState<AppLocale>(() => {
+    if (typeof window === "undefined") return "en";
+    return getPreferredLocale();
+  });
 
   useEffect(() => {
-    const current = getPreferredLocale();
-    setLocaleState(current);
-    applyLocale(current);
+    applyLocale(locale);
 
     const onChange = (event: Event) => {
       const next = (event as CustomEvent<AppLocale>).detail;
@@ -26,7 +27,7 @@ export function useLocale() {
 
     window.addEventListener(LOCALE_CHANGE_EVENT, onChange);
     return () => window.removeEventListener(LOCALE_CHANGE_EVENT, onChange);
-  }, []);
+  }, [locale]);
 
   const changeLocale = useCallback((next: AppLocale) => {
     setLocale(next);
