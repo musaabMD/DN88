@@ -1262,7 +1262,6 @@ function SummaryNotion({ file }: { file: ExamFile }) {
       <div className="nt-doc">
         <div className="nt-pageicon" style={{ background: file.color }}><FileText size={22} color="#fff" strokeWidth={2.2} /></div>
         <h1 className="nt-h1">{file.name} — Summary</h1>
-        <p className="nt-meta">Auto-generated · {file.pages} pages condensed</p>
         <div className="nt-callout"><span className="nt-callout-ic" style={{ background: C.yellow }}><Star size={14} color="#fff" fill="#fff" /></span><p>Reperfusion timing is the single highest-yield concept in this set — anchor everything else to it.</p></div>
         <h2 className="nt-h2">Key takeaways</h2>
         <ul className="nt-bullets">
