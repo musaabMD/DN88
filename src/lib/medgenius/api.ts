@@ -250,3 +250,42 @@ export async function bookmarkQuestion(
     body: JSON.stringify({ questionId, label }),
   });
 }
+
+export async function buildExam(
+  token: string | null,
+  params: {
+    mode?: string;
+    documentId?: string;
+    examId?: string;
+    topic?: string;
+    limit?: number;
+    title?: string;
+  }
+): Promise<{
+  sessionId: string;
+  questionIds: string[];
+  questions: MedGeniusQuestion[];
+}> {
+  return medgeniusFetch("/exam/build", token, {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+}
+
+export async function fetchCollections(token: string | null) {
+  return medgeniusFetch<{ collections: Array<{ id: string; name: string; itemCount: number }> }>(
+    "/collections",
+    token
+  );
+}
+
+export async function fetchSummaries(token: string | null, documentId: string) {
+  return medgeniusFetch<{ summaries: Array<{ id: string; type: string; content: string }> }>(
+    `/summaries?documentId=${encodeURIComponent(documentId)}`,
+    token
+  );
+}
+
+export async function fetchDueSrs(token: string | null) {
+  return medgeniusFetch<{ questions: MedGeniusQuestion[] }>("/srs/due", token);
+}

@@ -22,6 +22,7 @@ export function ClerkProviderWrapper({ children }: { children: ReactNode }) {
       routerReplace={(to) => router.replace(to)}
       signInFallbackRedirectUrl={HOME_PATH}
       signUpFallbackRedirectUrl={HOME_PATH}
+      afterSignOutUrl={HOME_PATH}
     >
       {children}
     </ClerkProvider>

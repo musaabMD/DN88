@@ -8,6 +8,8 @@ import { assetRoutes } from "./routes/assets";
 import { syncRoutes } from "./routes/sync";
 import { medgeniusRoutes } from "./medgenius/routes/index";
 import { handleMedGeniusQueue } from "./medgenius/queue/processor";
+import { handleClerkWebhook, handleStripeWebhook } from "./routes/webhooks";
+import { getMedGeniusProfileForUser } from "./medgenius/services/clerk-sync";
 import type { QueueMessage } from "./medgenius/types";
 
 type BillingInterval = "monthly" | "yearly";
@@ -171,6 +173,18 @@ app.get("/api/me", async (c) => {
   });
 
   const user = await clerk.users.getUser(auth.user.id);
+  const publicMetadata = user.publicMetadata as Record<string, unknown>;
+
+  let medgenius = null;
+  try {
+    medgenius = await getMedGeniusProfileForUser(c.env.DB, {
+      userId: user.id,
+      email: user.primaryEmailAddress?.emailAddress ?? null,
+      publicMetadata,
+    });
+  } catch {
+    medgenius = null;
+  }
 
   return c.json({
     id: user.id,
@@ -178,9 +192,14 @@ app.get("/api/me", async (c) => {
     lastName: user.lastName,
     email: user.primaryEmailAddress?.emailAddress ?? null,
     imageUrl: user.imageUrl,
-    role: user.publicMetadata?.role ?? null,
+    role: publicMetadata?.role ?? null,
+    plan: publicMetadata?.plan ?? medgenius?.plan ?? "free",
+    medgenius,
   });
 });
+
+app.post("/api/webhooks/clerk", async (c) => handleClerkWebhook(c.req.raw, c.env));
+app.post("/api/webhooks/stripe", async (c) => handleStripeWebhook(c.req.raw, c.env));
 
 app.post("/api/stripe/checkout", async (c) => {
   const auth = await getAuthedUser(c);

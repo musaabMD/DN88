@@ -21,6 +21,30 @@ import {
 } from "../services/questions";
 import { getUserCredits, handleTutorChat } from "../services/tutor";
 import { semanticSearchQuery } from "../services/openrouter";
+import { syncClerkUserToMedGenius } from "../services/clerk-sync";
+import {
+  addToCollection,
+  createCollection,
+  deleteCollection,
+  getCollectionQuestions,
+  listCollections,
+} from "../services/collections";
+import {
+  buildExamQuestionSet,
+  completeSession,
+  getDueSrsQuestions,
+  listSessions,
+  recordSrsReview,
+} from "../services/sessions";
+import {
+  computeCreditCost,
+  spendCredits,
+  checkCredits,
+} from "../services/credits";
+import {
+  detectAnswerConflicts,
+  generateBoardQuestion,
+} from "../services/conflicts";
 
 export const medgeniusRoutes = new Hono<{ Bindings: Bindings }>();
 
@@ -29,7 +53,15 @@ async function requireAuth(c: Context<{ Bindings: Bindings }>) {
   if ("error" in result) {
     return { error: result.error, status: result.status as 401 };
   }
-  return { user: result.user };
+
+  const plan = resolvePlan(result.user.publicMetadata);
+  await syncClerkUserToMedGenius(c.env.DB, {
+    userId: result.user.id,
+    email: result.user.email,
+    publicMetadata: result.user.publicMetadata,
+  });
+
+  return { user: result.user, plan };
 }
 
 medgeniusRoutes.get("/credits", async (c) => {
@@ -524,4 +556,358 @@ medgeniusRoutes.get("/analytics", async (c) => {
     totalStudySec: stats?.totalStudySec ?? 0,
     weakTopics: questionStats.results ?? [],
   });
+});
+
+medgeniusRoutes.get("/summaries", async (c) => {
+  const authResult = await requireAuth(c);
+  if ("error" in authResult) return c.json({ error: authResult.error }, authResult.status);
+
+  const documentId = c.req.query("documentId");
+  if (!documentId) return c.json({ error: "Missing documentId" }, 400);
+
+  const result = await c.env.DB.prepare(
+    "SELECT id, summary_type, content_markdown, created_at FROM medgenius_summaries WHERE user_id = ? AND document_id = ?"
+  )
+    .bind(authResult.user.id, documentId)
+    .all();
+
+  return c.json({
+    summaries: (result.results ?? []).map((row) => {
+      const r = row as Record<string, unknown>;
+      return {
+        id: r.id,
+        type: r.summary_type,
+        content: r.content_markdown,
+        createdAt: r.created_at,
+      };
+    }),
+  });
+});
+
+medgeniusRoutes.get("/collections", async (c) => {
+  const authResult = await requireAuth(c);
+  if ("error" in authResult) return c.json({ error: authResult.error }, authResult.status);
+  return c.json({ collections: await listCollections(c.env.DB, authResult.user.id) });
+});
+
+medgeniusRoutes.post("/collections", async (c) => {
+  const authResult = await requireAuth(c);
+  if ("error" in authResult) return c.json({ error: authResult.error }, authResult.status);
+
+  let body: { name?: string; description?: string; color?: string };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "Invalid request body" }, 400);
+  }
+  if (!body.name?.trim()) return c.json({ error: "Missing name" }, 400);
+
+  const collection = await createCollection(c.env.DB, authResult.user.id, {
+    name: body.name.trim(),
+    description: body.description,
+    color: body.color,
+  });
+  return c.json(collection);
+});
+
+medgeniusRoutes.post("/collections/:id/items", async (c) => {
+  const authResult = await requireAuth(c);
+  if ("error" in authResult) return c.json({ error: authResult.error }, authResult.status);
+
+  let body: { questionId?: string };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "Invalid request body" }, 400);
+  }
+  if (!body.questionId) return c.json({ error: "Missing questionId" }, 400);
+
+  try {
+    await addToCollection(c.env.DB, authResult.user.id, c.req.param("id"), body.questionId);
+    return c.json({ ok: true });
+  } catch (error) {
+    return c.json({ error: error instanceof Error ? error.message : "Failed" }, 404);
+  }
+});
+
+medgeniusRoutes.get("/collections/:id/questions", async (c) => {
+  const authResult = await requireAuth(c);
+  if ("error" in authResult) return c.json({ error: authResult.error }, authResult.status);
+
+  const rows = await getCollectionQuestions(c.env.DB, authResult.user.id, c.req.param("id"));
+  const questions = await Promise.all(
+    rows.map(async (row) => {
+      const q = row as import("../types").QuestionRow;
+      const images = await getQuestionImages(c.env.DB, q.id);
+      return serializeQuestion(q, images);
+    })
+  );
+  return c.json({ questions });
+});
+
+medgeniusRoutes.delete("/collections/:id", async (c) => {
+  const authResult = await requireAuth(c);
+  if ("error" in authResult) return c.json({ error: authResult.error }, authResult.status);
+  await deleteCollection(c.env.DB, authResult.user.id, c.req.param("id"));
+  return c.json({ ok: true });
+});
+
+medgeniusRoutes.get("/duplicates", async (c) => {
+  const authResult = await requireAuth(c);
+  if ("error" in authResult) return c.json({ error: authResult.error }, authResult.status);
+
+  const result = await c.env.DB.prepare(
+    `SELECT g.*, COUNT(q.id) as question_count
+     FROM medgenius_duplicate_groups g
+     LEFT JOIN medgenius_questions q ON q.duplicate_group_id = g.id
+     WHERE g.user_id = ?
+     GROUP BY g.id
+     ORDER BY g.created_at DESC LIMIT 100`
+  )
+    .bind(authResult.user.id)
+    .all();
+
+  return c.json({ groups: result.results ?? [] });
+});
+
+medgeniusRoutes.post("/exam/build", async (c) => {
+  const authResult = await requireAuth(c);
+  if ("error" in authResult) return c.json({ error: authResult.error }, authResult.status);
+
+  let body: {
+    mode?: import("../types").StudyMode;
+    documentId?: string;
+    examId?: string;
+    topic?: string;
+    limit?: number;
+    title?: string;
+  };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "Invalid request body" }, 400);
+  }
+
+  const questionIds = await buildExamQuestionSet(c.env.DB, authResult.user.id, {
+    mode: body.mode ?? "random",
+    documentId: body.documentId,
+    examId: body.examId,
+    topic: body.topic,
+    limit: body.limit ?? 40,
+  });
+
+  const sessionId = crypto.randomUUID();
+  await c.env.DB.prepare(
+    `INSERT INTO medgenius_study_sessions
+      (id, user_id, document_id, exam_id, mode, title, total_questions, config_json)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  )
+    .bind(
+      sessionId,
+      authResult.user.id,
+      body.documentId ?? null,
+      body.examId ?? null,
+      body.mode ?? "random",
+      body.title ?? "Exam session",
+      questionIds.length,
+      JSON.stringify({ questionIds })
+    )
+    .run();
+
+  const questions = await Promise.all(
+    questionIds.map(async (id) => {
+      const q = await getQuestion(c.env.DB, authResult.user.id, id);
+      if (!q) return null;
+      const images = await getQuestionImages(c.env.DB, q.id);
+      return serializeQuestion(q, images);
+    })
+  );
+
+  return c.json({
+    sessionId,
+    questionIds,
+    questions: questions.filter(Boolean),
+  });
+});
+
+medgeniusRoutes.get("/sessions", async (c) => {
+  const authResult = await requireAuth(c);
+  if ("error" in authResult) return c.json({ error: authResult.error }, authResult.status);
+  return c.json({ sessions: await listSessions(c.env.DB, authResult.user.id) });
+});
+
+medgeniusRoutes.post("/sessions/:id/complete", async (c) => {
+  const authResult = await requireAuth(c);
+  if ("error" in authResult) return c.json({ error: authResult.error }, authResult.status);
+
+  let body: { durationSec?: number; correctCount?: number; answeredCount?: number };
+  try {
+    body = await c.req.json();
+  } catch {
+    body = {};
+  }
+
+  try {
+    await completeSession(c.env.DB, authResult.user.id, c.req.param("id"), body);
+    return c.json({ ok: true });
+  } catch (error) {
+    return c.json({ error: error instanceof Error ? error.message : "Failed" }, 404);
+  }
+});
+
+medgeniusRoutes.get("/srs/due", async (c) => {
+  const authResult = await requireAuth(c);
+  if ("error" in authResult) return c.json({ error: authResult.error }, authResult.status);
+
+  const rows = await getDueSrsQuestions(c.env.DB, authResult.user.id);
+  const questions = await Promise.all(
+    rows.map(async (row) => {
+      const q = row as import("../types").QuestionRow;
+      const images = await getQuestionImages(c.env.DB, q.id);
+      return serializeQuestion(q, images);
+    })
+  );
+  return c.json({ questions });
+});
+
+medgeniusRoutes.post("/srs/review", async (c) => {
+  const authResult = await requireAuth(c);
+  if ("error" in authResult) return c.json({ error: authResult.error }, authResult.status);
+
+  let body: { questionId?: string; quality?: number };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "Invalid request body" }, 400);
+  }
+  if (!body.questionId) return c.json({ error: "Missing questionId" }, 400);
+
+  await recordSrsReview(
+    c.env.DB,
+    authResult.user.id,
+    body.questionId,
+    body.quality ?? 3
+  );
+  return c.json({ ok: true });
+});
+
+medgeniusRoutes.post("/questions/generate", async (c) => {
+  const authResult = await requireAuth(c);
+  if ("error" in authResult) return c.json({ error: authResult.error }, authResult.status);
+
+  if (!PLAN_LIMITS[authResult.plan].aiGeneratedQuestions) {
+    return c.json({ error: "AI question generation requires Pro plan", code: "LIMIT_EXCEEDED" }, 402);
+  }
+  if (!c.env.OPENROUTER_API_KEY) {
+    return c.json({ error: "AI not configured" }, 503);
+  }
+
+  let body: { questionId?: string };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "Invalid request body" }, 400);
+  }
+  if (!body.questionId) return c.json({ error: "Missing questionId" }, 400);
+
+  const source = await getQuestion(c.env.DB, authResult.user.id, body.questionId);
+  if (!source) return c.json({ error: "Question not found" }, 404);
+
+  const user = await c.env.DB.prepare("SELECT * FROM medgenius_users WHERE user_id = ?")
+    .bind(authResult.user.id)
+    .first<import("../types").MedGeniusUserRow>();
+  if (!user) return c.json({ error: "User not found" }, 404);
+
+  const cost = computeCreditCost("aiGeneratedQuestion");
+  const check = await checkCredits(c.env.DB, user, cost);
+  if (!check.ok) return c.json({ error: check.error, code: check.code }, 402);
+
+  const json = await generateBoardQuestion(c.env.OPENROUTER_API_KEY, {
+    text: source.cleaned_text ?? source.original_text,
+    options: JSON.parse(source.options_json) as string[],
+    topic: source.topic,
+    difficulty: source.difficulty,
+  });
+
+  await spendCredits(c.env.DB, authResult.user.id, cost, "ai_generated_question", {
+    type: "question",
+    id: body.questionId,
+  });
+
+  let generated: {
+    text?: string;
+    options?: string[];
+    correctAnswer?: number;
+    explanation?: string;
+  };
+  try {
+    generated = JSON.parse(json) as typeof generated;
+  } catch {
+    return c.json({ error: "Failed to parse generated question" }, 500);
+  }
+
+  if (!generated.text || !generated.options?.length) {
+    return c.json({ error: "AI returned invalid question" }, 500);
+  }
+
+  const newId = crypto.randomUUID();
+  await c.env.DB.prepare(
+    `INSERT INTO medgenius_questions (
+      id, user_id, document_id, original_text, cleaned_text, options_json,
+      correct_answer, explanation, topic, difficulty, verification_status, tags_json
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'verified', '["ai-generated"]')`
+  )
+    .bind(
+      newId,
+      authResult.user.id,
+      source.document_id,
+      generated.text ?? "",
+      generated.text ?? "",
+      JSON.stringify(generated.options ?? []),
+      generated.correctAnswer ?? null,
+      generated.explanation ?? null,
+      source.topic,
+      source.difficulty
+    )
+    .run();
+
+  const created = await getQuestion(c.env.DB, authResult.user.id, newId);
+  if (!created) return c.json({ error: "Failed to save question" }, 500);
+
+  return c.json(serializeQuestion(created, []));
+});
+
+medgeniusRoutes.post("/documents/:id/detect-conflicts", async (c) => {
+  const authResult = await requireAuth(c);
+  if ("error" in authResult) return c.json({ error: authResult.error }, authResult.status);
+
+  if (!c.env.OPENROUTER_API_KEY) {
+    return c.json({ error: "AI not configured" }, 503);
+  }
+
+  const doc = await getDocument(c.env.DB, authResult.user.id, c.req.param("id"));
+  if (!doc) return c.json({ error: "Document not found" }, 404);
+
+  const user = await c.env.DB.prepare("SELECT * FROM medgenius_users WHERE user_id = ?")
+    .bind(authResult.user.id)
+    .first<import("../types").MedGeniusUserRow>();
+  if (!user) return c.json({ error: "User not found" }, 404);
+
+  const cost = computeCreditCost("conflictDetection");
+  const check = await checkCredits(c.env.DB, user, cost);
+  if (!check.ok) return c.json({ error: check.error, code: check.code }, 402);
+
+  await spendCredits(c.env.DB, authResult.user.id, cost, "conflict_detection", {
+    type: "document",
+    id: doc.id,
+  });
+
+  const conflicts = await detectAnswerConflicts(
+    c.env.DB,
+    c.env.OPENROUTER_API_KEY,
+    authResult.user.id,
+    doc.id
+  );
+
+  return c.json({ conflictsFound: conflicts });
 });

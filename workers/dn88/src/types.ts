@@ -18,9 +18,15 @@ export type CatalogSyncState = "fresh" | "stale" | "unavailable" | "unchanged";
 export type Bindings = {
   CLERK_SECRET_KEY: string;
   CLERK_PUBLISHABLE_KEY: string;
+  CLERK_WEBHOOK_SECRET?: string;
   STRIPE_SECRET_KEY?: string;
+  STRIPE_WEBHOOK_SECRET?: string;
   STRIPE_PRICE_MONTHLY?: string;
   STRIPE_PRICE_YEARLY?: string;
+  STRIPE_PRICE_STUDENT_MONTHLY?: string;
+  STRIPE_PRICE_STUDENT_YEARLY?: string;
+  STRIPE_PRICE_PRO_MONTHLY?: string;
+  STRIPE_PRICE_PRO_YEARLY?: string;
   DB: D1Database;
   SNAPSHOTS: R2Bucket;
   USER_CONTENT: R2Bucket;

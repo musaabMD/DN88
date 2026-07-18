@@ -23,5 +23,14 @@ export async function fetchCurrentUser(token: string | null) {
     lastName: string | null;
     email: string | null;
     imageUrl: string;
+    role: string | null;
+    plan?: string;
+    medgenius?: {
+      plan: string;
+      creditsBalance: number;
+      creditsMonthlyLimit: number;
+      documentsCount: number;
+      documentsLimit: number;
+    } | null;
   }>;
 }
