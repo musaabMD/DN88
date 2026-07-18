@@ -3682,7 +3682,7 @@ html[dir="rtl"] .dn-header-right {
   margin-right: auto;
 }
 
-html[dir="rtl"] .dn-crumb-back svg,
+html[dir="rtl"] .dn-header-back svg,
 html[dir="rtl"] .dn-foot-back svg,
 html[dir="rtl"] .dn-inline svg:last-child {
   transform: scaleX(-1);
