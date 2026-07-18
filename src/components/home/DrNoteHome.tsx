@@ -253,7 +253,9 @@ const styles = `
 .dn-fs-close:hover { background: ${C.wash}; }
 .dn-fs-title-wrap { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
 .dn-fs-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.dn-fs-title { flex: 1; min-width: 0; margin: 0; font-size: 15px; font-weight: 800; color: ${C.ink}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+.dn-fs-title { flex: 1; min-width: 0; margin: 0; display: flex; align-items: baseline; gap: 0; overflow: hidden; white-space: nowrap; line-height: 1.2; }
+.dn-fs-title-main { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 15px; font-weight: 800; color: ${C.ink}; }
+.dn-fs-sub { flex-shrink: 0; font-size: 12px; font-weight: 700; color: ${C.faint}; margin-left: 6px; }
 .dn-fs-bk { width: 34px; height: 34px; border: none; background: none; border-radius: 10px; cursor: pointer; display: grid; place-items: center; flex-shrink: 0; }
 .dn-fs-bk:hover { background: ${C.wash}; }
 .dn-fs-fs { width: 34px; height: 34px; border: none; background: none; border-radius: 10px; cursor: pointer; display: grid; place-items: center; flex-shrink: 0; color: ${C.sub}; }
@@ -525,7 +527,8 @@ const styles = `
   .dn-fs-row1 { gap: 6px; padding: 6px 10px 4px; }
   .dn-fs-row2 { padding: 0 10px 6px; }
   .dn-fs-close { width: 32px; height: 32px; border-radius: 9px; }
-  .dn-fs-title { font-size: 14px; }
+  .dn-fs-title-main { font-size: 14px; }
+  .dn-fs-sub { font-size: 11px; margin-left: 5px; }
   .dn-fs-bk { width: 32px; height: 32px; }
   .dn-fs-fs { width: 32px; height: 32px; }
   .dn-fs-search { padding: 7px 10px; border-radius: 10px; }
@@ -614,7 +617,7 @@ export function DrNoteHome() {
           )}
 
           {page === "study" && file && (
-            <Study file={file} saved={saved.has(file.id)} onToggleSave={() => { toggleSaved(file.id); flash(saved.has(file.id) ? "Removed bookmark" : "Bookmarked"); }}
+            <Study file={file} exam={exam} saved={saved.has(file.id)} onToggleSave={() => { toggleSaved(file.id); flash(saved.has(file.id) ? "Removed bookmark" : "Bookmarked"); }}
               onClose={() => setPage("exam")} flash={flash} />
           )}
 
@@ -906,8 +909,8 @@ function ExamPage(props: {
 /* ------------------------------------------------------------------ */
 /*  Study (full screen)                                                */
 /* ------------------------------------------------------------------ */
-function Study({ file, saved, onToggleSave, onClose, flash }: {
-  file: ExamFile; saved: boolean; onToggleSave: () => void; onClose: () => void; flash: (m: string) => void;
+function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
+  file: ExamFile; exam: Exam | null; saved: boolean; onToggleSave: () => void; onClose: () => void; flash: (m: string) => void;
 }) {
   const [tab, setTab] = useState<Tab>("Read");
   const [query, setQuery] = useState("");
@@ -960,6 +963,8 @@ function Study({ file, saved, onToggleSave, onClose, flash }: {
 
   const searchable = tab === "Quiz" || tab === "Flashcards";
 
+  const subLabel = exam ? `${exam.code} · ${file.author}` : `@${file.author} · ${file.pages} pg`;
+
   return (
     <div className={`dn-fs${immersive ? " dn-fs-immersive" : ""}`} ref={fsRef}>
       <header className="dn-fs-head">
@@ -967,7 +972,10 @@ function Study({ file, saved, onToggleSave, onClose, flash }: {
           <button className="dn-fs-close" onClick={onClose} aria-label="Close"><X size={18} strokeWidth={2.8} /></button>
           <div className="dn-fs-title-wrap">
             <span className="dn-fs-dot" style={{ background: file.color }} aria-hidden />
-            <h1 className="dn-fs-title">{file.name}</h1>
+            <h1 className="dn-fs-title">
+              <span className="dn-fs-title-main">{file.name}</span>
+              <span className="dn-fs-sub">{subLabel}</span>
+            </h1>
           </div>
           <button type="button" className={`dn-fs-bk${saved ? " on" : ""}`} onClick={onToggleSave} title={saved ? "Bookmarked" : "Bookmark"} aria-label={saved ? "Remove bookmark" : "Bookmark"}>
             <BkIcon saved={saved} size={16} />
