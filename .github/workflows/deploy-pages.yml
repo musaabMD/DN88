@@ -14,7 +14,7 @@ env:
   PRODUCTION_API_URL: https://api.drnote.co
 
 jobs:
-  deploy:
+  deploy-pages:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -31,68 +31,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Apply MedGenius D1 migration
-        continue-on-error: true
-        run: npm run medgenius:migrate
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-
-      - name: Deploy DN88 Worker
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          wranglerVersion: "4.108.0"
-          command: deploy -c workers/dn88/wrangler.jsonc
-
-      - name: Set Worker secrets
-        continue-on-error: true
-        run: |
-          put_secret() {
-            local name="$1"
-            local value="$2"
-            if [ -n "$value" ]; then
-              printf '%s' "$value" | npx wrangler secret put "$name" -c workers/dn88/wrangler.jsonc
-            fi
-          }
-
-          put_secret CLERK_SECRET_KEY "$CLERK_SECRET_KEY"
-          put_secret CLERK_PUBLISHABLE_KEY "$CLERK_PUBLISHABLE_KEY"
-          put_secret CLERK_WEBHOOK_SECRET "$CLERK_WEBHOOK_SECRET"
-          put_secret STRIPE_SECRET_KEY "$STRIPE_SECRET_KEY"
-          put_secret STRIPE_WEBHOOK_SECRET "$STRIPE_WEBHOOK_SECRET"
-          put_secret STRIPE_PRICE_MONTHLY "$STRIPE_PRICE_MONTHLY"
-          put_secret STRIPE_PRICE_YEARLY "$STRIPE_PRICE_YEARLY"
-          put_secret STRIPE_PRICE_STUDENT_MONTHLY "$STRIPE_PRICE_STUDENT_MONTHLY"
-          put_secret STRIPE_PRICE_STUDENT_YEARLY "$STRIPE_PRICE_STUDENT_YEARLY"
-          put_secret STRIPE_PRICE_PRO_MONTHLY "$STRIPE_PRICE_PRO_MONTHLY"
-          put_secret STRIPE_PRICE_PRO_YEARLY "$STRIPE_PRICE_PRO_YEARLY"
-          put_secret CATALOG_SYNC_SECRET "$CATALOG_SYNC_SECRET"
-          put_secret OPENAI_API_KEY "$OPENAI_API_KEY"
-          put_secret OPENROUTER_API_KEY "$OPENROUTER_API_KEY"
-          put_secret CONTEXT_DEV_API_KEY "$CONTEXT_DEV_API_KEY"
-          put_secret ADMIN_BOOTSTRAP_IDS "$ADMIN_BOOTSTRAP_IDS"
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-          CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-          CLERK_WEBHOOK_SECRET: ${{ secrets.CLERK_WEBHOOK_SECRET }}
-          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
-          STRIPE_PRICE_MONTHLY: ${{ secrets.STRIPE_PRICE_MONTHLY }}
-          STRIPE_PRICE_YEARLY: ${{ secrets.STRIPE_PRICE_YEARLY }}
-          STRIPE_PRICE_STUDENT_MONTHLY: ${{ secrets.STRIPE_PRICE_STUDENT_MONTHLY }}
-          STRIPE_PRICE_STUDENT_YEARLY: ${{ secrets.STRIPE_PRICE_STUDENT_YEARLY }}
-          STRIPE_PRICE_PRO_MONTHLY: ${{ secrets.STRIPE_PRICE_PRO_MONTHLY }}
-          STRIPE_PRICE_PRO_YEARLY: ${{ secrets.STRIPE_PRICE_PRO_YEARLY }}
-          CATALOG_SYNC_SECRET: ${{ secrets.CATALOG_SYNC_SECRET }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          CONTEXT_DEV_API_KEY: ${{ secrets.CONTEXT_DEV_API_KEY }}
-          ADMIN_BOOTSTRAP_IDS: ${{ secrets.ADMIN_BOOTSTRAP_IDS }}
 
       - name: Build
         run: |
@@ -139,6 +77,60 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ZONE_ID: 789a9273b51c942e1f96be6186062963
+
+  deploy-worker:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply MedGenius D1 migration
+        continue-on-error: true
+        run: npm run medgenius:migrate
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy DN88 Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4.108.0"
+          command: deploy -c workers/dn88/wrangler.jsonc
+
+      - name: Set Worker secrets
+        continue-on-error: true
+        run: bash scripts/set-worker-secrets.sh
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_WEBHOOK_SECRET: ${{ secrets.CLERK_WEBHOOK_SECRET }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          STRIPE_PRICE_MONTHLY: ${{ secrets.STRIPE_PRICE_MONTHLY }}
+          STRIPE_PRICE_YEARLY: ${{ secrets.STRIPE_PRICE_YEARLY }}
+          STRIPE_PRICE_STUDENT_MONTHLY: ${{ secrets.STRIPE_PRICE_STUDENT_MONTHLY }}
+          STRIPE_PRICE_STUDENT_YEARLY: ${{ secrets.STRIPE_PRICE_STUDENT_YEARLY }}
+          STRIPE_PRICE_PRO_MONTHLY: ${{ secrets.STRIPE_PRICE_PRO_MONTHLY }}
+          STRIPE_PRICE_PRO_YEARLY: ${{ secrets.STRIPE_PRICE_PRO_YEARLY }}
+          CATALOG_SYNC_SECRET: ${{ secrets.CATALOG_SYNC_SECRET }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          CONTEXT_DEV_API_KEY: ${{ secrets.CONTEXT_DEV_API_KEY }}
+          ADMIN_BOOTSTRAP_IDS: ${{ secrets.ADMIN_BOOTSTRAP_IDS }}
 
       - name: Verify DN88 API health
         continue-on-error: true
