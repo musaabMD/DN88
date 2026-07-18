@@ -22,12 +22,14 @@ import {
 import { createStudySession, recordAttempt, searchQuestions, fetchDueSrs, recordSrsReview, bookmarkQuestion } from "@/lib/medgenius/api";
 import { useHomeAnalytics } from "@/hooks/useHomeAnalytics";
 import { useStudyStreak } from "@/hooks/useStudyStreak";
-import { MedGeniusCreditsBadge } from "@/components/MedGeniusCreditsBadge";
 import { CollectionsPanel } from "@/components/CollectionsPanel";
 import { getClerkToken } from "@/lib/clerk-token";
 import { useClerkEnabled } from "@/hooks/useClerkEnabled";
 import { LocaleToggle } from "@/components/LocaleToggle";
 import { HomeLocaleProvider, useHomeLocale } from "@/components/home/HomeLocaleProvider";
+import { MedGeniusCreditsProvider } from "@/lib/medgenius/credits-context";
+import { CreditsBadge, CreditsChatHint } from "@/components/medgenius/CreditsUsage";
+import { useMedGeniusCreditsContext } from "@/lib/medgenius/credits-context";
 import type { AppLocale } from "@/lib/locale";
 
 /* ------------------------------------------------------------------ */
@@ -379,6 +381,10 @@ const styles = `
 
 /* read */
 .dn-read-fs { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.dn-read-toolbar { display: flex; gap: 8px; padding: 8px 12px; border-bottom: 1px solid ${C.line}; background: #fff; }
+.dn-read-view { border: 2px solid ${C.line}; background: #fff; border-radius: 10px; padding: 6px 12px; font-weight: 800; font-size: 12px; color: ${C.sub}; cursor: pointer; }
+.dn-read-view.on { border-color: ${C.blue}; color: ${C.blueDark}; background: #DDF4FF; }
+.dn-read-source { max-width: 680px; margin: 0 auto; padding: 20px 18px; font-size: 13px; line-height: 1.55; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; white-space: pre-wrap; word-break: break-word; color: ${C.ink}; }
 .dn-progress { height: 8px; background: ${C.wash}; }
 .dn-progress span { display: block; height: 100%; border-radius: 0 6px 6px 0; transition: width .3s; }
 .dn-read-scroll { flex: 1; overflow-y: auto; }
@@ -653,9 +659,11 @@ const styles = `
 export function DrNoteHome() {
   return (
     <HomeLocaleProvider>
-      <div className="min-h-screen bg-[#F6F7F9] text-slate-900 [color-scheme:light]">
-        <DrNoteHomeInner />
-      </div>
+      <MedGeniusCreditsProvider>
+        <div className="min-h-screen bg-[#F6F7F9] text-slate-900 [color-scheme:light]">
+          <DrNoteHomeInner />
+        </div>
+      </MedGeniusCreditsProvider>
     </HomeLocaleProvider>
   );
 }
@@ -719,7 +727,7 @@ function DrNoteHomeInner() {
                 </button>
                 <div className="dn-header-right">
                   <LocaleToggle locale={locale} onToggle={toggleLocale} size="sm" />
-                  {clerkEnabled && <MedGeniusCreditsBadge />}
+                  <CreditsBadge />
                   <span className="dn-streak"><Flame size={18} color={C.yellow} fill={C.yellow} strokeWidth={2} /><b>{streakData.streakDays || 0}</b></span>
                   <span className="dn-avatar" style={{ background: C.purple }}>MA</span>
                 </div>
@@ -844,6 +852,7 @@ function Home({ onOpen, onAdd, locale, onToggleLocale }: { onOpen: (e: Exam) => 
           <DrNoteLogo showWordmark forceWordmark />
           <div className="flex items-center gap-3">
             <LocaleToggle locale={locale} onToggle={onToggleLocale} className="ring-1 ring-slate-200/80 bg-white/80" />
+            <CreditsBadge />
             <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 ring-1 ring-amber-200/70">
               <Flame className="h-4 w-4 text-amber-500" fill="currentColor" strokeWidth={1.5} />
               <span className="text-sm font-bold text-amber-600">14</span>
@@ -958,6 +967,7 @@ function AddFile({
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const clerkEnabled = useClerkEnabled();
+  const { refresh: refreshCredits } = useMedGeniusCreditsContext();
 
   const handleUpload = async () => {
     if (!name.trim() || uploading) return;
@@ -984,6 +994,7 @@ function AddFile({
           ? m.fileAlreadyProcessed
           : m.uploadCompleteProcessing
       );
+      void refreshCredits();
     } catch (err) {
       const message =
         err instanceof MedGeniusApiError
@@ -1438,6 +1449,7 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, locale, onTogg
             </h1>
           </div>
           <LocaleToggle locale={locale} onToggle={onToggleLocale} size="sm" className="shrink-0 bg-white ring-1 ring-black/5" />
+          <CreditsBadge className="shrink-0" />
           <button type="button" className={`dn-fs-bk${saved ? " on" : ""}`} onClick={onToggleSave} title={saved ? m.bookmarked : m.bookmark} aria-label={saved ? m.removeBookmark : m.bookmark}>
             <BkIcon saved={saved} size={16} />
           </button>
@@ -1471,7 +1483,14 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, locale, onTogg
             <p>{m.preparingStudyMaterials}{live.progress > 0 ? ` ${live.progress}%` : ""}</p>
           </div>
         )}
-        {tab === "Read" && <ReadFull file={file} pages={readPages} />}
+        {tab === "Read" && (
+          <ReadFull
+            key={file.id}
+            file={file}
+            pages={readPages}
+            rawMarkdown={useLive ? live.rawMarkdown : null}
+          />
+        )}
         {tab === "Quiz" && <QuizList query={query} questions={questions} answers={answers} setAnswers={setAnswers} flagged={flagged} setFlagged={setFlagged} perPage={perPage} setPerPage={setPerPage} reveal={reveal} setReveal={setReveal} onAsk={openChat} onAnswer={async (idx, selected) => {
           const q = questions[idx];
           const sessionId = backendSessionRef.current;
@@ -1531,8 +1550,10 @@ function ChatPanel({ documentId, documentContext, quote, clearQuote, msgs, setMs
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [conversationId, setConversationId] = useState<string | undefined>();
+  const [creditsRemaining, setCreditsRemaining] = useState<number | undefined>();
   const endRef = useRef<HTMLDivElement>(null);
   const clerkEnabled = useClerkEnabled();
+  const { refresh: refreshCredits } = useMedGeniusCreditsContext();
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
 
   const send = async () => {
@@ -1560,7 +1581,13 @@ function ChatPanel({ documentId, documentContext, quote, clearQuote, msgs, setMs
         () => content.chatMockReply
       );
       setConversationId(result.conversationId || conversationId);
+      if (result.creditsRemaining !== undefined) {
+        setCreditsRemaining(result.creditsRemaining);
+      }
       setMsgs((prev) => [...prev, { role: "ai", text: result.reply }]);
+      if (result.fromApi) {
+        void refreshCredits();
+      }
     } finally {
       setSending(false);
     }
@@ -1576,6 +1603,7 @@ function ChatPanel({ documentId, documentContext, quote, clearQuote, msgs, setMs
         </span>
         <button className="dn-fs-close" onClick={onClose} aria-label={m.closeChat}><X size={18} strokeWidth={2.8} /></button>
       </div>
+      <CreditsChatHint remaining={creditsRemaining} />
       <div className="dn-chat-body">
         {msgs.map((msg, i) => <div key={i} className={`dn-msg ${msg.role}`}>{msg.text}</div>)}
         <div ref={endRef} />
@@ -1590,12 +1618,44 @@ function ChatPanel({ documentId, documentContext, quote, clearQuote, msgs, setMs
 }
 
 /* ---- Read ---- */
-function ReadFull({ file, pages }: { file: ExamFile; pages: HomeReadPage[] }) {
+function ReadFull({
+  file,
+  pages,
+  rawMarkdown,
+}: {
+  file: ExamFile;
+  pages: HomeReadPage[];
+  rawMarkdown?: string | null;
+}) {
   const { m } = useHomeLocale();
   const [i, setI] = useState(0);
+  const [view, setView] = useState<"sections" | "source">("sections");
   useEffect(() => {
     setI(0);
   }, [file.id, pages.length]);
+
+  if (pages.length === 0 && !rawMarkdown) {
+    return (
+      <div className="dn-read-fs">
+        <div className="dn-empty" style={{ paddingTop: 48 }}><BookOpen size={26} color={C.faint} /><p>{m.readingContentPending}</p></div>
+      </div>
+    );
+  }
+
+  if (view === "source" && rawMarkdown) {
+    return (
+      <div className="dn-read-fs">
+        <div className="dn-read-toolbar">
+          <button type="button" className="dn-read-view on" onClick={() => setView("sections")}>{m.readSections}</button>
+          <button type="button" className="dn-read-view on" aria-current="true">{m.readSource}</button>
+        </div>
+        <div className="dn-read-scroll">
+          <pre className="dn-read-source">{rawMarkdown}</pre>
+        </div>
+      </div>
+    );
+  }
+
   if (pages.length === 0) {
     return (
       <div className="dn-read-fs">
@@ -1603,10 +1663,17 @@ function ReadFull({ file, pages }: { file: ExamFile; pages: HomeReadPage[] }) {
       </div>
     );
   }
+
   const p = pages[i] ?? pages[0];
   const pct = ((i + 1) / pages.length) * 100;
   return (
     <div className="dn-read-fs">
+      {rawMarkdown && (
+        <div className="dn-read-toolbar">
+          <button type="button" className="dn-read-view on" aria-current="true">{m.readSections}</button>
+          <button type="button" className="dn-read-view" onClick={() => setView("source")}>{m.readSource}</button>
+        </div>
+      )}
       <div className="dn-progress"><span style={{ width: `${pct}%`, background: C.green }} /></div>
       <div className="dn-read-scroll">
         <article className="dn-read-col">

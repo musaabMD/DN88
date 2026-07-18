@@ -10,8 +10,11 @@ concurrency:
   group: pages-deploy
   cancel-in-progress: true
 
+env:
+  PRODUCTION_API_URL: https://api.drnote.co
+
 jobs:
-  deploy:
+  deploy-pages:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -29,55 +32,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Deploy DN88 Worker
-        continue-on-error: true
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          wranglerVersion: "4.108.0"
-          command: deploy -c workers/dn88/wrangler.jsonc
-
-      - name: Set Worker Clerk secrets
-        continue-on-error: true
-        run: |
-          printf '%s' "$CLERK_SECRET_KEY" | npx wrangler secret put CLERK_SECRET_KEY -c workers/dn88/wrangler.jsonc
-          printf '%s' "$CLERK_PUBLISHABLE_KEY" | npx wrangler secret put CLERK_PUBLISHABLE_KEY -c workers/dn88/wrangler.jsonc
-          if [ -n "$STRIPE_SECRET_KEY" ]; then
-            printf '%s' "$STRIPE_SECRET_KEY" | npx wrangler secret put STRIPE_SECRET_KEY -c workers/dn88/wrangler.jsonc
-          fi
-          if [ -n "$STRIPE_PRICE_MONTHLY" ]; then
-            printf '%s' "$STRIPE_PRICE_MONTHLY" | npx wrangler secret put STRIPE_PRICE_MONTHLY -c workers/dn88/wrangler.jsonc
-          fi
-          if [ -n "$STRIPE_PRICE_YEARLY" ]; then
-            printf '%s' "$STRIPE_PRICE_YEARLY" | npx wrangler secret put STRIPE_PRICE_YEARLY -c workers/dn88/wrangler.jsonc
-          fi
-          if [ -n "$CATALOG_SYNC_SECRET" ]; then
-            printf '%s' "$CATALOG_SYNC_SECRET" | npx wrangler secret put CATALOG_SYNC_SECRET -c workers/dn88/wrangler.jsonc
-          fi
-          if [ -n "$OPENAI_API_KEY" ]; then
-            printf '%s' "$OPENAI_API_KEY" | npx wrangler secret put OPENAI_API_KEY -c workers/dn88/wrangler.jsonc
-          fi
-          if [ -n "$ADMIN_BOOTSTRAP_IDS" ]; then
-            printf '%s' "$ADMIN_BOOTSTRAP_IDS" | npx wrangler secret put ADMIN_BOOTSTRAP_IDS -c workers/dn88/wrangler.jsonc
-          fi
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-          CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-          STRIPE_PRICE_MONTHLY: ${{ secrets.STRIPE_PRICE_MONTHLY }}
-          STRIPE_PRICE_YEARLY: ${{ secrets.STRIPE_PRICE_YEARLY }}
-          CATALOG_SYNC_SECRET: ${{ secrets.CATALOG_SYNC_SECRET }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          ADMIN_BOOTSTRAP_IDS: ${{ secrets.ADMIN_BOOTSTRAP_IDS }}
-
       - name: Build
         run: |
-          export NEXT_PUBLIC_DN88_API_URL="${NEXT_PUBLIC_DN88_API_URL:-https://dn88-api.musaab.workers.dev}"
+          export NEXT_PUBLIC_DN88_API_URL="${NEXT_PUBLIC_DN88_API_URL:-$PRODUCTION_API_URL}"
           npm run build
         env:
+          PRODUCTION_API_URL: ${{ env.PRODUCTION_API_URL }}
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
           NEXT_PUBLIC_CLERK_DOMAIN: drnote.co
           NEXT_PUBLIC_DN88_API_URL: ${{ secrets.NEXT_PUBLIC_DN88_API_URL }}
@@ -118,10 +78,69 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ZONE_ID: 789a9273b51c942e1f96be6186062963
 
-      - name: Verify catalog API
+  deploy-worker:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply MedGenius D1 migration
+        continue-on-error: true
+        run: npm run medgenius:migrate
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy DN88 Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4.108.0"
+          command: deploy -c workers/dn88/wrangler.jsonc
+
+      - name: Set Worker secrets
+        continue-on-error: true
+        run: bash scripts/set-worker-secrets.sh
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_WEBHOOK_SECRET: ${{ secrets.CLERK_WEBHOOK_SECRET }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          STRIPE_PRICE_MONTHLY: ${{ secrets.STRIPE_PRICE_MONTHLY }}
+          STRIPE_PRICE_YEARLY: ${{ secrets.STRIPE_PRICE_YEARLY }}
+          STRIPE_PRICE_STUDENT_MONTHLY: ${{ secrets.STRIPE_PRICE_STUDENT_MONTHLY }}
+          STRIPE_PRICE_STUDENT_YEARLY: ${{ secrets.STRIPE_PRICE_STUDENT_YEARLY }}
+          STRIPE_PRICE_PRO_MONTHLY: ${{ secrets.STRIPE_PRICE_PRO_MONTHLY }}
+          STRIPE_PRICE_PRO_YEARLY: ${{ secrets.STRIPE_PRICE_PRO_YEARLY }}
+          CATALOG_SYNC_SECRET: ${{ secrets.CATALOG_SYNC_SECRET }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          CONTEXT_DEV_API_KEY: ${{ secrets.CONTEXT_DEV_API_KEY }}
+          ADMIN_BOOTSTRAP_IDS: ${{ secrets.ADMIN_BOOTSTRAP_IDS }}
+
+      - name: Verify DN88 API health
         continue-on-error: true
         run: |
-          API_URL="${NEXT_PUBLIC_DN88_API_URL:-https://dn88-api.musaab.workers.dev}"
+          API_URL="${NEXT_PUBLIC_DN88_API_URL:-$PRODUCTION_API_URL}"
+          echo "Checking $API_URL/health"
+          curl -fsS "$API_URL/health"
+          echo
           curl -fsS "$API_URL/api/catalog/state" | head -c 200
+          echo
         env:
+          PRODUCTION_API_URL: ${{ env.PRODUCTION_API_URL }}
           NEXT_PUBLIC_DN88_API_URL: ${{ secrets.NEXT_PUBLIC_DN88_API_URL }}
