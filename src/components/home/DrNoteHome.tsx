@@ -29,7 +29,6 @@ import { HomeLocaleProvider, useHomeLocale } from "@/components/home/HomeLocaleP
 import { MedGeniusCreditsProvider } from "@/lib/medgenius/credits-context";
 import { CreditsBadge, CreditsChatHint } from "@/components/medgenius/CreditsUsage";
 import { useMedGeniusCreditsContext } from "@/lib/medgenius/credits-context";
-import type { AppLocale } from "@/lib/locale";
 
 /* ------------------------------------------------------------------ */
 /*  Tokens                                                             */
@@ -172,8 +171,8 @@ function formatDuration(sec: number | null, inProgress: string, fmt: (min: numbe
   return fmt(m, s);
 }
 
-function formatSessionWhen(ts: number, locale: AppLocale) {
-  return new Intl.DateTimeFormat(locale === "ar" ? "ar-SA" : "en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(ts));
+function formatSessionWhen(ts: number) {
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(ts));
 }
 
 function displaySessionTitle(title: string, content: import("@/lib/i18n/home-content").HomeContent) {
@@ -239,6 +238,9 @@ const styles = `
 /* header */
 .dn-header { position: fixed; top: 0; left: 0; right: 0; z-index: 40; background: #fff; border-bottom: 2px solid ${C.line}; }
 .dn-header-inner { max-width: 1200px; margin: 0 auto; height: 66px; padding: 0 18px; display: flex; align-items: center; }
+.dn-header-left { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.dn-header-back { width: 40px; height: 40px; border-radius: 10px; border: none; background: none; cursor: pointer; display: grid; place-items: center; color: ${C.sub}; flex-shrink: 0; }
+.dn-header-back:hover { background: ${C.wash}; color: ${C.ink}; }
 .dn-brand { display: flex; align-items: center; gap: 10px; background: none; border: none; cursor: pointer; }
 .dn-logo { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; }
 .dn-brand-name { font-size: 21px; font-weight: 900; color: ${C.green}; letter-spacing: -.5px; }
@@ -249,20 +251,20 @@ const styles = `
 /* main / hero */
 .dn-main { max-width: min(1120px, calc(100% - 36px)); margin: 0 auto; padding: 92px 18px 120px; }
 .dn-hero { text-align: center; margin-bottom: 18px; display: flex; flex-direction: column; align-items: center; }
-.dn-hero-compact { margin-bottom: 12px; align-items: stretch; text-align: left; width: 100%; }
-.dn-hero-row { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 520px; margin: 0 auto 10px; }
-.dn-hero-compact .dn-hero-ic { width: 44px; height: 44px; min-width: 44px; border-radius: 12px; margin-bottom: 0; }
-.dn-hero-compact .dn-hero-code { font-size: 13px; }
-.dn-hero-title { flex: 1; min-width: 0; font-size: 20px; font-weight: 900; letter-spacing: -.4px; margin: 0; color: ${C.ink}; line-height: 1.25; }
+.dn-hero-compact { margin-bottom: 16px; align-items: stretch; text-align: left; width: 100%; }
+.dn-hero-row { display: flex; align-items: center; gap: 14px; width: 100%; max-width: 100%; margin: 0 0 14px; padding: 16px 18px; background: #fff; border: 1px solid ${C.line}; border-radius: 20px; box-shadow: 0 2px 14px rgba(0,0,0,.05); }
+.dn-hero-compact .dn-hero-ic { width: 56px; height: 56px; min-width: 56px; border-radius: 16px; margin-bottom: 0; }
+.dn-hero-compact .dn-hero-code { font-size: 15px; letter-spacing: -0.4px; }
+.dn-hero-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.dn-hero-title { flex: 1; min-width: 0; font-size: 24px; font-weight: 900; letter-spacing: -.5px; margin: 0; color: ${C.ink}; line-height: 1.15; }
+.dn-hero-meta { margin: 0; font-size: 13px; font-weight: 800; color: ${C.sub}; letter-spacing: .01em; }
 .dn-hero-ic { width: 52px; height: 52px; min-width: 52px; border-radius: 16px; display: grid; place-items: center; margin-bottom: 10px; padding: 0 6px; overflow: hidden; }
 .dn-hero-code { font-size: 18px; font-weight: 900; color: #fff; letter-spacing: -0.5px; line-height: 1; white-space: nowrap; }
 .dn-title { font-size: 34px; font-weight: 900; letter-spacing: -1px; margin: 0 0 4px; color: ${C.ink}; }
 .dn-hero-sub { color: ${C.sub}; font-weight: 700; margin: 0 0 12px; font-size: 15px; }
-.dn-hero-compact .dn-search { margin-top: 0; max-width: 520px; }
-.dn-crumb-back { display: inline-flex; align-items: center; gap: 6px; background: none; border: none; cursor: pointer; color: ${C.sub}; font-weight: 800; font-size: 14px; margin-bottom: 8px; padding: 6px 0; min-height: 44px; }
-.dn-crumb-back:hover { color: ${C.ink}; }
+.dn-hero-compact .dn-search { margin-top: 0; max-width: 100%; }
 .dn-exam-main { width: 100%; }
-.dn-search { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 520px; margin: 8px auto 0; background: #fff; border: 2px solid ${C.line}; border-radius: 18px; padding: 14px 16px; transition: border-color .12s, box-shadow .12s; }
+.dn-search { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 100%; margin: 0; background: #fff; border: 2px solid ${C.line}; border-radius: 18px; padding: 14px 16px; transition: border-color .12s, box-shadow .12s; }
 .dn-search:focus-within { border-color: ${C.blue}; box-shadow: 0 0 0 4px #DDF4FF; }
 .dn-search input { flex: 1; min-width: 0; border: none; outline: none; font-size: 16px; font-weight: 700; color: ${C.ink}; background: none; }
 .dn-search input::placeholder { color: ${C.faint}; font-weight: 600; }
@@ -285,11 +287,10 @@ const styles = `
 .dn-modal-input:focus { border-color: ${C.blue}; }
 
 /* filter bar */
-.dn-filterbar { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
-.dn-periods { display: inline-flex; gap: 2px; background: #fff; border: 1px solid ${C.line}; border-radius: 10px; padding: 2px; flex-shrink: 0; }
-.dn-period { border: none; cursor: pointer; padding: 4px 8px; border-radius: 7px; font-size: 11px; font-weight: 800; transition: all .1s; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 3px; line-height: 1; }
-.dn-period-icon { padding: 4px 6px; min-width: 28px; }
-.dn-selectall { display: inline-flex; align-items: center; gap: 5px; font-weight: 800; font-size: 11px; color: ${C.sub}; cursor: pointer; background: none; border: none; white-space: nowrap; flex-shrink: 0; }
+.dn-filterbar { display: flex; align-items: center; justify-content: flex-start; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.dn-periods { display: inline-flex; gap: 4px; background: #fff; border: 1px solid ${C.line}; border-radius: 14px; padding: 4px; flex-shrink: 0; }
+.dn-period { border: none; cursor: pointer; padding: 8px 14px; border-radius: 10px; font-size: 14px; font-weight: 800; transition: all .1s; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 4px; line-height: 1.2; min-height: 36px; }
+.dn-period-icon { padding: 8px 10px; min-width: 36px; }
 .dn-check { width: 16px; height: 16px; border: 2px solid ${C.line}; border-radius: 4px; display: grid; place-items: center; transition: all .1s; }
 
 /* rows */
@@ -579,20 +580,20 @@ const styles = `
 @media (max-width: 640px) {
   .dn-main { max-width: 100%; padding: 64px 12px 100px; }
   .dn-header-inner { height: 52px; padding: 0 12px; }
-  .dn-crumb-back { font-size: 13px; margin-bottom: 2px; min-height: 36px; }
-  .dn-hero { margin-bottom: 10px; }
-  .dn-hero-row { max-width: 100%; margin-bottom: 8px; gap: 8px; }
-  .dn-hero-compact .dn-hero-ic { width: 38px; height: 38px; min-width: 38px; border-radius: 10px; }
-  .dn-hero-compact .dn-hero-code { font-size: 11px; }
-  .dn-hero-title { font-size: 17px; }
+  .dn-header-back { width: 36px; height: 36px; border-radius: 9px; }
+  .dn-hero { margin-bottom: 12px; }
+  .dn-hero-row { margin-bottom: 12px; gap: 12px; padding: 14px; border-radius: 16px; }
+  .dn-hero-compact .dn-hero-ic { width: 48px; height: 48px; min-width: 48px; border-radius: 14px; }
+  .dn-hero-compact .dn-hero-code { font-size: 13px; }
+  .dn-hero-title { font-size: 20px; }
+  .dn-hero-meta { font-size: 12px; }
   .dn-hero-compact .dn-search { max-width: 100%; }
   .dn-search { max-width: 100%; padding: 10px 12px; border-radius: 12px; margin-top: 0; border-width: 1px; }
   .dn-search input { font-size: 15px; }
-  .dn-filterbar { justify-content: center; gap: 8px; margin-bottom: 8px; }
-  .dn-periods { border-radius: 9px; padding: 2px; }
-  .dn-period { padding: 4px 7px; font-size: 10px; }
-  .dn-period-icon { padding: 4px 5px; min-width: 26px; }
-  .dn-selectall { font-size: 10px; gap: 4px; }
+  .dn-filterbar { justify-content: flex-start; gap: 10px; margin-bottom: 12px; }
+  .dn-periods { border-radius: 12px; padding: 3px; }
+  .dn-period { padding: 7px 12px; font-size: 13px; min-height: 34px; }
+  .dn-period-icon { padding: 7px 9px; min-width: 34px; }
   .dn-check { width: 14px; height: 14px; }
   .dn-row { flex-wrap: nowrap; gap: 8px; padding: 8px; border-radius: 12px; align-items: center; }
   .dn-upvote { width: 38px; border-radius: 9px; padding: 3px 0; }
@@ -721,9 +722,21 @@ function DrNoteHomeInner() {
           {page !== "study" && (
             <header className="dn-header">
               <div className="dn-header-inner">
-                <button type="button" className="dn-brand" onClick={() => setPage("home")} aria-label={m.drnoteHome}>
-                  <DrNoteLogo showWordmark forceWordmark />
-                </button>
+                <div className="dn-header-left">
+                  {page === "exam" && (
+                    <button
+                      type="button"
+                      className="dn-header-back"
+                      onClick={() => setPage("home")}
+                      aria-label={m.allExamsBack}
+                    >
+                      <ArrowLeft size={20} strokeWidth={2.5} />
+                    </button>
+                  )}
+                  <button type="button" className="dn-brand" onClick={() => setPage("home")} aria-label={m.drnoteHome}>
+                    <DrNoteLogo showWordmark forceWordmark />
+                  </button>
+                </div>
                 <div className="dn-header-right">
                   <CreditsBadge />
                   <span className="dn-streak"><Flame size={18} color={C.yellow} fill={C.yellow} strokeWidth={2} /><b>{streakData.streakDays || 0}</b></span>
@@ -736,7 +749,7 @@ function DrNoteHomeInner() {
           {page === "exam" && exam && (
             <ExamPage exam={exam} filter={filter} setFilter={setFilter} query={query} setQuery={setQuery}
               voted={voted} setVoted={setVoted} saved={saved} toggleSaved={toggleSaved}
-              picked={picked} setPicked={setPicked} onBack={() => setPage("home")} onOpen={openFile}
+              picked={picked} setPicked={setPicked} onOpen={openFile}
               onAdd={() => setAdding(true)} flash={flash}
               docsRefreshKey={docsRefreshKey} useLiveData={clerkEnabled} />
           )}
@@ -1026,11 +1039,11 @@ function AddFile({
 function ExamPage(props: {
   exam: Exam; filter: Filter; setFilter: (f: Filter) => void; query: string; setQuery: (s: string) => void;
   voted: Set<string>; setVoted: (s: Set<string>) => void; saved: Set<string>; toggleSaved: (id: string) => void;
-  picked: Set<string>; setPicked: (s: Set<string>) => void; onBack: () => void; onOpen: (f: ExamFile) => void;
+  picked: Set<string>; setPicked: (s: Set<string>) => void; onOpen: (f: ExamFile) => void;
   onAdd: () => void; flash: (m: string) => void;
   docsRefreshKey: number; useLiveData: boolean;
 }) {
-  const { exam, filter, setFilter, query, setQuery, voted, setVoted, saved, toggleSaved, picked, setPicked, onBack, onOpen, onAdd, flash, docsRefreshKey, useLiveData } = props;
+  const { exam, filter, setFilter, query, setQuery, voted, setVoted, saved, toggleSaved, picked, setPicked, onOpen, onAdd, flash, docsRefreshKey, useLiveData } = props;
   const { files: liveFiles, loading: filesLoading } = useExamDocuments(exam.id, docsRefreshKey);
   const { m } = useHomeLocale();
   const clerkEnabled = useClerkEnabled();
@@ -1075,18 +1088,32 @@ function ExamPage(props: {
   }, [query, filter, voted, saved, liveFiles, useLiveData, semanticDocIds]);
 
   const toggle = (set: Set<string>, id: string, fn: (s: Set<string>) => void) => { const n = new Set(set); n.has(id) ? n.delete(id) : n.add(id); fn(n); };
-  const allPicked = picked.size > 0 && picked.size === ranked.length;
   const per: Exclude<Filter, "bookmarked"> = filter === "bookmarked" ? "all" : filter;
 
   return (
     <main className="dn-main dn-exam-main">
-      <button type="button" className="dn-crumb-back" onClick={onBack}><ArrowLeft size={18} strokeWidth={2.6} /> {m.allExamsBack}</button>
       <section className="dn-hero dn-hero-compact">
-        <div className="dn-hero-row">
-          <span className="dn-hero-ic" style={{ background: `linear-gradient(135deg, ${exam.from} 0%, ${exam.to} 100%)` }} aria-hidden>
+        <div
+          className="dn-hero-row"
+          style={{
+            borderColor: `${exam.to}33`,
+            background: `linear-gradient(135deg, ${exam.from}18 0%, #fff 55%)`,
+          }}
+        >
+          <span
+            className="dn-hero-ic"
+            style={{
+              background: `linear-gradient(135deg, ${exam.from} 0%, ${exam.to} 100%)`,
+              boxShadow: `0 6px 18px ${exam.to}55`,
+            }}
+            aria-hidden
+          >
             <span className="dn-hero-code">{exam.code}</span>
           </span>
-          <h1 className="dn-hero-title">{m.examName(exam.id, exam.name)}</h1>
+          <div className="dn-hero-copy">
+            <h1 className="dn-hero-title">{m.examName(exam.id, exam.name)}</h1>
+            <p className="dn-hero-meta">{m.filesCount(exam.files)}</p>
+          </div>
         </div>
         <div className="dn-search">
           <Search size={20} color={C.faint} strokeWidth={2.4} />
@@ -1108,9 +1135,6 @@ function ExamPage(props: {
             </button>
           ))}
         </div>
-        <button type="button" className="dn-selectall" onClick={() => setPicked(allPicked ? new Set() : new Set(ranked.map((f) => f.id)))}>
-          <span className="dn-check" style={{ borderColor: allPicked ? C.green : C.line, background: allPicked ? C.green : "#fff" }}>{allPicked && <Check size={11} color="#fff" strokeWidth={3.5} />}</span>{m.selectAll}
-        </button>
       </div>
 
       <ul className="dn-list">
@@ -1529,7 +1553,7 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
 function ChatPanel({ documentId, documentContext, quote, clearQuote, msgs, setMsgs, onClose }: {
   documentId?: string; documentContext?: string; quote: string | null; clearQuote: () => void; msgs: Msg[]; setMsgs: Dispatch<SetStateAction<Msg[]>>; onClose: () => void;
 }) {
-  const { m, content, locale } = useHomeLocale();
+  const { m, content } = useHomeLocale();
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [conversationId, setConversationId] = useState<string | undefined>();
@@ -1558,7 +1582,7 @@ function ChatPanel({ documentId, documentContext, quote, clearQuote, msgs, setMs
           contextType: documentId ? "document" : "general",
           contextId: documentId,
           documentContext: documentContext || undefined,
-          language: locale === "ar" ? "ar" : "en",
+          language: "en",
           mode: "explain",
         },
         () => content.chatMockReply
@@ -1794,7 +1818,7 @@ function ReviewPane({ questions, answers, flagged, setFlagged, sessions, onResum
   srsQueue?: HomeQuestion[];
   clerkEnabled?: boolean;
 }) {
-  const { m, content, locale } = useHomeLocale();
+  const { m, content } = useHomeLocale();
   type RF = "all" | "correct" | "incorrect" | "flagged" | "sessions";
   const [rf, setRf] = useState<RF>("all");
   const [search, setSearch] = useState("");
@@ -1871,7 +1895,7 @@ function ReviewPane({ questions, answers, flagged, setFlagged, sessions, onResum
               <span className="dn-rv-session-src">{report.source === "quiz" ? m.quizSource : m.customSource}</span>
               <div className="dn-rv-report-score">{pct}%</div>
               <p className="dn-rv-session-meta" style={{ justifyContent: "center" }}>
-                <span><Clock size={13} strokeWidth={2.2} /> {formatSessionWhen(report.startedAt, locale)}</span>
+                <span><Clock size={13} strokeWidth={2.2} /> {formatSessionWhen(report.startedAt)}</span>
                 <span>{formatDuration(report.durationSec, content.inProgress, m.durationMinSec)}</span>
               </p>
             </div>
@@ -2039,7 +2063,7 @@ function ReviewPane({ questions, answers, flagged, setFlagged, sessions, onResum
                       <div className="dn-rv-session-score">{sc.correct}/{sc.total} <small>({pct}%)</small></div>
                     </div>
                     <p className="dn-rv-session-meta">
-                      <span><Clock size={13} strokeWidth={2.2} /> {formatSessionWhen(s.startedAt, locale)}</span>
+                      <span><Clock size={13} strokeWidth={2.2} /> {formatSessionWhen(s.startedAt)}</span>
                       <span>{formatDuration(s.durationSec, content.inProgress, m.durationMinSec)}</span>
                       <span>{sc.answered} {m.answered}</span>
                     </p>
