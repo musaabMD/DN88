@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import DrNoteApp from "@/components/DrNoteApp";
+import { DrNoteHome } from "@/components/home/DrNoteHome";
 import { getAllExamStaticParams, getExamById, isValidExamId } from "@/lib/exams";
-import { DEFAULT_TAB, examPath } from "@/lib/routes";
+import { examPath } from "@/lib/routes";
 
 export function generateStaticParams() {
   return getAllExamStaticParams();
@@ -43,5 +43,5 @@ export default async function ExamBrowsePage({
 }) {
   const { examId } = await params;
   if (!isValidExamId(examId)) notFound();
-  return <DrNoteApp examId={examId} tab={DEFAULT_TAB} />;
+  return <DrNoteHome initialExamId={examId} />;
 }

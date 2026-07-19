@@ -26,6 +26,7 @@ import { createStudySession, recordAttempt, searchQuestions, fetchDueSrs, record
 import { useHomeAnalytics } from "@/hooks/useHomeAnalytics";
 import { useStudyStreak } from "@/hooks/useStudyStreak";
 import { CollectionsPanel } from "@/components/CollectionsPanel";
+import { QbankAccessGate } from "@/components/QbankAccessGate";
 import { getClerkToken } from "@/lib/clerk-token";
 import { useClerkEnabled, useClientMounted } from "@/hooks/useClerkEnabled";
 import { HomeLocaleProvider, useHomeLocale } from "@/components/home/HomeLocaleProvider";
@@ -659,22 +660,28 @@ const styles = `
 /* ------------------------------------------------------------------ */
 /*  Root                                                               */
 /* ------------------------------------------------------------------ */
-export function DrNoteHome() {
+export function DrNoteHome({ initialExamId }: { initialExamId?: string }) {
   return (
     <HomeLocaleProvider>
       <MedGeniusCreditsProvider>
         <div className="min-h-screen bg-[#F6F7F9] text-slate-900 [color-scheme:light]">
-          <DrNoteHomeInner />
+          <DrNoteHomeInner initialExamId={initialExamId} />
         </div>
       </MedGeniusCreditsProvider>
     </HomeLocaleProvider>
   );
 }
 
-function DrNoteHomeInner() {
+function DrNoteHomeInner({ initialExamId }: { initialExamId?: string }) {
   const { m } = useHomeLocale();
-  const [page, setPage] = useState<"home" | "exam" | "study">("home");
-  const [exam, setExam] = useState<Exam | null>(null);
+  const initialExam = useMemo(
+    () => EXAMS.find((item) => item.id === initialExamId) ?? null,
+    [initialExamId]
+  );
+  const [page, setPage] = useState<"home" | "exam" | "study">(
+    initialExam ? "exam" : "home"
+  );
+  const [exam, setExam] = useState<Exam | null>(initialExam);
   const [file, setFile] = useState<ExamFile | null>(null);
   const clerkEnabled = useClerkEnabled();
   const streakData = useStudyStreak(page !== "home");
@@ -746,8 +753,10 @@ function DrNoteHomeInner() {
           )}
 
           {page === "study" && file && (
-            <Study file={file} exam={exam} saved={saved.has(file.id)} onToggleSave={() => { toggleSaved(file.id); flash(saved.has(file.id) ? m.removedBookmark : m.bookmarked); }}
-              onClose={() => setPage("exam")} flash={flash} />
+            <QbankAccessGate>
+              <Study file={file} exam={exam} saved={saved.has(file.id)} onToggleSave={() => { toggleSaved(file.id); flash(saved.has(file.id) ? m.removedBookmark : m.bookmarked); }}
+                onClose={() => setPage("exam")} flash={flash} />
+            </QbankAccessGate>
           )}
 
           {toast && <div className="dn-toast"><Check size={16} strokeWidth={3} color={C.green} /> {toast}</div>}
