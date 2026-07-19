@@ -96,6 +96,32 @@ export class ContextDevParseError extends Error {
   }
 }
 
+/** Formats that can be read as plain text without Context.dev. */
+const PLAIN_TEXT_EXTENSIONS = new Set([
+  "txt",
+  "md",
+  "markdown",
+  "csv",
+  "json",
+  "html",
+  "htm",
+]);
+
+const BINARY_PARSE_EXTENSIONS = new Set([
+  "pdf",
+  "doc",
+  "docx",
+  "xls",
+  "xlsx",
+  "ppt",
+  "pptx",
+  "odt",
+  "ods",
+  "odp",
+  "rtf",
+  "epub",
+]);
+
 const IMAGE_EXTENSIONS = new Set([
   "jpg",
   "jpeg",
@@ -396,10 +422,49 @@ function normalizeErrorCode(code: string | undefined): ContextDevErrorCode | und
 async function fallbackParse(params: ContextDevParseParams): Promise<ContextDevParseResult> {
   assertParseableSize(params.fileBytes.byteLength);
 
+  const extension = extractExtension(params.filename);
+  const mimeType = params.mimeType.trim().toLowerCase();
+
+  if (
+    BINARY_PARSE_EXTENSIONS.has(extension) ||
+    mimeType === "application/pdf" ||
+    mimeType.includes("officedocument") ||
+    mimeType.includes("msword") ||
+    mimeType.includes("ms-excel") ||
+    mimeType.includes("ms-powerpoint")
+  ) {
+    throw new ContextDevParseError({
+      status: 503,
+      errorCode: "UNSUPPORTED_CONTENT",
+      message: sanitizeUserError(
+        "PDF and Office files require document parsing to be configured. Contact support or try a plain-text upload.",
+        "parse"
+      ),
+    });
+  }
+
+  if (
+    !PLAIN_TEXT_EXTENSIONS.has(extension) &&
+    mimeType !== "text/plain" &&
+    mimeType !== "text/markdown" &&
+    mimeType !== "text/html" &&
+    mimeType !== "text/csv" &&
+    mimeType !== "application/json"
+  ) {
+    throw new ContextDevParseError({
+      status: 415,
+      errorCode: "UNSUPPORTED_CONTENT",
+      message: sanitizeUserError(
+        "This file type needs document parsing. Upload a .txt or .md file, or contact support.",
+        "parse"
+      ),
+    });
+  }
+
   const text = new TextDecoder().decode(params.fileBytes);
   const cleaned = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "").trim();
 
-  if (cleaned.length < 50 && params.mimeType !== "text/plain") {
+  if (cleaned.length < 50) {
     throw new ContextDevParseError({
       status: 415,
       errorCode: "UNSUPPORTED_CONTENT",
@@ -407,7 +472,7 @@ async function fallbackParse(params: ContextDevParseParams): Promise<ContextDevP
     });
   }
 
-  const markdown = `# ${params.filename}\n\n${cleaned || "_No extractable text in this file._"}`;
+  const markdown = `# ${params.filename}\n\n${cleaned}`;
   return {
     markdown,
     type: "text",
