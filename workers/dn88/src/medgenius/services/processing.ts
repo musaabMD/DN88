@@ -230,7 +230,7 @@ async function runExtractQuestionsStage(
       documentId,
       "completed",
       100,
-      "AI question generation is unavailable. The uploaded document is ready to read."
+      "Quiz extraction was skipped — AI extraction is not configured on the server. Reprocess or extract MCQs after AI is enabled."
     );
     await completeJob(env, jobId, 100);
     return;
@@ -269,6 +269,15 @@ async function runExtractQuestionsStage(
     const questions = parseExtractedQuestions(jsonContent);
     if (questions.length === 0) {
       console.warn("Question extraction returned zero questions", { documentId, name: doc.name });
+      await updateDocumentStatus(
+        env.DB,
+        documentId,
+        "completed",
+        100,
+        "No MCQs were found in the parsed text. Check Parsed text in the Read tab, then reprocess if the content looks correct."
+      );
+      await completeJob(env, jobId, 100);
+      return;
     }
     const extractCost = computeCreditCost("questionExtract", Math.max(questions.length, 1));
     await spendCredits(env.DB, userId, extractCost, "question_extract", {
@@ -288,7 +297,7 @@ async function runExtractQuestionsStage(
       documentId,
       "completed",
       100,
-      "AI question generation is unavailable. The uploaded document is ready to read."
+      "Quiz extraction failed. Reprocess this file to try again."
     );
     await completeJob(env, jobId, 100);
     return;
@@ -516,4 +525,41 @@ export async function reprocessDocument(
 
   await updateDocumentStatus(env.DB, documentId, "pending", 0, null);
   await enqueueStage(env, documentId, userId, "parse");
+}
+
+export async function extractQuestionsOnly(
+  env: Bindings,
+  documentId: string,
+  userId: string
+): Promise<{ stage: "parse" | "extract_questions" }> {
+  const doc = await getDocument(env.DB, userId, documentId);
+  if (!doc) throw new Error("Document not found");
+
+  if (!env.OPENROUTER_API_KEY) {
+    throw new Error("AI extraction is not configured. Quiz generation cannot run.");
+  }
+
+  const markdownKey = doc.r2_markdown_key;
+  if (!markdownKey) {
+    await updateDocumentStatus(env.DB, documentId, "pending", 0, null);
+    await enqueueStage(env, documentId, userId, "parse");
+    return { stage: "parse" };
+  }
+
+  const markdown = await getMarkdown(env.USER_CONTENT, markdownKey);
+  if (!markdown || isCorruptParsedMarkdown(markdown)) {
+    await reprocessDocument(env, documentId, userId);
+    return { stage: "parse" };
+  }
+
+  await env.DB.prepare("DELETE FROM medgenius_questions WHERE document_id = ?")
+    .bind(documentId)
+    .run();
+  await env.DB.prepare("DELETE FROM medgenius_flashcards WHERE document_id = ?")
+    .bind(documentId)
+    .run();
+
+  await updateDocumentStatus(env.DB, documentId, "extracting", 40, null);
+  await enqueueStage(env, documentId, userId, "extract_questions");
+  return { stage: "extract_questions" };
 }

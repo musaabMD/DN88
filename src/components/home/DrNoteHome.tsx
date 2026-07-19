@@ -13,7 +13,7 @@ import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { DocumentPdfViewer } from "@/components/medgenius/DocumentPdfViewer";
 import { UserAuthControls } from "@/components/UserAuthControls";
 import { askMedGeniusAi } from "@/lib/medgenius/chat";
-import { uploadDocument, MedGeniusApiError, reprocessDocument as reprocessDocumentApi } from "@/lib/medgenius/api";
+import { uploadDocument, MedGeniusApiError, extractDocumentQuestions, reprocessDocument as reprocessDocumentApi } from "@/lib/medgenius/api";
 import { sanitizeUserError } from "@/lib/medgenius/errors";
 import {
   useExamDocuments,
@@ -1315,6 +1315,7 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
   const [tab, setTab] = useState<Tab>("Read");
   const [query, setQuery] = useState("");
   const [reprocessing, setReprocessing] = useState(false);
+  const [extracting, setExtracting] = useState(false);
 
   const handleReprocess = useCallback(async () => {
     if (!file.documentId || reprocessing) return;
@@ -1330,6 +1331,27 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
       setReprocessing(false);
     }
   }, [file.documentId, reprocessing, flash, m.reprocessStarted]);
+
+  const handleExtractMcqs = useCallback(async () => {
+    if (!file.documentId || extracting || reprocessing) return;
+    setExtracting(true);
+    try {
+      const token = await getClerkToken();
+      if (!token) return;
+      await extractDocumentQuestions(token, file.documentId);
+      flash(m.extractMcqsStarted);
+    } catch (err) {
+      flash(sanitizeUserError(err instanceof Error ? err.message : "Extraction failed", "ai"));
+    } finally {
+      setExtracting(false);
+    }
+  }, [file.documentId, extracting, reprocessing, flash, m.extractMcqsStarted]);
+
+  const quizEmptyMessage = useMemo(() => {
+    if (!useLive) return undefined;
+    if (live.processingError) return live.processingError;
+    return m.noQuestionsExtracted;
+  }, [useLive, live.processingError, m.noQuestionsExtracted]);
 
   // shared quiz state (Quiz + Review + Custom)
   const [answers, setAnswers] = useState<Record<number, number>>({ 0: 0, 2: 1, 4: 3 });
@@ -1595,7 +1617,7 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
             onReprocess={handleReprocess}
           />
         )}
-        {tab === "Quiz" && <QuizList query={query} questions={questions} emptyWhenNoQuery={useLive ? m.noQuestionsExtracted : undefined} answers={answers} setAnswers={setAnswers} flagged={flagged} setFlagged={setFlagged} perPage={perPage} setPerPage={setPerPage} reveal={reveal} setReveal={setReveal} onAsk={openChat} onAnswer={async (idx, selected) => {
+        {tab === "Quiz" && <QuizList query={query} questions={questions} emptyWhenNoQuery={quizEmptyMessage} canExtractMcqs={useLive && Boolean(file.documentId)} extractingMcqs={extracting} onExtractMcqs={handleExtractMcqs} answers={answers} setAnswers={setAnswers} flagged={flagged} setFlagged={setFlagged} perPage={perPage} setPerPage={setPerPage} reveal={reveal} setReveal={setReveal} onAsk={openChat} onAnswer={async (idx, selected) => {
           const q = questions[idx];
           const sessionId = backendSessionRef.current;
           if (!q?.id || !sessionId || !useLive) return;
@@ -1890,8 +1912,9 @@ function ReadFull({
 }
 
 /* ---- Quiz ---- */
-function QuizList({ query, questions, emptyWhenNoQuery, answers, setAnswers, flagged, setFlagged, perPage, setPerPage, reveal, setReveal, onAsk, onAnswer }: {
-  query: string; questions: HomeQuestion[]; emptyWhenNoQuery?: string; answers: Record<number, number>; setAnswers: Dispatch<SetStateAction<Record<number, number>>>;
+function QuizList({ query, questions, emptyWhenNoQuery, canExtractMcqs, extractingMcqs, onExtractMcqs, answers, setAnswers, flagged, setFlagged, perPage, setPerPage, reveal, setReveal, onAsk, onAnswer }: {
+  query: string; questions: HomeQuestion[]; emptyWhenNoQuery?: string; canExtractMcqs?: boolean; extractingMcqs?: boolean; onExtractMcqs?: () => void;
+  answers: Record<number, number>; setAnswers: Dispatch<SetStateAction<Record<number, number>>>;
   flagged: Set<number>; setFlagged: Dispatch<SetStateAction<Set<number>>>;
   perPage: number; setPerPage: (n: number) => void; reveal: Reveal; setReveal: (r: Reveal) => void; onAsk: (q: string) => void;
   onAnswer?: (questionIndex: number, selectedOption: number) => void;
@@ -1920,7 +1943,17 @@ function QuizList({ query, questions, emptyWhenNoQuery, answers, setAnswers, fla
   return (
     <div className="dn-quiz-fs">
       <div className="dn-quiz-scroll">
-        {slice.length === 0 && <div className="dn-empty" style={{ paddingTop: 40 }}><Search size={26} color={C.faint} /><p>{query.trim() ? m.noQuestionsMatch(query) : (emptyWhenNoQuery ?? m.noQuestionsMatch(query))}</p></div>}
+        {slice.length === 0 && (
+          <div className="dn-empty" style={{ paddingTop: 40 }}>
+            <Search size={26} color={C.faint} />
+            <p>{query.trim() ? m.noQuestionsMatch(query) : (emptyWhenNoQuery ?? m.noQuestionsMatch(query))}</p>
+            {!query.trim() && canExtractMcqs && onExtractMcqs && (
+              <button type="button" className="dn-chunky" style={{ marginTop: 16 }} onClick={() => void onExtractMcqs()} disabled={extractingMcqs}>
+                {extractingMcqs ? m.extractingMcqs : m.extractMcqs}
+              </button>
+            )}
+          </div>
+        )}
         {slice.map((qq) => {
           const idx = qq.idx, picked = answers[idx], answered = picked !== undefined, show = answered && showResult, isFlag = flagged.has(idx);
           return (

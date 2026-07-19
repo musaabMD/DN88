@@ -229,6 +229,7 @@ export type DocumentStudyData = {
   rawMarkdown: string | null;
   status: string | null;
   progress: number;
+  processingError: string | null;
   loading: boolean;
   error: string | null;
 };
@@ -241,6 +242,7 @@ const EMPTY_STUDY: DocumentStudyData = {
   rawMarkdown: null,
   status: null,
   progress: 0,
+  processingError: null,
   loading: false,
   error: null,
 };
@@ -255,6 +257,7 @@ export function useDocumentStudy(documentId: string | undefined): DocumentStudyD
   const [rawMarkdown, setRawMarkdown] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const [processingError, setProcessingError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const pollRef = useRef<number | null>(null);
@@ -274,6 +277,7 @@ export function useDocumentStudy(documentId: string | undefined): DocumentStudyD
         if (cancelled) return;
         setStatus(doc.status);
         setProgress(doc.progress ?? 0);
+        setProcessingError(doc.error ?? null);
 
         const [qRes, fRes, sRes] = await Promise.all([
           fetchQuestions(token, { documentId, limit: 200 }),
@@ -315,6 +319,7 @@ export function useDocumentStudy(documentId: string | undefined): DocumentStudyD
         if (cancelled) return;
         setStatus(doc.status);
         setProgress(doc.progress ?? 0);
+        setProcessingError(doc.error ?? null);
         if (doc.status === "completed" || doc.status === "failed") {
           if (pollRef.current !== null) {
             window.clearInterval(pollRef.current);
@@ -348,6 +353,7 @@ export function useDocumentStudy(documentId: string | undefined): DocumentStudyD
     rawMarkdown,
     status,
     progress,
+    processingError,
     loading,
     error,
   };

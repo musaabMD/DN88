@@ -7,7 +7,7 @@ import {
   ensureUserProfile,
   getCreditSummary,
 } from "../services/credits";
-import { createDocumentUpload, reprocessDocument } from "../services/processing";
+import { createDocumentUpload, extractQuestionsOnly, reprocessDocument } from "../services/processing";
 import {
   getDocument,
   listDocuments,
@@ -181,6 +181,30 @@ medgeniusRoutes.post("/documents/:id/reprocess", async (c) => {
     const message = sanitizeUserError(
       error instanceof Error ? error.message : "Reprocess failed",
       "processing"
+    );
+    return c.json({ error: message }, 500);
+  }
+});
+
+medgeniusRoutes.post("/documents/:id/extract-questions", async (c) => {
+  const authResult = await requireAuth(c);
+  if ("error" in authResult) return c.json({ error: authResult.error }, authResult.status);
+
+  const documentId = c.req.param("id");
+  const doc = await getDocument(c.env.DB, authResult.user.id, documentId);
+  if (!doc) return c.json({ error: "Document not found" }, 404);
+
+  try {
+    const result = await extractQuestionsOnly(c.env, documentId, authResult.user.id);
+    const message =
+      result.stage === "parse"
+        ? "Readable text missing — full reprocess started."
+        : "MCQ extraction queued.";
+    return c.json({ documentId, status: result.stage === "parse" ? "pending" : "extracting", stage: result.stage, message });
+  } catch (error) {
+    const message = sanitizeUserError(
+      error instanceof Error ? error.message : "Extraction failed",
+      "ai"
     );
     return c.json({ error: message }, 500);
   }

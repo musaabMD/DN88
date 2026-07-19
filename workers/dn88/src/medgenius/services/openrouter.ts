@@ -61,6 +61,13 @@ export async function chatCompletion(
   return { content, tokensUsed, model };
 }
 
+export function parseLlmJsonContent(content: string): unknown {
+  const trimmed = content.trim();
+  const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)```$/i);
+  const body = (fenced?.[1] ?? trimmed).trim();
+  return JSON.parse(body);
+}
+
 const EXTRACTION_SYSTEM_PROMPT = `You extract medical exam questions from study materials. Return valid JSON only with shape:
 {"questions":[{"originalText":"...","cleanedText":"...","options":["A","B","C","D"],"correctAnswer":0,"confidence":0.9,"explanation":"...","topic":"Cardiology","subtopic":"ACS","difficulty":"medium","page":1,"tags":["high-yield"]}]}
 Rules:
@@ -138,7 +145,7 @@ export async function extractQuestionsFromMarkdown(
         i + 1,
         chunks.length
       );
-      const parsed = JSON.parse(jsonContent) as {
+      const parsed = parseLlmJsonContent(jsonContent) as {
         questions?: import("../types").ExtractedQuestion[];
       };
       if (!Array.isArray(parsed.questions)) continue;

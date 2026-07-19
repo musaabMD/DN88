@@ -154,6 +154,13 @@ export async function reprocessDocument(
   return medgeniusFetch(`/documents/${documentId}/reprocess`, token, { method: "POST" });
 }
 
+export async function extractDocumentQuestions(
+  token: string | null,
+  documentId: string
+): Promise<{ documentId: string; status: string; stage: string; message: string }> {
+  return medgeniusFetch(`/documents/${documentId}/extract-questions`, token, { method: "POST" });
+}
+
 export async function fetchDocumentFileBlob(
   token: string | null,
   documentId: string
