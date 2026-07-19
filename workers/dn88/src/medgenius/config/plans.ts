@@ -13,9 +13,9 @@ export type PlanLimits = {
 
 export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
   free: {
-    monthlyCredits: 500,
-    maxDocuments: 3,
-    maxPages: 50,
+    monthlyCredits: 10_000,
+    maxDocuments: 10,
+    maxPages: 500,
     dailyAiTokens: 8_000,
     maxUploadBytes: 10 * 1024 * 1024,
     priorityProcessing: false,

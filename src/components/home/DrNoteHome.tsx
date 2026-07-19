@@ -1001,7 +1001,6 @@ function AddFile({
   const { m } = useHomeLocale();
   const [name, setName] = useState("");
   const [file, setFile] = useState<File | null>(null);
-  const [selectedExamId, setSelectedExamId] = useState(examId ?? "custom");
   const [customExamName, setCustomExamName] = useState("");
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -1020,12 +1019,7 @@ function AddFile({
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
-  const uploadExamId =
-    !examId && selectedExamId === "custom"
-      ? customExamId
-        ? `custom:${customExamId}`
-        : ""
-      : selectedExamId;
+  const uploadExamId = examId ?? (customExamId ? `custom:${customExamId}` : "");
   const canUpload = Boolean(name.trim() && uploadExamId && !uploading);
 
   const handleUpload = async () => {
@@ -1070,30 +1064,13 @@ function AddFile({
       <div className="dn-modal" onClick={(e) => e.stopPropagation()}>
         <div className="dn-modal-head"><b>{examId ? m.addFile : "Add exam files"}</b><button className="dn-fs-close" onClick={onClose} aria-label={m.close}><X size={18} strokeWidth={2.8} /></button></div>
         {!examId && (
-          <>
-            <select
-              className="dn-modal-select"
-              value={selectedExamId}
-              onChange={(e) => setSelectedExamId(e.target.value)}
-              aria-label="Exam"
-            >
-              <option value="custom">Enter exam name</option>
-              {EXAMS.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.code} - {m.examName(item.id, item.name)}
-                </option>
-              ))}
-            </select>
-            {selectedExamId === "custom" && (
-              <input
-                className="dn-modal-input"
-                value={customExamName}
-                onChange={(e) => setCustomExamName(e.target.value)}
-                placeholder="Exam name (e.g. MRCP Part 1)"
-                aria-label="Exam name"
-              />
-            )}
-          </>
+          <input
+            className="dn-modal-input"
+            value={customExamName}
+            onChange={(e) => setCustomExamName(e.target.value)}
+            placeholder="Exam name (e.g. MRCP Part 1)"
+            aria-label="Exam name"
+          />
         )}
         <button
           type="button"
