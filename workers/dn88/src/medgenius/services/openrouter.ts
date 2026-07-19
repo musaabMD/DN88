@@ -9,6 +9,7 @@ export type OpenRouterResult = {
 
 const DEFAULT_MODEL = "google/gemini-2.0-flash-001";
 const REASONING_MODEL = "anthropic/claude-3.5-sonnet";
+const EXTRACTION_MODEL = "google/gemini-2.0-flash-001";
 
 export async function chatCompletion(
   apiKey: string,
@@ -59,10 +60,6 @@ export async function chatCompletion(
 
   return { content, tokensUsed, model };
 }
-
-const DEFAULT_MODEL = "google/gemini-2.0-flash-001";
-const REASONING_MODEL = "anthropic/claude-3.5-sonnet";
-const EXTRACTION_MODEL = "google/gemini-2.5-flash-preview-05-20";
 
 const EXTRACTION_SYSTEM_PROMPT = `You extract medical exam questions from study materials. Return valid JSON only with shape:
 {"questions":[{"originalText":"...","cleanedText":"...","options":["A","B","C","D"],"correctAnswer":0,"confidence":0.9,"explanation":"...","topic":"Cardiology","subtopic":"ACS","difficulty":"medium","page":1,"tags":["high-yield"]}]}

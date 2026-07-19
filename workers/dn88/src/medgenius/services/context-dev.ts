@@ -1,4 +1,5 @@
 import { sanitizeUserError } from "./user-errors";
+import { isCorruptParsedMarkdown, markdownNeedsOcrRetry } from "./markdown-quality";
 
 /** Context.dev Parse API body limit (25 MiB). */
 export const CONTEXT_DEV_PARSE_MAX_BYTES = 25 * 1024 * 1024;
@@ -220,6 +221,53 @@ export async function parseDocumentWithContextDev(
     creditsConsumed: keyMeta?.credits_consumed ?? 1,
     creditsRemaining: keyMeta?.credits_remaining,
   };
+}
+
+/**
+ * Parse with OCR enabled for PDFs/images, and retry with OCR when output is too thin.
+ */
+export async function parseDocumentWithOcrFallback(
+  apiKey: string | undefined,
+  params: ContextDevParseParams
+): Promise<ContextDevParseResult> {
+  const extension = extractExtension(params.filename);
+  const ocrDefault = shouldEnableOcr(extension, params.mimeType);
+  const firstOptions = {
+    includeLinks: true,
+    includeImages: true,
+    shortenBase64Images: true,
+    useMainContentOnly: false,
+    ...params.options,
+    ocr: params.options?.ocr ?? ocrDefault,
+  };
+
+  let result = await parseDocumentWithContextDev(apiKey, {
+    ...params,
+    options: firstOptions,
+  });
+
+  if (
+    !firstOptions.ocr &&
+    markdownNeedsOcrRetry(result.markdown, params.fileBytes.byteLength)
+  ) {
+    result = await parseDocumentWithContextDev(apiKey, {
+      ...params,
+      options: { ...firstOptions, ocr: true },
+    });
+  }
+
+  if (isCorruptParsedMarkdown(result.markdown)) {
+    throw new ContextDevParseError({
+      status: 415,
+      errorCode: "UNSUPPORTED_CONTENT",
+      message: sanitizeUserError(
+        "Could not extract readable text from this file. For scanned PDFs, ensure the scan is clear and try reprocessing.",
+        "parse"
+      ),
+    });
+  }
+
+  return result;
 }
 
 function assertParseableSize(byteLength: number): void {

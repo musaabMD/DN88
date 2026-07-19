@@ -73,7 +73,13 @@ export function parseExtractedQuestions(jsonContent: string): ExtractedQuestion[
       questions?: ExtractedQuestion[];
     };
     if (!Array.isArray(parsed.questions)) return [];
-    return parsed.questions.filter((q) => q.originalText?.trim());
+    return parsed.questions.filter((q) => {
+      const text = q.originalText?.trim();
+      if (!text || text.length < 8) return false;
+      if (Array.isArray(q.options) && q.options.length >= 2) return true;
+      // recall / short-answer items without options
+      return text.includes("?") || text.length >= 20;
+    });
   } catch {
     return [];
   }

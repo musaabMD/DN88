@@ -6,7 +6,7 @@ import {
 import { isCorruptParsedMarkdown } from "./markdown-quality";
 import {
   computeFileHash,
-  parseDocumentWithContextDev,
+  parseDocumentWithOcrFallback,
 } from "./context-dev";
 import {
   buildR2Keys,
@@ -164,7 +164,7 @@ async function runParseStage(
   if (!obj) throw new Error("Original file missing from storage");
 
   const fileBytes = await obj.arrayBuffer();
-  const parsed = await parseDocumentWithContextDev(env.CONTEXT_DEV_API_KEY, {
+  const parsed = await parseDocumentWithOcrFallback(env.CONTEXT_DEV_API_KEY, {
     fileBytes,
     filename: doc.original_filename,
     mimeType: doc.mime_type,
@@ -267,6 +267,9 @@ async function runExtractQuestionsStage(
     );
 
     const questions = parseExtractedQuestions(jsonContent);
+    if (questions.length === 0) {
+      console.warn("Question extraction returned zero questions", { documentId, name: doc.name });
+    }
     const extractCost = computeCreditCost("questionExtract", Math.max(questions.length, 1));
     await spendCredits(env.DB, userId, extractCost, "question_extract", {
       type: "document",

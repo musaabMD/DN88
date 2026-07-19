@@ -26,3 +26,12 @@ export function isCorruptParsedMarkdown(markdown: string): boolean {
 
   return false;
 }
+
+/** True when parse output looks too thin — likely needs OCR on a scanned document. */
+export function markdownNeedsOcrRetry(markdown: string, fileBytes: number): boolean {
+  if (isCorruptParsedMarkdown(markdown)) return true;
+  const text = markdown.trim();
+  if (text.length < 120) return true;
+  if (fileBytes > 20_000 && text.length / fileBytes < 0.0015) return true;
+  return false;
+}
