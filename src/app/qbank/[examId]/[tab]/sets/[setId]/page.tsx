@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { QbankAccessGate } from "@/components/QbankAccessGate";
 import { SetDetailClient } from "@/components/SetDetailClient";
 import { getAllSetStaticParams, getSetById } from "@/lib/mock-data";
 import { isValidExamId } from "@/lib/exams";
@@ -22,9 +21,5 @@ export default async function SetDetailPage({
   ) {
     notFound();
   }
-  return (
-    <QbankAccessGate>
-      <SetDetailClient examId={examId} tab={tab} setId={setId} />
-    </QbankAccessGate>
-  );
+  return <SetDetailClient examId={examId} tab={tab} setId={setId} />;
 }

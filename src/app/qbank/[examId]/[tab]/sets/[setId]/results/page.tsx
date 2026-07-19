@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { QbankAccessGate } from "@/components/QbankAccessGate";
 import { SetResultsPage } from "@/components/SetResultsPage";
 import { getAllSetStaticParams, getSetById } from "@/lib/mock-data";
 import { isValidExamId } from "@/lib/exams";
@@ -22,9 +21,5 @@ export default async function ResultsPage({
   ) {
     notFound();
   }
-  return (
-    <QbankAccessGate>
-      <SetResultsPage examId={examId} tab={tab} setId={setId} />
-    </QbankAccessGate>
-  );
+  return <SetResultsPage examId={examId} tab={tab} setId={setId} />;
 }

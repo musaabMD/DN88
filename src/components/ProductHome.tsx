@@ -1,24 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type FormEvent } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { BookOpen, ChevronRight, FileQuestion, Lock } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { ProductSiteNav } from "@/components/ProductSiteNav";
 import { useClerkEnabled, useClientMounted } from "@/hooks/useClerkEnabled";
-import { EXAMS } from "@/lib/exams";
-import {
-  hasQbankPreorder,
-  isQbankOwnerEmail,
-  saveQbankPreorder,
-} from "@/lib/qbank-access";
 import { isLibraryOwnerEmail } from "@/lib/library-access";
-import {
-  LIBRARY_PATH,
-  QBANK_PATH,
-  UPGRADE_PATH,
-} from "@/lib/routes";
+import { LIBRARY_PATH, QBANK_PATH } from "@/lib/routes";
 import { getTileColors } from "@/lib/tile-colors";
 
 function ProductHomeHeader() {
@@ -113,177 +102,31 @@ function ProductCard({
   );
 }
 
-function QbankPreorderPanel({
-  onClose,
-  defaultEmail,
-}: {
-  onClose: () => void;
-  defaultEmail?: string;
-}) {
-  const [email, setEmail] = useState(defaultEmail ?? "");
-  const [examId, setExamId] = useState(EXAMS[0]?.id ?? "smle");
-  const [done, setDone] = useState(false);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (defaultEmail) setEmail(defaultEmail);
-  }, [defaultEmail]);
-
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    const trimmed = email.trim();
-    if (!trimmed.includes("@") || !trimmed.includes(".")) {
-      setError("Enter a valid email");
-      return;
-    }
-    saveQbankPreorder(trimmed, examId);
-    setDone(true);
-    setError("");
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-4 sm:items-center">
-      <div className="w-full max-w-md rounded-3xl border-2 border-slate-200 bg-white p-5 shadow-xl sm:p-6">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-extrabold uppercase tracking-wide text-slate-400">
-              Qbank early access
-            </p>
-            <h3 className="mt-1 text-xl font-black text-slate-900">
-              Join the waitlist
-            </h3>
-            <p className="mt-1 text-sm font-bold text-slate-500">
-              Tell us your email and exam — we&apos;ll notify you when Qbank opens.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg px-2 py-1 text-sm font-extrabold text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-          >
-            Close
-          </button>
-        </div>
-
-        {done ? (
-          <div className="mt-5 rounded-2xl border-2 border-emerald-200 bg-emerald-50 px-4 py-5 text-center">
-            <p className="text-base font-extrabold text-emerald-900">
-              You&apos;re on the list
-            </p>
-            <p className="mt-1 text-sm font-bold text-emerald-700">
-              We saved your email and exam preference.
-            </p>
-            <button
-              type="button"
-              onClick={onClose}
-              className="mt-4 rounded-xl border-2 border-b-4 border-slate-700 bg-slate-700 px-4 py-2 text-sm font-extrabold text-white"
-            >
-              Done
-            </button>
-          </div>
-        ) : (
-          <form onSubmit={submit} className="mt-5 space-y-3">
-            <label className="block text-left">
-              <span className="text-xs font-extrabold uppercase tracking-wide text-slate-400">
-                Email
-              </span>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@school.edu"
-                className="mt-1 w-full rounded-xl border-2 border-slate-200 bg-white px-3 py-2.5 text-sm font-bold text-slate-800 outline-none focus:border-slate-400"
-              />
-            </label>
-            <label className="block text-left">
-              <span className="text-xs font-extrabold uppercase tracking-wide text-slate-400">
-                Exam
-              </span>
-              <select
-                value={examId}
-                onChange={(e) => setExamId(e.target.value)}
-                className="mt-1 w-full rounded-xl border-2 border-slate-200 bg-white px-3 py-2.5 text-sm font-bold text-slate-800 outline-none focus:border-slate-400"
-              >
-                {EXAMS.map((exam) => (
-                  <option key={exam.id} value={exam.id}>
-                    {exam.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {error ? (
-              <p className="text-sm font-bold text-red-500">{error}</p>
-            ) : null}
-            <button
-              type="submit"
-              className="w-full rounded-xl border-2 border-b-4 border-slate-700 bg-slate-700 px-4 py-3 text-sm font-extrabold text-white transition-colors hover:bg-slate-600 active:translate-y-0.5 active:border-b-2"
-            >
-              Preorder notify me
-            </button>
-          </form>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function ProductHomeBody({
-  canOpenQbank,
   canOpenLibrary,
-  userEmail,
 }: {
-  canOpenQbank: boolean;
   canOpenLibrary: boolean;
-  userEmail?: string;
 }) {
-  const [showPreorder, setShowPreorder] = useState(false);
-  const [alreadyJoined, setAlreadyJoined] = useState(false);
-
-  useEffect(() => {
-    if (userEmail && hasQbankPreorder(userEmail)) setAlreadyJoined(true);
-  }, [userEmail]);
-
   return (
-    <>
-      <div className="mx-auto mt-8 grid max-w-xl grid-cols-1 gap-4">
-        {canOpenLibrary ? (
-          <ProductCard
-            title="Library"
-            description="Browse specialties, topics, and clinical articles"
-            href={LIBRARY_PATH}
-            colorKey="Library"
-            icon={BookOpen}
-          />
-        ) : null}
+    <div className="mx-auto mt-8 grid max-w-xl grid-cols-1 gap-4">
+      {canOpenLibrary ? (
         <ProductCard
-          title="Qbank"
-          description={
-            canOpenQbank
-              ? "Private preview — open exam practice"
-              : alreadyJoined
-                ? "You're on the waitlist — we'll email you at launch"
-                : "Coming soon — join the waitlist with your exam"
-          }
-          href={canOpenQbank ? QBANK_PATH : undefined}
-          colorKey="Qbank"
-          icon={FileQuestion}
-          badge={canOpenQbank ? "Preview" : "Coming soon"}
-          locked={!canOpenQbank}
-          onClick={canOpenQbank ? undefined : () => setShowPreorder(true)}
-        />
-      </div>
-
-      {showPreorder ? (
-        <QbankPreorderPanel
-          defaultEmail={userEmail}
-          onClose={() => {
-            setShowPreorder(false);
-            if (userEmail && hasQbankPreorder(userEmail)) setAlreadyJoined(true);
-          }}
+          title="Library"
+          description="Browse specialties, topics, and clinical articles"
+          href={LIBRARY_PATH}
+          colorKey="Library"
+          icon={BookOpen}
         />
       ) : null}
-    </>
+      <ProductCard
+        title="Qbank"
+        description="Open exam practice, uploaded files, questions, flashcards, and review tools"
+        href={QBANK_PATH}
+        colorKey="Qbank"
+        icon={FileQuestion}
+        badge="Open"
+      />
+    </div>
   );
 }
 
@@ -292,16 +135,9 @@ function ClerkGatedProducts() {
   const email =
     user?.primaryEmailAddress?.emailAddress ??
     user?.emailAddresses?.[0]?.emailAddress;
-  const canOpenQbank = isLoaded && isQbankOwnerEmail(email);
   const canOpenLibrary = isLoaded && isLibraryOwnerEmail(email);
 
-  return (
-    <ProductHomeBody
-      canOpenQbank={canOpenQbank}
-      canOpenLibrary={canOpenLibrary}
-      userEmail={email}
-    />
-  );
+  return <ProductHomeBody canOpenLibrary={canOpenLibrary} />;
 }
 
 export default function ProductHome() {
@@ -339,7 +175,7 @@ export default function ProductHome() {
       {mounted && clerkEnabled ? (
         <ClerkGatedProducts />
       ) : (
-        <ProductHomeBody canOpenQbank={false} canOpenLibrary={false} />
+        <ProductHomeBody canOpenLibrary={false} />
       )}
     </main>
   );

@@ -26,7 +26,6 @@ import { createStudySession, recordAttempt, searchQuestions, fetchDueSrs, record
 import { useHomeAnalytics } from "@/hooks/useHomeAnalytics";
 import { useStudyStreak } from "@/hooks/useStudyStreak";
 import { CollectionsPanel } from "@/components/CollectionsPanel";
-import { QbankAccessGate } from "@/components/QbankAccessGate";
 import { getClerkToken, isClerkSignedIn } from "@/lib/clerk-token";
 import { useClerkEnabled, useClientMounted } from "@/hooks/useClerkEnabled";
 import { HomeLocaleProvider, useHomeLocale } from "@/components/home/HomeLocaleProvider";
@@ -775,10 +774,8 @@ function DrNoteHomeInner({ initialExamId }: { initialExamId?: string }) {
           )}
 
           {page === "study" && file && (
-            <QbankAccessGate>
-              <Study file={file} exam={exam} saved={saved.has(file.id)} onToggleSave={() => { toggleSaved(file.id); flash(saved.has(file.id) ? m.removedBookmark : m.bookmarked); }}
-                onClose={() => setPage("exam")} flash={flash} />
-            </QbankAccessGate>
+            <Study file={file} exam={exam} saved={saved.has(file.id)} onToggleSave={() => { toggleSaved(file.id); flash(saved.has(file.id) ? m.removedBookmark : m.bookmarked); }}
+              onClose={() => setPage("exam")} flash={flash} />
           )}
 
           {toast && <div className="dn-toast"><Check size={16} strokeWidth={3} color={C.green} /> {toast}</div>}

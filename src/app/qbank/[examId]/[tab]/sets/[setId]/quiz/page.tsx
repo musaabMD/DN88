@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { QbankAccessGate } from "@/components/QbankAccessGate";
 import { QuizSessionClient } from "@/components/QuizSessionClient";
 import { getAllSetStaticParams, getSetById } from "@/lib/mock-data";
 import { isValidExamId } from "@/lib/exams";
@@ -24,10 +23,8 @@ export default async function QuizPage({
     notFound();
   }
   return (
-    <QbankAccessGate>
-      <Suspense fallback={<div className="min-h-screen bg-white" />}>
-        <QuizSessionClient examId={examId} tab={tab} setId={setId} />
-      </Suspense>
-    </QbankAccessGate>
+    <Suspense fallback={<div className="min-h-screen bg-white" />}>
+      <QuizSessionClient examId={examId} tab={tab} setId={setId} />
+    </Suspense>
   );
 }
