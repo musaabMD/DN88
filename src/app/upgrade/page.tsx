@@ -1,26 +1,33 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { X } from "lucide-react";
+import Link from "next/link";
+import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { UpgradePanel } from "@/components/UpgradePanel";
-import { HOME_PATH } from "@/lib/routes";
+import { UserAuthControls } from "@/components/UserAuthControls";
+import { HOME_PATH, PRICING_PATH } from "@/lib/routes";
 
 export default function UpgradePage() {
-  const router = useRouter();
-
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-slate-50">
-      <button
-        type="button"
-        onClick={() => router.push(HOME_PATH)}
-        className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm ring-1 ring-slate-200 transition-colors hover:bg-slate-50 hover:text-slate-700"
-        aria-label="Close upgrade"
-      >
-        <X size={18} strokeWidth={2.5} />
-      </button>
-      <div className="flex-1 overflow-y-auto">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <header className="sticky top-0 z-30 bg-slate-50/90 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
+          <Link href={HOME_PATH} className="flex min-w-0 items-center">
+            <DrNoteLogo showWordmark forceWordmark />
+          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href={PRICING_PATH}
+              className="hidden text-sm font-bold text-slate-600 transition-colors hover:text-slate-900 sm:inline-flex"
+            >
+              Pricing
+            </Link>
+            <UserAuthControls compact />
+          </div>
+        </div>
+      </header>
+      <main>
         <UpgradePanel />
-      </div>
+      </main>
     </div>
   );
 }

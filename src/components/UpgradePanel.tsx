@@ -2,16 +2,15 @@
 
 import { useState, type ReactNode } from "react";
 import {
-  BarChart3,
   BookOpen,
   Brain,
+  Check,
   FileQuestion,
   Layers,
   Sparkles,
   Zap,
 } from "lucide-react";
 import { SignInButton } from "@clerk/clerk-react";
-import { BRAND } from "@/lib/brand";
 import {
   createStripeCheckoutSession,
   createStripePortalSession,
@@ -21,29 +20,19 @@ import {
 import { getClerkToken, isClerkSignedIn } from "@/lib/clerk-token";
 import { useDrNoteAccess } from "@/hooks/useDrNoteAccess";
 import { useClerkEnabled, useClientMounted } from "@/hooks/useClerkEnabled";
-import { MedGeniusCreditsProvider } from "@/lib/medgenius/credits-context";
-import { CreditsUsageCard } from "@/components/medgenius/CreditsUsage";
-
-const FREE_FEATURES = [
-  { icon: FileQuestion, text: "1 exam" },
-  { icon: Layers, text: "50 cards per day" },
-  { icon: BarChart3, text: "Basic progress stats" },
-  { icon: BookOpen, text: "Library article reading" },
-] as const;
 
 const STUDENT_FEATURES = [
-  { icon: FileQuestion, text: "All exams and uploaded document sets" },
-  { icon: Layers, text: "Unlimited flashcards & questions" },
-  { icon: Brain, text: "AI tutor on every question" },
-  { icon: BarChart3, text: "Progress analytics" },
+  { icon: FileQuestion, text: "All medical exams" },
+  { icon: Layers, text: "Unlimited questions and flashcards" },
+  { icon: Brain, text: "Study assistant for explanations" },
+  { icon: BookOpen, text: "Full library access" },
 ] as const;
 
 const PRO_FEATURES = [
   { icon: Sparkles, text: "Everything in Student" },
-  { icon: Zap, text: "Priority document processing" },
-  { icon: Brain, text: "AI-generated practice questions" },
-  { icon: BarChart3, text: "Advanced analytics & SRS review" },
-  { icon: BookOpen, text: "Full library study modes" },
+  { icon: Zap, text: "Faster study generation" },
+  { icon: Brain, text: "More practice creation" },
+  { icon: BookOpen, text: "Advanced study modes" },
 ] as const;
 
 const PRICING: Record<
@@ -103,24 +92,19 @@ function BillingToggle({
 
 function FeatureList({
   items,
-  accent,
 }: {
   items: ReadonlyArray<{ icon: typeof FileQuestion; text: string }>;
-  accent: "slate" | "indigo";
 }) {
-  const iconClass =
-    accent === "indigo" ? "text-indigo-500" : "text-slate-400";
-
   return (
-    <ul className="mt-6 space-y-3.5">
-      {items.map(({ icon: Icon, text }) => (
+    <ul className="mt-6 space-y-4">
+      {items.map(({ text }) => (
         <li key={text} className="flex items-start gap-3 text-left">
-          <Icon
-            size={18}
-            strokeWidth={2.25}
-            className={`mt-0.5 shrink-0 ${iconClass}`}
+          <Check
+            size={20}
+            strokeWidth={2.75}
+            className="mt-0.5 shrink-0 text-emerald-600"
           />
-          <span className="text-sm font-semibold leading-snug text-slate-600">
+          <span className="text-base font-bold leading-snug text-slate-700">
             {text}
           </span>
         </li>
@@ -138,7 +122,6 @@ function PlanCard({
   badge,
   highlighted,
   features,
-  accent,
   footer,
 }: {
   title: string;
@@ -149,25 +132,24 @@ function PlanCard({
   badge?: string;
   highlighted?: boolean;
   features: ReadonlyArray<{ icon: typeof FileQuestion; text: string }>;
-  accent: "slate" | "indigo";
   footer: ReactNode;
 }) {
   return (
     <article
-      className={`relative flex flex-col rounded-2xl border bg-white p-6 shadow-sm sm:p-7 ${
+      className={`relative flex flex-col rounded-[1.75rem] border-2 bg-white p-6 shadow-sm sm:p-8 ${
         highlighted
-          ? "border-indigo-200 ring-2 ring-indigo-100"
+          ? "border-violet-300 bg-violet-50/40 ring-2 ring-violet-100"
           : "border-slate-200"
       }`}
     >
       {badge ? (
-        <span className="absolute right-5 top-5 rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-indigo-700">
+        <span className="absolute right-5 top-5 rounded-full bg-violet-100 px-3 py-1 text-xs font-extrabold text-violet-700">
           {badge}
         </span>
       ) : null}
 
-      <h3 className="text-xl font-black text-slate-900">{title}</h3>
-      <p className="mt-2 min-h-[2.5rem] text-sm font-medium leading-snug text-slate-500">
+      <h3 className="text-2xl font-black text-slate-900">{title}</h3>
+      <p className="mt-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-slate-500">
         {subtitle}
       </p>
 
@@ -187,7 +169,7 @@ function PlanCard({
 
       {footer}
 
-      <FeatureList items={features} accent={accent} />
+      <FeatureList items={features} />
     </article>
   );
 }
@@ -207,18 +189,15 @@ function CheckoutButton({
   onCheckout: (plan: CheckoutPlan) => void;
   clerkAuth: boolean;
 }) {
-  const price = PRICING[plan][billing];
-  const label = loading
-    ? "Redirecting to Stripe…"
-    : `Choose ${plan === "pro" ? "Pro" : "Student"} — ${price.amount}/mo`;
+  const label = loading ? "Opening checkout..." : "Upgrade Now";
 
   if (!signedIn) {
     if (clerkAuth) {
       return (
-        <SignInButton mode="redirect" fallbackRedirectUrl="/upgrade/">
+        <SignInButton mode="modal" fallbackRedirectUrl="/upgrade/">
           <button
             type="button"
-            className="mt-6 w-full rounded-xl border-b-4 border-indigo-800 bg-indigo-600 py-3 text-sm font-extrabold text-white transition-colors hover:bg-indigo-500 active:translate-y-0.5 active:border-b-2"
+            className="mt-6 w-full rounded-2xl border-b-4 border-violet-400 bg-violet-200 py-4 text-lg font-black text-slate-900 transition-colors hover:bg-violet-300 active:translate-y-0.5 active:border-b-2"
           >
             Sign in to upgrade
           </button>
@@ -230,7 +209,7 @@ function CheckoutButton({
       <button
         type="button"
         disabled
-        className="mt-6 w-full rounded-xl border-b-4 border-indigo-800 bg-indigo-600 py-3 text-sm font-extrabold text-white opacity-70"
+        className="mt-6 w-full rounded-2xl border-b-4 border-violet-400 bg-violet-200 py-4 text-lg font-black text-slate-900 opacity-70"
       >
         Sign in to upgrade
       </button>
@@ -242,8 +221,9 @@ function CheckoutButton({
       type="button"
       onClick={() => onCheckout(plan)}
       disabled={loading}
-      className="mt-6 w-full rounded-xl border-b-4 border-indigo-800 bg-indigo-600 py-3 text-sm font-extrabold text-white transition-colors hover:bg-indigo-500 active:translate-y-0.5 active:border-b-2 disabled:opacity-70"
+      className="mt-6 w-full rounded-2xl border-b-4 border-violet-400 bg-violet-200 py-4 text-lg font-black text-slate-900 transition-colors hover:bg-violet-300 active:translate-y-0.5 active:border-b-2 disabled:opacity-70"
     >
+      <Sparkles size={18} strokeWidth={2.5} className="mr-2 inline" />
       {label}
     </button>
   );
@@ -279,40 +259,21 @@ function UpgradePricingGrid({
         disabled={loading}
       />
 
-      <div className="mx-auto mt-8 grid max-w-5xl gap-4 md:grid-cols-3 md:gap-5">
-        <PlanCard
-          title="Free"
-          subtitle="Get started with core study tools"
-          price="$0"
-          priceSuffix="/ month"
-          features={FREE_FEATURES}
-          accent="slate"
-          footer={
-            <button
-              type="button"
-              disabled
-              className="mt-6 w-full rounded-xl bg-slate-100 py-3 text-sm font-extrabold text-slate-400"
-            >
-              {currentPlan === "free" ? "Your current plan" : "Included"}
-            </button>
-          }
-        />
-
+      <div className="mx-auto mt-8 grid max-w-4xl gap-5 md:grid-cols-2">
         <PlanCard
           title="Student"
-          subtitle="Full qbank access and AI study tools"
+          subtitle="Everything most students need to prepare."
           price={studentPrice.amount}
           priceSuffix={studentPrice.suffix}
           priceNote={studentPrice.note}
           badge={currentPlan === "student" ? "Current" : undefined}
           features={STUDENT_FEATURES}
-          accent="indigo"
           footer={
             currentPlan === "student" || currentPlan === "pro" ? (
               <button
                 type="button"
                 disabled
-                className="mt-6 w-full rounded-xl bg-indigo-50 py-3 text-sm font-extrabold text-indigo-600"
+                className="mt-6 w-full rounded-2xl bg-emerald-50 py-4 text-base font-black text-emerald-700"
               >
                 Active
               </button>
@@ -331,20 +292,19 @@ function UpgradePricingGrid({
 
         <PlanCard
           title="Pro"
-          subtitle="Maximum AI power for intensive prep"
+          subtitle="More speed and creation for intensive prep."
           price={proPrice.amount}
           priceSuffix={proPrice.suffix}
           priceNote={proPrice.note}
           badge="Recommended"
           highlighted
           features={PRO_FEATURES}
-          accent="indigo"
           footer={
             currentPlan === "pro" ? (
               <button
                 type="button"
                 disabled
-                className="mt-6 w-full rounded-xl bg-indigo-50 py-3 text-sm font-extrabold text-indigo-600"
+                className="mt-6 w-full rounded-2xl bg-emerald-50 py-4 text-base font-black text-emerald-700"
               >
                 Your current plan
               </button>
@@ -375,6 +335,17 @@ function UpgradePricingGrid({
   );
 }
 
+function checkoutErrorMessage(error: unknown): string {
+  const message =
+    error instanceof Error ? error.message : "Checkout could not start.";
+
+  if (/billing is not configured|stripe|price|secret|webhook/i.test(message)) {
+    return "Checkout is being connected. Please try again shortly.";
+  }
+
+  return message;
+}
+
 function UpgradePanelClerk() {
   const [billing, setBilling] = useState<BillingInterval>("yearly");
   const [loading, setLoading] = useState(false);
@@ -402,11 +373,7 @@ function UpgradePanelClerk() {
         const url = await createStripeCheckoutSession(token, billing, plan);
         window.location.assign(url);
       } catch (checkoutError) {
-        const message =
-          checkoutError instanceof Error
-            ? checkoutError.message
-            : "Checkout failed. Try again.";
-        setError(message);
+        setError(checkoutErrorMessage(checkoutError));
         setLoading(false);
       }
     })();
@@ -431,11 +398,7 @@ function UpgradePanelClerk() {
         const url = await createStripePortalSession(token);
         window.location.assign(url);
       } catch (portalError) {
-        const message =
-          portalError instanceof Error
-            ? portalError.message
-            : "Unable to open billing portal.";
-        setError(message);
+        setError("Could not open account settings. Please try again shortly.");
         setPortalLoading(false);
       }
     })();
@@ -445,6 +408,12 @@ function UpgradePanelClerk() {
 
   return (
     <>
+      {signedIn && (
+        <p className="mx-auto mt-6 w-fit rounded-full bg-white px-4 py-2 text-sm font-extrabold text-slate-600 shadow-sm ring-1 ring-slate-200">
+          Current plan: <span className="capitalize text-slate-900">{access.plan}</span>
+        </p>
+      )}
+
       {hasPaidPlan && (
         <div className="mx-auto mt-6 max-w-3xl text-center">
           <button
@@ -480,7 +449,7 @@ function UpgradePanelGuest() {
       billing={billing}
       setBilling={setBilling}
       loading={false}
-      error="Sign in on drnote.co to upgrade with Stripe."
+      error={null}
       signedIn={false}
       onCheckout={() => {}}
       clerkAuth={false}
@@ -496,28 +465,13 @@ export function UpgradePanel() {
   const content = (
     <>
       <div className="mx-auto max-w-3xl text-center">
-        <div
-          className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border-b-4"
-          style={{
-            background: `linear-gradient(135deg, ${BRAND.accent}, ${BRAND.accentDark})`,
-            borderColor: BRAND.accentDark,
-          }}
-        >
-          <Sparkles size={22} strokeWidth={2.5} className="text-white" />
-        </div>
-        <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
-          Upgrade your plan
+        <h1 className="text-4xl font-black tracking-tight text-slate-900 sm:text-6xl">
+          Unlock Everything with Pro
         </h1>
-        <p className="mt-2 text-sm font-medium text-slate-500">
-          Simple pricing for medical board prep
+        <p className="mt-4 text-lg font-semibold leading-relaxed text-slate-500">
+          Practice, review, and study faster with one simple plan.
         </p>
       </div>
-
-      {mounted && clerkEnabled && (
-        <div className="mx-auto mt-8 max-w-lg">
-          <CreditsUsageCard />
-        </div>
-      )}
 
       {!mounted || !clerkEnabled ? (
         <UpgradePanelGuest />
@@ -528,12 +482,8 @@ export function UpgradePanel() {
   );
 
   return (
-    <div className="min-h-full bg-slate-50 px-4 pb-10 pt-6 sm:px-6 sm:pt-10">
-      {mounted && clerkEnabled ? (
-        <MedGeniusCreditsProvider>{content}</MedGeniusCreditsProvider>
-      ) : (
-        content
-      )}
+    <div className="min-h-full bg-slate-50 px-4 pb-16 pt-10 sm:px-6 sm:pt-14">
+      {content}
     </div>
   );
 }
