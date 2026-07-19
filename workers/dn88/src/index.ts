@@ -114,31 +114,15 @@ function resolveOrigin(requestOrigin: string | undefined): string {
   return "https://drnote.co";
 }
 
-function resolveCheckoutPriceId(
-  env: Bindings,
-  plan: CheckoutPlan,
-  billing: BillingInterval
-): string | undefined {
-  if (plan === "pro") {
-    return billing === "yearly"
-      ? env.STRIPE_PRICE_PRO_YEARLY ?? env.STRIPE_PRICE_YEARLY
-      : env.STRIPE_PRICE_PRO_MONTHLY ?? env.STRIPE_PRICE_MONTHLY;
-  }
-
-  return billing === "yearly"
-    ? env.STRIPE_PRICE_STUDENT_YEARLY ?? env.STRIPE_PRICE_YEARLY
-    : env.STRIPE_PRICE_STUDENT_MONTHLY ?? env.STRIPE_PRICE_MONTHLY;
-}
-
 function resolveCheckoutLineItem(
-  env: Bindings,
   plan: CheckoutPlan,
   billing: BillingInterval
 ) {
-  const priceId = resolveCheckoutPriceId(env, plan, billing);
-  if (priceId) return { priceId };
-
   return { priceData: CHECKOUT_PRICES[plan][billing] };
+}
+
+function stripeErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Unable to create checkout session";
 }
 
 async function createStripeCheckoutSession(
@@ -186,6 +170,7 @@ async function createStripeCheckoutSession(
   body.set("cancel_url", params.cancelUrl);
   body.set("client_reference_id", params.clientReferenceId);
   body.set("metadata[clerkUserId]", params.clientReferenceId);
+  body.set("metadata[plan]", params.checkoutPlan);
   body.set("subscription_data[metadata][clerkUserId]", params.clientReferenceId);
   body.set("subscription_data[metadata][plan]", params.checkoutPlan);
   if (params.customerId) {
@@ -361,7 +346,7 @@ app.post("/api/stripe/checkout", async (c) => {
     return c.json({ error: "Invalid request body" }, 400);
   }
 
-  const lineItem = resolveCheckoutLineItem(c.env, checkoutPlan, billing);
+  const lineItem = resolveCheckoutLineItem(checkoutPlan, billing);
 
   const origin = resolveOrigin(c.req.header("Origin"));
 
@@ -376,22 +361,49 @@ app.post("/api/stripe/checkout", async (c) => {
       ? publicMetadata.stripeCustomerId
       : null;
 
+  const checkoutParams = {
+    lineItem,
+    successUrl: `${origin}/upgrade/success/?session_id={CHECKOUT_SESSION_ID}&plan=${checkoutPlan}`,
+    cancelUrl: `${origin}/upgrade/`,
+    customerEmail: auth.user.email,
+    customerId: stripeCustomerId,
+    clientReferenceId: auth.user.id,
+    checkoutPlan,
+  };
+
   try {
-    const session = await createStripeCheckoutSession(stripeSecret, {
-      lineItem,
-      successUrl: `${origin}/upgrade/success/?session_id={CHECKOUT_SESSION_ID}&plan=${checkoutPlan}`,
-      cancelUrl: `${origin}/upgrade/`,
-      customerEmail: auth.user.email,
-      customerId: stripeCustomerId,
-      clientReferenceId: auth.user.id,
-      checkoutPlan,
-    });
+    const session = await createStripeCheckoutSession(stripeSecret, checkoutParams);
 
     return c.json({ url: session.url });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unable to create checkout session";
-    return c.json({ error: message }, 502);
+    console.error("Stripe checkout failed", {
+      plan: checkoutPlan,
+      billing,
+      hasStoredCustomerId: Boolean(stripeCustomerId),
+      message: stripeErrorMessage(error),
+    });
+
+    if (stripeCustomerId) {
+      try {
+        const session = await createStripeCheckoutSession(stripeSecret, {
+          ...checkoutParams,
+          customerId: null,
+        });
+
+        return c.json({ url: session.url });
+      } catch (retryError) {
+        console.error("Stripe checkout retry without stored customer failed", {
+          plan: checkoutPlan,
+          billing,
+          message: stripeErrorMessage(retryError),
+        });
+      }
+    }
+
+    return c.json(
+      { error: "Unable to create secure checkout. Please try again shortly." },
+      502
+    );
   }
 });
 

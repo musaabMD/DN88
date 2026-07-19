@@ -147,9 +147,9 @@ export async function handleStripeWebhook(
         metadata?.plan === "pro" || metadata?.plan === "student"
           ? metadata.plan
           : null;
-      const plan = priceId
+      const plan = planFromMetadata ?? (priceId
         ? resolvePlanFromStripePrice(priceId, env)
-        : planFromMetadata ?? "student";
+        : "student");
       await applyPlan(userId, plan);
     }
   }
@@ -173,9 +173,9 @@ export async function handleStripeWebhook(
           subscriptionMetadata?.plan === "pro" || subscriptionMetadata?.plan === "student"
             ? subscriptionMetadata.plan
             : null;
-        const plan = priceId
+        const plan = planFromMetadata ?? (priceId
           ? resolvePlanFromStripePrice(priceId, env)
-          : planFromMetadata ?? "student";
+          : "student");
         await applyPlan(userId, plan);
       }
     }

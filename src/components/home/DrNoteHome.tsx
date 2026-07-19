@@ -1001,7 +1001,8 @@ function AddFile({
   const { m } = useHomeLocale();
   const [name, setName] = useState("");
   const [file, setFile] = useState<File | null>(null);
-  const [selectedExamId, setSelectedExamId] = useState(examId ?? EXAMS[0]?.id ?? "smle");
+  const [selectedExamId, setSelectedExamId] = useState(examId ?? "custom");
+  const [customExamName, setCustomExamName] = useState("");
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1014,8 +1015,21 @@ function AddFile({
     if (picked && !name.trim()) setName(picked.name.replace(/\.[^.]+$/, ""));
   };
 
+  const customExamId = customExamName
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  const uploadExamId =
+    !examId && selectedExamId === "custom"
+      ? customExamId
+        ? `custom:${customExamId}`
+        : ""
+      : selectedExamId;
+  const canUpload = Boolean(name.trim() && uploadExamId && !uploading);
+
   const handleUpload = async () => {
-    if (!name.trim() || uploading) return;
+    if (!canUpload) return;
     if (!file) {
       inputRef.current?.click();
       return;
@@ -1032,7 +1046,7 @@ function AddFile({
       const result = await uploadDocument(token, {
         file,
         name: name.trim(),
-        examId: selectedExamId,
+        examId: uploadExamId,
       });
       onDone(
         result.duplicate
@@ -1056,18 +1070,30 @@ function AddFile({
       <div className="dn-modal" onClick={(e) => e.stopPropagation()}>
         <div className="dn-modal-head"><b>{examId ? m.addFile : "Add exam files"}</b><button className="dn-fs-close" onClick={onClose} aria-label={m.close}><X size={18} strokeWidth={2.8} /></button></div>
         {!examId && (
-          <select
-            className="dn-modal-select"
-            value={selectedExamId}
-            onChange={(e) => setSelectedExamId(e.target.value)}
-            aria-label="Exam"
-          >
-            {EXAMS.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.code} - {m.examName(item.id, item.name)}
-              </option>
-            ))}
-          </select>
+          <>
+            <select
+              className="dn-modal-select"
+              value={selectedExamId}
+              onChange={(e) => setSelectedExamId(e.target.value)}
+              aria-label="Exam"
+            >
+              <option value="custom">Enter exam name</option>
+              {EXAMS.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.code} - {m.examName(item.id, item.name)}
+                </option>
+              ))}
+            </select>
+            {selectedExamId === "custom" && (
+              <input
+                className="dn-modal-input"
+                value={customExamName}
+                onChange={(e) => setCustomExamName(e.target.value)}
+                placeholder="Exam name (e.g. MRCP Part 1)"
+                aria-label="Exam name"
+              />
+            )}
+          </>
         )}
         <button
           type="button"
@@ -1097,7 +1123,7 @@ function AddFile({
         />
         <input className="dn-modal-input" value={name} onChange={(e) => setName(e.target.value)} placeholder={m.fileNamePlaceholder} />
         {error && <p className="px-1 text-sm font-semibold text-red-500">{error}</p>}
-        <Chunky bg={C.green} shadow={C.greenDark} full disabled={!name.trim() || uploading} onClick={handleUpload}>
+        <Chunky bg={C.green} shadow={C.greenDark} full disabled={!canUpload} onClick={handleUpload}>
           <span className="dn-inline"><Upload size={16} strokeWidth={2.6} /> {uploading ? m.uploading : file ? m.uploadFile : m.chooseFile}</span>
         </Chunky>
       </div>
