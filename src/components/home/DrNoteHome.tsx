@@ -30,7 +30,7 @@ import { getClerkToken } from "@/lib/clerk-token";
 import { useClerkEnabled, useClientMounted } from "@/hooks/useClerkEnabled";
 import { HomeLocaleProvider, useHomeLocale } from "@/components/home/HomeLocaleProvider";
 import { MedGeniusCreditsProvider } from "@/lib/medgenius/credits-context";
-import { CreditsBadge, CreditsChatHint } from "@/components/medgenius/CreditsUsage";
+import { CreditsBadge } from "@/components/medgenius/CreditsUsage";
 import { useMedGeniusCreditsContext } from "@/lib/medgenius/credits-context";
 import type { AppLocale } from "@/lib/locale";
 import { saveCurrentExamId } from "@/lib/current-exam";
@@ -1556,7 +1556,6 @@ function ChatPanel({ documentId, documentContext, quote, clearQuote, msgs, setMs
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [conversationId, setConversationId] = useState<string | undefined>();
-  const [creditsRemaining, setCreditsRemaining] = useState<number | undefined>();
   const endRef = useRef<HTMLDivElement>(null);
   const clerkEnabled = useClerkEnabled();
   const { refresh: refreshCredits } = useMedGeniusCreditsContext();
@@ -1587,9 +1586,6 @@ function ChatPanel({ documentId, documentContext, quote, clearQuote, msgs, setMs
         () => content.chatMockReply
       );
       setConversationId(result.conversationId || conversationId);
-      if (result.creditsRemaining !== undefined) {
-        setCreditsRemaining(result.creditsRemaining);
-      }
       setMsgs((prev) => [...prev, { role: "ai", text: result.reply }]);
       if (result.fromApi) {
         void refreshCredits();
@@ -1609,7 +1605,6 @@ function ChatPanel({ documentId, documentContext, quote, clearQuote, msgs, setMs
         </span>
         <button className="dn-fs-close" onClick={onClose} aria-label={m.closeChat}><X size={18} strokeWidth={2.8} /></button>
       </div>
-      <CreditsChatHint remaining={creditsRemaining} />
       <div className="dn-chat-body">
         {msgs.map((msg, i) => <div key={i} className={`dn-msg ${msg.role}`}>{msg.text}</div>)}
         <div ref={endRef} />

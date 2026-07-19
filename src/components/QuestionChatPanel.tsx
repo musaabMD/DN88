@@ -62,7 +62,6 @@ export function QuestionChatPanel({
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [conversationId, setConversationId] = useState<string | undefined>();
-  const [creditsRemaining, setCreditsRemaining] = useState<number | undefined>();
   const { getToken } = useAuth();
   const clerkEnabled = useClerkEnabled();
 
@@ -98,9 +97,6 @@ export function QuestionChatPanel({
       );
 
       setConversationId(result.conversationId || conversationId);
-      if (result.creditsRemaining !== undefined) {
-        setCreditsRemaining(result.creditsRemaining);
-      }
 
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now() + 1}`,
@@ -137,12 +133,6 @@ export function QuestionChatPanel({
           <X size={15} strokeWidth={2.5} className="text-muted-foreground" />
         </button>
       </header>
-
-      {creditsRemaining !== undefined && (
-        <p className="border-b border-border px-4 py-1.5 text-[11px] font-bold text-muted-foreground">
-          {creditsRemaining.toLocaleString()} credits remaining
-        </p>
-      )}
 
       <MessageScrollerProvider
         autoScroll
