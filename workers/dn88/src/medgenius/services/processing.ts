@@ -218,7 +218,15 @@ async function runExtractQuestionsStage(
   jobId: string
 ): Promise<void> {
   if (!env.OPENROUTER_API_KEY) {
-    throw new Error(sanitizeUserError("AI is not configured", "ai"));
+    await updateDocumentStatus(
+      env.DB,
+      documentId,
+      "completed",
+      100,
+      "AI question generation is unavailable. The uploaded document is ready to read."
+    );
+    await completeJob(env, jobId, 100);
+    return;
   }
 
   await updateDocumentStatus(env.DB, documentId, "extracting", 50);
@@ -232,40 +240,63 @@ async function runExtractQuestionsStage(
   const markdown = await getMarkdown(env.USER_CONTENT, doc.r2_markdown_key);
   if (!markdown) throw new Error("Markdown content missing");
 
-  const jsonContent = await extractQuestionsFromMarkdown(
-    env.OPENROUTER_API_KEY,
-    markdown,
-    doc.name
-  );
+  try {
+    const jsonContent = await extractQuestionsFromMarkdown(
+      env.OPENROUTER_API_KEY,
+      markdown,
+      doc.name
+    );
 
-  const questions = parseExtractedQuestions(jsonContent);
-  const extractCost = computeCreditCost("questionExtract", Math.max(questions.length, 1));
-  await spendCredits(env.DB, userId, extractCost, "question_extract", {
-    type: "document",
-    id: documentId,
-    metadata: { count: questions.length },
-  });
+    const questions = parseExtractedQuestions(jsonContent);
+    const extractCost = computeCreditCost("questionExtract", Math.max(questions.length, 1));
+    await spendCredits(env.DB, userId, extractCost, "question_extract", {
+      type: "document",
+      id: documentId,
+      metadata: { count: questions.length },
+    });
 
-  await insertQuestions(env.DB, userId, documentId, questions);
+    await insertQuestions(env.DB, userId, documentId, questions);
+  } catch (error) {
+    console.error("Question extraction failed; keeping parsed document", {
+      documentId,
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+    await updateDocumentStatus(
+      env.DB,
+      documentId,
+      "completed",
+      100,
+      "AI question generation is unavailable. The uploaded document is ready to read."
+    );
+    await completeJob(env, jobId, 100);
+    return;
+  }
 
-  const summaryCost = computeCreditCost("summaryGenerate");
-  await spendCredits(env.DB, userId, summaryCost, "summary_generate", {
-    type: "document",
-    id: documentId,
-  });
+  try {
+    const summary = await generateDocumentSummary(
+      env.OPENROUTER_API_KEY,
+      markdown,
+      "high_yield"
+    );
 
-  const summary = await generateDocumentSummary(
-    env.OPENROUTER_API_KEY,
-    markdown,
-    "high_yield"
-  );
+    const summaryCost = computeCreditCost("summaryGenerate");
+    await spendCredits(env.DB, userId, summaryCost, "summary_generate", {
+      type: "document",
+      id: documentId,
+    });
 
-  await env.DB.prepare(
-    `INSERT INTO medgenius_summaries (id, user_id, document_id, summary_type, content_markdown)
-     VALUES (?, ?, ?, 'high_yield', ?)`
-  )
-    .bind(crypto.randomUUID(), userId, documentId, summary)
-    .run();
+    await env.DB.prepare(
+      `INSERT INTO medgenius_summaries (id, user_id, document_id, summary_type, content_markdown)
+       VALUES (?, ?, ?, 'high_yield', ?)`
+    )
+      .bind(crypto.randomUUID(), userId, documentId, summary)
+      .run();
+  } catch (error) {
+    console.error("Summary generation failed; continuing document processing", {
+      documentId,
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
 
   await updateDocumentStatus(env.DB, documentId, "embedding", 70);
   await completeJob(env, jobId, 100);
@@ -292,13 +323,20 @@ async function runDuplicateStage(
   userId: string,
   jobId: string
 ): Promise<void> {
-  const cost = computeCreditCost("duplicateDetection");
-  await spendCredits(env.DB, userId, cost, "duplicate_detection", {
-    type: "document",
-    id: documentId,
-  });
+  try {
+    const cost = computeCreditCost("duplicateDetection");
+    await spendCredits(env.DB, userId, cost, "duplicate_detection", {
+      type: "document",
+      id: documentId,
+    });
 
-  await detectDuplicateGroups(env.DB, userId, documentId);
+    await detectDuplicateGroups(env.DB, userId, documentId);
+  } catch (error) {
+    console.error("Duplicate detection failed; continuing document processing", {
+      documentId,
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
   await updateDocumentStatus(env.DB, documentId, "embedding", 85);
   await completeJob(env, jobId, 100);
 
@@ -344,13 +382,12 @@ async function runFlashcardStage(
 
   for (const q of questions.results ?? []) {
     const text = q.cleaned_text ?? q.original_text;
-    const cardJson = await generateFlashcardsFromQuestion(
-      env.OPENROUTER_API_KEY,
-      text,
-      q.explanation ?? ""
-    );
-
     try {
+      const cardJson = await generateFlashcardsFromQuestion(
+        env.OPENROUTER_API_KEY,
+        text,
+        q.explanation ?? ""
+      );
       const card = JSON.parse(cardJson) as {
         front?: string;
         back?: string;

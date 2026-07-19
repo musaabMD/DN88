@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PricingPageHeader } from "@/components/PricingPageHeader";
 import { UpgradePanel } from "@/components/UpgradePanel";
 
 export const metadata: Metadata = {
@@ -15,8 +16,11 @@ export const metadata: Metadata = {
 
 export default function PricingPage() {
   return (
-    <main className="min-h-screen bg-slate-50" aria-label="DrNote pricing plans">
-      <UpgradePanel />
-    </main>
+    <div className="min-h-screen bg-slate-50">
+      <PricingPageHeader />
+      <main aria-label="DrNote pricing plans">
+        <UpgradePanel />
+      </main>
+    </div>
   );
 }
