@@ -40,7 +40,7 @@ function ClerkUserAuthControls({ compact = false }: { compact?: boolean }) {
         />
       </SignedIn>
       <SignedOut>
-        <SignInButton mode="redirect" fallbackRedirectUrl={DASHBOARD_PATH}>
+        <SignInButton mode="modal" fallbackRedirectUrl={DASHBOARD_PATH}>
           <button type="button" className={primaryNavButtonClass}>
             Get started
           </button>

@@ -1,0 +1,27 @@
+# DrNote
+
+DrNote is an AI medical education platform for exam practice, summaries, images, flashcards, and clinical library content.
+
+## Canonical Pages
+
+- Home: https://drnote.co/
+- Qbank: https://drnote.co/qbank/
+- SMLE Qbank: https://drnote.co/qbank/smle/
+- SDLE Qbank: https://drnote.co/qbank/sdle/
+- SPLE Qbank: https://drnote.co/qbank/sple/
+- SLLE Qbank: https://drnote.co/qbank/slle/
+- SNLE Qbank: https://drnote.co/qbank/snle/
+- Family Medicine Qbank: https://drnote.co/qbank/fm/
+- Library: https://drnote.co/library/
+- Pricing: https://drnote.co/pricing/
+- Upgrade: https://drnote.co/upgrade/
+
+## Route Patterns
+
+- Exam overview: `https://drnote.co/qbank/{examId}/`
+- Exam summaries: `https://drnote.co/qbank/{examId}/summary/`
+- Exam images: `https://drnote.co/qbank/{examId}/images/`
+- Exam flashcards: `https://drnote.co/qbank/{examId}/flashcards/`
+- Question set: `https://drnote.co/qbank/{examId}/questions/sets/{setId}/`
+- Quiz session: `https://drnote.co/qbank/{examId}/questions/sets/{setId}/quiz/`
+- Quiz results: `https://drnote.co/qbank/{examId}/questions/sets/{setId}/results/`
