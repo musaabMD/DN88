@@ -61,7 +61,6 @@ interface Exam {
   id: string;
   code: string;
   name: string;
-  files: number;
   from: string;
   to: string;
   tags: string[];
@@ -80,12 +79,12 @@ interface ExamFile {
 }
 
 const EXAMS: Exam[] = [
-  { id: "smle", code: "SMLE", name: "Saudi Medical Licensing", files: 1284, from: "#FF6B6B", to: "#E11D48", tags: ["medical", "smle", "doctor"] },
-  { id: "sdle", code: "SDLE", name: "Saudi Dental Licensing", files: 612, from: "#34D399", to: "#059669", tags: ["dental", "sdle", "dentist"] },
-  { id: "sple", code: "SPLE", name: "Saudi Pharmacy Licensing", files: 489, from: "#A78BFA", to: "#7C3AED", tags: ["pharmacy", "sple", "pharmacist"] },
-  { id: "slle", code: "SLLE", name: "Saudi Lab Licensing", files: 356, from: "#38BDF8", to: "#2563EB", tags: ["lab", "slle", "laboratory"] },
-  { id: "snle", code: "SNLE", name: "Saudi Nursing Licensing", files: 421, from: "#FBBF24", to: "#F97316", tags: ["nursing", "snle", "nurse"] },
-  { id: "fm", code: "FM", name: "Family Medicine", files: 938, from: "#2DD4BF", to: "#0F766E", tags: ["family", "medicine", "board"] },
+  { id: "smle", code: "SMLE", name: "Saudi Medical Licensing", from: "#FF6B6B", to: "#E11D48", tags: ["medical", "smle", "doctor"] },
+  { id: "sdle", code: "SDLE", name: "Saudi Dental Licensing", from: "#34D399", to: "#059669", tags: ["dental", "sdle", "dentist"] },
+  { id: "sple", code: "SPLE", name: "Saudi Pharmacy Licensing", from: "#A78BFA", to: "#7C3AED", tags: ["pharmacy", "sple", "pharmacist"] },
+  { id: "slle", code: "SLLE", name: "Saudi Lab Licensing", from: "#38BDF8", to: "#2563EB", tags: ["lab", "slle", "laboratory"] },
+  { id: "snle", code: "SNLE", name: "Saudi Nursing Licensing", from: "#FBBF24", to: "#F97316", tags: ["nursing", "snle", "nurse"] },
+  { id: "fm", code: "FM", name: "Family Medicine", from: "#2DD4BF", to: "#0F766E", tags: ["family", "medicine", "board"] },
 ];
 
 const FILES: ExamFile[] = [

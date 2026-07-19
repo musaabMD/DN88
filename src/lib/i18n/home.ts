@@ -45,8 +45,7 @@ const TAB_LABELS: Record<Tab, Record<AppLocale, string>> = {
 const en = {
   heroTitle1: "The fastest way to",
   heroTitle2: "ace your exam.",
-  heroSubtitle:
-    "Turn your files into a question bank or use shared ones. Test yourself and study with summaries and flashcards.",
+  heroSubtitle: "Practice faster with question banks, summaries, and flashcards.",
   searchExamsPlaceholder: "Search SMLE, pharmacy, family medicine…",
   browse: "Browse",
   allExams: "All exams",
@@ -56,7 +55,6 @@ const en = {
   noExamHint: "Try another name, or clear the search to see all exams.",
   showAllExams: "Show all exams",
   addExam: "Add exam",
-  filesCount: (n: number) => `${n.toLocaleString()} files`,
   pagesCount: (n: number) => `${n} pages`,
   pgShort: (n: number) => `${n} pg`,
   allExamsBack: "All exams",
@@ -188,8 +186,7 @@ const en = {
 const ar = {
   heroTitle1: "أسرع طريقة",
   heroTitle2: "للتفوق في اختبارك",
-  heroSubtitle:
-    "حوّل ملفاتك إلى بنك أسئلة، أو استخدم ملفات مشتركة. اختبر نفسك، حدّد مستواك، وراجع بملخصات وبطاقات تعليمية.",
+  heroSubtitle: "تدرّب أسرع مع بنوك الأسئلة والملخصات والبطاقات التعليمية.",
   searchExamsPlaceholder: "ابحث: الطب البشري، الصيدلة، طب الأسنان، طب الأسرة…",
   browse: "تصفّح",
   allExams: "اختبارات الرخصة المهنية",
@@ -199,7 +196,6 @@ const ar = {
   noExamHint: "جرّب اسم تخصص أو رمزًا آخر، أو امسح البحث لعرض كل الاختبارات.",
   showAllExams: "عرض كل الاختبارات",
   addExam: "إضافة اختبار",
-  filesCount: (n: number) => (n === 1 ? "ملف واحد" : n === 2 ? "ملفان" : `${n.toLocaleString("ar-SA")} ملف`),
   pagesCount: (n: number) => `${n} صفحة`,
   pgShort: (n: number) => `${n} ص`,
   allExamsBack: "اختبارات الرخصة",
