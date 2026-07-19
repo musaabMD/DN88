@@ -10,14 +10,13 @@ import {
   Sparkles,
   Zap,
 } from "lucide-react";
-import { SignInButton } from "@clerk/clerk-react";
+import { SignInButton, useAuth } from "@clerk/clerk-react";
 import {
   createStripeCheckoutSession,
   createStripePortalSession,
   type BillingInterval,
   type CheckoutPlan,
 } from "@/lib/stripe";
-import { getClerkToken, isClerkSignedIn } from "@/lib/clerk-token";
 import { useDrNoteAccess } from "@/hooks/useDrNoteAccess";
 import { useClerkEnabled, useClientMounted } from "@/hooks/useClerkEnabled";
 
@@ -179,6 +178,7 @@ function CheckoutButton({
   billing,
   loading,
   signedIn,
+  authReady,
   onCheckout,
   clerkAuth,
 }: {
@@ -186,10 +186,23 @@ function CheckoutButton({
   billing: BillingInterval;
   loading: boolean;
   signedIn: boolean;
+  authReady: boolean;
   onCheckout: (plan: CheckoutPlan) => void;
   clerkAuth: boolean;
 }) {
   const label = loading ? "Opening checkout..." : "Upgrade Now";
+
+  if (!authReady && clerkAuth) {
+    return (
+      <button
+        type="button"
+        disabled
+        className="mt-6 w-full rounded-2xl border-b-4 border-violet-300 bg-violet-100 py-4 text-lg font-black text-slate-500"
+      >
+        Checking account...
+      </button>
+    );
+  }
 
   if (!signedIn) {
     if (clerkAuth) {
@@ -235,6 +248,7 @@ function UpgradePricingGrid({
   loading,
   error,
   signedIn,
+  authReady,
   onCheckout,
   clerkAuth,
   currentPlan,
@@ -244,6 +258,7 @@ function UpgradePricingGrid({
   loading: boolean;
   error: string | null;
   signedIn: boolean;
+  authReady: boolean;
   onCheckout: (plan: CheckoutPlan) => void;
   clerkAuth: boolean;
   currentPlan: string;
@@ -283,6 +298,7 @@ function UpgradePricingGrid({
                 billing={billing}
                 loading={loading}
                 signedIn={signedIn}
+                authReady={authReady}
                 onCheckout={onCheckout}
                 clerkAuth={clerkAuth}
               />
@@ -314,6 +330,7 @@ function UpgradePricingGrid({
                 billing={billing}
                 loading={loading}
                 signedIn={signedIn}
+                authReady={authReady}
                 onCheckout={onCheckout}
                 clerkAuth={clerkAuth}
               />
@@ -347,16 +364,22 @@ function checkoutErrorMessage(error: unknown): string {
 }
 
 function UpgradePanelClerk() {
+  const { isLoaded, isSignedIn, getToken } = useAuth();
   const [billing, setBilling] = useState<BillingInterval>("yearly");
   const [loading, setLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const signedIn = isClerkSignedIn();
+  const signedIn = Boolean(isSignedIn);
   const access = useDrNoteAccess();
 
   const handleCheckout = (plan: CheckoutPlan) => {
     void (async () => {
       setError(null);
+
+      if (!isLoaded) {
+        setError("Checking your account. Please try again.");
+        return;
+      }
 
       if (!signedIn) {
         setError("Sign in to continue to secure checkout.");
@@ -365,7 +388,7 @@ function UpgradePanelClerk() {
 
       setLoading(true);
       try {
-        const token = await getClerkToken();
+        const token = await getToken();
         if (!token) {
           throw new Error("Sign in to continue to secure checkout.");
         }
@@ -383,6 +406,11 @@ function UpgradePanelClerk() {
     void (async () => {
       setError(null);
 
+      if (!isLoaded) {
+        setError("Checking your account. Please try again.");
+        return;
+      }
+
       if (!signedIn) {
         setError("Sign in to manage billing.");
         return;
@@ -390,7 +418,7 @@ function UpgradePanelClerk() {
 
       setPortalLoading(true);
       try {
-        const token = await getClerkToken();
+        const token = await getToken();
         if (!token) {
           throw new Error("Sign in to manage billing.");
         }
@@ -433,6 +461,7 @@ function UpgradePanelClerk() {
         loading={loading}
         error={error}
         signedIn={signedIn}
+        authReady={isLoaded}
         onCheckout={handleCheckout}
         clerkAuth
         currentPlan={access.plan}
@@ -451,8 +480,27 @@ function UpgradePanelGuest() {
       loading={false}
       error={null}
       signedIn={false}
+      authReady={false}
       onCheckout={() => {}}
       clerkAuth={false}
+      currentPlan="free"
+    />
+  );
+}
+
+function UpgradePanelLoading() {
+  const [billing, setBilling] = useState<BillingInterval>("yearly");
+
+  return (
+    <UpgradePricingGrid
+      billing={billing}
+      setBilling={setBilling}
+      loading={false}
+      error={null}
+      signedIn={false}
+      authReady={false}
+      onCheckout={() => {}}
+      clerkAuth
       currentPlan="free"
     />
   );
@@ -473,7 +521,9 @@ export function UpgradePanel() {
         </p>
       </div>
 
-      {!mounted || !clerkEnabled ? (
+      {!mounted ? (
+        <UpgradePanelLoading />
+      ) : !clerkEnabled ? (
         <UpgradePanelGuest />
       ) : (
         <UpgradePanelClerk />
