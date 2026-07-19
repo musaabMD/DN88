@@ -8,6 +8,7 @@ import {
   ListChecks, Send, Upload, Command, Maximize2, Minimize2, StickyNote, LayoutList, Columns2, Image as ImageIcon, BarChart2, RotateCcw,
 } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
+import { UserAuthControls } from "@/components/UserAuthControls";
 import { askMedGeniusAi } from "@/lib/medgenius/chat";
 import { uploadDocument, MedGeniusApiError } from "@/lib/medgenius/api";
 import { sanitizeUserError } from "@/lib/medgenius/errors";
@@ -727,7 +728,7 @@ function DrNoteHomeInner() {
                 <div className="dn-header-right">
                   <CreditsBadge />
                   <span className="dn-streak"><Flame size={18} color={C.yellow} fill={C.yellow} strokeWidth={2} /><b>{streakData.streakDays || 0}</b></span>
-                  <span className="dn-avatar" style={{ background: C.purple }}>MA</span>
+                  <UserAuthControls compact />
                 </div>
               </div>
             </header>
@@ -854,9 +855,7 @@ function Home({ onOpen, onAdd }: { onOpen: (e: Exam) => void; onAdd: () => void 
               <Flame className="h-4 w-4 text-amber-500" fill="currentColor" strokeWidth={1.5} />
               <span className="text-sm font-bold text-amber-600">14</span>
             </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-xs font-bold text-white ring-2 ring-white">
-              MA
-            </div>
+            <UserAuthControls compact />
           </div>
         </div>
       </header>
@@ -2393,4 +2392,3 @@ function CustomPane({ reveal, setReveal, onStart, flash }: {
     </div>
   );
 }
-
