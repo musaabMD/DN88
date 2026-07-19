@@ -63,6 +63,8 @@ export async function ensureUserProfile(
       creditsBalance = limits.monthlyCredits;
       creditsUsedMonth = 0;
       creditsMonthKey = monthKey;
+    } else if (creditsBalance + creditsUsedMonth < limits.monthlyCredits) {
+      creditsBalance = Math.max(0, limits.monthlyCredits - creditsUsedMonth);
     }
 
     if (existing.daily_tokens_key !== dayKey) {
