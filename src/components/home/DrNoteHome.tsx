@@ -12,7 +12,7 @@ import {
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { UserAuthControls } from "@/components/UserAuthControls";
 import { askMedGeniusAi } from "@/lib/medgenius/chat";
-import { uploadDocument, MedGeniusApiError } from "@/lib/medgenius/api";
+import { uploadDocument, MedGeniusApiError, reprocessDocument as reprocessDocumentApi } from "@/lib/medgenius/api";
 import { sanitizeUserError } from "@/lib/medgenius/errors";
 import {
   useExamDocuments,
@@ -22,6 +22,7 @@ import {
   type HomeReadPage,
   type HomeSummary,
 } from "@/lib/medgenius/home-data";
+import { isCorruptParsedMarkdown } from "@/lib/medgenius/markdown-quality";
 import { createStudySession, recordAttempt, searchQuestions, fetchDueSrs, recordSrsReview, bookmarkQuestion } from "@/lib/medgenius/api";
 import { useHomeAnalytics } from "@/hooks/useHomeAnalytics";
 import { useStudyStreak } from "@/hooks/useStudyStreak";
@@ -1040,9 +1041,11 @@ function AddFile({
         examId: uploadExamId,
       });
       onDone(
-        result.duplicate
-          ? m.fileAlreadyProcessed
-          : m.uploadCompleteProcessing
+        result.reprocessed
+          ? m.reprocessStarted
+          : result.duplicate
+            ? m.fileAlreadyProcessed
+            : m.uploadCompleteProcessing
       );
       void refreshCredits();
     } catch (err) {
@@ -1278,8 +1281,8 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
   const live = useDocumentStudy(clerkEnabled && file.documentId ? file.documentId : undefined);
   const useLive = Boolean(clerkEnabled && file.documentId);
   const questions: HomeQuestion[] = useLive ? live.questions : content.questions;
-  const readPages: HomeReadPage[] = useLive && live.readPages.length > 0 ? live.readPages : content.readPages;
-  const flashcards: HomeFlashCard[] = useLive && live.flashcards.length > 0 ? live.flashcards : content.cards;
+  const readPages: HomeReadPage[] = useLive ? live.readPages : content.readPages;
+  const flashcards: HomeFlashCard[] = useLive ? live.flashcards : content.cards;
   const summaries: HomeSummary[] = useLive ? live.summaries : [];
   const processing = useLive && live.status && live.status !== "completed" && live.status !== "failed";
   const analytics = useHomeAnalytics(useLive);
@@ -1296,6 +1299,22 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
 
   const [tab, setTab] = useState<Tab>("Read");
   const [query, setQuery] = useState("");
+  const [reprocessing, setReprocessing] = useState(false);
+
+  const handleReprocess = useCallback(async () => {
+    if (!file.documentId || reprocessing) return;
+    setReprocessing(true);
+    try {
+      const token = await getClerkToken();
+      if (!token) return;
+      await reprocessDocumentApi(token, file.documentId);
+      flash(m.reprocessStarted);
+    } catch (err) {
+      flash(sanitizeUserError(err instanceof Error ? err.message : "Reprocess failed", "processing"));
+    } finally {
+      setReprocessing(false);
+    }
+  }, [file.documentId, reprocessing, flash, m.reprocessStarted]);
 
   // shared quiz state (Quiz + Review + Custom)
   const [answers, setAnswers] = useState<Record<number, number>>({ 0: 0, 2: 1, 4: 3 });
@@ -1556,9 +1575,12 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
             file={file}
             pages={readPages}
             rawMarkdown={useLive ? live.rawMarkdown : null}
+            canReprocess={useLive && Boolean(file.documentId)}
+            reprocessing={reprocessing}
+            onReprocess={handleReprocess}
           />
         )}
-        {tab === "Quiz" && <QuizList query={query} questions={questions} answers={answers} setAnswers={setAnswers} flagged={flagged} setFlagged={setFlagged} perPage={perPage} setPerPage={setPerPage} reveal={reveal} setReveal={setReveal} onAsk={openChat} onAnswer={async (idx, selected) => {
+        {tab === "Quiz" && <QuizList query={query} questions={questions} emptyWhenNoQuery={useLive ? m.noQuestionsExtracted : undefined} answers={answers} setAnswers={setAnswers} flagged={flagged} setFlagged={setFlagged} perPage={perPage} setPerPage={setPerPage} reveal={reveal} setReveal={setReveal} onAsk={openChat} onAnswer={async (idx, selected) => {
           const q = questions[idx];
           const sessionId = backendSessionRef.current;
           if (!q?.id || !sessionId || !useLive) return;
@@ -1684,17 +1706,46 @@ function ReadFull({
   file,
   pages,
   rawMarkdown,
+  canReprocess,
+  reprocessing,
+  onReprocess,
 }: {
   file: ExamFile;
   pages: HomeReadPage[];
   rawMarkdown?: string | null;
+  canReprocess?: boolean;
+  reprocessing?: boolean;
+  onReprocess?: () => void;
 }) {
   const { m } = useHomeLocale();
   const [i, setI] = useState(0);
   const [view, setView] = useState<"sections" | "source">("sections");
+  const corruptSource = Boolean(rawMarkdown && isCorruptParsedMarkdown(rawMarkdown));
   useEffect(() => {
     setI(0);
   }, [file.id, pages.length]);
+
+  if (corruptSource) {
+    return (
+      <div className="dn-read-fs">
+        <div className="dn-empty" style={{ paddingTop: 48, maxWidth: 520, margin: "0 auto" }}>
+          <BookOpen size={26} color={C.faint} />
+          <p style={{ marginTop: 12, lineHeight: 1.5 }}>{m.parsedSourceCorrupt}</p>
+          {canReprocess && onReprocess && (
+            <button
+              type="button"
+              className="dn-btn primary"
+              style={{ marginTop: 16 }}
+              onClick={() => void onReprocess()}
+              disabled={reprocessing}
+            >
+              {reprocessing ? m.reprocessingDocument : m.reprocessDocument}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   if (pages.length === 0 && !rawMarkdown) {
     return (
@@ -1762,8 +1813,8 @@ function ReadFull({
 }
 
 /* ---- Quiz ---- */
-function QuizList({ query, questions, answers, setAnswers, flagged, setFlagged, perPage, setPerPage, reveal, setReveal, onAsk, onAnswer }: {
-  query: string; questions: HomeQuestion[]; answers: Record<number, number>; setAnswers: Dispatch<SetStateAction<Record<number, number>>>;
+function QuizList({ query, questions, emptyWhenNoQuery, answers, setAnswers, flagged, setFlagged, perPage, setPerPage, reveal, setReveal, onAsk, onAnswer }: {
+  query: string; questions: HomeQuestion[]; emptyWhenNoQuery?: string; answers: Record<number, number>; setAnswers: Dispatch<SetStateAction<Record<number, number>>>;
   flagged: Set<number>; setFlagged: Dispatch<SetStateAction<Set<number>>>;
   perPage: number; setPerPage: (n: number) => void; reveal: Reveal; setReveal: (r: Reveal) => void; onAsk: (q: string) => void;
   onAnswer?: (questionIndex: number, selectedOption: number) => void;
@@ -1792,7 +1843,7 @@ function QuizList({ query, questions, answers, setAnswers, flagged, setFlagged, 
   return (
     <div className="dn-quiz-fs">
       <div className="dn-quiz-scroll">
-        {slice.length === 0 && <div className="dn-empty" style={{ paddingTop: 40 }}><Search size={26} color={C.faint} /><p>{m.noQuestionsMatch(query)}</p></div>}
+        {slice.length === 0 && <div className="dn-empty" style={{ paddingTop: 40 }}><Search size={26} color={C.faint} /><p>{query.trim() ? m.noQuestionsMatch(query) : (emptyWhenNoQuery ?? m.noQuestionsMatch(query))}</p></div>}
         {slice.map((qq) => {
           const idx = qq.idx, picked = answers[idx], answered = picked !== undefined, show = answered && showResult, isFlag = flagged.has(idx);
           return (

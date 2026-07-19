@@ -7,7 +7,7 @@ import {
   ensureUserProfile,
   getCreditSummary,
 } from "../services/credits";
-import { createDocumentUpload } from "../services/processing";
+import { createDocumentUpload, reprocessDocument } from "../services/processing";
 import {
   getDocument,
   listDocuments,
@@ -135,6 +135,26 @@ medgeniusRoutes.get("/documents/:id/markdown", async (c) => {
   return c.json({ markdown, pageCount: doc.page_count });
 });
 
+medgeniusRoutes.post("/documents/:id/reprocess", async (c) => {
+  const authResult = await requireAuth(c);
+  if ("error" in authResult) return c.json({ error: authResult.error }, authResult.status);
+
+  const documentId = c.req.param("id");
+  const doc = await getDocument(c.env.DB, authResult.user.id, documentId);
+  if (!doc) return c.json({ error: "Document not found" }, 404);
+
+  try {
+    await reprocessDocument(c.env, documentId, authResult.user.id);
+    return c.json({ documentId, status: "pending", message: "Document queued for reprocessing." });
+  } catch (error) {
+    const message = sanitizeUserError(
+      error instanceof Error ? error.message : "Reprocess failed",
+      "processing"
+    );
+    return c.json({ error: message }, 500);
+  }
+});
+
 medgeniusRoutes.post("/documents/upload", async (c) => {
   const authResult = await requireAuth(c);
   if ("error" in authResult) return c.json({ error: authResult.error }, authResult.status);
@@ -192,6 +212,16 @@ medgeniusRoutes.post("/documents/upload", async (c) => {
         documentId: result.documentId,
         duplicate: true,
         message: "This file was already uploaded and processed.",
+      });
+    }
+
+    if (result.reprocessed) {
+      return c.json({
+        documentId: result.documentId,
+        duplicate: false,
+        reprocessed: true,
+        status: "pending",
+        message: "Previous parse was invalid — reprocessing with document parser.",
       });
     }
 

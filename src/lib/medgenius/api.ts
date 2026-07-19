@@ -123,6 +123,7 @@ export async function uploadDocument(
 ): Promise<{
   documentId: string;
   duplicate: boolean;
+  reprocessed?: boolean;
   status?: string;
   message?: string;
   credits?: CreditSummary;
@@ -143,6 +144,13 @@ export async function fetchDocumentStatus(
   documentId: string
 ): Promise<MedGeniusDocument> {
   return medgeniusFetch(`/documents/${documentId}`, token);
+}
+
+export async function reprocessDocument(
+  token: string | null,
+  documentId: string
+): Promise<{ documentId: string; status: string; message: string }> {
+  return medgeniusFetch(`/documents/${documentId}/reprocess`, token, { method: "POST" });
 }
 
 export async function fetchQuestions(

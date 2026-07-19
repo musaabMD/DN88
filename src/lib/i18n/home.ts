@@ -84,6 +84,13 @@ const en = {
   noFilesYetUpload: "No files yet — tap + to upload.",
   preparingStudyMaterials: "Preparing your study materials…",
   readingContentPending: "Reading content will appear when processing finishes.",
+  parsedSourceCorrupt:
+    "This PDF was saved as raw binary instead of readable text (parsed before document parsing was configured). Click Reprocess below, or re-upload the same file.",
+  reprocessDocument: "Reprocess file",
+  reprocessingDocument: "Reprocessing…",
+  reprocessStarted: "Reprocessing started — readable content will appear shortly.",
+  noQuestionsExtracted:
+    "No questions were extracted from this file. The PDF may not have parsed correctly — try re-uploading.",
   readSections: "Sections",
   readSource: "Parsed source",
   uploadCompleteProcessing: "Upload complete — AI is processing your document",
@@ -225,6 +232,13 @@ const ar = {
   noFilesYetUpload: "لا توجد ملفات بعد — اضغط + للرفع.",
   preparingStudyMaterials: "جاري تجهيز مواد الدراسة…",
   readingContentPending: "سيظهر محتوى القراءة عند انتهاء المعالجة.",
+  parsedSourceCorrupt:
+    "لم يُ parse الملف بشكل صحيح — حُفظت ملف PDF كبيانات ثنائية بدل نص قابل للقراءة. أعد الرفع بعد ضبط التحليل أو تواصل مع الدعم.",
+  reprocessDocument: "إعادة معالجة الملف",
+  reprocessingDocument: "جاري إعادة المعالجة…",
+  reprocessStarted: "بدأت إعادة المعالجة — سيظهر المحتوى قريباً.",
+  noQuestionsExtracted:
+    "لم تُستخرج أسئلة من هذا الملف. ربما لم يُ parse ملف PDF بشكل صحيح — جرّب إعادة الرفع.",
   readSections: "أقسام",
   readSource: "المصدر المُحلَّل",
   uploadCompleteProcessing: "اكتمل الرفع — الذكاء الاصطناعي يعالج مستندك",
