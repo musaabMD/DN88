@@ -27,7 +27,7 @@ import { useHomeAnalytics } from "@/hooks/useHomeAnalytics";
 import { useStudyStreak } from "@/hooks/useStudyStreak";
 import { CollectionsPanel } from "@/components/CollectionsPanel";
 import { QbankAccessGate } from "@/components/QbankAccessGate";
-import { getClerkToken } from "@/lib/clerk-token";
+import { getClerkToken, isClerkSignedIn } from "@/lib/clerk-token";
 import { useClerkEnabled, useClientMounted } from "@/hooks/useClerkEnabled";
 import { HomeLocaleProvider, useHomeLocale } from "@/components/home/HomeLocaleProvider";
 import { MedGeniusCreditsProvider } from "@/lib/medgenius/credits-context";
@@ -244,6 +244,8 @@ const styles = `
 /* header */
 .dn-header { position: fixed; top: 0; left: 0; right: 0; z-index: 40; background: #fff; border-bottom: 2px solid ${C.line}; }
 .dn-header-inner { max-width: 1200px; margin: 0 auto; height: 66px; padding: 0 18px; display: flex; align-items: center; }
+.dn-header-back { width: 40px; height: 40px; border: none; border-radius: 12px; background: ${C.wash}; color: ${C.ink}; cursor: pointer; display: grid; place-items: center; margin-right: 10px; }
+.dn-header-back:hover { background: #ECECEC; }
 .dn-brand { display: flex; align-items: center; gap: 10px; background: none; border: none; cursor: pointer; }
 .dn-logo { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; }
 .dn-brand-name { font-size: 21px; font-weight: 900; color: ${C.green}; letter-spacing: -.5px; }
@@ -252,18 +254,18 @@ const styles = `
 .dn-avatar { width: 36px; height: 36px; border-radius: 50%; color: #fff; font-weight: 900; font-size: 13px; display: grid; place-items: center; }
 
 /* main / hero */
-.dn-main { max-width: min(1120px, calc(100% - 36px)); margin: 0 auto; padding: 92px 18px 120px; }
+.dn-main { max-width: min(1120px, calc(100% - 36px)); margin: 0 auto; padding: 84px 18px 120px; }
 .dn-hero { text-align: center; margin-bottom: 18px; display: flex; flex-direction: column; align-items: center; }
-.dn-hero-compact { margin-bottom: 12px; align-items: stretch; text-align: left; width: 100%; }
-.dn-hero-row { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 520px; margin: 0 auto 10px; }
-.dn-hero-compact .dn-hero-ic { width: 44px; height: 44px; min-width: 44px; border-radius: 12px; margin-bottom: 0; }
-.dn-hero-compact .dn-hero-code { font-size: 13px; }
-.dn-hero-title { flex: 1; min-width: 0; font-size: 20px; font-weight: 900; letter-spacing: -.4px; margin: 0; color: ${C.ink}; line-height: 1.25; }
+.dn-hero-compact { margin-bottom: 16px; align-items: stretch; text-align: left; width: 100%; }
+.dn-hero-row { display: flex; align-items: center; gap: 14px; width: 100%; max-width: 580px; margin: 0 auto 12px; }
+.dn-hero-compact .dn-hero-ic { width: 58px; height: 58px; min-width: 58px; border-radius: 16px; margin-bottom: 0; box-shadow: 0 5px 0 rgba(0,0,0,.12); }
+.dn-hero-compact .dn-hero-code { font-size: 15px; }
+.dn-hero-title { flex: 1; min-width: 0; font-size: 28px; font-weight: 900; letter-spacing: -.6px; margin: 0; color: ${C.ink}; line-height: 1.1; }
 .dn-hero-ic { width: 52px; height: 52px; min-width: 52px; border-radius: 16px; display: grid; place-items: center; margin-bottom: 10px; padding: 0 6px; overflow: hidden; }
 .dn-hero-code { font-size: 18px; font-weight: 900; color: #fff; letter-spacing: -0.5px; line-height: 1; white-space: nowrap; }
 .dn-title { font-size: 34px; font-weight: 900; letter-spacing: -1px; margin: 0 0 4px; color: ${C.ink}; }
 .dn-hero-sub { color: ${C.sub}; font-weight: 700; margin: 0 0 12px; font-size: 15px; }
-.dn-hero-compact .dn-search { margin-top: 0; max-width: 520px; }
+.dn-hero-compact .dn-search { margin-top: 0; max-width: 580px; }
 .dn-crumb-back { display: inline-flex; align-items: center; gap: 6px; background: none; border: none; cursor: pointer; color: ${C.sub}; font-weight: 800; font-size: 14px; margin-bottom: 8px; padding: 6px 0; min-height: 44px; }
 .dn-crumb-back:hover { color: ${C.ink}; }
 .dn-exam-main { width: 100%; }
@@ -282,20 +284,23 @@ const styles = `
 
 /* modal */
 .dn-modal-wrap { position: fixed; inset: 0; z-index: 90; background: rgba(0,0,0,.28); display: grid; place-items: center; padding: 20px; }
-.dn-modal { width: 100%; max-width: 400px; background: #fff; border-radius: 22px; padding: 22px; }
+.dn-modal { width: 100%; max-width: 520px; background: #fff; border-radius: 24px; padding: 26px; box-shadow: 0 24px 70px rgba(15,23,42,.18); }
 .dn-modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.dn-modal-head b { font-size: 19px; font-weight: 900; }
-.dn-drop { border: 2px dashed ${C.line}; border-radius: 16px; padding: 30px; display: flex; flex-direction: column; align-items: center; gap: 8px; color: ${C.sub}; font-weight: 700; font-size: 14px; margin-bottom: 14px; }
+.dn-modal-head b { font-size: 24px; font-weight: 900; }
+.dn-drop { width: 100%; border: 2px dashed ${C.line}; border-radius: 20px; padding: 46px 24px; display: flex; flex-direction: column; align-items: center; gap: 10px; color: ${C.sub}; font-weight: 800; font-size: 16px; margin-bottom: 16px; background: #FAFAFA; cursor: pointer; transition: border-color .12s, background .12s, color .12s; }
+.dn-drop:hover, .dn-drop.dragging { border-color: ${C.blue}; background: #F0FAFF; color: ${C.blueDark}; }
 .dn-modal-input { width: 100%; border: 2px solid ${C.line}; border-radius: 14px; padding: 12px 14px; font-size: 15px; font-weight: 700; color: ${C.ink}; outline: none; margin-bottom: 16px; }
 .dn-modal-input:focus { border-color: ${C.blue}; }
+.dn-modal-select { width: 100%; border: 2px solid ${C.line}; border-radius: 14px; padding: 12px 14px; font-size: 15px; font-weight: 800; color: ${C.ink}; outline: none; margin-bottom: 12px; background: #fff; }
+.dn-modal-select:focus { border-color: ${C.blue}; }
 
 /* filter bar */
-.dn-filterbar { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
-.dn-periods { display: inline-flex; gap: 2px; background: #fff; border: 1px solid ${C.line}; border-radius: 10px; padding: 2px; flex-shrink: 0; }
-.dn-period { border: none; cursor: pointer; padding: 4px 8px; border-radius: 7px; font-size: 11px; font-weight: 800; transition: all .1s; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 3px; line-height: 1; }
-.dn-period-icon { padding: 4px 6px; min-width: 28px; }
-.dn-selectall { display: inline-flex; align-items: center; gap: 5px; font-weight: 800; font-size: 11px; color: ${C.sub}; cursor: pointer; background: none; border: none; white-space: nowrap; flex-shrink: 0; }
-.dn-check { width: 16px; height: 16px; border: 2px solid ${C.line}; border-radius: 4px; display: grid; place-items: center; transition: all .1s; }
+.dn-filterbar { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
+.dn-periods { display: inline-flex; gap: 3px; background: #fff; border: 1px solid ${C.line}; border-radius: 14px; padding: 3px; flex-shrink: 0; box-shadow: 0 2px 8px rgba(15,23,42,.04); }
+.dn-period { border: none; cursor: pointer; padding: 8px 13px; border-radius: 10px; font-size: 13px; font-weight: 900; transition: all .1s; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 5px; line-height: 1; }
+.dn-period-icon { padding: 8px 10px; min-width: 36px; }
+.dn-selectall { display: inline-flex; align-items: center; gap: 7px; font-weight: 900; font-size: 13px; color: ${C.sub}; cursor: pointer; background: none; border: none; white-space: nowrap; flex-shrink: 0; }
+.dn-check { width: 18px; height: 18px; border: 2px solid ${C.line}; border-radius: 5px; display: grid; place-items: center; transition: all .1s; }
 
 /* rows */
 .dn-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -584,21 +589,24 @@ const styles = `
 @media (max-width: 640px) {
   .dn-main { max-width: 100%; padding: 64px 12px 100px; }
   .dn-header-inner { height: 52px; padding: 0 12px; }
-  .dn-crumb-back { font-size: 13px; margin-bottom: 2px; min-height: 36px; }
+  .dn-header-back { width: 34px; height: 34px; border-radius: 10px; margin-right: 8px; }
   .dn-hero { margin-bottom: 10px; }
-  .dn-hero-row { max-width: 100%; margin-bottom: 8px; gap: 8px; }
-  .dn-hero-compact .dn-hero-ic { width: 38px; height: 38px; min-width: 38px; border-radius: 10px; }
-  .dn-hero-compact .dn-hero-code { font-size: 11px; }
-  .dn-hero-title { font-size: 17px; }
+  .dn-hero-row { max-width: 100%; margin-bottom: 10px; gap: 10px; }
+  .dn-hero-compact .dn-hero-ic { width: 46px; height: 46px; min-width: 46px; border-radius: 13px; }
+  .dn-hero-compact .dn-hero-code { font-size: 12px; }
+  .dn-hero-title { font-size: 21px; }
   .dn-hero-compact .dn-search { max-width: 100%; }
   .dn-search { max-width: 100%; padding: 10px 12px; border-radius: 12px; margin-top: 0; border-width: 1px; }
   .dn-search input { font-size: 15px; }
-  .dn-filterbar { justify-content: center; gap: 8px; margin-bottom: 8px; }
-  .dn-periods { border-radius: 9px; padding: 2px; }
-  .dn-period { padding: 4px 7px; font-size: 10px; }
-  .dn-period-icon { padding: 4px 5px; min-width: 26px; }
-  .dn-selectall { font-size: 10px; gap: 4px; }
-  .dn-check { width: 14px; height: 14px; }
+  .dn-filterbar { justify-content: center; gap: 10px; margin-bottom: 12px; }
+  .dn-periods { border-radius: 12px; padding: 3px; }
+  .dn-period { padding: 7px 9px; font-size: 12px; }
+  .dn-period-icon { padding: 7px 8px; min-width: 32px; }
+  .dn-selectall { font-size: 12px; gap: 5px; }
+  .dn-check { width: 16px; height: 16px; }
+  .dn-modal { max-width: 100%; padding: 22px; }
+  .dn-modal-head b { font-size: 21px; }
+  .dn-drop { padding: 38px 18px; font-size: 15px; }
   .dn-row { flex-wrap: nowrap; gap: 8px; padding: 8px; border-radius: 12px; align-items: center; }
   .dn-upvote { width: 38px; border-radius: 9px; padding: 3px 0; }
   .dn-upvote b { font-size: 10px; }
@@ -684,6 +692,7 @@ function DrNoteHomeInner({ initialExamId }: { initialExamId?: string }) {
   const [exam, setExam] = useState<Exam | null>(initialExam);
   const [file, setFile] = useState<ExamFile | null>(null);
   const clerkEnabled = useClerkEnabled();
+  const mounted = useClientMounted();
   const streakData = useStudyStreak(page !== "home");
   const [docsRefreshKey, setDocsRefreshKey] = useState(0);
 
@@ -732,12 +741,25 @@ function DrNoteHomeInner({ initialExamId }: { initialExamId?: string }) {
           {page !== "study" && (
             <header className="dn-header">
               <div className="dn-header-inner">
+                {page === "exam" && (
+                  <button
+                    type="button"
+                    className="dn-header-back"
+                    onClick={() => setPage("home")}
+                    aria-label={m.allExamsBack}
+                    title={m.allExamsBack}
+                  >
+                    <ArrowLeft size={21} strokeWidth={2.8} />
+                  </button>
+                )}
                 <button type="button" className="dn-brand" onClick={() => setPage("home")} aria-label={m.drnoteHome}>
                   <DrNoteLogo showWordmark forceWordmark />
                 </button>
                 <div className="dn-header-right">
                   <CreditsBadge />
-                  <span className="dn-streak"><Flame size={18} color={C.yellow} fill={C.yellow} strokeWidth={2} /><b>{streakData.streakDays || 0}</b></span>
+                  {mounted && clerkEnabled && isClerkSignedIn() && (
+                    <span className="dn-streak"><Flame size={18} color={C.yellow} fill={C.yellow} strokeWidth={2} /><b>{streakData.streakDays || 0}</b></span>
+                  )}
                   <UserAuthControls compact />
                 </div>
               </div>
@@ -979,11 +1001,18 @@ function AddFile({
   const { m } = useHomeLocale();
   const [name, setName] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [selectedExamId, setSelectedExamId] = useState(examId ?? EXAMS[0]?.id ?? "smle");
+  const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const clerkEnabled = useClerkEnabled();
   const { refresh: refreshCredits } = useMedGeniusCreditsContext();
+
+  const pickFile = (picked: File | null) => {
+    setFile(picked);
+    if (picked && !name.trim()) setName(picked.name.replace(/\.[^.]+$/, ""));
+  };
 
   const handleUpload = async () => {
     if (!name.trim() || uploading) return;
@@ -1003,7 +1032,7 @@ function AddFile({
       const result = await uploadDocument(token, {
         file,
         name: name.trim(),
-        examId,
+        examId: selectedExamId,
       });
       onDone(
         result.duplicate
@@ -1025,20 +1054,45 @@ function AddFile({
   return (
     <div className="dn-modal-wrap" onClick={onClose}>
       <div className="dn-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="dn-modal-head"><b>{m.addFile}</b><button className="dn-fs-close" onClick={onClose} aria-label={m.close}><X size={18} strokeWidth={2.8} /></button></div>
-        <button type="button" className="dn-drop" onClick={() => inputRef.current?.click()}>
-          <Upload size={26} color={C.faint} strokeWidth={2.2} />
-          <span>{file ? file.name : m.dropPdf}</span>
+        <div className="dn-modal-head"><b>{examId ? m.addFile : "Add exam files"}</b><button className="dn-fs-close" onClick={onClose} aria-label={m.close}><X size={18} strokeWidth={2.8} /></button></div>
+        {!examId && (
+          <select
+            className="dn-modal-select"
+            value={selectedExamId}
+            onChange={(e) => setSelectedExamId(e.target.value)}
+            aria-label="Exam"
+          >
+            {EXAMS.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.code} - {m.examName(item.id, item.name)}
+              </option>
+            ))}
+          </select>
+        )}
+        <button
+          type="button"
+          className={`dn-drop${dragging ? " dragging" : ""}`}
+          onClick={() => inputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragging(false);
+            pickFile(e.dataTransfer.files?.[0] ?? null);
+          }}
+        >
+          <Upload size={36} color="currentColor" strokeWidth={2.2} />
+          <span>{file ? file.name : "Drop any file here or tap to browse"}</span>
         </button>
         <input
           ref={inputRef}
           type="file"
-          accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.md,image/*"
           className="sr-only"
           onChange={(e) => {
-            const picked = e.target.files?.[0] ?? null;
-            setFile(picked);
-            if (picked && !name.trim()) setName(picked.name.replace(/\.[^.]+$/, ""));
+            pickFile(e.target.files?.[0] ?? null);
           }}
         />
         <input className="dn-modal-input" value={name} onChange={(e) => setName(e.target.value)} placeholder={m.fileNamePlaceholder} />
@@ -1111,7 +1165,6 @@ function ExamPage(props: {
 
   return (
     <main className="dn-main dn-exam-main">
-      <button type="button" className="dn-crumb-back" onClick={onBack}><ArrowLeft size={18} strokeWidth={2.6} /> {m.allExamsBack}</button>
       <section className="dn-hero dn-hero-compact">
         <div className="dn-hero-row">
           <span className="dn-hero-ic" style={{ background: `linear-gradient(135deg, ${exam.from} 0%, ${exam.to} 100%)` }} aria-hidden>
