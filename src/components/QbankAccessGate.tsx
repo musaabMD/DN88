@@ -9,7 +9,7 @@ import { useDrNoteAccess } from "@/hooks/useDrNoteAccess";
 import { useClerkEnabled, useClientMounted } from "@/hooks/useClerkEnabled";
 import { HOME_PATH, UPGRADE_PATH } from "@/lib/routes";
 
-function QbankLocked({ signedIn }: { signedIn: boolean }) {
+function QbankLocked() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-lg flex-col bg-white px-4 pb-14 sm:px-6">
       <header className="fixed inset-x-0 top-0 z-40 border-b border-slate-100 bg-white/95 backdrop-blur-md">
@@ -28,15 +28,13 @@ function QbankLocked({ signedIn }: { signedIn: boolean }) {
         </div>
         <h1 className="mt-4 text-3xl font-black tracking-tight text-slate-900">Qbank</h1>
         <p className="mt-2 max-w-sm text-sm font-bold leading-relaxed text-slate-500">
-          {signedIn
-            ? "Upgrade to Student or Pro to unlock practice questions, flashcards, and full exam sets."
-            : "Sign in and choose a plan to access the question bank."}
+          Upgrade to Student or Pro to unlock practice questions, flashcards, and full exam sets.
         </p>
         <Link
-          href={signedIn ? UPGRADE_PATH : HOME_PATH}
+          href={UPGRADE_PATH}
           className="mt-8 rounded-xl border-b-4 border-indigo-800 bg-indigo-600 px-6 py-3 text-sm font-extrabold text-white transition-colors hover:bg-indigo-500"
         >
-          {signedIn ? "View plans" : "Go to home"}
+          View plans
         </Link>
       </div>
     </main>
@@ -57,7 +55,7 @@ export function QbankAccessGate({ children }: { children: ReactNode }) {
   }
 
   if (!clerkEnabled || !access.canUseQbank) {
-    return <QbankLocked signedIn={access.isSignedIn} />;
+    return <QbankLocked />;
   }
 
   return <>{children}</>;
