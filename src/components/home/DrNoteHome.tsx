@@ -10,6 +10,7 @@ import {
   ListChecks, Send, Upload, Command, Maximize2, Minimize2, StickyNote, LayoutList, Columns2, Image as ImageIcon, BarChart2, RotateCcw,
 } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
+import { DocumentPdfViewer } from "@/components/medgenius/DocumentPdfViewer";
 import { UserAuthControls } from "@/components/UserAuthControls";
 import { askMedGeniusAi } from "@/lib/medgenius/chat";
 import { uploadDocument, MedGeniusApiError, reprocessDocument as reprocessDocumentApi } from "@/lib/medgenius/api";
@@ -74,6 +75,8 @@ interface ExamFile {
   color: string;
   votes: Record<Exclude<Filter, "bookmarked">, number>;
   documentId?: string;
+  originalFilename?: string;
+  mimeType?: string;
   status?: string;
   progress?: number;
   isLive?: boolean;
@@ -394,6 +397,18 @@ const styles = `
 .dn-read-view { border: 2px solid ${C.line}; background: #fff; border-radius: 10px; padding: 6px 12px; font-weight: 800; font-size: 12px; color: ${C.sub}; cursor: pointer; }
 .dn-read-view.on { border-color: ${C.blue}; color: ${C.blueDark}; background: #DDF4FF; }
 .dn-read-source { max-width: 680px; margin: 0 auto; padding: 20px 18px; font-size: 13px; line-height: 1.55; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; white-space: pre-wrap; word-break: break-word; color: ${C.ink}; }
+.dn-read-banner { max-width: 680px; margin: 12px auto 0; padding: 12px 14px; border-radius: 12px; border: 1px solid ${C.line}; background: ${C.wash}; font-size: 13px; line-height: 1.45; color: ${C.sub}; }
+.dn-pdf-wrap { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.dn-pdf-page { position: relative; flex: 1; overflow: auto; display: flex; justify-content: center; padding: 12px; background: ${C.wash}; }
+.dn-pdf-canvas { display: block; box-shadow: 0 2px 16px rgba(0,0,0,.12); background: #fff; }
+.dn-pdf-text-layer { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); overflow: hidden; line-height: 1; pointer-events: auto; }
+.dn-pdf-text-layer span, .dn-pdf-text-layer br { color: transparent; position: absolute; white-space: pre; transform-origin: 0 0; user-select: text; cursor: text; }
+.dn-pdf-text-layer ::selection { background: rgba(88, 204, 2, 0.35); }
+.dn-pdf-pager { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 10px; border-top: 1px solid ${C.line}; background: #fff; font-size: 13px; font-weight: 700; color: ${C.sub}; }
+.dn-pdf-pager button { border: 1px solid ${C.line}; background: #fff; border-radius: 8px; width: 34px; height: 34px; display: grid; place-items: center; cursor: pointer; }
+.dn-pdf-pager button:disabled { opacity: .4; cursor: not-allowed; }
+.dn-pdf-state { padding: 48px 20px; text-align: center; color: ${C.sub}; font-size: 14px; }
+.dn-pdf-error { color: ${C.red}; }
 .dn-progress { height: 8px; background: ${C.wash}; }
 .dn-progress span { display: block; height: 100%; border-radius: 0 6px 6px 0; transition: width .3s; }
 .dn-read-scroll { flex: 1; overflow-y: auto; }
@@ -1702,6 +1717,62 @@ function ChatPanel({ documentId, documentContext, quote, clearQuote, msgs, setMs
 }
 
 /* ---- Read ---- */
+type ReadView = "pdf" | "sections" | "source";
+
+function fileHasPdfOriginal(file: ExamFile): boolean {
+  if (!file.documentId) return false;
+  if (file.mimeType === "application/pdf") return true;
+  if (file.originalFilename?.toLowerCase().endsWith(".pdf")) return true;
+  return true;
+}
+
+function ReadToolbar({
+  view,
+  setView,
+  showPdf,
+  showSource,
+  m,
+}: {
+  view: ReadView;
+  setView: (v: ReadView) => void;
+  showPdf: boolean;
+  showSource: boolean;
+  m: ReturnType<typeof useHomeLocale>["m"];
+}) {
+  return (
+    <div className="dn-read-toolbar">
+      {showPdf && (
+        <button
+          type="button"
+          className={`dn-read-view${view === "pdf" ? " on" : ""}`}
+          aria-current={view === "pdf" ? "true" : undefined}
+          onClick={() => setView("pdf")}
+        >
+          {m.readPdf}
+        </button>
+      )}
+      <button
+        type="button"
+        className={`dn-read-view${view === "sections" ? " on" : ""}`}
+        aria-current={view === "sections" ? "true" : undefined}
+        onClick={() => setView("sections")}
+      >
+        {m.readSections}
+      </button>
+      {showSource && (
+        <button
+          type="button"
+          className={`dn-read-view${view === "source" ? " on" : ""}`}
+          aria-current={view === "source" ? "true" : undefined}
+          onClick={() => setView("source")}
+        >
+          {m.readSource}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function ReadFull({
   file,
   pages,
@@ -1719,35 +1790,45 @@ function ReadFull({
 }) {
   const { m } = useHomeLocale();
   const [i, setI] = useState(0);
-  const [view, setView] = useState<"sections" | "source">("sections");
+  const showPdf = fileHasPdfOriginal(file);
+  const showSource = Boolean(rawMarkdown);
   const corruptSource = Boolean(rawMarkdown && isCorruptParsedMarkdown(rawMarkdown));
+  const [view, setView] = useState<ReadView>(() => (showPdf ? "pdf" : "sections"));
+
   useEffect(() => {
     setI(0);
-  }, [file.id, pages.length]);
+    setView(showPdf ? "pdf" : "sections");
+  }, [file.id, pages.length, showPdf]);
 
-  if (corruptSource) {
+  const corruptBanner =
+    corruptSource && canReprocess && onReprocess ? (
+      <div className="dn-read-banner">
+        <p style={{ margin: 0 }}>{m.parsedSourceCorrupt}</p>
+        <button
+          type="button"
+          className="dn-btn primary"
+          style={{ marginTop: 10 }}
+          onClick={() => void onReprocess()}
+          disabled={reprocessing}
+        >
+          {reprocessing ? m.reprocessingDocument : m.reprocessDocument}
+        </button>
+      </div>
+    ) : corruptSource ? (
+      <div className="dn-read-banner"><p style={{ margin: 0 }}>{m.parsedSourceCorrupt}</p></div>
+    ) : null;
+
+  if (view === "pdf" && file.documentId && showPdf) {
     return (
       <div className="dn-read-fs">
-        <div className="dn-empty" style={{ paddingTop: 48, maxWidth: 520, margin: "0 auto" }}>
-          <BookOpen size={26} color={C.faint} />
-          <p style={{ marginTop: 12, lineHeight: 1.5 }}>{m.parsedSourceCorrupt}</p>
-          {canReprocess && onReprocess && (
-            <button
-              type="button"
-              className="dn-btn primary"
-              style={{ marginTop: 16 }}
-              onClick={() => void onReprocess()}
-              disabled={reprocessing}
-            >
-              {reprocessing ? m.reprocessingDocument : m.reprocessDocument}
-            </button>
-          )}
-        </div>
+        {corruptBanner}
+        <ReadToolbar view={view} setView={setView} showPdf={showPdf} showSource={showSource} m={m} />
+        <DocumentPdfViewer documentId={file.documentId} pageCount={file.pages} />
       </div>
     );
   }
 
-  if (pages.length === 0 && !rawMarkdown) {
+  if (pages.length === 0 && !rawMarkdown && !showPdf) {
     return (
       <div className="dn-read-fs">
         <div className="dn-empty" style={{ paddingTop: 48 }}><BookOpen size={26} color={C.faint} /><p>{m.readingContentPending}</p></div>
@@ -1758,10 +1839,8 @@ function ReadFull({
   if (view === "source" && rawMarkdown) {
     return (
       <div className="dn-read-fs">
-        <div className="dn-read-toolbar">
-          <button type="button" className="dn-read-view on" onClick={() => setView("sections")}>{m.readSections}</button>
-          <button type="button" className="dn-read-view on" aria-current="true">{m.readSource}</button>
-        </div>
+        {corruptBanner}
+        <ReadToolbar view={view} setView={setView} showPdf={showPdf} showSource={showSource} m={m} />
         <div className="dn-read-scroll">
           <pre className="dn-read-source">{rawMarkdown}</pre>
         </div>
@@ -1772,6 +1851,8 @@ function ReadFull({
   if (pages.length === 0) {
     return (
       <div className="dn-read-fs">
+        {corruptBanner}
+        <ReadToolbar view={view} setView={setView} showPdf={showPdf} showSource={showSource} m={m} />
         <div className="dn-empty" style={{ paddingTop: 48 }}><BookOpen size={26} color={C.faint} /><p>{m.readingContentPending}</p></div>
       </div>
     );
@@ -1781,12 +1862,8 @@ function ReadFull({
   const pct = ((i + 1) / pages.length) * 100;
   return (
     <div className="dn-read-fs">
-      {rawMarkdown && (
-        <div className="dn-read-toolbar">
-          <button type="button" className="dn-read-view on" aria-current="true">{m.readSections}</button>
-          <button type="button" className="dn-read-view" onClick={() => setView("source")}>{m.readSource}</button>
-        </div>
-      )}
+      {corruptBanner}
+      <ReadToolbar view={view} setView={setView} showPdf={showPdf} showSource={showSource} m={m} />
       <div className="dn-progress"><span style={{ width: `${pct}%`, background: C.green }} /></div>
       <div className="dn-read-scroll">
         <article className="dn-read-col">

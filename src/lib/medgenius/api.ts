@@ -19,6 +19,7 @@ export type MedGeniusDocument = {
   examId: string | null;
   name: string;
   originalFilename?: string;
+  mimeType?: string;
   pageCount: number;
   status: string;
   progress: number;
@@ -151,6 +152,32 @@ export async function reprocessDocument(
   documentId: string
 ): Promise<{ documentId: string; status: string; message: string }> {
   return medgeniusFetch(`/documents/${documentId}/reprocess`, token, { method: "POST" });
+}
+
+export async function fetchDocumentFileBlob(
+  token: string | null,
+  documentId: string
+): Promise<Blob> {
+  if (!token) {
+    throw new MedGeniusApiError("Sign in required", 401, "AUTH_REQUIRED");
+  }
+
+  const response = await fetch(`${getApiBaseUrl()}/api/medgenius/documents/${documentId}/file`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    let message = "Failed to load file";
+    try {
+      const payload = (await response.json()) as { error?: string };
+      message = payload.error ?? message;
+    } catch {
+      /* binary error body */
+    }
+    throw new MedGeniusApiError(sanitizeUserError(message, "default"), response.status);
+  }
+
+  return response.blob();
 }
 
 export async function fetchQuestions(

@@ -25,6 +25,8 @@ export type HomeExamFile = {
   color: string;
   votes: { today: number; week: number; month: number; all: number };
   documentId?: string;
+  originalFilename?: string;
+  mimeType?: string;
   status?: string;
   progress?: number;
   isLive?: boolean;
@@ -83,6 +85,8 @@ export function documentToExamFile(doc: MedGeniusDocument, index: number): HomeE
     id: doc.id,
     documentId: doc.id,
     name: doc.name,
+    originalFilename: doc.originalFilename,
+    mimeType: doc.mimeType,
     author: statusLabel(doc.status),
     pages: doc.pageCount || 1,
     color: FILE_COLORS[index % FILE_COLORS.length] ?? "#58CC02",

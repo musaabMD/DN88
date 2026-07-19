@@ -3,6 +3,7 @@ import {
   incrementDocumentUsage,
   spendCredits,
 } from "./credits";
+import { isCorruptParsedMarkdown } from "./markdown-quality";
 import {
   computeFileHash,
   parseDocumentWithContextDev,
@@ -15,7 +16,6 @@ import {
   storeMarkdown,
   updateDocumentStatus,
 } from "./documents";
-import { isCorruptParsedMarkdown } from "./markdown-quality";
 import {
   detectDuplicateGroups,
   insertQuestions,
@@ -170,7 +170,7 @@ async function runParseStage(
     mimeType: doc.mime_type,
     options: {
       includeLinks: true,
-      includeImages: false,
+      includeImages: true,
       shortenBase64Images: true,
       useMainContentOnly: false,
     },
@@ -246,6 +246,18 @@ async function runExtractQuestionsStage(
 
   const markdown = await getMarkdown(env.USER_CONTENT, doc.r2_markdown_key);
   if (!markdown) throw new Error("Markdown content missing");
+
+  if (isCorruptParsedMarkdown(markdown)) {
+    await updateDocumentStatus(
+      env.DB,
+      documentId,
+      "completed",
+      100,
+      "Document text could not be read. Reprocess the file from the Read tab."
+    );
+    await completeJob(env, jobId, 100);
+    return;
+  }
 
   try {
     const jsonContent = await extractQuestionsFromMarkdown(

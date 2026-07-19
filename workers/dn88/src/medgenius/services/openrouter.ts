@@ -60,38 +60,105 @@ export async function chatCompletion(
   return { content, tokensUsed, model };
 }
 
-export async function extractQuestionsFromMarkdown(
-  apiKey: string,
-  markdown: string,
-  documentName: string
-): Promise<string> {
-  const truncated =
-    markdown.length > 80_000 ? `${markdown.slice(0, 80_000)}\n\n[truncated]` : markdown;
+const DEFAULT_MODEL = "google/gemini-2.0-flash-001";
+const REASONING_MODEL = "anthropic/claude-3.5-sonnet";
+const EXTRACTION_MODEL = "google/gemini-2.5-flash-preview-05-20";
 
-  const result = await chatCompletion(
-    apiKey,
-    [
-      {
-        role: "system",
-        content: `You extract medical exam questions from study materials. Return valid JSON only with shape:
+const EXTRACTION_SYSTEM_PROMPT = `You extract medical exam questions from study materials. Return valid JSON only with shape:
 {"questions":[{"originalText":"...","cleanedText":"...","options":["A","B","C","D"],"correctAnswer":0,"confidence":0.9,"explanation":"...","topic":"Cardiology","subtopic":"ACS","difficulty":"medium","page":1,"tags":["high-yield"]}]}
 Rules:
 - Preserve original wording in originalText; put polished board-style text in cleanedText
 - correctAnswer is 0-based index or null if unknown
 - confidence 0-1 for answer certainty
 - Mark conflicting answers with confidence < 0.5
-- Extract ALL recall-style questions, MCQs, and vignettes
-- Never invent questions not present in the source`,
-      },
+- Extract ALL numbered MCQs (1. 2. 3.), A/B/C/D options, recall Q&A, and clinical vignettes
+- Include questions even when the answer key is missing (set correctAnswer null, confidence low)
+- Never invent questions not present in the source chunk`;
+
+export function chunkMarkdownForExtraction(markdown: string, maxChunkSize = 18_000): string[] {
+  if (markdown.length <= maxChunkSize) return [markdown];
+
+  const sections = markdown.split(/\n(?=##?\s+)/).filter((s) => s.trim());
+  if (sections.length <= 1) {
+    const chunks: string[] = [];
+    for (let i = 0; i < markdown.length; i += maxChunkSize) {
+      chunks.push(markdown.slice(i, i + maxChunkSize));
+    }
+    return chunks;
+  }
+
+  const chunks: string[] = [];
+  let current = "";
+  for (const section of sections) {
+    if (current.length + section.length > maxChunkSize && current) {
+      chunks.push(current);
+      current = section;
+    } else {
+      current = current ? `${current}\n${section}` : section;
+    }
+  }
+  if (current) chunks.push(current);
+  return chunks;
+}
+
+async function extractQuestionsFromChunk(
+  apiKey: string,
+  chunk: string,
+  documentName: string,
+  chunkIndex: number,
+  chunkTotal: number
+): Promise<string> {
+  const result = await chatCompletion(
+    apiKey,
+    [
+      { role: "system", content: EXTRACTION_SYSTEM_PROMPT },
       {
         role: "user",
-        content: `Document: ${documentName}\n\n${truncated}`,
+        content: `Document: ${documentName}\nChunk ${chunkIndex} of ${chunkTotal}\n\n${chunk}`,
       },
     ],
-    { jsonMode: true, maxTokens: 8192 }
+    { model: EXTRACTION_MODEL, jsonMode: true, maxTokens: 8192, temperature: 0.2 }
   );
-
   return result.content;
+}
+
+export async function extractQuestionsFromMarkdown(
+  apiKey: string,
+  markdown: string,
+  documentName: string
+): Promise<string> {
+  const chunks = chunkMarkdownForExtraction(markdown);
+  const merged = new Map<string, import("../types").ExtractedQuestion>();
+
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    if (!chunk) continue;
+    try {
+      const jsonContent = await extractQuestionsFromChunk(
+        apiKey,
+        chunk,
+        documentName,
+        i + 1,
+        chunks.length
+      );
+      const parsed = JSON.parse(jsonContent) as {
+        questions?: import("../types").ExtractedQuestion[];
+      };
+      if (!Array.isArray(parsed.questions)) continue;
+      for (const q of parsed.questions) {
+        const key = q.originalText?.trim().toLowerCase().slice(0, 240);
+        if (key && !merged.has(key)) merged.set(key, q);
+      }
+    } catch (error) {
+      console.error("Question extraction chunk failed", {
+        documentName,
+        chunk: i + 1,
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  return JSON.stringify({ questions: [...merged.values()] });
 }
 
 export async function tutorReply(

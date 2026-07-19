@@ -113,12 +113,43 @@ medgeniusRoutes.get("/documents/:id", async (c) => {
     id: doc.id,
     examId: doc.exam_id,
     name: doc.name,
+    originalFilename: doc.original_filename,
+    mimeType: doc.mime_type,
     pageCount: doc.page_count,
     status: doc.processing_status,
     progress: doc.processing_progress,
     error: doc.processing_error ? sanitizeUserError(doc.processing_error, "processing") : null,
     processedAt: doc.processed_at,
     createdAt: doc.created_at,
+  });
+});
+
+medgeniusRoutes.get("/documents/:id/file", async (c) => {
+  const authResult = await requireAuth(c);
+  if ("error" in authResult) return c.json({ error: authResult.error }, authResult.status);
+
+  const doc = await getDocument(c.env.DB, authResult.user.id, c.req.param("id"));
+  if (!doc?.r2_original_key) return c.json({ error: "Original file not available" }, 404);
+
+  const object = await c.env.USER_CONTENT.get(doc.r2_original_key);
+  if (!object) return c.json({ error: "File not found" }, 404);
+
+  const body = await object.arrayBuffer();
+  const filename = doc.original_filename.replace(/[^\w.\-()+\s]/g, "_") || "document";
+  const contentType =
+    doc.mime_type && doc.mime_type !== "application/octet-stream"
+      ? doc.mime_type
+      : filename.toLowerCase().endsWith(".pdf")
+        ? "application/pdf"
+        : "application/octet-stream";
+
+  return new Response(body, {
+    headers: {
+      "Content-Type": contentType,
+      "Content-Disposition": `inline; filename="${filename}"`,
+      "Cache-Control": "private, max-age=3600",
+      "X-Content-Type-Options": "nosniff",
+    },
   });
 });
 

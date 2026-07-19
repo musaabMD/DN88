@@ -92,7 +92,8 @@ const en = {
   noQuestionsExtracted:
     "No questions were extracted from this file. The PDF may not have parsed correctly — try re-uploading.",
   readSections: "Sections",
-  readSource: "Parsed source",
+  readPdf: "PDF",
+  readSource: "Parsed text",
   uploadCompleteProcessing: "Upload complete — AI is processing your document",
   fileAlreadyProcessed: "This file was already processed",
   chooseFile: "Choose file",
@@ -240,7 +241,8 @@ const ar = {
   noQuestionsExtracted:
     "لم تُستخرج أسئلة من هذا الملف. ربما لم يُ parse ملف PDF بشكل صحيح — جرّب إعادة الرفع.",
   readSections: "أقسام",
-  readSource: "المصدر المُحلَّل",
+  readPdf: "PDF",
+  readSource: "النص المُ parse",
   uploadCompleteProcessing: "اكتمل الرفع — الذكاء الاصطناعي يعالج مستندك",
   fileAlreadyProcessed: "تمت معالجة هذا الملف مسبقًا",
   chooseFile: "اختر ملفًا",
