@@ -46,7 +46,7 @@ const en = {
   heroTitle1: "The fastest way to",
   heroTitle2: "ace your exam.",
   heroSubtitle:
-    "Turn your files into a question bank—or use shared ones. Test yourself, check your level, and study with summaries and flashcards.",
+    "Turn your files into a question bank or use shared ones. Test yourself and study with summaries and flashcards.",
   searchExamsPlaceholder: "Search SMLE, pharmacy, family medicine…",
   browse: "Browse",
   allExams: "All exams",

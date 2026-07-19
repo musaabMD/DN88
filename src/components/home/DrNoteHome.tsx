@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { SignedIn } from "@clerk/clerk-react";
 import { useMemo, useState, useEffect, useRef, useCallback, type CSSProperties, type ElementType, type ReactNode, type Dispatch, type SetStateAction } from "react";
 import {
   Search, ChevronUp, ChevronRight, ChevronLeft, Bookmark,
@@ -26,14 +27,14 @@ import { useHomeAnalytics } from "@/hooks/useHomeAnalytics";
 import { useStudyStreak } from "@/hooks/useStudyStreak";
 import { CollectionsPanel } from "@/components/CollectionsPanel";
 import { getClerkToken } from "@/lib/clerk-token";
-import { useClerkEnabled } from "@/hooks/useClerkEnabled";
+import { useClerkEnabled, useClientMounted } from "@/hooks/useClerkEnabled";
 import { HomeLocaleProvider, useHomeLocale } from "@/components/home/HomeLocaleProvider";
 import { MedGeniusCreditsProvider } from "@/lib/medgenius/credits-context";
 import { CreditsBadge, CreditsChatHint } from "@/components/medgenius/CreditsUsage";
 import { useMedGeniusCreditsContext } from "@/lib/medgenius/credits-context";
 import type { AppLocale } from "@/lib/locale";
 import { saveCurrentExamId } from "@/lib/current-exam";
-import { examPath } from "@/lib/routes";
+import { examPath, PRICING_PATH } from "@/lib/routes";
 
 /* ------------------------------------------------------------------ */
 /*  Tokens                                                             */
@@ -802,9 +803,6 @@ function ExamCard({ exam, onOpen }: { exam: Exam; onOpen: (e: Exam) => void }) {
         <h3 className="font-display text-lg font-extrabold leading-tight tracking-tight sm:text-xl">
           {m.examName(exam.id, exam.name)}
         </h3>
-        <p className="mt-1.5 text-xs font-semibold text-white/75 sm:text-sm">
-          {exam.code} · {m.filesCount(exam.files)}
-        </p>
       </div>
       <div
         aria-hidden
@@ -818,6 +816,23 @@ function ExamCard({ exam, onOpen }: { exam: Exam; onOpen: (e: Exam) => void }) {
         </div>
       </div>
     </Link>
+  );
+}
+
+function HomeStreakBadge() {
+  const mounted = useClientMounted();
+  const clerkEnabled = useClerkEnabled();
+  const streakData = useStudyStreak(mounted && clerkEnabled);
+
+  if (!mounted || !clerkEnabled || streakData.streakDays <= 0) return null;
+
+  return (
+    <SignedIn>
+      <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 ring-1 ring-amber-200/70">
+        <Flame className="h-4 w-4 text-amber-500" fill="currentColor" strokeWidth={1.5} />
+        <span className="text-sm font-bold text-amber-600">{streakData.streakDays}</span>
+      </div>
+    </SignedIn>
   );
 }
 
@@ -852,15 +867,18 @@ function Home({ onOpen, onAdd }: { onOpen: (e: Exam) => void; onAdd: () => void 
     <div className="min-h-screen w-full bg-[#F6F7F9] font-body text-slate-900 antialiased">
       <style>{homeFonts}</style>
 
-      <header className="sticky top-0 z-20 border-b border-slate-200/70 bg-[#F6F7F9]/80 backdrop-blur-md">
+      <header className="sticky top-0 z-20 bg-[#F6F7F9]/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
           <DrNoteLogo showWordmark forceWordmark />
           <div className="flex items-center gap-3">
             <CreditsBadge />
-            <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 ring-1 ring-amber-200/70">
-              <Flame className="h-4 w-4 text-amber-500" fill="currentColor" strokeWidth={1.5} />
-              <span className="text-sm font-bold text-amber-600">14</span>
-            </div>
+            <HomeStreakBadge />
+            <Link
+              href={PRICING_PATH}
+              className="hidden text-sm font-bold text-slate-600 transition-colors hover:text-slate-900 sm:inline-flex"
+            >
+              Pricing
+            </Link>
             <UserAuthControls compact />
           </div>
         </div>
@@ -875,7 +893,7 @@ function Home({ onOpen, onAdd }: { onOpen: (e: Exam) => void; onAdd: () => void 
               {m.heroTitle2}
             </span>
           </h1>
-          <p className="mt-5 max-w-xl text-lg leading-relaxed text-slate-500">
+          <p className="mt-4 max-w-lg text-base leading-relaxed text-slate-500">
             {m.heroSubtitle}
           </p>
 
