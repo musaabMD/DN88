@@ -80,7 +80,6 @@ jobs:
 
   deploy-worker:
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -94,6 +93,32 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate production billing secrets
+        run: |
+          missing=0
+
+          for name in STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::${name} is missing from GitHub Actions secrets. Stripe checkout cannot go live without it."
+              missing=1
+            fi
+          done
+
+          for name in STRIPE_PRICE_STUDENT_MONTHLY STRIPE_PRICE_STUDENT_YEARLY STRIPE_PRICE_PRO_MONTHLY STRIPE_PRICE_PRO_YEARLY; do
+            if [ -z "${!name:-}" ]; then
+              echo "::warning::${name} is missing. The Worker will fall back to inline Stripe Checkout pricing."
+            fi
+          done
+
+          exit "$missing"
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          STRIPE_PRICE_STUDENT_MONTHLY: ${{ secrets.STRIPE_PRICE_STUDENT_MONTHLY }}
+          STRIPE_PRICE_STUDENT_YEARLY: ${{ secrets.STRIPE_PRICE_STUDENT_YEARLY }}
+          STRIPE_PRICE_PRO_MONTHLY: ${{ secrets.STRIPE_PRICE_PRO_MONTHLY }}
+          STRIPE_PRICE_PRO_YEARLY: ${{ secrets.STRIPE_PRICE_PRO_YEARLY }}
+
       - name: Apply MedGenius D1 migration
         continue-on-error: true
         run: npm run medgenius:migrate
@@ -101,16 +126,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Deploy DN88 Worker
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          wranglerVersion: "4.108.0"
-          command: deploy -c workers/dn88/wrangler.jsonc
-
       - name: Set Worker secrets
-        continue-on-error: true
         run: bash scripts/set-worker-secrets.sh
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -131,6 +147,17 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           CONTEXT_DEV_API_KEY: ${{ secrets.CONTEXT_DEV_API_KEY }}
           ADMIN_BOOTSTRAP_IDS: ${{ secrets.ADMIN_BOOTSTRAP_IDS }}
+
+      - name: Deploy DN88 Worker
+        uses: cloudflare/wrangler-action@v3
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4.108.0"
+          command: deploy -c workers/dn88/wrangler.jsonc
 
       - name: Verify DN88 API health
         continue-on-error: true
