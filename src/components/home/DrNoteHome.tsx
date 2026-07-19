@@ -12,7 +12,7 @@ import {
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { UserAuthControls } from "@/components/UserAuthControls";
 import { askMedGeniusAi } from "@/lib/medgenius/chat";
-import { uploadDocument, MedGeniusApiError } from "@/lib/medgenius/api";
+import { uploadDocument, MedGeniusApiError, reprocessDocument as reprocessDocumentApi } from "@/lib/medgenius/api";
 import { sanitizeUserError } from "@/lib/medgenius/errors";
 import {
   useExamDocuments,
@@ -1041,9 +1041,11 @@ function AddFile({
         examId: uploadExamId,
       });
       onDone(
-        result.duplicate
-          ? m.fileAlreadyProcessed
-          : m.uploadCompleteProcessing
+        result.reprocessed
+          ? m.reprocessStarted
+          : result.duplicate
+            ? m.fileAlreadyProcessed
+            : m.uploadCompleteProcessing
       );
       void refreshCredits();
     } catch (err) {
@@ -1297,6 +1299,22 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
 
   const [tab, setTab] = useState<Tab>("Read");
   const [query, setQuery] = useState("");
+  const [reprocessing, setReprocessing] = useState(false);
+
+  const handleReprocess = useCallback(async () => {
+    if (!file.documentId || reprocessing) return;
+    setReprocessing(true);
+    try {
+      const token = await getClerkToken();
+      if (!token) return;
+      await reprocessDocumentApi(token, file.documentId);
+      flash(m.reprocessStarted);
+    } catch (err) {
+      flash(sanitizeUserError(err instanceof Error ? err.message : "Reprocess failed", "processing"));
+    } finally {
+      setReprocessing(false);
+    }
+  }, [file.documentId, reprocessing, flash, m.reprocessStarted]);
 
   // shared quiz state (Quiz + Review + Custom)
   const [answers, setAnswers] = useState<Record<number, number>>({ 0: 0, 2: 1, 4: 3 });
@@ -1557,6 +1575,9 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
             file={file}
             pages={readPages}
             rawMarkdown={useLive ? live.rawMarkdown : null}
+            canReprocess={useLive && Boolean(file.documentId)}
+            reprocessing={reprocessing}
+            onReprocess={handleReprocess}
           />
         )}
         {tab === "Quiz" && <QuizList query={query} questions={questions} emptyWhenNoQuery={useLive ? m.noQuestionsExtracted : undefined} answers={answers} setAnswers={setAnswers} flagged={flagged} setFlagged={setFlagged} perPage={perPage} setPerPage={setPerPage} reveal={reveal} setReveal={setReveal} onAsk={openChat} onAnswer={async (idx, selected) => {
@@ -1685,10 +1706,16 @@ function ReadFull({
   file,
   pages,
   rawMarkdown,
+  canReprocess,
+  reprocessing,
+  onReprocess,
 }: {
   file: ExamFile;
   pages: HomeReadPage[];
   rawMarkdown?: string | null;
+  canReprocess?: boolean;
+  reprocessing?: boolean;
+  onReprocess?: () => void;
 }) {
   const { m } = useHomeLocale();
   const [i, setI] = useState(0);
@@ -1704,6 +1731,17 @@ function ReadFull({
         <div className="dn-empty" style={{ paddingTop: 48, maxWidth: 520, margin: "0 auto" }}>
           <BookOpen size={26} color={C.faint} />
           <p style={{ marginTop: 12, lineHeight: 1.5 }}>{m.parsedSourceCorrupt}</p>
+          {canReprocess && onReprocess && (
+            <button
+              type="button"
+              className="dn-btn primary"
+              style={{ marginTop: 16 }}
+              onClick={() => void onReprocess()}
+              disabled={reprocessing}
+            >
+              {reprocessing ? m.reprocessingDocument : m.reprocessDocument}
+            </button>
+          )}
         </div>
       </div>
     );

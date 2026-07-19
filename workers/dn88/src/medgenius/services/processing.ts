@@ -10,10 +10,12 @@ import {
 import {
   buildR2Keys,
   findDuplicateDocument,
+  getDocument,
   getMarkdown,
   storeMarkdown,
   updateDocumentStatus,
 } from "./documents";
+import { isCorruptParsedMarkdown } from "./markdown-quality";
 import {
   detectDuplicateGroups,
   insertQuestions,
@@ -38,10 +40,15 @@ export async function createDocumentUpload(
     mimeType: string;
     fileBytes: ArrayBuffer;
   }
-): Promise<{ documentId: string; duplicate: boolean }> {
+): Promise<{ documentId: string; duplicate: boolean; reprocessed?: boolean }> {
   const fileHash = await computeFileHash(params.fileBytes);
   const existing = await findDuplicateDocument(env.DB, params.userId, fileHash);
   if (existing) {
+    const corrupt = await documentHasCorruptMarkdown(env, existing);
+    if (corrupt) {
+      await reprocessDocument(env, existing.id, params.userId);
+      return { documentId: existing.id, duplicate: false, reprocessed: true };
+    }
     return { documentId: existing.id, duplicate: true };
   }
 
@@ -462,4 +469,36 @@ export async function enqueueStage(
   } satisfies QueueMessage);
 
   return jobId;
+}
+
+export async function documentHasCorruptMarkdown(
+  env: Bindings,
+  doc: { r2_markdown_key: string | null }
+): Promise<boolean> {
+  if (!doc.r2_markdown_key) return false;
+  const markdown = await getMarkdown(env.USER_CONTENT, doc.r2_markdown_key);
+  if (!markdown) return false;
+  return isCorruptParsedMarkdown(markdown);
+}
+
+export async function reprocessDocument(
+  env: Bindings,
+  documentId: string,
+  userId: string
+): Promise<void> {
+  const doc = await getDocument(env.DB, userId, documentId);
+  if (!doc) throw new Error("Document not found");
+
+  await env.DB.prepare("DELETE FROM medgenius_questions WHERE document_id = ?")
+    .bind(documentId)
+    .run();
+  await env.DB.prepare("DELETE FROM medgenius_flashcards WHERE document_id = ?")
+    .bind(documentId)
+    .run();
+  await env.DB.prepare("DELETE FROM medgenius_summaries WHERE document_id = ?")
+    .bind(documentId)
+    .run();
+
+  await updateDocumentStatus(env.DB, documentId, "pending", 0, null);
+  await enqueueStage(env, documentId, userId, "parse");
 }
