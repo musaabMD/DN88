@@ -1,21 +1,11 @@
 "use client";
 
 import { SignInButton } from "@clerk/clerk-react";
+import { Loader2, Upload } from "lucide-react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
-  FileText,
-  Loader2,
-  Play,
-  RefreshCw,
-  Upload,
-  Wand2,
-} from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  EXAMPLE_EXTRACTED_QUESTION,
   extractDocument,
   fetchRagHealth,
-  fetchRagRun,
-  triggerRagTask,
   type RagHealth,
 } from "@/lib/rag/api";
 import { renderPdfPages, type RenderedPdfPage } from "@/lib/rag/render-pdf-pages";
@@ -93,36 +83,21 @@ export function RagLabView() {
   const clerkEnabled = useClerkEnabled();
   const signedIn = mounted && clerkEnabled && isClerkSignedIn();
   const inputRef = useRef<HTMLInputElement>(null);
+  const processingRef = useRef(false);
 
   const [file, setFile] = useState<File | null>(null);
   const [pages, setPages] = useState<RenderedPdfPage[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
-  const [rendering, setRendering] = useState(false);
-  const [renderProgress, setRenderProgress] = useState<string | null>(null);
-  const [health, setHealth] = useState<RagHealth | null>(null);
-  const [runId, setRunId] = useState<string | null>(null);
-  const [runStatus, setRunStatus] = useState<string | null>(null);
-  const [extractProgress, setExtractProgress] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
   const [result, setResult] = useState<DocumentExtractionResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(
-    null,
-  );
+  const [dragging, setDragging] = useState(false);
+  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
   const [selectedRegionId, setSelectedRegionId] = useState<string | null>(null);
   const [versionTab, setVersionTab] = useState<VersionTab>("source");
-  const [useExample, setUseExample] = useState(false);
 
-  const documentId = useMemo(
-    () => `doc_${file?.name?.replace(/\W+/g, "_").slice(0, 40) || "demo"}`,
-    [file],
-  );
-
-  const questions = useMemo(() => {
-    if (result?.questions?.length) return result.questions;
-    if (useExample) return [EXAMPLE_EXTRACTED_QUESTION];
-    return [];
-  }, [result, useExample]);
+  const questions = result?.questions ?? [];
 
   const activeQuestionId =
     selectedQuestionId && questions.some((q) => q.id === selectedQuestionId)
@@ -134,688 +109,412 @@ export function RagLabView() {
 
   const pageRegions = useMemo(() => {
     const pageNumber = pages[pageIndex]?.pageNumber ?? 1;
-    if (result?.regions?.length) {
-      return result.regions.filter((r) => r.pageNumber === pageNumber);
-    }
-    if (useExample && selectedQuestion) {
-      return [
-        {
-          id: "region_page6_stem",
-          pageNumber: 1,
-          type: "question_stem" as const,
-          text: selectedQuestion.versions.source.stem,
-          boundingBox: { x: 6, y: 8, width: 88, height: 18 },
-          confidence: 0.92,
-          associatedQuestionId: selectedQuestion.id,
-        },
-        {
-          id: "region_page6_choices",
-          pageNumber: 1,
-          type: "answer_choices" as const,
-          text: selectedQuestion.versions.source.choices
-            .map((c) => `${c.label}. ${c.text}`)
-            .join("\n"),
-          boundingBox: { x: 8, y: 28, width: 70, height: 22 },
-          confidence: 0.9,
-          associatedQuestionId: selectedQuestion.id,
-        },
-        {
-          id: "region_page6_reference",
-          pageNumber: 1,
-          type: "reference_image" as const,
-          text: null,
-          boundingBox: { x: 8, y: 55, width: 84, height: 38 },
-          confidence: 0.8,
-          associatedQuestionId: selectedQuestion.id,
-        },
-      ];
-    }
-    return [];
-  }, [result, pages, pageIndex, useExample, selectedQuestion]);
+    if (!result?.regions?.length) return [];
+    return result.regions.filter((r) => r.pageNumber === pageNumber);
+  }, [result, pages, pageIndex]);
 
-  const refreshHealth = useCallback(async () => {
-    if (!signedIn) return;
-    try {
-      const token = await getClerkToken();
-      setHealth(await fetchRagHealth(token));
-    } catch {
-      setHealth(null);
-    }
-  }, [signedIn]);
+  const processPdf = useCallback(
+    async (picked: File) => {
+      if (processingRef.current) return;
+      if (!signedIn) return;
 
-  useEffect(() => {
-    if (!runId || !signedIn) return;
-    let cancelled = false;
+      processingRef.current = true;
+      setBusy(true);
+      setError(null);
+      setResult(null);
+      setPages([]);
+      setPageIndex(0);
+      setSelectedQuestionId(null);
+      setFile(picked);
+      setStatus("Reading PDF…");
 
-    const poll = async () => {
+      const documentId = `doc_${picked.name.replace(/\W+/g, "_").slice(0, 40)}`;
+
       try {
         const token = await getClerkToken();
-        const { run } = await fetchRagRun(token, runId);
-        if (cancelled) return;
-        setRunStatus(run.status);
-        if (run.status === "COMPLETED" && run.output) {
-          setResult(run.output as DocumentExtractionResult);
-          setUseExample(false);
-          setBusy(false);
-          return;
+        const health = await fetchRagHealth(token);
+
+        if (!health.triggerConfigured && !health.openRouterConfigured) {
+          throw new Error("Extraction is not configured on the server.");
         }
-        if (
-          run.status === "FAILED" ||
-          run.status === "CRASHED" ||
-          run.status === "CANCELED" ||
-          run.status === "SYSTEM_FAILURE"
-        ) {
-          const message =
-            typeof run.error === "string"
-              ? run.error
-              : run.error?.message ?? `Run ${run.status}`;
-          setError(message);
-          setBusy(false);
-          return;
-        }
-        window.setTimeout(() => {
-          void poll();
-        }, 2000);
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to poll run");
-          setBusy(false);
-        }
-      }
-    };
 
-    void poll();
-    return () => {
-      cancelled = true;
-    };
-  }, [runId, signedIn]);
+        const rendered = await renderPdfPages(picked, {
+          scale: 1.5,
+          onProgress: (done, total) =>
+            setStatus(`Rendering page ${done}/${total}…`),
+        });
 
-  const pickFile = (picked: File | null) => {
-    if (!picked) return;
-    if (
-      picked.type !== "application/pdf" &&
-      !picked.name.toLowerCase().endsWith(".pdf")
-    ) {
-      setError("Please choose a PDF file.");
-      return;
-    }
-    setFile(picked);
-    setError(null);
-    setResult(null);
-    setRunId(null);
-    setRunStatus(null);
-    setUseExample(false);
-  };
+        setPages(rendered);
+        setStatus(`Extracting ${rendered.length} page(s)…`);
 
-  const handleRender = async () => {
-    if (!file) return;
-    setRendering(true);
-    setError(null);
-    setRenderProgress("Reading PDF…");
-    if (signedIn) void refreshHealth();
-    try {
-      const rendered = await renderPdfPages(file, {
-        scale: 1.5,
-        onProgress: (done, total) =>
-          setRenderProgress(`Rendering page ${done}/${total}…`),
-      });
-      setPages(rendered);
-      setPageIndex(0);
-      setRenderProgress(`Rendered ${rendered.length} page(s).`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to render PDF");
-    } finally {
-      setRendering(false);
-    }
-  };
-
-  const handleExtract = async () => {
-    if (!signedIn || pages.length === 0 || busy) return;
-
-    const useTrigger = Boolean(health?.triggerConfigured);
-    if (!useTrigger && !health?.openRouterConfigured) {
-      setError("Extraction is not configured on the Worker yet.");
-      return;
-    }
-
-    setBusy(true);
-    setError(null);
-    setUseExample(false);
-    setResult(null);
-    setSelectedQuestionId(null);
-    setRunId(null);
-    setRunStatus(null);
-    setExtractProgress(
-      useTrigger
-        ? `Starting Trigger.dev on ${pages.length} page(s)…`
-        : `Extracting page 0/${pages.length}…`,
-    );
-
-    try {
-      const token = await getClerkToken();
-      const merged = await extractDocument(
-        token,
-        documentId,
-        pages.map((p) => ({
-          pageNumber: p.pageNumber,
-          pageText: p.pageText,
-          pageImageUrl: p.pageImageUrl,
-        })),
-        {
-          preferTrigger: useTrigger,
-          onProgress: (done, total, status) => {
-            setExtractProgress(
-              status ?? `Extracting page ${done}/${total}…`,
-            );
+        const merged = await extractDocument(
+          token,
+          documentId,
+          rendered.map((p) => ({
+            pageNumber: p.pageNumber,
+            pageText: p.pageText,
+            pageImageUrl: p.pageImageUrl,
+          })),
+          {
+            preferTrigger: Boolean(health.triggerConfigured),
+            onProgress: (done, total, batchStatus) => {
+              setStatus(batchStatus ?? `Extracting page ${done}/${total}…`);
+            },
           },
-        },
-      );
+        );
 
-      setResult(merged);
-      setExtractProgress(
-        merged.questions.length > 0
-          ? `Done — ${merged.questions.length} question(s) from ${pages.length} page(s).`
-          : `Done — no questions detected on ${pages.length} page(s).`,
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to extract questions");
-      setExtractProgress(null);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const extractionReady = Boolean(
-    health?.triggerConfigured || health?.openRouterConfigured,
+        setResult(merged);
+        setStatus(
+          merged.questions.length > 0
+            ? `Done — ${merged.questions.length} question(s) found.`
+            : `Done — no questions detected.`,
+        );
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Processing failed");
+        setStatus(null);
+      } finally {
+        setBusy(false);
+        processingRef.current = false;
+      }
+    },
+    [signedIn],
   );
-  const canExtract = signedIn && pages.length > 0 && !busy && extractionReady;
-  const extractDisabledReason = !signedIn
-    ? "Sign in to extract questions."
-    : pages.length === 0
-      ? "Render the PDF pages first."
-      : !extractionReady
-        ? "Extraction is not configured on the Worker."
-        : null;
-  const extractionEngine = health?.triggerConfigured
-    ? "Trigger.dev"
-    : health?.openRouterConfigured
-      ? "Worker"
-      : null;
 
-  const handleHello = async () => {
-    if (!signedIn || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const token = await getClerkToken();
-      const handle = await triggerRagTask(token, "hello-world", {
-        name: "RAG lab",
-      });
-      setRunId(handle.runId);
-      setRunStatus("QUEUED");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to trigger hello-world");
-      setBusy(false);
-    }
-  };
+  const onPickFile = useCallback(
+    (picked: File | null) => {
+      if (!picked) return;
+      if (
+        picked.type !== "application/pdf" &&
+        !picked.name.toLowerCase().endsWith(".pdf")
+      ) {
+        setError("Please upload a PDF file.");
+        return;
+      }
+      if (!signedIn) {
+        setError("Sign in to process your PDF.");
+        return;
+      }
+      void processPdf(picked);
+    },
+    [processPdf, signedIn],
+  );
 
   const version = selectedQuestion?.versions[versionTab];
   const currentPage = pages[pageIndex] ?? null;
+  const showUpload = !busy && !result;
+
+  const uploadZone = (
+    <div
+      className="mx-auto flex max-w-xl flex-col items-center justify-center rounded-2xl border-2 border-dashed px-8 py-16 text-center transition-colors"
+      style={{
+        borderColor: dragging ? C.accent : C.line,
+        background: dragging ? C.accentSoft : C.panel,
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragging(false);
+        onPickFile(e.dataTransfer.files[0] ?? null);
+      }}
+    >
+      {busy ? (
+        <>
+          <Loader2
+            className="size-10 animate-spin"
+            style={{ color: C.accent }}
+          />
+          <p className="mt-4 text-lg font-bold">{status ?? "Working…"}</p>
+          {file ? (
+            <p className="mt-1 text-sm" style={{ color: C.sub }}>
+              {file.name}
+            </p>
+          ) : null}
+        </>
+      ) : (
+        <>
+          <Upload className="size-10" style={{ color: C.accent }} />
+          <p className="mt-4 text-lg font-bold">Drop your PDF here</p>
+          <p className="mt-1 text-sm" style={{ color: C.sub }}>
+            Or click to upload — we render and extract automatically.
+          </p>
+          {!signedIn && mounted && clerkEnabled ? (
+            <div className="mt-5">
+              <SignInButton mode="modal">
+                <button
+                  type="button"
+                  className="rounded-lg px-4 py-2 text-sm font-bold text-white"
+                  style={{ background: C.accent }}
+                >
+                  Sign in to upload
+                </button>
+              </SignInButton>
+            </div>
+          ) : (
+            <button
+              type="button"
+              disabled={!signedIn}
+              onClick={() => inputRef.current?.click()}
+              className="mt-5 rounded-lg px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+              style={{ background: C.accent }}
+            >
+              Choose PDF
+            </button>
+          )}
+        </>
+      )}
+    </div>
+  );
 
   return (
     <div
       className="min-h-[100dvh]"
-      style={{ background: C.bg, color: C.ink, fontFamily: "var(--font-nunito), sans-serif" }}
+      style={{
+        background: C.bg,
+        color: C.ink,
+        fontFamily: "var(--font-nunito), sans-serif",
+      }}
     >
+      <input
+        ref={inputRef}
+        type="file"
+        accept="application/pdf,.pdf"
+        className="hidden"
+        onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
+      />
+
       <header
-        className="sticky top-0 z-20 border-b backdrop-blur-sm"
-        style={{ borderColor: C.line, background: "rgba(243,245,244,0.92)" }}
+        className="border-b px-4 py-3"
+        style={{ borderColor: C.line, background: C.panel }}
       >
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold tracking-[0.18em] uppercase" style={{ color: C.sub }}>
-              DrNote · RAG lab
-            </p>
-            <h1 className="text-xl font-extrabold tracking-tight" style={{ color: C.ink }}>
-              Exam-recall extraction
-            </h1>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span
-              className="rounded-md px-2.5 py-1 font-semibold"
-              style={{
-                background: extractionReady ? C.accentSoft : C.warnSoft,
-                color: extractionReady ? C.accent : C.warn,
-              }}
+            <p
+              className="text-xs font-semibold tracking-[0.18em] uppercase"
+              style={{ color: C.sub }}
             >
-              {extractionEngine
-                ? `${extractionEngine} ready`
-                : "Extraction not configured"}
-            </span>
+              DrNote · RAG
+            </p>
+            <h1 className="text-lg font-extrabold">Upload PDF → extract questions</h1>
+          </div>
+          {status && !showUpload ? (
+            <p className="text-sm font-semibold" style={{ color: C.accent }}>
+              {status}
+            </p>
+          ) : null}
+          {result ? (
             <button
               type="button"
-              onClick={() => void refreshHealth()}
-              className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 font-semibold"
-              style={{ borderColor: C.line, color: C.sub }}
+              onClick={() => {
+                setResult(null);
+                setPages([]);
+                setFile(null);
+                setStatus(null);
+                setError(null);
+                inputRef.current?.click();
+              }}
+              className="rounded-lg border px-3 py-1.5 text-sm font-semibold"
+              style={{ borderColor: C.line }}
             >
-              <RefreshCw className="size-3.5" />
-              Refresh
+              Upload another
             </button>
-          </div>
+          ) : null}
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-[1600px] gap-4 px-4 py-4 lg:grid-cols-[280px_1fr]">
-        <aside
-          className="h-fit rounded-xl border p-4"
-          style={{ background: C.panel, borderColor: C.line }}
+      {error ? (
+        <p
+          className="mx-auto max-w-[1600px] px-4 py-2 text-sm font-semibold"
+          style={{ color: C.danger }}
         >
-          <p className="text-sm font-bold">1. Load PDF</p>
-          <p className="mt-1 text-xs leading-relaxed" style={{ color: C.sub }}>
-            Pages may contain zero, one, or many questions. Extraction segments
-            semantic regions — not page = question.
-          </p>
+          {error}
+        </p>
+      ) : null}
 
-          {mounted && clerkEnabled && !signedIn ? (
-            <div className="mt-4 rounded-lg p-3 text-sm" style={{ background: C.warnSoft, color: C.warn }}>
-              <p className="font-semibold">Sign in to extract questions from your PDF</p>
-              <div className="mt-2">
-                <SignInButton mode="modal">
-                  <button
-                    type="button"
-                    className="rounded-md px-3 py-1.5 text-sm font-bold text-white"
-                    style={{ background: C.accent }}
-                  >
-                    Sign in
-                  </button>
-                </SignInButton>
-              </div>
-            </div>
-          ) : null}
-          {mounted && !clerkEnabled ? (
-            <p className="mt-4 text-xs leading-relaxed" style={{ color: C.sub }}>
-              Clerk is off on this host — you can still load the example JSON and
-              render PDFs. Trigger runs need a signed-in session on drnote.co (or
-              a configured Worker).
-            </p>
-          ) : null}
+      {showUpload ? (
+        <div className="flex min-h-[60vh] items-center justify-center px-4 py-12">
+          {uploadZone}
+        </div>
+      ) : null}
 
-          <input
-            ref={inputRef}
-            type="file"
-            accept="application/pdf,.pdf"
-            className="hidden"
-            onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
-          />
+      {busy && !showUpload && !result ? (
+        <div className="flex min-h-[40vh] items-center justify-center px-4 py-8">
+          {uploadZone}
+        </div>
+      ) : null}
 
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed px-3 py-6 text-sm font-semibold"
-            style={{ borderColor: C.line, color: C.ink, background: C.bg }}
-          >
-            <Upload className="size-4" />
-            {file ? file.name : "Choose PDF"}
-          </button>
-
-          <p className="mt-3 text-xs font-semibold" style={{ color: C.sub }}>
-            2. Render all pages
-          </p>
-
-          <button
-            type="button"
-            disabled={!file || rendering}
-            onClick={() => void handleRender()}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-bold text-white disabled:opacity-50"
-            style={{ background: C.accent }}
-          >
-            {rendering ? <Loader2 className="size-4 animate-spin" /> : <FileText className="size-4" />}
-            Render all pages
-          </button>
-
-          <p className="mt-3 text-xs font-semibold" style={{ color: C.sub }}>
-            3. Extract questions
-          </p>
-          <button
-            type="button"
-            disabled={!canExtract}
-            onClick={() => void handleExtract()}
-            className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-bold text-white disabled:opacity-50"
-            style={{ background: C.ink }}
-          >
-            {busy ? <Loader2 className="size-4 animate-spin" /> : <Play className="size-4" />}
-            Extract questions
-          </button>
-          {extractDisabledReason ? (
-            <p className="mt-1 text-[11px]" style={{ color: C.sub }}>
-              {extractDisabledReason}
-            </p>
-          ) : null}
-
-          <button
-            type="button"
-            disabled={!signedIn || busy}
-            onClick={() => void handleHello()}
-            className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold disabled:opacity-50"
-            style={{ borderColor: C.line }}
-          >
-            <Wand2 className="size-4" />
-            Ping hello-world
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setUseExample(true);
-              setResult(null);
-              setSelectedQuestionId(EXAMPLE_EXTRACTED_QUESTION.id);
-            }}
-            className="mt-2 w-full rounded-lg px-3 py-2 text-sm font-semibold"
-            style={{ background: C.accentSoft, color: C.accent }}
-          >
-            Load example question JSON
-          </button>
-
-          {renderProgress ? (
-            <p className="mt-3 text-xs" style={{ color: C.sub }}>
-              {renderProgress}
-            </p>
-          ) : null}
-          {extractProgress ? (
-            <p className="mt-2 text-xs font-semibold" style={{ color: C.accent }}>
-              {extractProgress}
-            </p>
-          ) : null}
-          {runId ? (
-            <p className="mt-3 text-xs leading-relaxed" style={{ color: C.sub }}>
-              Run <span className="font-mono">{runId}</span>
-              <br />
-              Status: <strong>{runStatus ?? "…"}</strong>
-            </p>
-          ) : null}
-          {error ? (
-            <p className="mt-3 text-xs font-semibold" style={{ color: C.danger }}>
-              {error}
-            </p>
-          ) : null}
-
-          <div className="mt-5 border-t pt-4" style={{ borderColor: C.line }}>
-            <p className="text-xs font-bold tracking-wide uppercase" style={{ color: C.sub }}>
-              Questions
-            </p>
-            <ul className="mt-2 space-y-1.5">
-              {questions.length === 0 ? (
-                <li className="rounded-md px-2 py-3 text-xs" style={{ color: C.sub, background: C.bg }}>
-                  No questions yet. Choose a PDF, render pages, then extract.
-                </li>
-              ) : null}
+      {result ? (
+        <main className="mx-auto max-w-[1600px] space-y-4 px-4 py-4">
+          {questions.length > 0 ? (
+            <div
+              className="flex gap-2 overflow-x-auto rounded-xl border p-2"
+              style={{ background: C.panel, borderColor: C.line }}
+            >
               {questions.map((q) => {
                 const label = originLabel(q.origin);
                 const active = q.id === activeQuestionId;
                 return (
-                  <li key={q.id}>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedQuestionId(q.id)}
-                      className="w-full rounded-md px-2 py-2 text-left text-xs"
+                  <button
+                    key={q.id}
+                    type="button"
+                    onClick={() => setSelectedQuestionId(q.id)}
+                    className="min-w-[200px] shrink-0 rounded-lg px-3 py-2 text-left text-xs"
+                    style={{
+                      background: active ? C.accentSoft : C.bg,
+                      color: C.ink,
+                    }}
+                  >
+                    <span
+                      className="inline-block rounded px-1.5 py-0.5 text-[10px] font-bold uppercase"
                       style={{
-                        background: active ? C.accentSoft : "transparent",
-                        color: C.ink,
+                        background: `${label.color}22`,
+                        color: label.color,
                       }}
                     >
-                      <span
-                        className="inline-block rounded px-1.5 py-0.5 text-[10px] font-bold uppercase"
-                        style={{ background: `${label.color}22`, color: label.color }}
-                      >
-                        {label.text}
-                      </span>
-                      <span className="mt-1 block line-clamp-2 font-semibold">
-                        {q.versions.source.stem || q.versions.normalized.stem}
-                      </span>
-                      <span style={{ color: C.sub }}>{q.usabilityStatus}</span>
-                    </button>
-                  </li>
+                      {label.text}
+                    </span>
+                    <span className="mt-1 block line-clamp-2 font-semibold">
+                      {q.versions.source.stem || q.versions.normalized.stem}
+                    </span>
+                  </button>
                 );
               })}
-            </ul>
-          </div>
-        </aside>
+            </div>
+          ) : null}
 
-        <section className="grid min-h-[70vh] gap-3 xl:grid-cols-3">
-          {/* Left: original page */}
-          <div
-            className="flex min-h-[420px] flex-col overflow-hidden rounded-xl border"
-            style={{ background: C.panel, borderColor: C.line }}
-          >
+          <section className="grid min-h-[60vh] gap-3 xl:grid-cols-3">
             <div
-              className="flex items-center justify-between border-b px-3 py-2 text-xs font-bold"
-              style={{ borderColor: C.line, color: C.sub }}
+              className="flex min-h-[420px] flex-col overflow-hidden rounded-xl border"
+              style={{ background: C.panel, borderColor: C.line }}
             >
-              <span>Original page</span>
-              {pages.length > 0 ? (
-                <span className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={pageIndex <= 0}
-                    onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
-                    className="disabled:opacity-40"
-                  >
-                    ←
-                  </button>
-                  {pageIndex + 1}/{pages.length}
-                  <button
-                    type="button"
-                    disabled={pageIndex >= pages.length - 1}
-                    onClick={() =>
-                      setPageIndex((i) => Math.min(pages.length - 1, i + 1))
-                    }
-                    className="disabled:opacity-40"
-                  >
-                    →
-                  </button>
-                </span>
-              ) : null}
-            </div>
-            <div className="relative flex-1 overflow-auto bg-[#E8ECEA] p-3">
-              {currentPage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={currentPage.pageImageUrl}
-                  alt={`Page ${currentPage.pageNumber}`}
-                  className="mx-auto max-w-full shadow-sm"
-                />
-              ) : (
-                <div
-                  className="flex h-full min-h-[320px] items-center justify-center text-sm"
-                  style={{ color: C.sub }}
-                >
-                  Render a PDF or load the example to inspect the review panels.
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Center: boundaries */}
-          <div
-            className="flex min-h-[420px] flex-col overflow-hidden rounded-xl border"
-            style={{ background: C.panel, borderColor: C.line }}
-          >
-            <div
-              className="border-b px-3 py-2 text-xs font-bold"
-              style={{ borderColor: C.line, color: C.sub }}
-            >
-              Detected regions
-            </div>
-            <div className="relative flex-1 overflow-auto bg-[#E8ECEA] p-3">
-              <div className="relative mx-auto max-w-full">
+              <div
+                className="flex items-center justify-between border-b px-3 py-2 text-xs font-bold"
+                style={{ borderColor: C.line, color: C.sub }}
+              >
+                <span>Original page</span>
+                {pages.length > 0 ? (
+                  <span className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={pageIndex <= 0}
+                      onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
+                      className="disabled:opacity-40"
+                    >
+                      ←
+                    </button>
+                    {pageIndex + 1}/{pages.length}
+                    <button
+                      type="button"
+                      disabled={pageIndex >= pages.length - 1}
+                      onClick={() =>
+                        setPageIndex((i) => Math.min(pages.length - 1, i + 1))
+                      }
+                      className="disabled:opacity-40"
+                    >
+                      →
+                    </button>
+                  </span>
+                ) : null}
+              </div>
+              <div className="relative flex-1 overflow-auto bg-[#E8ECEA] p-3">
                 {currentPage ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={currentPage.pageImageUrl}
-                    alt=""
-                    className="block w-full opacity-90"
+                    alt={`Page ${currentPage.pageNumber}`}
+                    className="mx-auto max-w-full shadow-sm"
                   />
-                ) : (
-                  <div
-                    className="min-h-[320px] rounded-md border border-dashed"
-                    style={{ borderColor: C.line, background: "#F8FAF9" }}
-                  />
-                )}
-                <RegionOverlay
-                  regions={pageRegions}
-                  selectedId={selectedRegionId}
-                  onSelect={setSelectedRegionId}
-                />
+                ) : null}
               </div>
-              <ul className="mt-3 space-y-1 text-xs">
-                {pageRegions.map((r) => (
-                  <li key={r.id}>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedRegionId(r.id)}
-                      className="w-full rounded px-2 py-1 text-left font-semibold"
-                      style={{
-                        background:
-                          selectedRegionId === r.id ? C.accentSoft : "transparent",
-                        color: C.ink,
-                      }}
-                    >
-                      {r.type}
-                      <span className="ml-2 font-normal" style={{ color: C.sub }}>
-                        {Math.round(r.confidence * 100)}%
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
             </div>
-          </div>
 
-          {/* Right: JSON versions */}
-          <div
-            className="flex min-h-[420px] flex-col overflow-hidden rounded-xl border"
-            style={{ background: C.panel, borderColor: C.line }}
-          >
             <div
-              className="flex flex-wrap items-center gap-1 border-b px-2 py-2"
-              style={{ borderColor: C.line }}
+              className="flex min-h-[420px] flex-col overflow-hidden rounded-xl border"
+              style={{ background: C.panel, borderColor: C.line }}
             >
-              {(
-                [
-                  ["source", "Source"],
-                  ["normalized", "Normalized"],
-                  ["quizReady", "Quiz-ready"],
-                ] as const
-              ).map(([key, label]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setVersionTab(key)}
-                  className="rounded-md px-2.5 py-1 text-xs font-bold"
-                  style={{
-                    background: versionTab === key ? C.ink : "transparent",
-                    color: versionTab === key ? "#fff" : C.sub,
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
+              <div
+                className="border-b px-3 py-2 text-xs font-bold"
+                style={{ borderColor: C.line, color: C.sub }}
+              >
+                Detected regions
+              </div>
+              <div className="relative flex-1 overflow-auto bg-[#E8ECEA] p-3">
+                <div className="relative mx-auto max-w-full">
+                  {currentPage ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={currentPage.pageImageUrl}
+                      alt=""
+                      className="block w-full opacity-90"
+                    />
+                  ) : null}
+                  <RegionOverlay
+                    regions={pageRegions}
+                    selectedId={selectedRegionId}
+                    onSelect={setSelectedRegionId}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="flex-1 overflow-auto p-3 text-xs">
-              {selectedQuestion ? (
-                <>
-                  <div className="mb-3 flex flex-wrap gap-2">
-                    {(() => {
-                      const label = originLabel(selectedQuestion.origin);
-                      return (
-                        <span
-                          className="rounded px-2 py-0.5 text-[10px] font-bold uppercase"
-                          style={{
-                            background: `${label.color}22`,
-                            color: label.color,
-                          }}
-                        >
-                          {label.text}
-                        </span>
-                      );
-                    })()}
-                    <span
-                      className="rounded px-2 py-0.5 text-[10px] font-bold uppercase"
-                      style={{ background: C.warnSoft, color: C.warn }}
-                    >
-                      {selectedQuestion.answer.status}
-                    </span>
-                    <span
-                      className="rounded px-2 py-0.5 text-[10px] font-bold uppercase"
-                      style={{ background: C.accentSoft, color: C.accent }}
-                    >
-                      {selectedQuestion.usabilityStatus}
-                    </span>
-                  </div>
-                  <p className="text-[11px] font-bold tracking-wide uppercase" style={{ color: C.sub }}>
-                    Stem ({versionTab})
-                  </p>
-                  <p className="mt-1 whitespace-pre-wrap text-sm font-semibold leading-relaxed">
-                    {version?.stem || "(null)"}
-                  </p>
-                  <p
-                    className="mt-4 text-[11px] font-bold tracking-wide uppercase"
-                    style={{ color: C.sub }}
+
+            <div
+              className="flex min-h-[420px] flex-col overflow-hidden rounded-xl border"
+              style={{ background: C.panel, borderColor: C.line }}
+            >
+              <div
+                className="flex flex-wrap items-center gap-1 border-b px-2 py-2"
+                style={{ borderColor: C.line }}
+              >
+                {(
+                  [
+                    ["source", "Source"],
+                    ["normalized", "Normalized"],
+                    ["quizReady", "Quiz-ready"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setVersionTab(key)}
+                    className="rounded-md px-2.5 py-1 text-xs font-bold"
+                    style={{
+                      background: versionTab === key ? C.ink : "transparent",
+                      color: versionTab === key ? "#fff" : C.sub,
+                    }}
                   >
-                    Choices
-                  </p>
-                  <ul className="mt-1 space-y-1">
-                    {(version?.choices ?? []).map((choice) => {
-                      const correct =
-                        choice.id === selectedQuestion.answer.correctChoiceId;
-                      return (
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex-1 overflow-auto p-3 text-xs">
+                {selectedQuestion ? (
+                  <>
+                    <p className="whitespace-pre-wrap text-sm font-semibold leading-relaxed">
+                      {version?.stem || "(null)"}
+                    </p>
+                    <ul className="mt-3 space-y-1">
+                      {(version?.choices ?? []).map((choice) => (
                         <li
                           key={choice.id}
                           className="rounded-md px-2 py-1.5"
-                          style={{
-                            background: correct ? C.accentSoft : C.bg,
-                            color: C.ink,
-                          }}
+                          style={{ background: C.bg }}
                         >
                           <strong>{choice.label ?? "?"}</strong>. {choice.text}
                         </li>
-                      );
-                    })}
-                  </ul>
-                  {selectedQuestion.warnings.length > 0 ? (
-                    <>
-                      <p
-                        className="mt-4 text-[11px] font-bold tracking-wide uppercase"
-                        style={{ color: C.warn }}
-                      >
-                        Warnings
-                      </p>
-                      <ul className="mt-1 list-disc space-y-1 pl-4" style={{ color: C.warn }}>
-                        {selectedQuestion.warnings.map((w) => (
-                          <li key={w}>{w}</li>
-                        ))}
-                      </ul>
-                    </>
-                  ) : null}
-                  <details className="mt-4">
-                    <summary className="cursor-pointer font-bold" style={{ color: C.sub }}>
-                      Full JSON
-                    </summary>
-                    <pre
-                      className="mt-2 overflow-auto rounded-md p-2 text-[10px] leading-relaxed"
-                      style={{ background: C.bg }}
-                    >
-                      {JSON.stringify(selectedQuestion, null, 2)}
-                    </pre>
-                  </details>
-                </>
-              ) : (
-                <p style={{ color: C.sub }}>No question selected.</p>
-              )}
+                      ))}
+                    </ul>
+                  </>
+                ) : (
+                  <p style={{ color: C.sub }}>No questions extracted.</p>
+                )}
+              </div>
             </div>
-          </div>
-        </section>
-      </main>
+          </section>
+        </main>
+      ) : null}
     </div>
   );
 }
