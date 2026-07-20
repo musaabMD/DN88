@@ -50,7 +50,7 @@ export function SplitScreenPanelShell({
   return (
     <div
       ref={panelRef}
-      className={`relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border bg-white ${
+      className={`relative flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border bg-white ${
         immersive ? "fixed inset-0 z-[200] rounded-none border-0 shadow-none" : ""
       }${className ? ` ${className}` : ""}`}
       style={
@@ -108,7 +108,7 @@ export function SplitScreenPanelShell({
           </button>
         </div>
       )}
-      <div className="min-h-0 flex-1">{children}</div>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
     </div>
   );
 }

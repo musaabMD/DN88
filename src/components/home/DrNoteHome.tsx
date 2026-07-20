@@ -420,7 +420,7 @@ const styles = `
 .dn-pdf-text-layer { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); overflow: hidden; line-height: 1; pointer-events: auto; }
 .dn-pdf-text-layer span, .dn-pdf-text-layer br { color: transparent; position: absolute; white-space: pre; transform-origin: 0 0; user-select: text; cursor: text; }
 .dn-pdf-text-layer ::selection { background: rgba(255, 243, 176, 0.92); }
-.dn-pdf-pager { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 10px; border-top: 1px solid ${C.line}; background: #fff; font-size: 13px; font-weight: 700; color: ${C.sub}; }
+.dn-pdf-pager { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 10px; border-top: 1px solid ${C.line}; background: #fff; font-size: 13px; font-weight: 700; color: ${C.sub}; flex-shrink: 0; position: relative; z-index: 10; box-shadow: 0 -4px 12px rgba(15,23,42,.04); }
 .dn-pdf-pager button { border: 1px solid ${C.line}; background: #fff; border-radius: 8px; width: 34px; height: 34px; display: grid; place-items: center; cursor: pointer; }
 .dn-pdf-pager button:disabled { opacity: .4; cursor: not-allowed; }
 .dn-pdf-state { padding: 48px 20px; text-align: center; color: ${C.sub}; font-size: 14px; }

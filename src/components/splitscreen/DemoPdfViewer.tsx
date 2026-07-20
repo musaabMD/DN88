@@ -67,8 +67,8 @@ export function DemoPdfViewer({
   }, []);
 
   return (
-    <div className="flex h-full flex-col bg-white">
-      <div className="min-h-0 flex-1 overflow-auto bg-white p-4" onMouseUp={onMouseUp}>
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white">
+      <div className="min-h-0 flex-1 overflow-auto bg-white p-4 pb-2" onMouseUp={onMouseUp}>
         <article
           className="mx-auto max-w-[620px] rounded-xl border bg-white px-8 py-10 shadow-[0_4px_24px_rgba(15,23,42,0.06)]"
           style={{ borderColor: SS.panelBorder }}
@@ -115,7 +115,7 @@ export function DemoPdfViewer({
       </div>
 
       <div
-        className="flex shrink-0 items-center justify-center gap-3 border-t bg-white px-3 py-2 text-sm font-bold"
+        className="relative z-10 flex shrink-0 items-center justify-center gap-3 border-t bg-white px-3 py-2 text-sm font-bold shadow-[0_-4px_12px_rgba(15,23,42,0.04)]"
         style={{ borderColor: SS.panelBorder, color: SS.sub }}
       >
         <button
