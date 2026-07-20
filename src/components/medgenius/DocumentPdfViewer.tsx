@@ -23,6 +23,7 @@ type DocumentPdfViewerProps = {
   documentId: string;
   pageCount?: number;
   onAskSelection?: (text: string) => void;
+  canvasBg?: string;
 };
 
 const HIGHLIGHT_COLOR = "#FFF3B0";
@@ -31,6 +32,7 @@ export function DocumentPdfViewer({
   documentId,
   pageCount = 1,
   onAskSelection,
+  canvasBg,
 }: DocumentPdfViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const textLayerRef = useRef<HTMLDivElement>(null);
@@ -154,7 +156,12 @@ export function DocumentPdfViewer({
 
   return (
     <div className="dn-pdf-wrap">
-      <div className="dn-pdf-page" ref={pageWrapRef} onMouseUp={onMouseUp}>
+      <div
+        className="dn-pdf-page"
+        ref={pageWrapRef}
+        onMouseUp={onMouseUp}
+        style={canvasBg ? { background: canvasBg } : undefined}
+      >
         <canvas ref={canvasRef} className="dn-pdf-canvas" />
         <div ref={textLayerRef} className="dn-pdf-text-layer textLayer" />
       </div>

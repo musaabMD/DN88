@@ -3,7 +3,7 @@ export const SS = {
   pageBg: "#F7F7F7",
   panelBorder: "#E5E5E5",
   panelShadow: "0 8px 32px rgba(15, 23, 42, 0.05)",
-  canvasBg: "#F7F7F7",
+  canvasBg: "#FFFFFF",
   ink: "#3C3C3C",
   sub: "#777777",
   faint: "#AFAFAF",
