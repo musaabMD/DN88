@@ -37,6 +37,8 @@ export type Bindings = {
   MEDGENIUS_TEST_MODE?: string;
   ADMIN_BOOTSTRAP_IDS?: string;
   CATALOG_SYNC_SECRET?: string;
+  /** Trigger.dev DEV/PROD secret key for RAG extraction tasks */
+  TRIGGER_SECRET_KEY?: string;
 };
 
 export type ArticleRow = {

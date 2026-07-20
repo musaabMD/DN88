@@ -40,6 +40,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Trigger.dev
+.trigger/
+
 .wrangler/
 .catalog-sync/
 .catalog-staging/

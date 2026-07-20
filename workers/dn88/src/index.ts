@@ -8,6 +8,7 @@ import { assetRoutes } from "./routes/assets";
 import { syncRoutes } from "./routes/sync";
 import { medgeniusRoutes } from "./medgenius/routes/index";
 import { handleMedGeniusQueue } from "./medgenius/queue/processor";
+import { createRagRoutes } from "./rag/routes";
 import { handleClerkWebhook, handleStripeWebhook } from "./routes/webhooks";
 import { getMedGeniusProfileForUser } from "./medgenius/services/clerk-sync";
 import type { QueueMessage } from "./medgenius/types";
@@ -463,6 +464,14 @@ app.route("/api/admin", catalogAdminRoutes);
 app.route("/api/dl88-assets", assetRoutes);
 app.route("/api/admin/sync", syncRoutes);
 app.route("/api/medgenius", medgeniusRoutes);
+app.route(
+  "/api/rag",
+  createRagRoutes(async (c) => {
+    const auth = await getAuthedUser(c);
+    if ("error" in auth) return null;
+    return auth.user.id;
+  }),
+);
 
 app.notFound((c) => c.json({ error: "Not found" }, 404));
 
