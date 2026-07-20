@@ -341,15 +341,14 @@ const styles = `
 /* ============ full-screen study ============ */
 .dn-fs { position: fixed; inset: 0; z-index: 100; background: #fff; display: flex; flex-direction: column; }
 .dn-fs-split { position: relative; inset: auto; z-index: 0; height: 100%; min-height: 0; overflow: hidden; background: #fff; }
-.dn-fs-split .dn-chat { position: absolute; }
 .dn-fs-split .dn-fs-row1 { display: none; }
 .dn-fs-split .dn-fs-row2 { padding: 8px 10px 6px; }
 .dn-fs-split .dn-fs-head { border-bottom: 1px solid ${C.line}; }
 .dn-fs-split .dn-fs-tabs { padding: 0 10px 8px; gap: 2px; border-bottom: 1px solid ${C.line}; }
 .dn-fs-split .dn-fs-tab { padding: 8px 12px; border-radius: 10px; font-size: 13px; color: ${C.faint}; background: transparent; }
 .dn-fs-split .dn-fs-tab.on-tab { color: ${C.ink}; background: ${C.wash}; box-shadow: inset 0 -2px 0 ${C.blue}; }
-.dn-fs-split .dn-fs-tab.on-ask { color: ${C.purpleDark}; background: #FAF5FF; box-shadow: inset 0 -2px 0 ${C.purple}; }
 .dn-fs-split .dn-fs-tab:hover { background: ${C.wash}; color: ${C.sub}; }
+.dn-fs-split .dn-chat-inline { position: relative; inset: auto; top: auto; right: auto; bottom: auto; flex: 1; min-height: 0; width: 100%; max-width: none; border-left: none; box-shadow: none; z-index: 0; }
 .dn-fs-row2-split { display: flex; align-items: center; gap: 8px; }
 .dn-fs-row2-split .dn-fs-search { flex: 1; min-width: 0; }
 .dn-fs-split .dn-fs-tabs { padding-top: 0; }
@@ -1602,7 +1601,10 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, splitScreen, p
   useEffect(() => {
     setMsgs((prev) => (prev.length === 1 && prev[0]?.role === "ai" ? [{ role: "ai", text: content.chatGreeting }] : prev));
   }, [content.chatGreeting]);
-  const openChat = (q?: string) => { setQuote(q ?? null); setChatOpen(true); };
+  const openChat = (q?: string) => {
+    setQuote(q ?? null);
+    setChatOpen(true);
+  };
 
   useEffect(() => {
     if (!pendingAskQuote || !splitScreen) return;
@@ -1702,7 +1704,7 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, splitScreen, p
             </button>
           ))}
           <button
-            className={`dn-fs-tab${chatOpen ? " on-ask" : ""}`}
+            className={`dn-fs-tab${chatOpen ? " on-tab" : ""}`}
             onClick={() => openChat()}
             style={
               splitScreen
@@ -1716,12 +1718,25 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, splitScreen, p
       </header>
 
       <div className="dn-fs-body" onMouseUp={onBodyMouseUp}>
-        {processing && (
+        {processing && !chatOpen && (
           <div className="dn-empty" style={{ padding: "24px 16px" }}>
             <Sparkles size={26} color={C.purple} />
             <p>{m.preparingStudyMaterials}{live.progress > 0 ? ` ${live.progress}%` : ""}</p>
           </div>
         )}
+        {splitScreen && chatOpen ? (
+          <ChatPanel
+            inline
+            documentId={file.documentId}
+            documentContext={documentContext}
+            quote={quote}
+            clearQuote={() => setQuote(null)}
+            msgs={msgs}
+            setMsgs={setMsgs}
+            onClose={() => setChatOpen(false)}
+          />
+        ) : (
+          <>
         {tab === "Read" && !splitScreen && (
           <ReadFull
             key={file.id}
@@ -1755,6 +1770,8 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, splitScreen, p
             <CustomPane reveal={reveal} setReveal={setReveal} onStart={startCustomSession} flash={flash} />
           </>
         )}
+          </>
+        )}
       </div>
 
       {!splitScreen && (
@@ -1780,7 +1797,17 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, splitScreen, p
         </button>
       )}
 
-      {chatOpen && <ChatPanel documentId={file.documentId} documentContext={documentContext} quote={quote} clearQuote={() => setQuote(null)} msgs={msgs} setMsgs={setMsgs} onClose={() => setChatOpen(false)} />}
+      {chatOpen && !splitScreen && (
+        <ChatPanel
+          documentId={file.documentId}
+          documentContext={documentContext}
+          quote={quote}
+          clearQuote={() => setQuote(null)}
+          msgs={msgs}
+          setMsgs={setMsgs}
+          onClose={() => setChatOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -1856,8 +1883,8 @@ export function SplitScreenStudyPanel({
 }
 
 /* ---- AI chat panel ---- */
-function ChatPanel({ documentId, documentContext, quote, clearQuote, msgs, setMsgs, onClose }: {
-  documentId?: string; documentContext?: string; quote: string | null; clearQuote: () => void; msgs: Msg[]; setMsgs: Dispatch<SetStateAction<Msg[]>>; onClose: () => void;
+function ChatPanel({ documentId, documentContext, quote, clearQuote, msgs, setMsgs, onClose, inline }: {
+  documentId?: string; documentContext?: string; quote: string | null; clearQuote: () => void; msgs: Msg[]; setMsgs: Dispatch<SetStateAction<Msg[]>>; onClose: () => void; inline?: boolean;
 }) {
   const { m, content, locale } = useHomeLocale();
   const [draft, setDraft] = useState("");
@@ -1903,15 +1930,17 @@ function ChatPanel({ documentId, documentContext, quote, clearQuote, msgs, setMs
   };
 
   return (
-    <aside className="dn-chat">
-      <div className="dn-chat-head">
-        <span className="dn-chat-brand">
-          <DrNoteLogo showWordmark forceWordmark size="sm" />
-          <span className="dn-chat-head-div" aria-hidden>·</span>
-          <span className="dn-inline"><Sparkles size={18} color={C.purple} strokeWidth={2.4} /><b>{m.askAi}</b></span>
-        </span>
-        <button className="dn-fs-close" onClick={onClose} aria-label={m.closeChat}><X size={18} strokeWidth={2.8} /></button>
-      </div>
+    <div className={`dn-chat${inline ? " dn-chat-inline" : ""}`} role={inline ? undefined : "complementary"} aria-label={inline ? undefined : m.askAi}>
+      {!inline ? (
+        <div className="dn-chat-head">
+          <span className="dn-chat-brand">
+            <DrNoteLogo showWordmark forceWordmark size="sm" />
+            <span className="dn-chat-head-div" aria-hidden>·</span>
+            <span className="dn-inline"><Sparkles size={18} color={C.purple} strokeWidth={2.4} /><b>{m.askAi}</b></span>
+          </span>
+          <button className="dn-fs-close" onClick={onClose} aria-label={m.closeChat}><X size={18} strokeWidth={2.8} /></button>
+        </div>
+      ) : null}
       <div className="dn-chat-body">
         {msgs.map((msg, i) => <div key={i} className={`dn-msg ${msg.role}`}>{msg.text}</div>)}
         <div ref={endRef} />
@@ -1921,7 +1950,7 @@ function ChatPanel({ documentId, documentContext, quote, clearQuote, msgs, setMs
         <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={m.askFollowUp} />
         <button className="dn-chat-send" onClick={send} style={{ background: C.purple }} aria-label={m.send}><Send size={16} color="#fff" strokeWidth={2.4} /></button>
       </div>
-    </aside>
+    </div>
   );
 }
 
