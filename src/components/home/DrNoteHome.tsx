@@ -340,6 +340,8 @@ const styles = `
 
 /* ============ full-screen study ============ */
 .dn-fs { position: fixed; inset: 0; z-index: 100; background: #fff; display: flex; flex-direction: column; }
+.dn-fs-split { position: relative; inset: auto; z-index: 0; height: 100%; min-height: 0; overflow: hidden; }
+.dn-fs-split .dn-chat { position: absolute; }
 .dn-fs-head { flex-shrink: 0; background: #fff; }
 .dn-fs-row1 { display: flex; align-items: center; gap: 8px; padding: 8px 12px 6px; min-width: 0; }
 .dn-fs-row2 { padding: 0 12px 8px; }
@@ -1334,11 +1336,13 @@ function ExamPage(props: {
 /* ------------------------------------------------------------------ */
 /*  Study (full screen)                                                */
 /* ------------------------------------------------------------------ */
-function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
+function Study({ file, exam, saved, onToggleSave, onClose, flash, splitScreen }: {
   file: ExamFile; exam: Exam | null; saved: boolean; onToggleSave: () => void; onClose: () => void; flash: (m: string) => void;
+  splitScreen?: boolean;
 }) {
   const { m, content } = useHomeLocale();
   const clerkEnabled = useClerkEnabled();
+  const studyTabs = splitScreen ? TABS.filter(({ key }) => key !== "Read") : TABS;
   const live = useDocumentStudy(clerkEnabled && file.documentId ? file.documentId : undefined);
   const useLive = Boolean(clerkEnabled && file.documentId);
   const questions: HomeQuestion[] = useLive ? live.questions : content.questions;
@@ -1358,7 +1362,7 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
     [readPages]
   );
 
-  const [tab, setTab] = useState<Tab>("Read");
+  const [tab, setTab] = useState<Tab>(splitScreen ? "Quiz" : "Read");
   const [query, setQuery] = useState("");
   const [reprocessing, setReprocessing] = useState(false);
   const [extracting, setExtracting] = useState(false);
@@ -1626,10 +1630,12 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
   const subLabel = exam ? `${exam.code} · ${file.author}` : `@${file.author} · ${m.pgShort(file.pages)}`;
 
   return (
-    <div className={`dn-fs${immersive ? " dn-fs-immersive" : ""}`} ref={fsRef}>
+    <div className={`dn-fs${immersive ? " dn-fs-immersive" : ""}${splitScreen ? " dn-fs-split" : ""}`} ref={fsRef}>
       <header className="dn-fs-head">
         <div className="dn-fs-row1">
-          <button className="dn-fs-close" onClick={onClose} aria-label={m.close}><X size={18} strokeWidth={2.8} /></button>
+          {!splitScreen && (
+            <button className="dn-fs-close" onClick={onClose} aria-label={m.close}><X size={18} strokeWidth={2.8} /></button>
+          )}
           <div className="dn-fs-title-wrap">
             <span className="dn-fs-dot" style={{ background: file.color }} aria-hidden />
             <h1 className="dn-fs-title">
@@ -1653,7 +1659,7 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
           </div>
         </div>
         <nav className="dn-fs-tabs">
-          {TABS.map(({ key, icon: Icon }) => (
+          {studyTabs.map(({ key, icon: Icon }) => (
             <button key={key} className="dn-fs-tab" onClick={() => { setTab(key); setChatOpen(false); }} style={{ color: tab === key && !chatOpen ? C.blueDark : C.faint, background: tab === key && !chatOpen ? "#DDF4FF" : "transparent" }}>
               <Icon size={16} strokeWidth={2.4} /><span>{m.tabLabel(key)}</span>
             </button>
@@ -1671,7 +1677,7 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
             <p>{m.preparingStudyMaterials}{live.progress > 0 ? ` ${live.progress}%` : ""}</p>
           </div>
         )}
-        {tab === "Read" && (
+        {tab === "Read" && !splitScreen && (
           <ReadFull
             key={file.id}
             file={file}
@@ -1706,7 +1712,7 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
         )}
       </div>
 
-      {/* iOS-style bottom tab bar (mobile / iPad) */}
+      {!splitScreen && (
       <nav className="dn-tabbar">
         <div className="dn-tabbar-inner">
           {TABS.map(({ key, icon: Icon }) => (
@@ -1719,6 +1725,7 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
           </button>
         </div>
       </nav>
+      )}
 
       {/* highlight-to-ask popover */}
       {ask && (
@@ -1729,6 +1736,64 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
       )}
 
       {chatOpen && <ChatPanel documentId={file.documentId} documentContext={documentContext} quote={quote} clearQuote={() => setQuote(null)} msgs={msgs} setMsgs={setMsgs} onClose={() => setChatOpen(false)} />}
+    </div>
+  );
+}
+
+export function SplitScreenStudyPanel({ file, exam }: { file: ExamFile; exam: Exam | null }) {
+  const { m } = useHomeLocale();
+  const [saved, setSaved] = useState<Set<string>>(new Set());
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimerRef = useRef<number | null>(null);
+
+  const flash = useCallback((msg: string) => {
+    setToast(msg);
+    if (toastTimerRef.current !== null) {
+      window.clearTimeout(toastTimerRef.current);
+    }
+    toastTimerRef.current = window.setTimeout(() => {
+      setToast(null);
+      toastTimerRef.current = null;
+    }, 1700);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current !== null) {
+        window.clearTimeout(toastTimerRef.current);
+      }
+    };
+  }, []);
+
+  const toggleSaved = useCallback((id: string) => {
+    setSaved((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  return (
+    <div className="dn-root h-full min-h-0 overflow-hidden">
+      <style>{styles}</style>
+      <Study
+        file={file}
+        exam={exam}
+        saved={saved.has(file.id)}
+        onToggleSave={() => {
+          toggleSaved(file.id);
+          flash(saved.has(file.id) ? m.removedBookmark : m.bookmarked);
+        }}
+        onClose={() => {}}
+        flash={flash}
+        splitScreen
+      />
+      {toast && (
+        <div className="dn-toast">
+          <Check size={16} strokeWidth={3} color={C.green} /> {toast}
+        </div>
+      )}
     </div>
   );
 }
