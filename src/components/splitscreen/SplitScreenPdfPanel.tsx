@@ -1,10 +1,7 @@
 "use client";
 
-import { DocumentPdfViewer } from "@/components/medgenius/DocumentPdfViewer";
-import { DemoPdfViewer } from "@/components/splitscreen/DemoPdfViewer";
+import { ParsedMarkdownViewer } from "@/components/splitscreen/ParsedMarkdownViewer";
 import { SplitScreenPanelShell } from "@/components/splitscreen/SplitScreenPanelShell";
-import { SS } from "@/components/splitscreen/splitscreen-theme";
-import { useClerkEnabled } from "@/hooks/useClerkEnabled";
 import type { HomeReadPage } from "@/lib/medgenius/home-data";
 
 type SplitScreenPdfPanelProps = {
@@ -14,39 +11,30 @@ type SplitScreenPdfPanelProps = {
   color: string;
   documentId?: string;
   readPages: HomeReadPage[];
+  rawMarkdown?: string | null;
+  markdownLoading?: boolean;
   onAskSelection?: (text: string) => void;
 };
 
 export function SplitScreenPdfPanel({
-  fileId,
   fileName,
   pages,
   color,
-  documentId,
   readPages,
+  rawMarkdown,
+  markdownLoading,
   onAskSelection,
 }: SplitScreenPdfPanelProps) {
-  const clerkEnabled = useClerkEnabled();
-  const canShowLivePdf = Boolean(documentId && clerkEnabled);
-
   return (
     <SplitScreenPanelShell expandOnlyHeader accent={color}>
-      {canShowLivePdf && documentId ? (
-        <DocumentPdfViewer
-          documentId={documentId}
-          pageCount={pages}
-          onAskSelection={onAskSelection}
-          canvasBg={SS.canvasBg}
-        />
-      ) : (
-        <DemoPdfViewer
-          fileId={fileId}
-          fileName={fileName}
-          pageCount={pages}
-          readPages={readPages}
-          onAskSelection={onAskSelection}
-        />
-      )}
+      <ParsedMarkdownViewer
+        fileName={fileName}
+        pageCount={pages}
+        rawMarkdown={rawMarkdown}
+        readPages={readPages}
+        loading={markdownLoading}
+        onAskSelection={onAskSelection}
+      />
     </SplitScreenPanelShell>
   );
 }
