@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Highlighter, Sparkles } from "lucide-react";
 import { fetchDocumentFileBlob } from "@/lib/medgenius/api";
 import { getClerkToken } from "@/lib/clerk-token";
 
@@ -22,16 +22,36 @@ async function loadPdfJs(): Promise<PdfJsModule> {
 type DocumentPdfViewerProps = {
   documentId: string;
   pageCount?: number;
+  onAskSelection?: (text: string) => void;
+  showAnnotationToolbar?: boolean;
 };
 
-export function DocumentPdfViewer({ documentId, pageCount = 1 }: DocumentPdfViewerProps) {
+const HIGHLIGHT_COLORS = [
+  { id: "yellow", bg: "#FEF08A" },
+  { id: "green", bg: "#BBF7D0" },
+  { id: "blue", bg: "#BFDBFE" },
+  { id: "pink", bg: "#FBCFE8" },
+] as const;
+
+export function DocumentPdfViewer({
+  documentId,
+  pageCount = 1,
+  onAskSelection,
+  showAnnotationToolbar = false,
+}: DocumentPdfViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const textLayerRef = useRef<HTMLDivElement>(null);
+  const pageWrapRef = useRef<HTMLDivElement>(null);
   const [pdfDoc, setPdfDoc] = useState<import("pdfjs-dist").PDFDocumentProxy | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(pageCount);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [annotateMode, setAnnotateMode] = useState(false);
+  const [highlightColor, setHighlightColor] = useState<(typeof HIGHLIGHT_COLORS)[number]["bg"]>(
+    HIGHLIGHT_COLORS[0].bg
+  );
+  const [ask, setAsk] = useState<{ x: number; y: number; text: string } | null>(null);
   const renderTaskRef = useRef<import("pdfjs-dist").RenderTask | null>(null);
 
   useEffect(() => {
@@ -119,6 +139,27 @@ export function DocumentPdfViewer({ documentId, pageCount = 1 }: DocumentPdfView
     };
   }, [pdfDoc, page]);
 
+  const onMouseUp = useCallback(() => {
+    const sel = window.getSelection();
+    const text = sel?.toString().trim() ?? "";
+    if (text.length <= 2 || !sel?.rangeCount) {
+      setAsk(null);
+      return;
+    }
+    const rect = sel.getRangeAt(0).getBoundingClientRect();
+    if (annotateMode) {
+      try {
+        document.execCommand("hiliteColor", false, highlightColor);
+      } catch {
+        /* browser may block hiliteColor on PDF text layer */
+      }
+      window.getSelection()?.removeAllRanges();
+      setAsk(null);
+      return;
+    }
+    setAsk({ x: rect.left + rect.width / 2, y: rect.top - 8, text });
+  }, [annotateMode, highlightColor]);
+
   if (loading) {
     return <div className="dn-pdf-state">Loading PDF…</div>;
   }
@@ -129,7 +170,39 @@ export function DocumentPdfViewer({ documentId, pageCount = 1 }: DocumentPdfView
 
   return (
     <div className="dn-pdf-wrap">
-      <div className="dn-pdf-page">
+      {showAnnotationToolbar ? (
+        <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-[#E5E7EB] bg-white/90 px-3 py-2 backdrop-blur">
+          <button
+            type="button"
+            onClick={() => setAnnotateMode((value) => !value)}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-extrabold ${
+              annotateMode ? "bg-[#FEF08A] text-[#854D0E]" : "bg-[#F8FAFC] text-[#64748B]"
+            }`}
+          >
+            <Highlighter size={14} />
+            Annotate
+          </button>
+          {HIGHLIGHT_COLORS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => {
+                setHighlightColor(item.bg);
+                setAnnotateMode(true);
+              }}
+              className={`h-6 w-6 rounded-full border-2 ${
+                highlightColor === item.bg && annotateMode ? "border-[#334155]" : "border-white"
+              }`}
+              style={{ background: item.bg }}
+              aria-label={`Highlight ${item.id}`}
+            />
+          ))}
+          <span className="ml-auto text-[10px] font-bold uppercase tracking-wide text-[#94A3B8]">
+            Select text to highlight or ask
+          </span>
+        </div>
+      ) : null}
+      <div className="dn-pdf-page" ref={pageWrapRef} onMouseUp={onMouseUp}>
         <canvas ref={canvasRef} className="dn-pdf-canvas" />
         <div ref={textLayerRef} className="dn-pdf-text-layer textLayer" />
       </div>
@@ -138,7 +211,7 @@ export function DocumentPdfViewer({ documentId, pageCount = 1 }: DocumentPdfView
           <ChevronLeft size={18} />
         </button>
         <span>
-          Page {page} of {totalPages}
+          {page} / {totalPages}
         </span>
         <button
           type="button"
@@ -149,6 +222,22 @@ export function DocumentPdfViewer({ documentId, pageCount = 1 }: DocumentPdfView
           <ChevronRight size={18} />
         </button>
       </div>
+      {ask && onAskSelection ? (
+        <button
+          type="button"
+          className="fixed z-[220] inline-flex -translate-x-1/2 -translate-y-full items-center gap-1.5 rounded-xl bg-[#111827] px-3 py-2 text-xs font-extrabold text-white shadow-lg"
+          style={{ left: ask.x, top: ask.y }}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => {
+            onAskSelection(ask.text);
+            setAsk(null);
+            window.getSelection()?.removeAllRanges();
+          }}
+        >
+          <Sparkles size={13} />
+          Ask AI
+        </button>
+      ) : null}
     </div>
   );
 }

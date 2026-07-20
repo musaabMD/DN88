@@ -17,15 +17,15 @@ export function SplitScreenResizable({
   return (
     <ResizablePanelGroup
       direction="horizontal"
-      autoSaveId="drnote-splitscreen"
-      className="h-full rounded-xl border border-[#E5E5E5] bg-white shadow-sm"
+      autoSaveId="drnote-splitscreen-v2"
+      className="h-full gap-3"
     >
-      <ResizablePanel defaultSize={50} minSize={30}>
+      <ResizablePanel defaultSize={52} minSize={28} className="min-w-0">
         {pdfPanel}
       </ResizablePanel>
-      <ResizableHandle withHandle />
-      <ResizablePanel defaultSize={50} minSize={30}>
-        <div className="flex h-full min-h-0 flex-col">{studyPanel}</div>
+      <ResizableHandle withHandle className="mx-1 bg-transparent after:bg-[#CBD5E1]" />
+      <ResizablePanel defaultSize={48} minSize={28} className="min-w-0">
+        {studyPanel}
       </ResizablePanel>
     </ResizablePanelGroup>
   );
