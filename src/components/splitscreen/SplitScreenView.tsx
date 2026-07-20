@@ -14,7 +14,7 @@ import { SS } from "@/components/splitscreen/splitscreen-theme";
 import { HomeLocaleProvider, useHomeLocale } from "@/components/home/HomeLocaleProvider";
 import { MedGeniusCreditsProvider } from "@/lib/medgenius/credits-context";
 import { getDemoFilesForExam } from "@/lib/medgenius/demo-files";
-import { useExamDocuments } from "@/lib/medgenius/home-data";
+import { useDocumentStudy, useExamDocuments } from "@/lib/medgenius/home-data";
 
 const MOBILE_MAX_WIDTH = 767;
 
@@ -118,6 +118,8 @@ function SplitScreenInner() {
     };
   }, [docParam, demoFiles, liveFiles]);
 
+  const documentStudy = useDocumentStudy(file?.documentId);
+
   const pdfPanel =
     file ? (
       <SplitScreenPdfPanel
@@ -127,6 +129,8 @@ function SplitScreenInner() {
         color={file.color}
         documentId={file.documentId}
         readPages={content.readPages}
+        rawMarkdown={documentStudy.rawMarkdown}
+        markdownLoading={Boolean(file.documentId && documentStudy.loading)}
         onAskSelection={handleAskFromPdf}
       />
     ) : (
