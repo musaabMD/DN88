@@ -67,6 +67,19 @@ export async function insertQuestions(
   return inserted;
 }
 
+export function mergeExtractedQuestions(
+  ...lists: ExtractedQuestion[][]
+): ExtractedQuestion[] {
+  const merged = new Map<string, ExtractedQuestion>();
+  for (const list of lists) {
+    for (const q of list) {
+      const key = q.originalText.trim().toLowerCase().slice(0, 240);
+      if (key && !merged.has(key)) merged.set(key, q);
+    }
+  }
+  return [...merged.values()];
+}
+
 export function parseExtractedQuestions(jsonContent: string): ExtractedQuestion[] {
   try {
     const parsed = JSON.parse(jsonContent) as {

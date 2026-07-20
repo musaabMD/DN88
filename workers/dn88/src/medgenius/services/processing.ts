@@ -19,8 +19,10 @@ import {
 import {
   detectDuplicateGroups,
   insertQuestions,
+  mergeExtractedQuestions,
   parseExtractedQuestions,
 } from "./questions";
+import { extractRecallMcqsFromMarkdown } from "./recall-extraction";
 import {
   extractQuestionsFromMarkdown,
   generateDocumentSummary,
@@ -224,18 +226,6 @@ async function runExtractQuestionsStage(
   userId: string,
   jobId: string
 ): Promise<void> {
-  if (!env.OPENROUTER_API_KEY) {
-    await updateDocumentStatus(
-      env.DB,
-      documentId,
-      "completed",
-      100,
-      "Quiz extraction was skipped — AI extraction is not configured on the server. Reprocess or extract MCQs after AI is enabled."
-    );
-    await completeJob(env, jobId, 100);
-    return;
-  }
-
   await updateDocumentStatus(env.DB, documentId, "extracting", 50);
 
   const doc = await env.DB.prepare("SELECT * FROM medgenius_documents WHERE id = ?")
@@ -259,50 +249,53 @@ async function runExtractQuestionsStage(
     return;
   }
 
-  try {
-    const jsonContent = await extractQuestionsFromMarkdown(
-      env.OPENROUTER_API_KEY,
-      markdown,
-      doc.name
-    );
+  const recallQuestions = extractRecallMcqsFromMarkdown(markdown);
+  let aiQuestions: import("../types").ExtractedQuestion[] = [];
 
-    const questions = parseExtractedQuestions(jsonContent);
-    if (questions.length === 0) {
-      console.warn("Question extraction returned zero questions", { documentId, name: doc.name });
-      await updateDocumentStatus(
-        env.DB,
-        documentId,
-        "completed",
-        100,
-        "No MCQs were found in the parsed text. Check Parsed text in the Read tab, then reprocess if the content looks correct."
+  if (env.OPENROUTER_API_KEY) {
+    try {
+      const jsonContent = await extractQuestionsFromMarkdown(
+        env.OPENROUTER_API_KEY,
+        markdown,
+        doc.name
       );
-      await completeJob(env, jobId, 100);
-      return;
+      aiQuestions = parseExtractedQuestions(jsonContent);
+    } catch (error) {
+      console.error("OpenRouter question extraction failed; using recall parser if available", {
+        documentId,
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
     }
-    const extractCost = computeCreditCost("questionExtract", Math.max(questions.length, 1));
-    await spendCredits(env.DB, userId, extractCost, "question_extract", {
-      type: "document",
-      id: documentId,
-      metadata: { count: questions.length },
-    });
+  }
 
-    await insertQuestions(env.DB, userId, documentId, questions);
-  } catch (error) {
-    console.error("Question extraction failed; keeping parsed document", {
+  const questions = mergeExtractedQuestions(aiQuestions, recallQuestions);
+
+  if (questions.length === 0) {
+    console.warn("Question extraction returned zero questions", {
       documentId,
-      message: error instanceof Error ? error.message : "Unknown error",
+      name: doc.name,
+      recallCount: recallQuestions.length,
+      aiCount: aiQuestions.length,
+      hasOpenRouter: Boolean(env.OPENROUTER_API_KEY),
     });
-    await updateDocumentStatus(
-      env.DB,
-      documentId,
-      "completed",
-      100,
-      "Quiz extraction failed. Reprocess this file to try again."
-    );
+    const message = env.OPENROUTER_API_KEY
+      ? "No MCQs were found in the parsed text. Check Parsed text in the Read tab, then reprocess if the content looks correct."
+      : "Quiz extraction was skipped — AI extraction is not configured on the server. Reprocess or extract MCQs after AI is enabled.";
+    await updateDocumentStatus(env.DB, documentId, "completed", 100, message);
     await completeJob(env, jobId, 100);
     return;
   }
 
+  const extractCost = computeCreditCost("questionExtract", Math.max(questions.length, 1));
+  await spendCredits(env.DB, userId, extractCost, "question_extract", {
+    type: "document",
+    id: documentId,
+    metadata: { count: questions.length, recall: recallQuestions.length, ai: aiQuestions.length },
+  });
+
+  await insertQuestions(env.DB, userId, documentId, questions);
+
+  if (env.OPENROUTER_API_KEY) {
   try {
     const summary = await generateDocumentSummary(
       env.OPENROUTER_API_KEY,
@@ -327,6 +320,7 @@ async function runExtractQuestionsStage(
       documentId,
       message: error instanceof Error ? error.message : "Unknown error",
     });
+  }
   }
 
   await updateDocumentStatus(env.DB, documentId, "embedding", 70);

@@ -76,6 +76,7 @@ Rules:
 - confidence 0-1 for answer certainty
 - Mark conflicting answers with confidence < 0.5
 - Extract ALL numbered MCQs (1. 2. 3.), A/B/C/D options, recall Q&A, and clinical vignettes
+- SMLE/recall sheets: stem ends with "?", options are unlabeled lines below (may end with "/"), skip title/intro lines
 - Include questions even when the answer key is missing (set correctAnswer null, confidence low)
 - Never invent questions not present in the source chunk`;
 
