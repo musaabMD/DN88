@@ -641,11 +641,19 @@ const styles = `
 /* ---------- responsive: tablets & phones ---------- */
 @media (max-width: 1024px) {
   .dn-fs-tabs { display: none; }
+  .dn-fs-split .dn-fs-tabs { display: flex !important; }
   .dn-tabbar { display: flex; }
+  .dn-fs-split .dn-tabbar { display: none !important; }
   .dn-chat { width: 100%; border-left: none; }
   .dn-fs-body { padding-bottom: 0; }
   .nt-doc { padding: 20px 16px 24px; }
   .dn-custom { padding: 20px 16px 24px; }
+}
+@media (max-width: 767px) {
+  .dn-fs-split .dn-fs-tabs { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; padding: 6px 8px 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .dn-fs-split .dn-fs-tabs::-webkit-scrollbar { display: none; }
+  .dn-fs-split .dn-fs-tab { flex-shrink: 0; padding: 7px 10px; font-size: 12px; }
+  .dn-fs-split .dn-fs-row2 { padding: 4px 8px 8px; }
 }
 @media (max-width: 640px) {
   .dn-main { max-width: 100%; padding: 64px 12px 100px; }
