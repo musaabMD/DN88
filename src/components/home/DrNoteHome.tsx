@@ -344,6 +344,8 @@ const styles = `
 .dn-fs-split .dn-chat { position: absolute; }
 .dn-fs-split .dn-fs-row1 { display: none; }
 .dn-fs-split .dn-fs-row2 { padding-top: 8px; }
+.dn-fs-row2-split { display: flex; align-items: center; gap: 8px; }
+.dn-fs-row2-split .dn-fs-search { flex: 1; min-width: 0; }
 .dn-fs-split .dn-fs-tabs { padding-top: 0; }
 .dn-fs-head { flex-shrink: 0; background: #fff; }
 .dn-fs-row1 { display: flex; align-items: center; gap: 8px; padding: 8px 12px 6px; min-width: 0; }
@@ -1663,12 +1665,17 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, splitScreen, p
             {immersive ? <Minimize2 size={16} strokeWidth={2.4} /> : <Maximize2 size={16} strokeWidth={2.4} />}
           </button>
         </div>
-        <div className="dn-fs-row2">
+        <div className={`dn-fs-row2${splitScreen ? " dn-fs-row2-split" : ""}`}>
           <div className="dn-fs-search">
             <Search size={16} color={C.faint} strokeWidth={2.4} />
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={searchable ? m.searchTab(m.tabLabelLower(tab)) : m.searchThisFile} aria-label={m.searchThisFile} />
             {query && <button className="dn-fs-clear" onClick={() => setQuery("")}><X size={14} strokeWidth={2.8} /></button>}
           </div>
+          {splitScreen ? (
+            <button type="button" className="dn-fs-fs" onClick={() => void toggleFullscreen()} title={immersive ? m.exitFullScreen : m.fullScreen} aria-label={immersive ? m.exitFullScreen : m.fullScreen} aria-pressed={immersive}>
+              {immersive ? <Minimize2 size={16} strokeWidth={2.4} /> : <Maximize2 size={16} strokeWidth={2.4} />}
+            </button>
+          ) : null}
         </div>
         <nav className="dn-fs-tabs">
           {studyTabs.map(({ key, icon: Icon }) => (

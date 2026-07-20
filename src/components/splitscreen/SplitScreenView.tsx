@@ -116,27 +116,30 @@ function SplitScreenInner() {
       </SplitScreenPanelShell>
     );
 
+  const studyShellClass =
+    "flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-[#E8ECF0] bg-white shadow-[0_10px_40px_rgba(15,23,42,0.06)]";
+
   const studyPanel = !mounted ? (
-    <SplitScreenPanelShell title="Study" subtitle="Quiz · Review · Summary" accent={exam.from}>
+    <div className={studyShellClass}>
       <div className="flex h-full items-center justify-center p-6 text-sm font-semibold text-[#777]">
         Loading study panel…
       </div>
-    </SplitScreenPanelShell>
+    </div>
   ) : file && exam ? (
-    <SplitScreenPanelShell title="Study" subtitle="Quiz · Review · Summary · Flashcards · Custom" accent={exam.from}>
+    <div className={studyShellClass}>
       <SplitScreenStudyPanel
         file={file}
         exam={exam}
         pendingAskQuote={pendingAskQuote}
         onPendingAskHandled={handlePendingAskHandled}
       />
-    </SplitScreenPanelShell>
+    </div>
   ) : (
-    <SplitScreenPanelShell title="Study" subtitle="Waiting for file" accent={exam.from}>
+    <div className={studyShellClass}>
       <div className="flex h-full items-center justify-center p-6 text-sm font-semibold text-[#777]">
         Load a file to show study tabs
       </div>
-    </SplitScreenPanelShell>
+    </div>
   );
 
   return (
