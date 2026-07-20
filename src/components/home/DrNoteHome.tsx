@@ -342,16 +342,15 @@ const styles = `
 .dn-fs { position: fixed; inset: 0; z-index: 100; background: #fff; display: flex; flex-direction: column; }
 .dn-fs-split { position: relative; inset: auto; z-index: 0; height: 100%; min-height: 0; overflow: hidden; background: #fff; }
 .dn-fs-split .dn-fs-row1 { display: none; }
-.dn-fs-split .dn-fs-row2 { padding: 8px 10px 6px; }
+.dn-fs-split .dn-fs-row2 { padding: 4px 10px 8px; border-bottom: none; }
 .dn-fs-split .dn-fs-head { border-bottom: 1px solid ${C.line}; }
-.dn-fs-split .dn-fs-tabs { padding: 0 10px 8px; gap: 2px; border-bottom: 1px solid ${C.line}; }
+.dn-fs-split .dn-fs-tabs { justify-content: center; padding: 8px 10px 4px; gap: 2px; border-bottom: none; flex-wrap: wrap; }
 .dn-fs-split .dn-fs-tab { padding: 8px 12px; border-radius: 10px; font-size: 13px; color: ${C.faint}; background: transparent; }
 .dn-fs-split .dn-fs-tab.on-tab { color: ${C.ink}; background: ${C.wash}; box-shadow: inset 0 -2px 0 ${C.blue}; }
 .dn-fs-split .dn-fs-tab:hover { background: ${C.wash}; color: ${C.sub}; }
 .dn-fs-split .dn-chat-inline { position: relative; inset: auto; top: auto; right: auto; bottom: auto; flex: 1; min-height: 0; width: 100%; max-width: none; border-left: none; box-shadow: none; z-index: 0; }
 .dn-fs-row2-split { display: flex; align-items: center; gap: 8px; }
 .dn-fs-row2-split .dn-fs-search { flex: 1; min-width: 0; }
-.dn-fs-split .dn-fs-tabs { padding-top: 0; }
 .dn-fs-head { flex-shrink: 0; background: #fff; }
 .dn-fs-row1 { display: flex; align-items: center; gap: 8px; padding: 8px 12px 6px; min-width: 0; }
 .dn-fs-row2 { padding: 0 12px 8px; }
@@ -1651,6 +1650,54 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, splitScreen, p
 
   const subLabel = exam ? `${exam.code} · ${file.author}` : `@${file.author} · ${m.pgShort(file.pages)}`;
 
+  const studyTabsNav = (
+    <nav className="dn-fs-tabs">
+      {studyTabs.map(({ key, icon: Icon }) => (
+        <button
+          key={key}
+          className={`dn-fs-tab${tab === key && !chatOpen ? " on-tab" : ""}`}
+          onClick={() => { setTab(key); setChatOpen(false); }}
+          style={
+            splitScreen
+              ? undefined
+              : {
+                  color: tab === key && !chatOpen ? C.blueDark : C.faint,
+                  background: tab === key && !chatOpen ? "#DDF4FF" : "transparent",
+                }
+          }
+        >
+          <Icon size={16} strokeWidth={2.4} /><span>{m.tabLabel(key)}</span>
+        </button>
+      ))}
+      <button
+        className={`dn-fs-tab${chatOpen ? " on-tab" : ""}`}
+        onClick={() => openChat()}
+        style={
+          splitScreen
+            ? undefined
+            : { color: chatOpen ? C.purpleDark : C.faint, background: chatOpen ? "#F3E8FF" : "transparent" }
+        }
+      >
+        <Sparkles size={16} strokeWidth={2.4} /><span>{m.ask}</span>
+      </button>
+    </nav>
+  );
+
+  const searchRow = (
+    <div className={`dn-fs-row2${splitScreen ? " dn-fs-row2-split" : ""}`}>
+      <div className="dn-fs-search">
+        <Search size={16} color={C.faint} strokeWidth={2.4} />
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={searchable ? m.searchTab(m.tabLabelLower(tab)) : m.searchThisFile} aria-label={m.searchThisFile} />
+        {query && <button className="dn-fs-clear" onClick={() => setQuery("")}><X size={14} strokeWidth={2.8} /></button>}
+      </div>
+      {splitScreen ? (
+        <button type="button" className="dn-fs-fs" onClick={() => void toggleFullscreen()} title={immersive ? m.exitFullScreen : m.fullScreen} aria-label={immersive ? m.exitFullScreen : m.fullScreen} aria-pressed={immersive}>
+          {immersive ? <Minimize2 size={16} strokeWidth={2.4} /> : <Maximize2 size={16} strokeWidth={2.4} />}
+        </button>
+      ) : null}
+    </div>
+  );
+
   return (
     <div className={`dn-fs${immersive ? " dn-fs-immersive" : ""}${splitScreen ? " dn-fs-split" : ""}`} ref={fsRef}>
       <header className="dn-fs-head">
@@ -1673,48 +1720,17 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, splitScreen, p
             {immersive ? <Minimize2 size={16} strokeWidth={2.4} /> : <Maximize2 size={16} strokeWidth={2.4} />}
           </button>
         </div>
-        <div className={`dn-fs-row2${splitScreen ? " dn-fs-row2-split" : ""}`}>
-          <div className="dn-fs-search">
-            <Search size={16} color={C.faint} strokeWidth={2.4} />
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={searchable ? m.searchTab(m.tabLabelLower(tab)) : m.searchThisFile} aria-label={m.searchThisFile} />
-            {query && <button className="dn-fs-clear" onClick={() => setQuery("")}><X size={14} strokeWidth={2.8} /></button>}
-          </div>
-          {splitScreen ? (
-            <button type="button" className="dn-fs-fs" onClick={() => void toggleFullscreen()} title={immersive ? m.exitFullScreen : m.fullScreen} aria-label={immersive ? m.exitFullScreen : m.fullScreen} aria-pressed={immersive}>
-              {immersive ? <Minimize2 size={16} strokeWidth={2.4} /> : <Maximize2 size={16} strokeWidth={2.4} />}
-            </button>
-          ) : null}
-        </div>
-        <nav className="dn-fs-tabs">
-          {studyTabs.map(({ key, icon: Icon }) => (
-            <button
-              key={key}
-              className={`dn-fs-tab${tab === key && !chatOpen ? " on-tab" : ""}`}
-              onClick={() => { setTab(key); setChatOpen(false); }}
-              style={
-                splitScreen
-                  ? undefined
-                  : {
-                      color: tab === key && !chatOpen ? C.blueDark : C.faint,
-                      background: tab === key && !chatOpen ? "#DDF4FF" : "transparent",
-                    }
-              }
-            >
-              <Icon size={16} strokeWidth={2.4} /><span>{m.tabLabel(key)}</span>
-            </button>
-          ))}
-          <button
-            className={`dn-fs-tab${chatOpen ? " on-tab" : ""}`}
-            onClick={() => openChat()}
-            style={
-              splitScreen
-                ? undefined
-                : { color: chatOpen ? C.purpleDark : C.faint, background: chatOpen ? "#F3E8FF" : "transparent" }
-            }
-          >
-            <Sparkles size={16} strokeWidth={2.4} /><span>{m.ask}</span>
-          </button>
-        </nav>
+        {splitScreen ? (
+          <>
+            {studyTabsNav}
+            {searchRow}
+          </>
+        ) : (
+          <>
+            {searchRow}
+            {studyTabsNav}
+          </>
+        )}
       </header>
 
       <div className="dn-fs-body" onMouseUp={onBodyMouseUp}>
