@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Highlighter, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { fetchDocumentFileBlob } from "@/lib/medgenius/api";
 import { getClerkToken } from "@/lib/clerk-token";
 
@@ -23,21 +23,14 @@ type DocumentPdfViewerProps = {
   documentId: string;
   pageCount?: number;
   onAskSelection?: (text: string) => void;
-  showAnnotationToolbar?: boolean;
 };
 
-const HIGHLIGHT_COLORS = [
-  { id: "yellow", bg: "#FEF08A" },
-  { id: "green", bg: "#BBF7D0" },
-  { id: "blue", bg: "#BFDBFE" },
-  { id: "pink", bg: "#FBCFE8" },
-] as const;
+const HIGHLIGHT_COLOR = "#FEF08A";
 
 export function DocumentPdfViewer({
   documentId,
   pageCount = 1,
   onAskSelection,
-  showAnnotationToolbar = false,
 }: DocumentPdfViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const textLayerRef = useRef<HTMLDivElement>(null);
@@ -47,10 +40,6 @@ export function DocumentPdfViewer({
   const [totalPages, setTotalPages] = useState(pageCount);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [annotateMode, setAnnotateMode] = useState(false);
-  const [highlightColor, setHighlightColor] = useState<(typeof HIGHLIGHT_COLORS)[number]["bg"]>(
-    HIGHLIGHT_COLORS[0].bg
-  );
   const [ask, setAsk] = useState<{ x: number; y: number; text: string } | null>(null);
   const renderTaskRef = useRef<import("pdfjs-dist").RenderTask | null>(null);
 
@@ -147,18 +136,13 @@ export function DocumentPdfViewer({
       return;
     }
     const rect = sel.getRangeAt(0).getBoundingClientRect();
-    if (annotateMode) {
-      try {
-        document.execCommand("hiliteColor", false, highlightColor);
-      } catch {
-        /* browser may block hiliteColor on PDF text layer */
-      }
-      window.getSelection()?.removeAllRanges();
-      setAsk(null);
-      return;
+    try {
+      document.execCommand("hiliteColor", false, HIGHLIGHT_COLOR);
+    } catch {
+      /* browser may block hiliteColor on PDF text layer */
     }
     setAsk({ x: rect.left + rect.width / 2, y: rect.top - 8, text });
-  }, [annotateMode, highlightColor]);
+  }, []);
 
   if (loading) {
     return <div className="dn-pdf-state">Loading PDF…</div>;
@@ -170,38 +154,6 @@ export function DocumentPdfViewer({
 
   return (
     <div className="dn-pdf-wrap">
-      {showAnnotationToolbar ? (
-        <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-[#E5E7EB] bg-white/90 px-3 py-2 backdrop-blur">
-          <button
-            type="button"
-            onClick={() => setAnnotateMode((value) => !value)}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-extrabold ${
-              annotateMode ? "bg-[#FEF08A] text-[#854D0E]" : "bg-[#F8FAFC] text-[#64748B]"
-            }`}
-          >
-            <Highlighter size={14} />
-            Annotate
-          </button>
-          {HIGHLIGHT_COLORS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => {
-                setHighlightColor(item.bg);
-                setAnnotateMode(true);
-              }}
-              className={`h-6 w-6 rounded-full border-2 ${
-                highlightColor === item.bg && annotateMode ? "border-[#334155]" : "border-white"
-              }`}
-              style={{ background: item.bg }}
-              aria-label={`Highlight ${item.id}`}
-            />
-          ))}
-          <span className="ml-auto text-[10px] font-bold uppercase tracking-wide text-[#94A3B8]">
-            Select text to highlight or ask
-          </span>
-        </div>
-      ) : null}
       <div className="dn-pdf-page" ref={pageWrapRef} onMouseUp={onMouseUp}>
         <canvas ref={canvasRef} className="dn-pdf-canvas" />
         <div ref={textLayerRef} className="dn-pdf-text-layer textLayer" />

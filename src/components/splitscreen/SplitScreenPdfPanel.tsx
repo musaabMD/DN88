@@ -35,7 +35,6 @@ export function SplitScreenPdfPanel({
           documentId={documentId}
           pageCount={pages}
           onAskSelection={onAskSelection}
-          showAnnotationToolbar
         />
       ) : (
         <DemoPdfViewer
