@@ -34,10 +34,61 @@ export async function chatCompletion(
     body.response_format = { type: "json_object" };
   }
 
+  return executeChatCompletion(body, apiKey);
+}
+
+export type JsonSchemaFormat = {
+  name: string;
+  schema: Record<string, unknown>;
+  strict?: boolean;
+};
+
+export async function chatCompletionWithSchema(
+  apiKey: string,
+  messages: OpenRouterMessage[],
+  options: {
+    name: string;
+    schema: Record<string, unknown>;
+    model?: string;
+    maxTokens?: number;
+    temperature?: number;
+    strict?: boolean;
+  }
+): Promise<{ content: string; parsed: unknown; tokensUsed: number; model: string }> {
+  const body: Record<string, unknown> = {
+    model: options.model ?? EXTRACTION_MODEL,
+    messages,
+    max_tokens: options.maxTokens ?? 8192,
+    temperature: options.temperature ?? 0,
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: options.name,
+        strict: options.strict ?? true,
+        schema: options.schema,
+      },
+    },
+  };
+
+  const result = await executeChatCompletion(body, apiKey);
+  const parsed = parseLlmJsonContent(result.content);
+  return { ...result, parsed };
+}
+
+async function executeChatCompletion(
+  body: Record<string, unknown>,
+  apiKey?: string
+): Promise<OpenRouterResult> {
+  const key = apiKey ?? (body as { _apiKey?: string })._apiKey;
+  const apiKeyResolved = key ?? (body as { apiKey?: string }).apiKey;
+  if (!apiKeyResolved) {
+    throw new Error("OpenRouter API key required");
+  }
+
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${apiKeyResolved}`,
       "Content-Type": "application/json",
       "HTTP-Referer": "https://drnote.co",
       "X-Title": "MedGenius AI",
@@ -57,6 +108,7 @@ export async function chatCompletion(
 
   const content = payload.choices?.[0]?.message?.content ?? "";
   const tokensUsed = payload.usage?.total_tokens ?? Math.ceil(content.length / 4);
+  const model = typeof body.model === "string" ? body.model : DEFAULT_MODEL;
 
   return { content, tokensUsed, model };
 }
@@ -68,102 +120,20 @@ export function parseLlmJsonContent(content: string): unknown {
   return JSON.parse(body);
 }
 
-const EXTRACTION_SYSTEM_PROMPT = `You extract medical exam questions from study materials. Return valid JSON only with shape:
-{"questions":[{"originalText":"...","cleanedText":"...","options":["A","B","C","D"],"correctAnswer":0,"confidence":0.9,"explanation":"...","topic":"Cardiology","subtopic":"ACS","difficulty":"medium","page":1,"tags":["high-yield"]}]}
-Rules:
-- Preserve original wording in originalText; put polished board-style text in cleanedText
-- correctAnswer is 0-based index or null if unknown
-- confidence 0-1 for answer certainty
-- Mark conflicting answers with confidence < 0.5
-- Extract ALL numbered MCQs (1. 2. 3.), A/B/C/D options, recall Q&A, and clinical vignettes
-- SMLE/recall sheets: stem ends with "?", options are unlabeled lines below (may end with "/"), skip title/intro lines
-- Include questions even when the answer key is missing (set correctAnswer null, confidence low)
-- Never invent questions not present in the source chunk`;
-
-export function chunkMarkdownForExtraction(markdown: string, maxChunkSize = 18_000): string[] {
-  if (markdown.length <= maxChunkSize) return [markdown];
-
-  const sections = markdown.split(/\n(?=##?\s+)/).filter((s) => s.trim());
-  if (sections.length <= 1) {
-    const chunks: string[] = [];
-    for (let i = 0; i < markdown.length; i += maxChunkSize) {
-      chunks.push(markdown.slice(i, i + maxChunkSize));
-    }
-    return chunks;
-  }
-
-  const chunks: string[] = [];
-  let current = "";
-  for (const section of sections) {
-    if (current.length + section.length > maxChunkSize && current) {
-      chunks.push(current);
-      current = section;
-    } else {
-      current = current ? `${current}\n${section}` : section;
-    }
-  }
-  if (current) chunks.push(current);
-  return chunks;
-}
-
-async function extractQuestionsFromChunk(
-  apiKey: string,
-  chunk: string,
-  documentName: string,
-  chunkIndex: number,
-  chunkTotal: number
-): Promise<string> {
-  const result = await chatCompletion(
-    apiKey,
-    [
-      { role: "system", content: EXTRACTION_SYSTEM_PROMPT },
-      {
-        role: "user",
-        content: `Document: ${documentName}\nChunk ${chunkIndex} of ${chunkTotal}\n\n${chunk}`,
-      },
-    ],
-    { model: EXTRACTION_MODEL, jsonMode: true, maxTokens: 8192, temperature: 0.2 }
-  );
-  return result.content;
-}
-
 export async function extractQuestionsFromMarkdown(
   apiKey: string,
   markdown: string,
   documentName: string
 ): Promise<string> {
-  const chunks = chunkMarkdownForExtraction(markdown);
-  const merged = new Map<string, import("../types").ExtractedQuestion>();
-
-  for (let i = 0; i < chunks.length; i++) {
-    const chunk = chunks[i];
-    if (!chunk) continue;
-    try {
-      const jsonContent = await extractQuestionsFromChunk(
-        apiKey,
-        chunk,
-        documentName,
-        i + 1,
-        chunks.length
-      );
-      const parsed = parseLlmJsonContent(jsonContent) as {
-        questions?: import("../types").ExtractedQuestion[];
-      };
-      if (!Array.isArray(parsed.questions)) continue;
-      for (const q of parsed.questions) {
-        const key = q.originalText?.trim().toLowerCase().slice(0, 240);
-        if (key && !merged.has(key)) merged.set(key, q);
-      }
-    } catch (error) {
-      console.error("Question extraction chunk failed", {
-        documentName,
-        chunk: i + 1,
-        message: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
-  }
-
-  return JSON.stringify({ questions: [...merged.values()] });
+  const { runMcqExtractionPipeline } = await import("../mcq/pipeline");
+  const { DEFAULT_PROCESSING_OPTIONS } = await import("../mcq/types");
+  const result = await runMcqExtractionPipeline(
+    apiKey,
+    markdown,
+    documentName,
+    DEFAULT_PROCESSING_OPTIONS
+  );
+  return JSON.stringify({ questions: result.questions });
 }
 
 export async function tutorReply(

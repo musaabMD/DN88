@@ -5,12 +5,35 @@ Cloudflare Worker API for document processing, AI tutoring, and credit-enforced 
 ## Architecture
 
 ```
-Upload → R2 (original) → Queue → Context.dev (parse once) → R2 (markdown)
-                                      ↓
-                              OpenRouter (extract questions, summaries, flashcards)
-                                      ↓
-                                   D1 (structured data)
+Upload → R2 (original) → Queue
+              ↓
+         Context.dev (parse bytes → Markdown only)
+              ↓
+         Page-aware Markdown (`<!-- PAGE:n -->` markers)
+              ↓
+         Document classifier (per chunk)
+              ↓
+         Question-boundary chunker
+              ↓
+         OpenRouter LLM (extract or generate, json_schema)
+              ↓
+         Validation + deduplication
+              ↓
+         D1 (structured questions) + Quiz UI
 ```
+
+Context.dev converts PDFs and Office files to Markdown. OpenRouter classifies chunks and extracts or generates structured MCQs. The two stages are separate by design.
+
+Upload form fields (optional):
+
+| Field | Values | Default |
+|-------|--------|---------|
+| `processingMode` | `auto`, `extract`, `generate`, `extract_and_generate` | `auto` |
+| `qualityMode` | `fast`, `balanced`, `maximum` | `balanced` |
+| `incompletePolicy` | `keep_for_review`, `exclude` | `keep_for_review` |
+
+- **fast**: single Context.dev parse
+- **balanced** / **maximum**: PDFs parsed in 8-page batches with page markers
 
 All AI and parsing runs **once per document**. Subsequent reads come from D1/R2 only.
 
@@ -46,7 +69,7 @@ Base path: `/api/medgenius` (requires Clerk Bearer token)
 | GET | `/documents` | List uploaded documents |
 | GET | `/documents/:id` | Document processing status |
 | GET | `/documents/:id/markdown` | Processed markdown content |
-| POST | `/documents/upload` | Upload file (multipart: file, name, examId) |
+| POST | `/documents/upload` | Upload file (multipart: file, name, examId, processingMode, qualityMode, incompletePolicy) |
 | GET | `/questions` | List extracted questions |
 | GET | `/questions/:id` | Single question with images |
 | GET | `/search?q=` | Semantic question search |
@@ -68,6 +91,7 @@ npx wrangler queues create medgenius-processing
 
 # Run D1 migration
 npm run medgenius:migrate
+npx wrangler d1 execute dn88-catalog --file=migrations/d1/003_medgenius_processing_options.sql -c workers/dn88/wrangler.jsonc --remote
 
 # Set secrets
 npx wrangler secret put OPENROUTER_API_KEY -c workers/dn88/wrangler.jsonc

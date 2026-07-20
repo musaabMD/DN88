@@ -33,7 +33,10 @@ export async function insertQuestions(
         q.difficulty ?? null,
         q.page ?? null,
         JSON.stringify(q.tags ?? []),
-        q.confidence !== undefined && q.confidence < 0.5 ? "needs_review" : "unverified"
+        q.tags?.includes("needs_review") ||
+        (q.confidence !== undefined && q.confidence < 0.5)
+          ? "needs_review"
+          : "unverified"
       )
       .run();
 

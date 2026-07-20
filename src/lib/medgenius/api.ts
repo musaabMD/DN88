@@ -118,9 +118,24 @@ export async function fetchDocuments(
   return medgeniusFetch(`/documents${query}`, token);
 }
 
+export type ProcessingMode = "auto" | "extract" | "generate" | "extract_and_generate";
+export type QualityMode = "fast" | "balanced" | "maximum";
+export type IncompleteQuestionPolicy = "keep_for_review" | "exclude";
+
+export type UploadProcessingOptions = {
+  mode: ProcessingMode;
+  quality: QualityMode;
+  incompletePolicy: IncompleteQuestionPolicy;
+};
+
 export async function uploadDocument(
   token: string | null,
-  params: { file: File; name: string; examId?: string }
+  params: {
+    file: File;
+    name: string;
+    examId?: string;
+    processingOptions?: UploadProcessingOptions;
+  }
 ): Promise<{
   documentId: string;
   duplicate: boolean;
@@ -133,6 +148,11 @@ export async function uploadDocument(
   formData.append("file", params.file);
   formData.append("name", params.name);
   if (params.examId) formData.append("examId", params.examId);
+  if (params.processingOptions) {
+    formData.append("processingMode", params.processingOptions.mode);
+    formData.append("qualityMode", params.processingOptions.quality);
+    formData.append("incompletePolicy", params.processingOptions.incompletePolicy);
+  }
 
   return medgeniusFetch("/documents/upload", token, {
     method: "POST",
