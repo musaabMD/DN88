@@ -29,7 +29,17 @@ async function ragFetch<T>(
 export type RagHealth = {
   ok: boolean;
   triggerConfigured: boolean;
+  openRouterConfigured?: boolean;
+  extractionMode?: "worker" | "trigger" | "worker_or_trigger" | "none";
   projectRef: string;
+};
+
+export type RagPageResult = {
+  pageNumber: number;
+  regions: DocumentExtractionResult["regions"];
+  questions: DocumentExtractionResult["questions"];
+  evidence: DocumentExtractionResult["evidence"];
+  notes: string[];
 };
 
 export type RagTriggerResult = {
@@ -68,6 +78,94 @@ export function triggerRagTask(
 
 export function fetchRagRun(token: string | null, runId: string) {
   return ragFetch<RagRunResponse>(token, `/runs/${runId}`);
+}
+
+export function extractRagPageWorker(
+  token: string | null,
+  payload: {
+    documentId: string;
+    pageNumber: number;
+    pageText?: string | null;
+    pageImageUrl?: string | null;
+    nearbyPageHints?: Array<{ pageNumber: number; textPreview: string }>;
+  },
+) {
+  return ragFetch<RagPageResult>(token, "/extract-page", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function mergeRagPageResults(
+  documentId: string,
+  pageCount: number,
+  pages: RagPageResult[],
+): DocumentExtractionResult {
+  const questions = pages.flatMap((p) => p.questions);
+  const regions = pages.flatMap((p) => p.regions);
+  const evidence = pages.flatMap((p) => p.evidence);
+  const warnings = pages.flatMap((p) =>
+    p.notes.map((n) => `page ${p.pageNumber}: ${n}`),
+  );
+
+  return {
+    documentId,
+    pageCount,
+    questions,
+    regions,
+    evidence,
+    ragReady: questions.map((q) => ({
+      questionId: q.id,
+      stem: q.versions.quizReady.stem || q.versions.normalized.stem,
+      choices: q.versions.quizReady.choices,
+      answerStatus: q.answer.status,
+      origin: q.origin,
+      pageNumbers: q.source.pageNumbers,
+      usabilityStatus: q.usabilityStatus,
+    })),
+    warnings,
+  };
+}
+
+export async function extractDocumentViaWorker(
+  token: string | null,
+  documentId: string,
+  pages: Array<{
+    pageNumber: number;
+    pageText?: string | null;
+    pageImageUrl?: string | null;
+  }>,
+  onProgress?: (done: number, total: number) => void,
+): Promise<DocumentExtractionResult> {
+  const sorted = [...pages].sort((a, b) => a.pageNumber - b.pageNumber);
+  const pageResults: RagPageResult[] = [];
+
+  for (let index = 0; index < sorted.length; index += 1) {
+    const page = sorted[index]!;
+    onProgress?.(index + 1, sorted.length);
+
+    const nearby = sorted
+      .filter(
+        (p) =>
+          p.pageNumber !== page.pageNumber &&
+          Math.abs(p.pageNumber - page.pageNumber) <= 1,
+      )
+      .map((p) => ({
+        pageNumber: p.pageNumber,
+        textPreview: (p.pageText ?? "").slice(0, 500),
+      }));
+
+    const result = await extractRagPageWorker(token, {
+      documentId,
+      pageNumber: page.pageNumber,
+      pageText: page.pageText,
+      pageImageUrl: page.pageImageUrl,
+      nearbyPageHints: nearby,
+    });
+    pageResults.push(result);
+  }
+
+  return mergeRagPageResults(documentId, sorted.length, pageResults);
 }
 
 export const EXAMPLE_EXTRACTED_QUESTION = {
