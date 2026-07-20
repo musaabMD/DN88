@@ -340,10 +340,16 @@ const styles = `
 
 /* ============ full-screen study ============ */
 .dn-fs { position: fixed; inset: 0; z-index: 100; background: #fff; display: flex; flex-direction: column; }
-.dn-fs-split { position: relative; inset: auto; z-index: 0; height: 100%; min-height: 0; overflow: hidden; }
+.dn-fs-split { position: relative; inset: auto; z-index: 0; height: 100%; min-height: 0; overflow: hidden; background: #fff; }
 .dn-fs-split .dn-chat { position: absolute; }
 .dn-fs-split .dn-fs-row1 { display: none; }
-.dn-fs-split .dn-fs-row2 { padding-top: 8px; }
+.dn-fs-split .dn-fs-row2 { padding: 8px 10px 6px; }
+.dn-fs-split .dn-fs-head { border-bottom: 1px solid ${C.line}; }
+.dn-fs-split .dn-fs-tabs { padding: 0 10px 8px; gap: 2px; border-bottom: 1px solid ${C.line}; }
+.dn-fs-split .dn-fs-tab { padding: 8px 12px; border-radius: 10px; font-size: 13px; color: ${C.faint}; background: transparent; }
+.dn-fs-split .dn-fs-tab.on-tab { color: ${C.ink}; background: ${C.wash}; box-shadow: inset 0 -2px 0 ${C.blue}; }
+.dn-fs-split .dn-fs-tab.on-ask { color: ${C.purpleDark}; background: #FAF5FF; box-shadow: inset 0 -2px 0 ${C.purple}; }
+.dn-fs-split .dn-fs-tab:hover { background: ${C.wash}; color: ${C.sub}; }
 .dn-fs-row2-split { display: flex; align-items: center; gap: 8px; }
 .dn-fs-row2-split .dn-fs-search { flex: 1; min-width: 0; }
 .dn-fs-split .dn-fs-tabs { padding-top: 0; }
@@ -413,7 +419,7 @@ const styles = `
 .dn-pdf-canvas { display: block; box-shadow: 0 2px 16px rgba(0,0,0,.12); background: #fff; }
 .dn-pdf-text-layer { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); overflow: hidden; line-height: 1; pointer-events: auto; }
 .dn-pdf-text-layer span, .dn-pdf-text-layer br { color: transparent; position: absolute; white-space: pre; transform-origin: 0 0; user-select: text; cursor: text; }
-.dn-pdf-text-layer ::selection { background: rgba(88, 204, 2, 0.35); }
+.dn-pdf-text-layer ::selection { background: rgba(255, 243, 176, 0.92); }
 .dn-pdf-pager { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 10px; border-top: 1px solid ${C.line}; background: #fff; font-size: 13px; font-weight: 700; color: ${C.sub}; }
 .dn-pdf-pager button { border: 1px solid ${C.line}; background: #fff; border-radius: 8px; width: 34px; height: 34px; display: grid; place-items: center; cursor: pointer; }
 .dn-pdf-pager button:disabled { opacity: .4; cursor: not-allowed; }
@@ -1679,11 +1685,31 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, splitScreen, p
         </div>
         <nav className="dn-fs-tabs">
           {studyTabs.map(({ key, icon: Icon }) => (
-            <button key={key} className="dn-fs-tab" onClick={() => { setTab(key); setChatOpen(false); }} style={{ color: tab === key && !chatOpen ? C.blueDark : C.faint, background: tab === key && !chatOpen ? "#DDF4FF" : "transparent" }}>
+            <button
+              key={key}
+              className={`dn-fs-tab${tab === key && !chatOpen ? " on-tab" : ""}`}
+              onClick={() => { setTab(key); setChatOpen(false); }}
+              style={
+                splitScreen
+                  ? undefined
+                  : {
+                      color: tab === key && !chatOpen ? C.blueDark : C.faint,
+                      background: tab === key && !chatOpen ? "#DDF4FF" : "transparent",
+                    }
+              }
+            >
               <Icon size={16} strokeWidth={2.4} /><span>{m.tabLabel(key)}</span>
             </button>
           ))}
-          <button className="dn-fs-tab" onClick={() => openChat()} style={{ color: chatOpen ? C.purpleDark : C.faint, background: chatOpen ? "#F3E8FF" : "transparent" }}>
+          <button
+            className={`dn-fs-tab${chatOpen ? " on-ask" : ""}`}
+            onClick={() => openChat()}
+            style={
+              splitScreen
+                ? undefined
+                : { color: chatOpen ? C.purpleDark : C.faint, background: chatOpen ? "#F3E8FF" : "transparent" }
+            }
+          >
             <Sparkles size={16} strokeWidth={2.4} /><span>{m.ask}</span>
           </button>
         </nav>

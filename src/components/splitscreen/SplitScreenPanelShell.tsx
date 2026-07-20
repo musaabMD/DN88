@@ -2,6 +2,7 @@
 
 import { Maximize2, Minimize2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { SS } from "@/components/splitscreen/splitscreen-theme";
 
 type SplitScreenPanelShellProps = {
   title?: string;
@@ -49,19 +50,20 @@ export function SplitScreenPanelShell({
   return (
     <div
       ref={panelRef}
-      className={`flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-[#E8ECF0] bg-white shadow-[0_10px_40px_rgba(15,23,42,0.06)] ${
+      className={`flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border bg-white ${
         immersive ? "fixed inset-0 z-[200] rounded-none border-0 shadow-none" : ""
       }${className ? ` ${className}` : ""}`}
+      style={
+        immersive
+          ? undefined
+          : { borderColor: SS.panelBorder, boxShadow: SS.panelShadow }
+      }
     >
       <div
-        className={`flex shrink-0 items-center gap-2 border-b border-[#E8ECF0] ${
+        className={`flex shrink-0 items-center gap-2 border-b ${
           expandOnlyHeader ? "justify-end px-2 py-1.5" : "px-3 py-2.5"
         }`}
-        style={
-          expandOnlyHeader
-            ? undefined
-            : { background: `linear-gradient(135deg, ${accent}14 0%, #ffffff 55%, #f8fafc 100%)` }
-        }
+        style={{ borderColor: SS.panelBorder, background: expandOnlyHeader ? "#fff" : SS.pageBg }}
       >
         {!expandOnlyHeader ? (
           <>
@@ -86,7 +88,8 @@ export function SplitScreenPanelShell({
         <button
           type="button"
           onClick={() => void toggleFullscreen()}
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-[#E5E7EB] bg-white text-[#64748B] shadow-sm transition hover:border-[#CBD5E1] hover:text-[#334155]"
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border bg-white shadow-sm transition hover:opacity-90"
+          style={{ borderColor: SS.panelBorder, color: SS.sub }}
           title={immersive ? "Exit full screen" : "Full screen"}
           aria-label={immersive ? "Exit full screen" : "Full screen"}
         >

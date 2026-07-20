@@ -25,7 +25,7 @@ type DocumentPdfViewerProps = {
   onAskSelection?: (text: string) => void;
 };
 
-const HIGHLIGHT_COLOR = "#FEF08A";
+const HIGHLIGHT_COLOR = "#FFF3B0";
 
 export function DocumentPdfViewer({
   documentId,
