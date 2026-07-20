@@ -275,6 +275,7 @@ export function RagLabView() {
     setRunStatus("QUEUED");
     try {
       const token = await getClerkToken();
+      void refreshHealth();
       const handle = await triggerRagTask(token, "process-document", {
         documentId,
         pages: pages.map((p) => ({
