@@ -1,0 +1,26 @@
+---
+description: Exam-recall PDF extraction and /rag Trigger.dev pipeline rules
+globs:
+  - "src/lib/rag/**"
+  - "src/components/rag/**"
+  - "src/app/rag/**"
+  - "trigger/**"
+  - "workers/dn88/src/rag/**"
+  - "docs/rag-extraction-spec.md"
+alwaysApply: false
+---
+
+# RAG exam-document extraction
+
+Follow `docs/rag-extraction-spec.md` and `src/lib/rag/schemas.ts`.
+
+## Non-negotiable rules
+
+1. Never assume `one page = one question`. A page may contain zero, one, or many questions; a question may span regions or pages.
+2. Preserve exact source wording in `versions.source` (spelling mistakes, grammar, abbreviations, uncertainty like “I think”). Do not silently improve.
+3. Every question must have `origin: "extracted" | "reconstructed" | "generated"`. Never present generated text as extracted.
+4. Associate images only when required to answer — not merely because they share a page with a question.
+5. Do not generate MCQs during extraction. Generation uses `GENERATION_SYSTEM_PROMPT` in a separate step (`generate-question` task).
+6. Validate all outputs with Zod (`questionSchema`, `pageExtractionResultSchema`, `documentExtractionResultSchema`).
+7. When answers conflict or are uncertain, preserve evidence and require review — never invent a confirmed source answer.
+8. The review UI must keep source / normalized / quiz-ready distinguishable, and label reconstructed/generated questions.
