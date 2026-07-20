@@ -147,15 +147,23 @@ export function DocumentPdfViewer({
   }, []);
 
   if (loading) {
-    return <div className="dn-pdf-state">Loading PDF…</div>;
+    return (
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="dn-pdf-state flex-1">Loading PDF…</div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="dn-pdf-state dn-pdf-error">{error}</div>;
+    return (
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="dn-pdf-state dn-pdf-error flex-1">{error}</div>
+      </div>
+    );
   }
 
   return (
-    <div className="dn-pdf-wrap">
+    <div className="dn-pdf-wrap min-h-0 flex-1">
       <div
         className="dn-pdf-page"
         ref={pageWrapRef}

@@ -125,7 +125,7 @@ function SplitScreenInner() {
     boxShadow: SS.panelShadow,
   };
   const studyShellClass =
-    "flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border bg-white";
+    "flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border bg-white";
 
   const studyPanel = !mounted ? (
     <div className={studyShellClass} style={studyShellStyle}>

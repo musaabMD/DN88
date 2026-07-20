@@ -20,11 +20,11 @@ export function SplitScreenResizable({
       autoSaveId="drnote-splitscreen-v2"
       className="h-full gap-3"
     >
-      <ResizablePanel defaultSize={52} minSize={28} className="min-w-0">
+      <ResizablePanel defaultSize={52} minSize={28} className="flex min-h-0 min-w-0 flex-col">
         {pdfPanel}
       </ResizablePanel>
       <ResizableHandle withHandle className="mx-1 bg-transparent after:bg-[#D4D4D4]" />
-      <ResizablePanel defaultSize={48} minSize={28} className="min-w-0">
+      <ResizablePanel defaultSize={48} minSize={28} className="flex min-h-0 min-w-0 flex-col">
         {studyPanel}
       </ResizablePanel>
     </ResizablePanelGroup>
