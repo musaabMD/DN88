@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { SplitScreenPdfPanel } from "@/components/splitscreen/SplitScreenPdfPanel";
 import { SplitScreenPanelShell } from "@/components/splitscreen/SplitScreenPanelShell";
+import { SS } from "@/components/splitscreen/splitscreen-theme";
 import { HomeLocaleProvider, useHomeLocale } from "@/components/home/HomeLocaleProvider";
 import { MedGeniusCreditsProvider } from "@/lib/medgenius/credits-context";
 import { getDemoFilesForExam } from "@/lib/medgenius/demo-files";
@@ -19,7 +20,7 @@ const SplitScreenStudyPanel = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-full items-center justify-center p-6 text-sm font-semibold text-[#777]">
+      <div className="flex h-full items-center justify-center p-6 text-sm font-semibold" style={{ color: SS.sub }}>
         Loading study panel…
       </div>
     ),
@@ -32,8 +33,8 @@ const ResizablePanels = dynamic(
     ssr: false,
     loading: () => (
       <div className="grid h-full grid-cols-2 gap-3">
-        <div className="rounded-2xl border border-[#E8ECF0] bg-white" />
-        <div className="rounded-2xl border border-[#E8ECF0] bg-white" />
+        <div className="rounded-2xl border bg-white" style={{ borderColor: SS.panelBorder }} />
+        <div className="rounded-2xl border bg-white" style={{ borderColor: SS.panelBorder }} />
       </div>
     ),
   }
@@ -47,7 +48,10 @@ export function SplitScreenView() {
   return (
     <HomeLocaleProvider>
       <MedGeniusCreditsProvider>
-        <div className="h-[100dvh] bg-[radial-gradient(circle_at_top,#ffffff_0%,#eef2f7_45%,#e8edf3_100%)] text-slate-900 [color-scheme:light]">
+        <div
+          className="h-[100dvh] [color-scheme:light]"
+          style={{ background: SS.pageBg, color: SS.ink }}
+        >
           <SplitScreenInner />
         </div>
       </MedGeniusCreditsProvider>
@@ -110,23 +114,27 @@ function SplitScreenInner() {
       />
     ) : (
       <SplitScreenPanelShell title="Original PDF" subtitle="No file" accent="#94A3B8">
-        <div className="flex h-full items-center justify-center p-6 text-sm font-semibold text-[#777]">
+        <div className="flex h-full items-center justify-center p-6 text-sm font-semibold" style={{ color: SS.sub }}>
           No demo file available
         </div>
       </SplitScreenPanelShell>
     );
 
+  const studyShellStyle = {
+    borderColor: SS.panelBorder,
+    boxShadow: SS.panelShadow,
+  };
   const studyShellClass =
-    "flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-[#E8ECF0] bg-white shadow-[0_10px_40px_rgba(15,23,42,0.06)]";
+    "flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border bg-white";
 
   const studyPanel = !mounted ? (
-    <div className={studyShellClass}>
-      <div className="flex h-full items-center justify-center p-6 text-sm font-semibold text-[#777]">
+    <div className={studyShellClass} style={studyShellStyle}>
+      <div className="flex h-full items-center justify-center p-6 text-sm font-semibold" style={{ color: SS.sub }}>
         Loading study panel…
       </div>
     </div>
   ) : file && exam ? (
-    <div className={studyShellClass}>
+    <div className={studyShellClass} style={studyShellStyle}>
       <SplitScreenStudyPanel
         file={file}
         exam={exam}
@@ -135,8 +143,8 @@ function SplitScreenInner() {
       />
     </div>
   ) : (
-    <div className={studyShellClass}>
-      <div className="flex h-full items-center justify-center p-6 text-sm font-semibold text-[#777]">
+    <div className={studyShellClass} style={studyShellStyle}>
+      <div className="flex h-full items-center justify-center p-6 text-sm font-semibold" style={{ color: SS.sub }}>
         Load a file to show study tabs
       </div>
     </div>
@@ -144,14 +152,25 @@ function SplitScreenInner() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex shrink-0 items-center justify-between border-b border-[#E5E7EB] bg-white/80 px-4 py-3 backdrop-blur">
+      <header
+        className="flex shrink-0 items-center justify-between border-b bg-white px-4 py-3"
+        style={{ borderColor: SS.panelBorder }}
+      >
         <div>
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#94A3B8]">Split screen</p>
-          <h1 className="text-base font-black tracking-tight text-[#111827]">{file?.name ?? "Pick a file"}</h1>
+          <p
+            className="text-[10px] font-extrabold uppercase tracking-[0.18em]"
+            style={{ color: SS.faint }}
+          >
+            Split screen
+          </p>
+          <h1 className="text-base font-black tracking-tight" style={{ color: SS.ink }}>
+            {file?.name ?? "Pick a file"}
+          </h1>
         </div>
         <Link
           href="/qbank/smle/"
-          className="rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-xs font-extrabold text-[#64748B] shadow-sm transition hover:border-[#CBD5E1]"
+          className="rounded-xl border bg-white px-3 py-2 text-xs font-extrabold shadow-sm transition hover:opacity-90"
+          style={{ borderColor: SS.panelBorder, color: SS.sub }}
         >
           Back to SMLE
         </Link>

@@ -3,14 +3,13 @@
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import type { HomeReadPage } from "@/lib/medgenius/home-data";
+import { SS } from "@/components/splitscreen/splitscreen-theme";
 
 type DemoPdfPage = {
   heading: string;
   paragraphs: string[];
   callout?: string;
 };
-
-const HIGHLIGHT_COLOR = "#FEF08A";
 
 function buildDemoPages(readPages: HomeReadPage[], totalPages: number): DemoPdfPage[] {
   if (totalPages <= 0) return [];
@@ -60,7 +59,7 @@ export function DemoPdfViewer({
     }
     const rect = sel.getRangeAt(0).getBoundingClientRect();
     try {
-      document.execCommand("hiliteColor", false, HIGHLIGHT_COLOR);
+      document.execCommand("hiliteColor", false, SS.highlight);
     } catch {
       /* selection may not support hiliteColor */
     }
@@ -68,35 +67,63 @@ export function DemoPdfViewer({
   }, []);
 
   return (
-    <div className="flex h-full flex-col bg-[#EEF2F6]">
+    <div className="flex h-full flex-col" style={{ background: SS.canvasBg }}>
       <div className="min-h-0 flex-1 overflow-auto p-4" onMouseUp={onMouseUp}>
-        <article className="mx-auto max-w-[620px] rounded-xl border border-[#D1D5DB] bg-white px-8 py-10 shadow-[0_18px_50px_rgba(15,23,42,0.12)] selection:bg-[#FEF08A]">
-          <header className="mb-6 border-b border-[#E5E7EB] pb-4">
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#94A3B8]">{fileName}</p>
-            <h2 className="mt-1 text-xl font-black text-[#111827]">{current?.heading ?? "Page"}</h2>
-            <p className="mt-1 text-xs font-bold text-[#64748B]">
+        <article
+          className="mx-auto max-w-[620px] rounded-xl border bg-white px-8 py-10 shadow-[0_4px_24px_rgba(15,23,42,0.06)]"
+          style={{ borderColor: SS.panelBorder }}
+        >
+          <header
+            className="mb-6 border-b pb-4"
+            style={{ borderColor: SS.panelBorder }}
+          >
+            <p
+              className="text-[10px] font-extrabold uppercase tracking-[0.18em]"
+              style={{ color: SS.faint }}
+            >
+              {fileName}
+            </p>
+            <h2 className="mt-1 text-xl font-black" style={{ color: SS.ink }}>
+              {current?.heading ?? "Page"}
+            </h2>
+            <p className="mt-1 text-xs font-bold" style={{ color: SS.sub }}>
               Page {page} of {pages.length}
             </p>
           </header>
           {current?.paragraphs.map((paragraph) => (
-            <p key={paragraph} className="mb-4 text-[15px] leading-7 font-semibold text-[#1F2937]">
+            <p
+              key={paragraph}
+              className="mb-4 text-[15px] leading-7 font-semibold"
+              style={{ color: SS.ink }}
+            >
               {paragraph}
             </p>
           ))}
           {current?.callout ? (
-            <div className="rounded-xl border-l-4 border-[#58CC02] bg-[#F0FDF4] px-4 py-3 text-sm font-bold text-[#166534]">
+            <div
+              className="rounded-xl border-l-4 px-4 py-3 text-sm font-bold"
+              style={{
+                borderColor: SS.green,
+                background: SS.calloutBg,
+                color: SS.calloutText,
+              }}
+            >
               {current.callout}
             </div>
           ) : null}
         </article>
       </div>
 
-      <div className="flex shrink-0 items-center justify-center gap-3 border-t border-[#E5E7EB] bg-white px-3 py-2 text-sm font-bold text-[#64748B]">
+      <div
+        className="flex shrink-0 items-center justify-center gap-3 border-t bg-white px-3 py-2 text-sm font-bold"
+        style={{ borderColor: SS.panelBorder, color: SS.sub }}
+      >
         <button
           type="button"
           disabled={page <= 1}
           onClick={() => setPage((value) => value - 1)}
-          className="grid h-8 w-8 place-items-center rounded-lg border border-[#E5E7EB] disabled:opacity-40"
+          className="grid h-8 w-8 place-items-center rounded-lg border disabled:opacity-40"
+          style={{ borderColor: SS.panelBorder }}
           aria-label="Previous page"
         >
           <ChevronLeft size={16} />
@@ -108,7 +135,8 @@ export function DemoPdfViewer({
           type="button"
           disabled={page >= pages.length}
           onClick={() => setPage((value) => value + 1)}
-          className="grid h-8 w-8 place-items-center rounded-lg border border-[#E5E7EB] disabled:opacity-40"
+          className="grid h-8 w-8 place-items-center rounded-lg border disabled:opacity-40"
+          style={{ borderColor: SS.panelBorder }}
           aria-label="Next page"
         >
           <ChevronRight size={16} />
@@ -118,8 +146,8 @@ export function DemoPdfViewer({
       {ask && onAskSelection ? (
         <button
           type="button"
-          className="fixed z-[220] inline-flex -translate-x-1/2 -translate-y-full items-center gap-1.5 rounded-xl bg-[#111827] px-3 py-2 text-xs font-extrabold text-white shadow-lg"
-          style={{ left: ask.x, top: ask.y }}
+          className="fixed z-[220] inline-flex -translate-x-1/2 -translate-y-full items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-extrabold text-white shadow-lg"
+          style={{ left: ask.x, top: ask.y, background: SS.ink }}
           onMouseDown={(event) => event.preventDefault()}
           onClick={() => {
             onAskSelection(ask.text);

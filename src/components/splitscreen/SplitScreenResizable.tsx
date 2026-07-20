@@ -23,7 +23,7 @@ export function SplitScreenResizable({
       <ResizablePanel defaultSize={52} minSize={28} className="min-w-0">
         {pdfPanel}
       </ResizablePanel>
-      <ResizableHandle withHandle className="mx-1 bg-transparent after:bg-[#CBD5E1]" />
+      <ResizableHandle withHandle className="mx-1 bg-transparent after:bg-[#D4D4D4]" />
       <ResizablePanel defaultSize={48} minSize={28} className="min-w-0">
         {studyPanel}
       </ResizablePanel>
