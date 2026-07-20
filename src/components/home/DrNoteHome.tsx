@@ -38,6 +38,8 @@ import { useMedGeniusCreditsContext } from "@/lib/medgenius/credits-context";
 import type { AppLocale } from "@/lib/locale";
 import { saveCurrentExamId } from "@/lib/current-exam";
 import { examPath, PRICING_PATH } from "@/lib/routes";
+import { getDemoFilesForExam } from "@/lib/medgenius/demo-files";
+import { useDemoFilesEnabled } from "@/hooks/useDemoFilesEnabled";
 
 /* ------------------------------------------------------------------ */
 /*  Tokens                                                             */
@@ -1166,6 +1168,8 @@ function ExamPage(props: {
 }) {
   const { exam, filter, setFilter, query, setQuery, voted, setVoted, saved, toggleSaved, picked, setPicked, onBack, onOpen, onAdd, flash, docsRefreshKey, useLiveData } = props;
   const { files: liveFiles, loading: filesLoading } = useExamDocuments(exam.id, docsRefreshKey);
+  const demoFilesEnabled = useDemoFilesEnabled();
+  const demoFiles = useMemo(() => getDemoFilesForExam(exam.id), [exam.id]);
   const { m } = useHomeLocale();
   const clerkEnabled = useClerkEnabled();
   const [semanticDocIds, setSemanticDocIds] = useState<Set<string>>(new Set());
@@ -1195,7 +1199,11 @@ function ExamPage(props: {
 
   const ranked = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const source = useLiveData ? liveFiles : FILES;
+    const source = useLiveData
+      ? demoFilesEnabled
+        ? demoFiles
+        : liveFiles
+      : FILES;
     let list = source.filter((f) => {
       if (!q) return true;
       const textMatch =
@@ -1206,7 +1214,7 @@ function ExamPage(props: {
     if (filter === "bookmarked") list = list.filter((f) => saved.has(f.id));
     const per: Exclude<Filter, "bookmarked"> = filter === "bookmarked" ? "all" : filter;
     return list.sort((a, b) => b.votes[per] + (voted.has(b.id) ? 1 : 0) - (a.votes[per] + (voted.has(a.id) ? 1 : 0)));
-  }, [query, filter, voted, saved, liveFiles, useLiveData, semanticDocIds]);
+  }, [query, filter, voted, saved, liveFiles, demoFiles, demoFilesEnabled, useLiveData, semanticDocIds]);
 
   const toggle = (set: Set<string>, id: string, fn: (s: Set<string>) => void) => { const n = new Set(set); n.has(id) ? n.delete(id) : n.add(id); fn(n); };
   const allPicked = picked.size > 0 && picked.size === ranked.length;
@@ -1247,7 +1255,7 @@ function ExamPage(props: {
       </div>
 
       <ul className="dn-list">
-        {filesLoading && useLiveData && ranked.length === 0 && (
+        {filesLoading && useLiveData && !demoFilesEnabled && ranked.length === 0 && (
           <li className="dn-empty"><p>{m.loadingYourFiles}</p></li>
         )}
         {ranked.map((f) => {
