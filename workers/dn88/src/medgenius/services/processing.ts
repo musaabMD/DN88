@@ -6,7 +6,7 @@ import {
 import { isCorruptParsedMarkdown } from "./markdown-quality";
 import {
   computeFileHash,
-  parseDocumentWithOcrFallback,
+  parseDocumentPageAware,
 } from "./context-dev";
 import {
   buildR2Keys,
@@ -16,6 +16,12 @@ import {
   storeMarkdown,
   updateDocumentStatus,
 } from "./documents";
+import {
+  persistMarkdownImages,
+  splitMarkdownByPages,
+  loadImageDataUrls,
+  type StoredPageImage,
+} from "./markdown-images";
 import {
   detectDuplicateGroups,
   insertQuestions,
@@ -27,6 +33,7 @@ import {
   extractQuestionsFromMarkdown,
   generateDocumentSummary,
   generateFlashcardsFromQuestion,
+  type PageExtractionInput,
 } from "./openrouter";
 import { sanitizeUserError } from "./user-errors";
 import type { Bindings } from "../../types";
@@ -166,17 +173,43 @@ async function runParseStage(
   if (!obj) throw new Error("Original file missing from storage");
 
   const fileBytes = await obj.arrayBuffer();
-  const parsed = await parseDocumentWithOcrFallback(env.CONTEXT_DEV_API_KEY, {
+  const parsed = await parseDocumentPageAware(env.CONTEXT_DEV_API_KEY, {
     fileBytes,
     filename: doc.original_filename,
     mimeType: doc.mime_type,
     options: {
       includeLinks: true,
       includeImages: true,
-      shortenBase64Images: true,
+      shortenBase64Images: false,
       useMainContentOnly: false,
     },
   });
+
+  const keys = buildR2Keys(userId, documentId, doc.original_filename);
+  const rawPages = splitMarkdownByPages(parsed.markdown);
+  const processedPages: string[] = [];
+  const allImages: StoredPageImage[] = [];
+
+  for (let index = 0; index < rawPages.length; index += 1) {
+    const pageNumber = index + 1;
+    const pageMarkdown = rawPages[index] ?? "";
+    const persisted = await persistMarkdownImages(
+      env.USER_CONTENT,
+      keys.images,
+      pageNumber,
+      pageMarkdown
+    );
+    processedPages.push(persisted.markdown);
+    allImages.push(...persisted.images);
+  }
+
+  const finalMarkdown = processedPages.join("\f\n");
+
+  if (allImages.length > 0) {
+    await env.USER_CONTENT.put(`${keys.images}/manifest.json`, JSON.stringify(allImages), {
+      httpMetadata: { contentType: "application/json" },
+    });
+  }
 
   const parseCost = parsed.creditsConsumed;
   await spendCredits(env.DB, userId, parseCost, "page_parse", {
@@ -189,8 +222,7 @@ async function runParseStage(
     },
   });
 
-  const keys = buildR2Keys(userId, documentId, doc.original_filename);
-  await storeMarkdown(env.USER_CONTENT, keys.markdown, parsed.markdown);
+  await storeMarkdown(env.USER_CONTENT, keys.markdown, finalMarkdown);
 
   await env.DB.prepare(
     `UPDATE medgenius_documents SET
@@ -254,10 +286,29 @@ async function runExtractQuestionsStage(
 
   if (env.OPENROUTER_API_KEY) {
     try {
+      const pageSlices = splitMarkdownByPages(markdown);
+      const imagesByPage = await loadDocumentImageManifest(env.USER_CONTENT, documentId, userId);
+      const pageInputs: PageExtractionInput[] = [];
+      for (let index = 0; index < pageSlices.length; index += 1) {
+        const pageNumber = index + 1;
+        const pageImages = imagesByPage.get(pageNumber) ?? [];
+        const imageDataUrls =
+          pageImages.length > 0
+            ? await loadImageDataUrls(env.USER_CONTENT, pageImages)
+            : undefined;
+        pageInputs.push({
+          pageNumber,
+          markdown: pageSlices[index] ?? "",
+          images: pageImages,
+          imageDataUrls,
+        });
+      }
+
       const jsonContent = await extractQuestionsFromMarkdown(
         env.OPENROUTER_API_KEY,
         markdown,
-        doc.name
+        doc.name,
+        pageInputs
       );
       aiQuestions = parseExtractedQuestions(jsonContent);
     } catch (error) {
@@ -487,6 +538,33 @@ export async function enqueueStage(
   } satisfies QueueMessage);
 
   return jobId;
+}
+
+async function loadDocumentImageManifest(
+  bucket: R2Bucket,
+  documentId: string,
+  userId: string
+): Promise<Map<number, StoredPageImage[]>> {
+  const manifestKey = `users/${userId}/documents/${documentId}/images/manifest.json`;
+  const obj = await bucket.get(manifestKey);
+  if (!obj) return new Map();
+
+  try {
+    const images = (await obj.json()) as StoredPageImage[];
+    const byPage = new Map<number, StoredPageImage[]>();
+    for (const image of images) {
+      const group = byPage.get(image.page) ?? [];
+      group.push(image);
+      byPage.set(image.page, group);
+    }
+    for (const [page, group] of byPage) {
+      group.sort((a, b) => a.position - b.position);
+      byPage.set(page, group);
+    }
+    return byPage;
+  } catch {
+    return new Map();
+  }
 }
 
 export async function documentHasCorruptMarkdown(
