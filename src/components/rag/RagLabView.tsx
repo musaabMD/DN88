@@ -364,7 +364,7 @@ export function RagLabView() {
             semantic regions — not page = question.
           </p>
 
-          {!signedIn ? (
+          {mounted && clerkEnabled && !signedIn ? (
             <div className="mt-4 rounded-lg p-3 text-sm" style={{ background: C.warnSoft, color: C.warn }}>
               <p className="font-semibold">Sign in to trigger Trigger.dev tasks</p>
               <div className="mt-2">
@@ -379,6 +379,13 @@ export function RagLabView() {
                 </SignInButton>
               </div>
             </div>
+          ) : null}
+          {mounted && !clerkEnabled ? (
+            <p className="mt-4 text-xs leading-relaxed" style={{ color: C.sub }}>
+              Clerk is off on this host — you can still load the example JSON and
+              render PDFs. Trigger runs need a signed-in session on drnote.co (or
+              a configured Worker).
+            </p>
           ) : null}
 
           <input
