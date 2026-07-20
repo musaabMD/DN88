@@ -46,6 +46,7 @@ import {
   generateBoardQuestion,
 } from "../services/conflicts";
 import { sanitizeUserError } from "../services/user-errors";
+import { isMedGeniusTestMode } from "../services/test-mode";
 
 export const medgeniusRoutes = new Hono<{ Bindings: Bindings }>();
 
@@ -76,8 +77,12 @@ medgeniusRoutes.get("/credits", async (c) => {
     authResult.user.publicMetadata
   );
 
-  return c.json(credits);
+  return c.json({ ...credits, testMode: workerTestMode(c) });
 });
+
+function workerTestMode(c: Context<{ Bindings: Bindings }>): boolean {
+  return isMedGeniusTestMode(c.env.MEDGENIUS_TEST_MODE);
+}
 
 medgeniusRoutes.get("/documents", async (c) => {
   const authResult = await requireAuth(c);
@@ -263,8 +268,9 @@ medgeniusRoutes.post("/documents/upload", async (c) => {
     return c.json({ error: "Missing document name" }, 400);
   }
 
+  const testMode = workerTestMode(c);
   const limits = PLAN_LIMITS[plan];
-  if (file.size > limits.maxUploadBytes) {
+  if (!testMode && file.size > limits.maxUploadBytes) {
     return c.json(
       {
         error: `File too large. Max ${Math.round(limits.maxUploadBytes / 1024 / 1024)}MB on ${plan} plan.`,
@@ -276,7 +282,7 @@ medgeniusRoutes.post("/documents/upload", async (c) => {
 
   const fileBytes = await file.arrayBuffer();
   const pageEstimate = Math.max(1, Math.ceil(file.size / 50_000));
-  const limitCheck = await checkDocumentLimits(c.env.DB, user, pageEstimate);
+  const limitCheck = await checkDocumentLimits(c.env.DB, user, pageEstimate, { testMode });
   if (!limitCheck.ok) {
     return c.json({ error: limitCheck.error, code: limitCheck.code }, 402);
   }
@@ -320,7 +326,8 @@ medgeniusRoutes.post("/documents/upload", async (c) => {
       documentId: result.documentId,
       duplicate: false,
       status: "pending",
-      credits: getCreditSummary(updatedUser),
+      credits: getCreditSummary(updatedUser, testMode),
+      testMode,
     });
   } catch (error) {
     const message = sanitizeUserError(
