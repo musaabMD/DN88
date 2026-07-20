@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { DrNoteLogo } from "@/components/DrNoteLogo";
 import { DocumentPdfViewer } from "@/components/medgenius/DocumentPdfViewer";
+import { StudyReadEditor } from "@/components/medgenius/StudyReadEditor";
 import { UserAuthControls } from "@/components/UserAuthControls";
 import { askMedGeniusAi } from "@/lib/medgenius/chat";
 import { uploadDocument, MedGeniusApiError, extractDocumentQuestions, reprocessDocument as reprocessDocumentApi } from "@/lib/medgenius/api";
@@ -425,6 +426,36 @@ const styles = `
 .dn-read-foot .dn-foot-back { padding: 6px 10px; font-size: 12px; border-width: 1px; border-radius: 10px; gap: 3px; }
 .dn-read-foot .dn-foot-count { font-size: 11px; flex-shrink: 0; }
 .dn-foot-count-short { display: none; }
+.dn-read-edit { flex: 1; min-height: 0; display: flex; flex-direction: column; background: ${C.wash}; }
+.dn-read-edit-loading { flex: 1; display: grid; place-items: center; color: ${C.sub}; font-weight: 700; }
+.dn-read-edit-card { flex: 1; min-height: 0; display: flex; flex-direction: column; max-width: 760px; width: calc(100% - 24px); margin: 12px auto; background: #fff; border: 1px solid ${C.line}; border-radius: 18px; box-shadow: 0 8px 28px rgba(0,0,0,.06); overflow: hidden; }
+.dn-read-edit-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-bottom: 1px solid ${C.line}; background: #fff; flex-wrap: wrap; }
+.dn-read-edit-tools { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.dn-read-edit-btn { width: 34px; height: 34px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: ${C.sub}; cursor: pointer; display: grid; place-items: center; }
+.dn-read-edit-btn.on { background: #DDF4FF; color: ${C.blueDark}; border-color: #B8E8FF; }
+.dn-read-edit-btn:hover { background: ${C.wash}; }
+.dn-read-edit-divider { width: 1px; height: 22px; background: ${C.line}; margin: 0 4px; }
+.dn-read-edit-callout-icon { font-size: 14px; line-height: 1; }
+.dn-read-edit-scroll { flex: 1; overflow-y: auto; padding: 8px 0 24px; }
+.dn-read-edit-scroll.is-preview { background: #fff; }
+.dn-read-edit-content { max-width: 620px; margin: 0 auto; padding: 28px 28px 12px; outline: none; min-height: 320px; }
+.dn-read-edit-content h1 { text-align: center; font-size: 28px; font-weight: 900; letter-spacing: -.7px; margin: 0 0 24px; color: ${C.ink}; line-height: 1.15; }
+.dn-read-edit-content h2 { font-size: 20px; font-weight: 900; margin: 28px 0 12px; color: ${C.ink}; line-height: 1.25; }
+.dn-read-edit-content h3 { font-size: 17px; font-weight: 800; margin: 20px 0 10px; color: ${C.ink}; }
+.dn-read-edit-content p { font-size: 16px; line-height: 1.65; font-weight: 500; color: ${C.ink}; margin: 0 0 14px; }
+.dn-read-edit-content ul, .dn-read-edit-content ol { margin: 0 0 14px; padding-left: 22px; }
+.dn-read-edit-content li { font-size: 16px; line-height: 1.6; font-weight: 500; color: ${C.ink}; margin-bottom: 8px; }
+.dn-read-edit-content li p { margin: 0; }
+.dn-read-edit-content strong { font-weight: 800; }
+.dn-read-edit-content a { color: ${C.purpleDark}; text-decoration: underline; text-underline-offset: 2px; }
+.dn-read-edit-content code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: .92em; background: ${C.wash}; padding: 1px 6px; border-radius: 6px; }
+.dn-read-edit-content blockquote { margin: 0 0 16px; padding: 12px 16px; border-left: 4px solid var(--read-accent, ${C.purple}); background: #FAF5FF; border-radius: 0 12px 12px 0; color: ${C.sub}; font-style: italic; }
+.dn-read-edit-content blockquote p { margin: 0; color: inherit; }
+.dn-read-edit-content .article-callout { margin: 0 0 16px; border-left: 4px solid var(--read-accent, ${C.purple}); background: #FAF5FF; border-radius: 0 12px 12px 0; padding: 12px 14px 10px; }
+.dn-read-edit-content .article-callout-label { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 11px; font-weight: 900; letter-spacing: .35px; text-transform: uppercase; color: ${C.purpleDark}; }
+.dn-read-edit-content .article-callout-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--read-accent, ${C.purple}); flex-shrink: 0; }
+.dn-read-edit-content .article-callout-body p { margin: 0 0 8px; }
+.dn-read-edit-content .article-callout-body p:last-child { margin-bottom: 0; }
 .dn-foot-back-label { display: inline; }
 .dn-foot-next-label { display: inline; }
 .dn-foot-back { display: inline-flex; align-items: center; gap: 4px; border: 2px solid ${C.line}; background: #fff; border-radius: 12px; padding: 8px 12px; font-weight: 800; font-size: 13px; color: ${C.sub}; cursor: pointer; }
@@ -1758,7 +1789,7 @@ function ChatPanel({ documentId, documentContext, quote, clearQuote, msgs, setMs
 }
 
 /* ---- Read ---- */
-type ReadView = "pdf" | "sections" | "source";
+type ReadView = "pdf" | "read";
 
 function fileHasPdfOriginal(file: ExamFile): boolean {
   if (!file.documentId) return false;
@@ -1771,13 +1802,11 @@ function ReadToolbar({
   view,
   setView,
   showPdf,
-  showSource,
   m,
 }: {
   view: ReadView;
   setView: (v: ReadView) => void;
   showPdf: boolean;
-  showSource: boolean;
   m: ReturnType<typeof useHomeLocale>["m"];
 }) {
   return (
@@ -1794,22 +1823,12 @@ function ReadToolbar({
       )}
       <button
         type="button"
-        className={`dn-read-view${view === "sections" ? " on" : ""}`}
-        aria-current={view === "sections" ? "true" : undefined}
-        onClick={() => setView("sections")}
+        className={`dn-read-view${view === "read" ? " on" : ""}`}
+        aria-current={view === "read" ? "true" : undefined}
+        onClick={() => setView("read")}
       >
         {m.readSections}
       </button>
-      {showSource && (
-        <button
-          type="button"
-          className={`dn-read-view${view === "source" ? " on" : ""}`}
-          aria-current={view === "source" ? "true" : undefined}
-          onClick={() => setView("source")}
-        >
-          {m.readSource}
-        </button>
-      )}
     </div>
   );
 }
@@ -1830,16 +1849,9 @@ function ReadFull({
   onReprocess?: () => void;
 }) {
   const { m } = useHomeLocale();
-  const [i, setI] = useState(0);
   const showPdf = fileHasPdfOriginal(file);
-  const showSource = Boolean(rawMarkdown);
   const corruptSource = Boolean(rawMarkdown && isCorruptParsedMarkdown(rawMarkdown));
-  const [view, setView] = useState<ReadView>(() => (showPdf ? "pdf" : "sections"));
-
-  useEffect(() => {
-    setI(0);
-    setView(showPdf ? "pdf" : "sections");
-  }, [file.id, pages.length, showPdf]);
+  const [view, setView] = useState<ReadView>(() => (showPdf ? "pdf" : "read"));
 
   const corruptBanner =
     corruptSource && canReprocess && onReprocess ? (
@@ -1863,7 +1875,7 @@ function ReadFull({
     return (
       <div className="dn-read-fs">
         {corruptBanner}
-        <ReadToolbar view={view} setView={setView} showPdf={showPdf} showSource={showSource} m={m} />
+        <ReadToolbar view={view} setView={setView} showPdf={showPdf} m={m} />
         <DocumentPdfViewer documentId={file.documentId} pageCount={file.pages} />
       </div>
     );
@@ -1877,55 +1889,17 @@ function ReadFull({
     );
   }
 
-  if (view === "source" && rawMarkdown) {
-    return (
-      <div className="dn-read-fs">
-        {corruptBanner}
-        <ReadToolbar view={view} setView={setView} showPdf={showPdf} showSource={showSource} m={m} />
-        <div className="dn-read-scroll">
-          <pre className="dn-read-source">{rawMarkdown}</pre>
-        </div>
-      </div>
-    );
-  }
-
-  if (pages.length === 0) {
-    return (
-      <div className="dn-read-fs">
-        {corruptBanner}
-        <ReadToolbar view={view} setView={setView} showPdf={showPdf} showSource={showSource} m={m} />
-        <div className="dn-empty" style={{ paddingTop: 48 }}><BookOpen size={26} color={C.faint} /><p>{m.readingContentPending}</p></div>
-      </div>
-    );
-  }
-
-  const p = pages[i] ?? pages[0];
-  const pct = ((i + 1) / pages.length) * 100;
   return (
     <div className="dn-read-fs">
       {corruptBanner}
-      <ReadToolbar view={view} setView={setView} showPdf={showPdf} showSource={showSource} m={m} />
-      <div className="dn-progress"><span style={{ width: `${pct}%`, background: C.green }} /></div>
-      <div className="dn-read-scroll">
-        <article className="dn-read-col">
-          <h1>{p.h}</h1>
-          <p className="dn-read-lead">{p.body[0]}</p>
-          <div className="dn-callout" style={{ borderColor: file.color }}><b>{m.keyPoint}</b><p>{p.key}</p></div>
-          {p.body.slice(1).map((t, k) => <p key={k}>{t}</p>)}
-        </article>
-      </div>
-      <div className="dn-read-foot">
-        <button className="dn-foot-back" disabled={i === 0} onClick={() => setI((v) => v - 1)} aria-label={m.back}>
-          <ChevronLeft size={16} strokeWidth={2.8} /><span className="dn-foot-back-label">{m.back}</span>
-        </button>
-        <span className="dn-foot-count">
-          <span className="dn-foot-count-full">{m.pageOf(i + 1, pages.length)}</span>
-          <span className="dn-foot-count-short">{i + 1}/{pages.length}</span>
-        </span>
-        <Chunky sm bg={C.green} shadow={C.greenDark} disabled={i === pages.length - 1} onClick={() => setI((v) => v + 1)}>
-          <span className="dn-inline"><span className="dn-foot-next-label">{m.continueLabel}</span><ChevronRight size={14} strokeWidth={2.8} /></span>
-        </Chunky>
-      </div>
+      <ReadToolbar view={view} setView={setView} showPdf={showPdf} m={m} />
+      <StudyReadEditor
+        documentId={file.documentId}
+        title={file.name}
+        pages={pages}
+        rawMarkdown={rawMarkdown}
+        accentColor={file.color}
+      />
     </div>
   );
 }
