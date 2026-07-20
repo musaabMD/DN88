@@ -51,8 +51,13 @@ export function getDemoFilesForExam(examId: string): HomeExamFile[] {
   return DEMO_BY_EXAM[examId] ?? DEMO_BY_EXAM.smle ?? [];
 }
 
-export function isDemoFilesEnabled(): boolean {
-  if (process.env.NEXT_PUBLIC_DEMO_FILES === "true") return true;
+/** True when `?demo=1` forces demo-only mode (hides live files). */
+export function isDemoFilesForced(): boolean {
   if (typeof window === "undefined") return false;
   return new URLSearchParams(window.location.search).get("demo") === "1";
+}
+
+export function isDemoFilesEnabled(): boolean {
+  if (process.env.NEXT_PUBLIC_DEMO_FILES === "true") return true;
+  return isDemoFilesForced();
 }
