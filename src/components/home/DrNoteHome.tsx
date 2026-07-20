@@ -39,6 +39,8 @@ import type { AppLocale } from "@/lib/locale";
 import { saveCurrentExamId } from "@/lib/current-exam";
 import { examPath, PRICING_PATH } from "@/lib/routes";
 import { getDemoFilesForExam } from "@/lib/medgenius/demo-files";
+import { SplitScreenPager } from "@/components/splitscreen/SplitScreenPager";
+import { SS } from "@/components/splitscreen/splitscreen-theme";
 import { useDemoFilesEnabled } from "@/hooks/useDemoFilesEnabled";
 
 /* ------------------------------------------------------------------ */
@@ -1778,7 +1780,7 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, splitScreen, p
           } catch { /* ignore */ }
         }} />}
         {tab === "Review" && <ReviewPane questions={questions} answers={answers} flagged={flagged} setFlagged={setFlagged} sessions={sessions} onResume={resumeSession} onRepeat={repeatSession} onAsk={openChat} analytics={analytics} srsQueue={srsQueue} clerkEnabled={clerkEnabled} />}
-        {tab === "Summary" && <SummaryNotion file={file} summaries={summaries} />}
+        {tab === "Summary" && <SummaryNotion file={file} summaries={summaries} splitScreen={splitScreen} />}
         {tab === "Flashcards" && <FlashcardsQuizlet query={query} cards={flashcards} />}
         {tab === "Custom" && (
           <>
@@ -2610,10 +2612,11 @@ function NotionToggle({ fileId, id, title, children }: { fileId: string; id: str
     </div>
   );
 }
-function SummaryNotion({ file, summaries }: { file: ExamFile; summaries: HomeSummary[] }) {
+function SummaryNotion({ file, summaries, splitScreen }: { file: ExamFile; summaries: HomeSummary[]; splitScreen?: boolean }) {
   const { m, content } = useHomeLocale();
   const { summary } = content;
   const [done, setDone] = useState<Set<number>>(new Set());
+  const [page, setPage] = useState(1);
   const primary = summaries.find((s) => s.type === "summary") ?? summaries[0];
   const liveBullets = primary
     ? primary.content
@@ -2623,44 +2626,101 @@ function SummaryNotion({ file, summaries }: { file: ExamFile; summaries: HomeSum
         .slice(0, 6)
     : [];
   const bullets = liveBullets.length > 0 ? liveBullets : summary.bullets;
-  return (
-    <div className="nt-scroll">
-      <div className="nt-doc">
-        <div className="nt-pageicon" style={{ background: file.color }}><FileText size={22} color="#fff" strokeWidth={2.2} /></div>
-        <h1 className="nt-h1 dn-centered-h1">{file.name} {summary.titleSuffix}</h1>
-        {primary ? (
-          <SummaryBlock fileId={file.id} blockId="live-summary" className="nt-callout">
-            <p>{primary.content.split("\n").find((l) => l.trim() && !l.startsWith("#"))?.trim() ?? m.aiGeneratedSummary}</p>
-          </SummaryBlock>
-        ) : (
-          <SummaryBlock fileId={file.id} blockId="callout" className="nt-callout">
-            <span className="nt-callout-ic" style={{ background: C.yellow }}><Star size={14} color="#fff" fill="#fff" /></span>
-            <p>{summary.callout}</p>
-          </SummaryBlock>
-        )}
-        <h2 className="nt-h2">{summary.keyTakeaways}</h2>
-        <ul className="nt-bullets">
-          {bullets.map((text, i) => (
-            <li key={i}><SummaryBlock fileId={file.id} blockId={`bullet-${i}`}>{text}</SummaryBlock></li>
-          ))}
-        </ul>
-        <h2 className="nt-h2">{summary.expandDetail}</h2>
-        {summary.toggles.map((toggle) => (
-          <NotionToggle key={toggle.id} fileId={file.id} id={toggle.id} title={toggle.title}>
-            <p>{toggle.body}</p>
-          </NotionToggle>
+
+  useEffect(() => {
+    setPage(1);
+  }, [file.id]);
+
+  const calloutBlock = primary ? (
+    <SummaryBlock fileId={file.id} blockId="live-summary" className="nt-callout">
+      <p>{primary.content.split("\n").find((l) => l.trim() && !l.startsWith("#"))?.trim() ?? m.aiGeneratedSummary}</p>
+    </SummaryBlock>
+  ) : (
+    <SummaryBlock fileId={file.id} blockId="callout" className="nt-callout">
+      <span className="nt-callout-ic" style={{ background: C.yellow }}><Star size={14} color="#fff" fill="#fff" /></span>
+      <p>{summary.callout}</p>
+    </SummaryBlock>
+  );
+
+  const overviewPage = (
+    <>
+      <div className="nt-pageicon" style={{ background: file.color }}><FileText size={22} color="#fff" strokeWidth={2.2} /></div>
+      <h1 className="nt-h1 dn-centered-h1">{file.name} {summary.titleSuffix}</h1>
+      {calloutBlock}
+    </>
+  );
+
+  const takeawaysPage = (
+    <>
+      <h2 className="nt-h2">{summary.keyTakeaways}</h2>
+      <ul className="nt-bullets">
+        {bullets.map((text, i) => (
+          <li key={i}><SummaryBlock fileId={file.id} blockId={`bullet-${i}`}>{text}</SummaryBlock></li>
         ))}
-        <h2 className="nt-h2">{summary.checklist}</h2>
-        <ul className="nt-checks">
-          {summary.checks.map((c, i) => { const on = done.has(i); return (
+      </ul>
+    </>
+  );
+
+  const detailPage = (
+    <>
+      <h2 className="nt-h2">{summary.expandDetail}</h2>
+      {summary.toggles.map((toggle) => (
+        <NotionToggle key={toggle.id} fileId={file.id} id={toggle.id} title={toggle.title}>
+          <p>{toggle.body}</p>
+        </NotionToggle>
+      ))}
+    </>
+  );
+
+  const checklistPage = (
+    <>
+      <h2 className="nt-h2">{summary.checklist}</h2>
+      <ul className="nt-checks">
+        {summary.checks.map((c, i) => {
+          const on = done.has(i);
+          return (
             <li key={i}>
               <button type="button" className="nt-check" onClick={() => { const n = new Set(done); on ? n.delete(i) : n.add(i); setDone(n); }} style={{ borderColor: on ? C.green : C.faint, background: on ? C.green : "#fff" }}>{on && <Check size={12} color="#fff" strokeWidth={3.5} />}</button>
               <SummaryBlock fileId={file.id} blockId={`check-${i}`}>
                 <span style={{ color: on ? C.faint : C.ink, textDecoration: on ? "line-through" : "none" }}>{c}</span>
               </SummaryBlock>
             </li>
-          ); })}
-        </ul>
+          );
+        })}
+      </ul>
+    </>
+  );
+
+  const pages = [overviewPage, takeawaysPage, detailPage, checklistPage];
+  const totalPages = pages.length;
+  const currentPage = pages[Math.min(page, totalPages) - 1];
+
+  if (splitScreen) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white">
+        <div className="min-h-0 flex-1 overflow-auto bg-white p-4 pb-2">
+          <article
+            className="nt-doc mx-auto max-w-[620px] rounded-xl border bg-white px-8 py-10 shadow-[0_4px_24px_rgba(15,23,42,0.06)]"
+            style={{ borderColor: SS.panelBorder, padding: "32px 28px 28px", maxWidth: "620px" }}
+          >
+            <p className="mb-4 text-xs font-bold" style={{ color: SS.sub }}>
+              Page {page} of {totalPages}
+            </p>
+            {currentPage}
+          </article>
+        </div>
+        <SplitScreenPager page={page} totalPages={totalPages} onPageChange={setPage} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="nt-scroll">
+      <div className="nt-doc">
+        {overviewPage}
+        {takeawaysPage}
+        {detailPage}
+        {checklistPage}
       </div>
     </div>
   );

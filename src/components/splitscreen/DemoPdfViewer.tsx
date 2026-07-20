@@ -1,8 +1,9 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import type { HomeReadPage } from "@/lib/medgenius/home-data";
+import { SplitScreenPager } from "@/components/splitscreen/SplitScreenPager";
 import { SS } from "@/components/splitscreen/splitscreen-theme";
 
 type DemoPdfPage = {
@@ -114,34 +115,7 @@ export function DemoPdfViewer({
         </article>
       </div>
 
-      <div
-        className="relative z-10 flex shrink-0 items-center justify-center gap-3 border-t bg-white px-3 py-2 text-sm font-bold shadow-[0_-4px_12px_rgba(15,23,42,0.04)]"
-        style={{ borderColor: SS.panelBorder, color: SS.sub }}
-      >
-        <button
-          type="button"
-          disabled={page <= 1}
-          onClick={() => setPage((value) => value - 1)}
-          className="grid h-8 w-8 place-items-center rounded-lg border disabled:opacity-40"
-          style={{ borderColor: SS.panelBorder }}
-          aria-label="Previous page"
-        >
-          <ChevronLeft size={16} />
-        </button>
-        <span>
-          {page} / {pages.length}
-        </span>
-        <button
-          type="button"
-          disabled={page >= pages.length}
-          onClick={() => setPage((value) => value + 1)}
-          className="grid h-8 w-8 place-items-center rounded-lg border disabled:opacity-40"
-          style={{ borderColor: SS.panelBorder }}
-          aria-label="Next page"
-        >
-          <ChevronRight size={16} />
-        </button>
-      </div>
+      <SplitScreenPager page={page} totalPages={pages.length} onPageChange={setPage} />
 
       {ask && onAskSelection ? (
         <button
