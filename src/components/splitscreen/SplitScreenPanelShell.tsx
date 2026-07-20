@@ -4,12 +4,14 @@ import { Maximize2, Minimize2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 type SplitScreenPanelShellProps = {
-  title: string;
+  title?: string;
   subtitle?: string;
   accent?: string;
   toolbar?: ReactNode;
   children: ReactNode;
   className?: string;
+  /** When true, only show the expand control (no title/subtitle). */
+  expandOnlyHeader?: boolean;
 };
 
 export function SplitScreenPanelShell({
@@ -19,6 +21,7 @@ export function SplitScreenPanelShell({
   toolbar,
   children,
   className,
+  expandOnlyHeader = false,
 }: SplitScreenPanelShellProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [immersive, setImmersive] = useState(false);
@@ -51,25 +54,35 @@ export function SplitScreenPanelShell({
       }${className ? ` ${className}` : ""}`}
     >
       <div
-        className="flex shrink-0 items-center gap-2 border-b border-[#E8ECF0] px-3 py-2.5"
-        style={{
-          background: `linear-gradient(135deg, ${accent}14 0%, #ffffff 55%, #f8fafc 100%)`,
-        }}
+        className={`flex shrink-0 items-center gap-2 border-b border-[#E8ECF0] ${
+          expandOnlyHeader ? "justify-end px-2 py-1.5" : "px-3 py-2.5"
+        }`}
+        style={
+          expandOnlyHeader
+            ? undefined
+            : { background: `linear-gradient(135deg, ${accent}14 0%, #ffffff 55%, #f8fafc 100%)` }
+        }
       >
-        <span
-          className="h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-white"
-          style={{ background: accent }}
-          aria-hidden
-        />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-black tracking-tight text-[#1F2937]">{title}</p>
-          {subtitle ? (
-            <p className="truncate text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]">
-              {subtitle}
-            </p>
-          ) : null}
-        </div>
-        {toolbar}
+        {!expandOnlyHeader ? (
+          <>
+            <span
+              className="h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-white"
+              style={{ background: accent }}
+              aria-hidden
+            />
+            <div className="min-w-0 flex-1">
+              {title ? (
+                <p className="truncate text-sm font-black tracking-tight text-[#1F2937]">{title}</p>
+              ) : null}
+              {subtitle ? (
+                <p className="truncate text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]">
+                  {subtitle}
+                </p>
+              ) : null}
+            </div>
+            {toolbar}
+          </>
+        ) : null}
         <button
           type="button"
           onClick={() => void toggleFullscreen()}

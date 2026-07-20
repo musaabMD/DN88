@@ -29,11 +29,7 @@ export function SplitScreenPdfPanel({
   const canShowLivePdf = Boolean(documentId && clerkEnabled);
 
   return (
-    <SplitScreenPanelShell
-      title={fileName}
-      subtitle="Original PDF"
-      accent={color}
-    >
+    <SplitScreenPanelShell expandOnlyHeader accent={color}>
       {canShowLivePdf && documentId ? (
         <DocumentPdfViewer
           documentId={documentId}
