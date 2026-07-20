@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { SplitScreenPdfPanel } from "@/components/splitscreen/SplitScreenPdfPanel";
-import { SplitScreenPanelShell } from "@/components/splitscreen/SplitScreenPanelShell";
 import {
   SplitScreenMobileToggle,
   type SplitScreenMobilePane,
