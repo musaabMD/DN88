@@ -3,6 +3,7 @@
 import { DocumentPdfViewer } from "@/components/medgenius/DocumentPdfViewer";
 import { DemoPdfViewer } from "@/components/splitscreen/DemoPdfViewer";
 import { SplitScreenPanelShell } from "@/components/splitscreen/SplitScreenPanelShell";
+import { SS } from "@/components/splitscreen/splitscreen-theme";
 import { useClerkEnabled } from "@/hooks/useClerkEnabled";
 import type { HomeReadPage } from "@/lib/medgenius/home-data";
 
@@ -35,6 +36,7 @@ export function SplitScreenPdfPanel({
           documentId={documentId}
           pageCount={pages}
           onAskSelection={onAskSelection}
+          canvasBg={SS.canvasBg}
         />
       ) : (
         <DemoPdfViewer

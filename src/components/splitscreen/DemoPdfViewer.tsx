@@ -67,8 +67,8 @@ export function DemoPdfViewer({
   }, []);
 
   return (
-    <div className="flex h-full flex-col" style={{ background: SS.canvasBg }}>
-      <div className="min-h-0 flex-1 overflow-auto p-4" onMouseUp={onMouseUp}>
+    <div className="flex h-full flex-col bg-white">
+      <div className="min-h-0 flex-1 overflow-auto bg-white p-4" onMouseUp={onMouseUp}>
         <article
           className="mx-auto max-w-[620px] rounded-xl border bg-white px-8 py-10 shadow-[0_4px_24px_rgba(15,23,42,0.06)]"
           style={{ borderColor: SS.panelBorder }}
