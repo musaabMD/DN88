@@ -2,14 +2,14 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { DocumentPdfViewer } from "@/components/medgenius/DocumentPdfViewer";
-import { HomeLocaleProvider } from "@/components/home/HomeLocaleProvider";
+import { SplitScreenPdfPanel } from "@/components/splitscreen/SplitScreenPdfPanel";
+import { SplitScreenPanelShell } from "@/components/splitscreen/SplitScreenPanelShell";
+import { HomeLocaleProvider, useHomeLocale } from "@/components/home/HomeLocaleProvider";
 import { MedGeniusCreditsProvider } from "@/lib/medgenius/credits-context";
 import { getDemoFilesForExam } from "@/lib/medgenius/demo-files";
 import { useExamDocuments } from "@/lib/medgenius/home-data";
-import { useClerkEnabled } from "@/hooks/useClerkEnabled";
 
 const SplitScreenStudyPanel = dynamic(
   () =>
@@ -31,13 +31,9 @@ const ResizablePanels = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-full gap-3 rounded-xl border border-[#E5E5E5] bg-white p-3 shadow-sm">
-        <div className="flex flex-1 items-center justify-center rounded-lg bg-[#F6F7F9] text-sm font-semibold text-[#777]">
-          Loading panels…
-        </div>
-        <div className="flex flex-1 items-center justify-center rounded-lg bg-[#F6F7F9] text-sm font-semibold text-[#777]">
-          Loading panels…
-        </div>
+      <div className="grid h-full grid-cols-2 gap-3">
+        <div className="rounded-2xl border border-[#E8ECF0] bg-white" />
+        <div className="rounded-2xl border border-[#E8ECF0] bg-white" />
       </div>
     ),
   }
@@ -51,7 +47,7 @@ export function SplitScreenView() {
   return (
     <HomeLocaleProvider>
       <MedGeniusCreditsProvider>
-        <div className="h-[100dvh] bg-[#F6F7F9] text-slate-900 [color-scheme:light]">
+        <div className="h-[100dvh] bg-[radial-gradient(circle_at_top,#ffffff_0%,#eef2f7_45%,#e8edf3_100%)] text-slate-900 [color-scheme:light]">
           <SplitScreenInner />
         </div>
       </MedGeniusCreditsProvider>
@@ -61,8 +57,9 @@ export function SplitScreenView() {
 
 function SplitScreenInner() {
   const searchParams = useSearchParams();
-  const clerkEnabled = useClerkEnabled();
+  const { content } = useHomeLocale();
   const [mounted, setMounted] = useState(false);
+  const [pendingAskQuote, setPendingAskQuote] = useState<string | null>(null);
   const examId = searchParams.get("exam") ?? "smle";
   const docParam = searchParams.get("doc");
   const exam = EXAMS.find((item) => item.id === examId) ?? EXAMS[0];
@@ -71,6 +68,14 @@ function SplitScreenInner() {
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  const handlePendingAskHandled = useCallback(() => {
+    setPendingAskQuote(null);
+  }, []);
+
+  const handleAskFromPdf = useCallback((text: string) => {
+    setPendingAskQuote(text);
   }, []);
 
   const file = useMemo(() => {
@@ -88,57 +93,62 @@ function SplitScreenInner() {
       pages: demo.pages,
       color: demo.color,
       votes: demo.votes,
-      documentId: docParam ?? undefined,
+      documentId: undefined,
     };
   }, [docParam, demoFiles, liveFiles]);
 
-  const pdfPanel = (
-    <div className="flex h-full flex-col">
-      <div className="border-b border-[#E5E5E5] px-4 py-2 text-xs font-extrabold uppercase tracking-wide text-[#777]">
-        Original PDF
-      </div>
-      <div className="min-h-0 flex-1">
-        {file?.documentId && clerkEnabled ? (
-          <DocumentPdfViewer documentId={file.documentId} pageCount={file.pages} />
-        ) : (
-          <div className="flex h-full items-center justify-center p-6 text-center text-sm font-semibold text-[#777]">
-            {file ? (
-              <>
-                Sign in and upload a PDF, or open with{" "}
-                <code className="rounded bg-[#F6F7F9] px-1 py-0.5 text-xs">?doc=&lt;documentId&gt;</code>
-              </>
-            ) : (
-              "No demo file available"
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  const pdfPanel =
+    file ? (
+      <SplitScreenPdfPanel
+        fileId={file.id}
+        fileName={file.name}
+        pages={file.pages}
+        color={file.color}
+        documentId={file.documentId}
+        readPages={content.readPages}
+        onAskSelection={handleAskFromPdf}
+      />
+    ) : (
+      <SplitScreenPanelShell title="Original PDF" subtitle="No file" accent="#94A3B8">
+        <div className="flex h-full items-center justify-center p-6 text-sm font-semibold text-[#777]">
+          No demo file available
+        </div>
+      </SplitScreenPanelShell>
+    );
 
-  const studyPanel =
-    !mounted ? (
+  const studyPanel = !mounted ? (
+    <SplitScreenPanelShell title="Study" subtitle="Quiz · Review · Summary" accent={exam.from}>
       <div className="flex h-full items-center justify-center p-6 text-sm font-semibold text-[#777]">
         Loading study panel…
       </div>
-    ) : file && exam ? (
-      <SplitScreenStudyPanel file={file} exam={exam} />
-    ) : (
+    </SplitScreenPanelShell>
+  ) : file && exam ? (
+    <SplitScreenPanelShell title="Study" subtitle="Quiz · Review · Summary · Flashcards · Custom" accent={exam.from}>
+      <SplitScreenStudyPanel
+        file={file}
+        exam={exam}
+        pendingAskQuote={pendingAskQuote}
+        onPendingAskHandled={handlePendingAskHandled}
+      />
+    </SplitScreenPanelShell>
+  ) : (
+    <SplitScreenPanelShell title="Study" subtitle="Waiting for file" accent={exam.from}>
       <div className="flex h-full items-center justify-center p-6 text-sm font-semibold text-[#777]">
         Load a file to show study tabs
       </div>
-    );
+    </SplitScreenPanelShell>
+  );
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex shrink-0 items-center justify-between border-b border-[#E5E5E5] bg-white px-4 py-2">
+      <header className="flex shrink-0 items-center justify-between border-b border-[#E5E7EB] bg-white/80 px-4 py-3 backdrop-blur">
         <div>
-          <p className="text-xs font-extrabold uppercase tracking-wide text-[#AFAFAF]">Split screen test</p>
-          <h1 className="text-sm font-black text-[#3C3C3C]">{file?.name ?? "No file selected"}</h1>
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#94A3B8]">Split screen</p>
+          <h1 className="text-base font-black tracking-tight text-[#111827]">{file?.name ?? "Pick a file"}</h1>
         </div>
         <Link
           href="/qbank/smle/"
-          className="rounded-lg border border-[#E5E5E5] px-3 py-1.5 text-xs font-extrabold text-[#777]"
+          className="rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-xs font-extrabold text-[#64748B] shadow-sm transition hover:border-[#CBD5E1]"
         >
           Back to SMLE
         </Link>
@@ -148,9 +158,9 @@ function SplitScreenInner() {
         {mounted ? (
           <ResizablePanels pdfPanel={pdfPanel} studyPanel={studyPanel} />
         ) : (
-          <div className="flex h-full gap-3 rounded-xl border border-[#E5E5E5] bg-white p-3 shadow-sm">
-            <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-[#E5E5E5]">{pdfPanel}</div>
-            <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-[#E5E5E5]">{studyPanel}</div>
+          <div className="grid h-full grid-cols-2 gap-3">
+            {pdfPanel}
+            {studyPanel}
           </div>
         )}
       </div>

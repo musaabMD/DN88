@@ -342,6 +342,9 @@ const styles = `
 .dn-fs { position: fixed; inset: 0; z-index: 100; background: #fff; display: flex; flex-direction: column; }
 .dn-fs-split { position: relative; inset: auto; z-index: 0; height: 100%; min-height: 0; overflow: hidden; }
 .dn-fs-split .dn-chat { position: absolute; }
+.dn-fs-split .dn-fs-row1 { display: none; }
+.dn-fs-split .dn-fs-row2 { padding-top: 8px; }
+.dn-fs-split .dn-fs-tabs { padding-top: 0; }
 .dn-fs-head { flex-shrink: 0; background: #fff; }
 .dn-fs-row1 { display: flex; align-items: center; gap: 8px; padding: 8px 12px 6px; min-width: 0; }
 .dn-fs-row2 { padding: 0 12px 8px; }
@@ -1336,9 +1339,11 @@ function ExamPage(props: {
 /* ------------------------------------------------------------------ */
 /*  Study (full screen)                                                */
 /* ------------------------------------------------------------------ */
-function Study({ file, exam, saved, onToggleSave, onClose, flash, splitScreen }: {
+function Study({ file, exam, saved, onToggleSave, onClose, flash, splitScreen, pendingAskQuote, onPendingAskHandled }: {
   file: ExamFile; exam: Exam | null; saved: boolean; onToggleSave: () => void; onClose: () => void; flash: (m: string) => void;
   splitScreen?: boolean;
+  pendingAskQuote?: string | null;
+  onPendingAskHandled?: () => void;
 }) {
   const { m, content } = useHomeLocale();
   const clerkEnabled = useClerkEnabled();
@@ -1591,6 +1596,13 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, splitScreen }:
   }, [content.chatGreeting]);
   const openChat = (q?: string) => { setQuote(q ?? null); setChatOpen(true); };
 
+  useEffect(() => {
+    if (!pendingAskQuote || !splitScreen) return;
+    setQuote(pendingAskQuote);
+    setChatOpen(true);
+    onPendingAskHandled?.();
+  }, [pendingAskQuote, splitScreen, onPendingAskHandled]);
+
   const fsRef = useRef<HTMLDivElement>(null);
   const [immersive, setImmersive] = useState(false);
 
@@ -1740,7 +1752,17 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, splitScreen }:
   );
 }
 
-export function SplitScreenStudyPanel({ file, exam }: { file: ExamFile; exam: Exam | null }) {
+export function SplitScreenStudyPanel({
+  file,
+  exam,
+  pendingAskQuote,
+  onPendingAskHandled,
+}: {
+  file: ExamFile;
+  exam: Exam | null;
+  pendingAskQuote?: string | null;
+  onPendingAskHandled?: () => void;
+}) {
   const { m } = useHomeLocale();
   const [saved, setSaved] = useState<Set<string>>(new Set());
   const [toast, setToast] = useState<string | null>(null);
@@ -1775,7 +1797,7 @@ export function SplitScreenStudyPanel({ file, exam }: { file: ExamFile; exam: Ex
   }, []);
 
   return (
-    <div className="dn-root h-full min-h-0 overflow-hidden">
+    <div className="dn-root flex h-full min-h-0 flex-col overflow-hidden">
       <style>{styles}</style>
       <Study
         file={file}
@@ -1788,6 +1810,8 @@ export function SplitScreenStudyPanel({ file, exam }: { file: ExamFile; exam: Ex
         onClose={() => {}}
         flash={flash}
         splitScreen
+        pendingAskQuote={pendingAskQuote}
+        onPendingAskHandled={onPendingAskHandled}
       />
       {toast && (
         <div className="dn-toast">
