@@ -1353,6 +1353,25 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash }: {
     return m.noQuestionsExtracted;
   }, [useLive, live.processingError, m.noQuestionsExtracted]);
 
+  const autoExtractRef = useRef(false);
+  useEffect(() => {
+    if (!useLive || !file.documentId || autoExtractRef.current) return;
+    if (live.loading || live.status !== "completed") return;
+    if (live.questions.length > 0) return;
+    if (extracting || reprocessing) return;
+    autoExtractRef.current = true;
+    void handleExtractMcqs();
+  }, [
+    useLive,
+    file.documentId,
+    live.loading,
+    live.status,
+    live.questions.length,
+    extracting,
+    reprocessing,
+    handleExtractMcqs,
+  ]);
+
   // shared quiz state (Quiz + Review + Custom)
   const [answers, setAnswers] = useState<Record<number, number>>({ 0: 0, 2: 1, 4: 3 });
   const [flagged, setFlagged] = useState<Set<number>>(new Set([5]));

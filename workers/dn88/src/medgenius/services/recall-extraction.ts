@@ -16,13 +16,23 @@ function shouldSkipLine(line: string): boolean {
   return SKIP_LINE.test(line) || isTitleLine(line);
 }
 
-function cleanOption(line: string): string {
-  return line.replace(/\/+\s*$/, "").replace(/\*\*/g, "").trim();
+function cleanOption(text: string): string {
+  return text.replace(/\/+\s*$/, "").replace(/\*\*/g, "").trim();
+}
+
+function splitSlashOptions(line: string): string[] {
+  if (!/\/.+\//.test(line) && line.split("/").length < 3) return [];
+  return line
+    .split(/\s*\/\s*/)
+    .map(cleanOption)
+    .filter((part) => part.length > 0 && part.length < 120);
 }
 
 function looksLikeOption(line: string): boolean {
   const cleaned = cleanOption(line);
-  if (!cleaned || cleaned.length > 90) return false;
+  if (!cleaned) return false;
+  if (splitSlashOptions(line).length >= 2) return true;
+  if (cleaned.length > 90) return false;
   if (/^#/.test(cleaned)) return false;
   if (shouldSkipLine(cleaned)) return false;
   if (/\?$/.test(cleaned) && cleaned.split(/\s+/).length >= 5) return false;
@@ -30,6 +40,13 @@ function looksLikeOption(line: string): boolean {
     return false;
   }
   return true;
+}
+
+function optionsFromLine(line: string): string[] {
+  const slash = splitSlashOptions(line);
+  if (slash.length >= 2) return slash;
+  if (looksLikeOption(line)) return [cleanOption(line)];
+  return [];
 }
 
 function isStemLine(line: string): boolean {
@@ -46,12 +63,28 @@ function looksLikeNewStem(line: string): boolean {
   return isStemLine(line);
 }
 
+/** Expand "opt1/ opt2/ opt3" onto separate lines for line-based parsing. */
+export function normalizeRecallMarkdown(markdown: string): string {
+  return markdown
+    .split("\n")
+    .flatMap((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return [];
+      if (trimmed.includes("?")) return [trimmed];
+      const slashOpts = splitSlashOptions(trimmed);
+      if (slashOpts.length >= 2) return slashOpts;
+      return [trimmed];
+    })
+    .join("\n");
+}
+
 /**
  * Heuristic extractor for SMLE-style recall sheets: stem (often ending in "?"),
- * then unlabeled option lines (may end with "/"), without A/B/C/D prefixes.
+ * then unlabeled option lines (may be slash-separated on one line).
  */
 export function extractRecallMcqsFromMarkdown(markdown: string): ExtractedQuestion[] {
-  const lines = markdown
+  const normalized = normalizeRecallMarkdown(markdown);
+  const lines = normalized
     .replace(/\*\*/g, "")
     .split("\n")
     .map((line) => line.trim())
@@ -81,7 +114,7 @@ export function extractRecallMcqsFromMarkdown(markdown: string): ExtractedQuesti
       i += 1;
       if (current.includes("?")) break;
       const next = lines[i];
-      if (next && looksLikeOption(next) && stemParts.length >= 1) break;
+      if (next && optionsFromLine(next).length > 0 && stemParts.length >= 1) break;
       if (stemParts.length > 8) break;
     }
 
@@ -89,15 +122,18 @@ export function extractRecallMcqsFromMarkdown(markdown: string): ExtractedQuesti
     if (!stem) continue;
 
     const options: string[] = [];
-    while (i < lines.length && options.length < 6) {
+    while (i < lines.length && options.length < 8) {
       const current = lines[i] ?? "";
       if (shouldSkipLine(current)) {
         i += 1;
         continue;
       }
       if (looksLikeNewStem(current) && options.length >= 2) break;
-      if (!looksLikeOption(current)) break;
-      options.push(cleanOption(current));
+
+      const fromLine = optionsFromLine(current);
+      if (fromLine.length === 0) break;
+
+      options.push(...fromLine);
       i += 1;
     }
 
@@ -105,7 +141,7 @@ export function extractRecallMcqsFromMarkdown(markdown: string): ExtractedQuesti
       questions.push({
         originalText: stem,
         cleanedText: stem,
-        options,
+        options: options.slice(0, 6),
         correctAnswer: null,
         confidence: 0.35,
         tags: ["recall"],
