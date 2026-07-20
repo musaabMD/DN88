@@ -1202,7 +1202,9 @@ function ExamPage(props: {
     const source = useLiveData
       ? demoFilesEnabled
         ? demoFiles
-        : liveFiles
+        : liveFiles.length > 0
+          ? liveFiles
+          : demoFiles
       : FILES;
     let list = source.filter((f) => {
       if (!q) return true;
@@ -1215,6 +1217,11 @@ function ExamPage(props: {
     const per: Exclude<Filter, "bookmarked"> = filter === "bookmarked" ? "all" : filter;
     return list.sort((a, b) => b.votes[per] + (voted.has(b.id) ? 1 : 0) - (a.votes[per] + (voted.has(a.id) ? 1 : 0)));
   }, [query, filter, voted, saved, liveFiles, demoFiles, demoFilesEnabled, useLiveData, semanticDocIds]);
+
+  const showDemoFallback =
+    useLiveData && liveFiles.length === 0 && demoFiles.length > 0;
+  const showLoadingState =
+    useLiveData && filesLoading && !showDemoFallback && ranked.length === 0;
 
   const toggle = (set: Set<string>, id: string, fn: (s: Set<string>) => void) => { const n = new Set(set); n.has(id) ? n.delete(id) : n.add(id); fn(n); };
   const allPicked = picked.size > 0 && picked.size === ranked.length;
@@ -1255,7 +1262,7 @@ function ExamPage(props: {
       </div>
 
       <ul className="dn-list">
-        {filesLoading && useLiveData && !demoFilesEnabled && ranked.length === 0 && (
+        {showLoadingState && (
           <li className="dn-empty"><p>{m.loadingYourFiles}</p></li>
         )}
         {ranked.map((f) => {
@@ -1289,7 +1296,7 @@ function ExamPage(props: {
             </li>
           );
         })}
-        {ranked.length === 0 && !filesLoading && (
+        {ranked.length === 0 && !showLoadingState && (
           <div className="dn-empty">
             <Search size={26} color={C.faint} />
             <p>
