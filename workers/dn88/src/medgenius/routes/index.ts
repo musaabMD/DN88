@@ -166,6 +166,35 @@ medgeniusRoutes.get("/documents/:id/markdown", async (c) => {
   return c.json({ markdown, pageCount: doc.page_count });
 });
 
+medgeniusRoutes.get("/documents/:id/images/:filename", async (c) => {
+  const authResult = await requireAuth(c);
+  if ("error" in authResult) return c.json({ error: authResult.error }, authResult.status);
+
+  const documentId = c.req.param("id");
+  const filename = c.req.param("filename");
+  if (!/^page-\d+-\d+\.[a-z0-9]+$/i.test(filename)) {
+    return c.json({ error: "Invalid image path" }, 400);
+  }
+
+  const doc = await getDocument(c.env.DB, authResult.user.id, documentId);
+  if (!doc) return c.json({ error: "Document not found" }, 404);
+
+  const r2Key = `users/${authResult.user.id}/documents/${documentId}/images/${filename}`;
+  const object = await c.env.USER_CONTENT.get(r2Key);
+  if (!object) return c.json({ error: "Image not found" }, 404);
+
+  const body = await object.arrayBuffer();
+  const contentType = object.httpMetadata?.contentType ?? "application/octet-stream";
+
+  return new Response(body, {
+    headers: {
+      "Content-Type": contentType,
+      "Cache-Control": "private, max-age=86400",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
+});
+
 medgeniusRoutes.post("/documents/:id/reprocess", async (c) => {
   const authResult = await requireAuth(c);
   if ("error" in authResult) return c.json({ error: authResult.error }, authResult.status);

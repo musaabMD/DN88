@@ -1,10 +1,20 @@
-import type { OpenRouterMessage } from "../types";
+import type { ExtractedQuestion, OpenRouterMessage } from "../types";
 import { sanitizeUserError } from "./user-errors";
+import type { StoredPageImage } from "./markdown-images";
 
 export type OpenRouterResult = {
   content: string;
   tokensUsed: number;
   model: string;
+};
+
+type OpenRouterContentPart =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string } };
+
+type OpenRouterChatMessage = {
+  role: "system" | "user" | "assistant";
+  content: string | OpenRouterContentPart[];
 };
 
 const DEFAULT_MODEL = "google/gemini-2.0-flash-001";
@@ -13,7 +23,7 @@ const EXTRACTION_MODEL = "google/gemini-2.0-flash-001";
 
 export async function chatCompletion(
   apiKey: string,
-  messages: OpenRouterMessage[],
+  messages: OpenRouterMessage[] | OpenRouterChatMessage[],
   options?: {
     model?: string;
     maxTokens?: number;
@@ -69,7 +79,7 @@ export function parseLlmJsonContent(content: string): unknown {
 }
 
 const EXTRACTION_SYSTEM_PROMPT = `You extract medical exam questions from study materials. Return valid JSON only with shape:
-{"questions":[{"originalText":"...","cleanedText":"...","options":["A","B","C","D"],"correctAnswer":0,"confidence":0.9,"explanation":"...","topic":"Cardiology","subtopic":"ACS","difficulty":"medium","page":1,"tags":["high-yield"]}]}
+{"questions":[{"originalText":"...","cleanedText":"...","options":["A","B","C","D"],"correctAnswer":0,"confidence":0.9,"explanation":"...","topic":"Cardiology","subtopic":"ACS","difficulty":"medium","page":1,"imageRefs":[0],"tags":["high-yield"]}]}
 Rules:
 - Preserve original wording in originalText; put polished board-style text in cleanedText
 - correctAnswer is 0-based index or null if unknown
@@ -78,7 +88,10 @@ Rules:
 - Extract ALL numbered MCQs (1. 2. 3.), A/B/C/D options, recall Q&A, and clinical vignettes
 - SMLE/recall sheets: stem ends with "?", options are unlabeled lines below (may end with "/"), skip title/intro lines
 - Include questions even when the answer key is missing (set correctAnswer null, confidence low)
-- Never invent questions not present in the source chunk`;
+- Never invent questions not present in the source chunk
+- Always set page to the PDF page number provided in the user message
+- When images are attached, use imageRefs (0-based indices) for questions that reference ECGs, scans, histology, or diagrams
+- Image-based MCQs: describe what the image shows in cleanedText when the stem references a figure`;
 
 export function chunkMarkdownForExtraction(markdown: string, maxChunkSize = 18_000): string[] {
   if (markdown.length <= maxChunkSize) return [markdown];
@@ -106,6 +119,123 @@ export function chunkMarkdownForExtraction(markdown: string, maxChunkSize = 18_0
   return chunks;
 }
 
+export type PageExtractionInput = {
+  pageNumber: number;
+  markdown: string;
+  images: StoredPageImage[];
+  imageDataUrls?: string[];
+};
+
+function buildPageExtractionContent(
+  documentName: string,
+  page: PageExtractionInput,
+  pageTotal: number
+): OpenRouterChatMessage["content"] {
+  const header = `Document: ${documentName}\nPDF page ${page.pageNumber} of ${pageTotal}\n\n${page.markdown}`;
+  const parts: OpenRouterContentPart[] = [{ type: "text", text: header }];
+
+  const dataUrls = page.imageDataUrls ?? [];
+  for (const url of dataUrls) {
+    if (url.startsWith("data:")) {
+      parts.push({ type: "image_url", image_url: { url } });
+    }
+  }
+
+  if (page.images.length > 0 && dataUrls.length === 0) {
+    const imageList = page.images
+      .map((img, index) => `[${index}] ${img.alt || img.filename}`)
+      .join("\n");
+    parts[0] = {
+      type: "text",
+      text: `${header}\n\nImages on this page:\n${imageList}`,
+    };
+  }
+
+  return parts.length > 1 ? parts : header;
+}
+
+async function extractQuestionsFromPage(
+  apiKey: string,
+  page: PageExtractionInput,
+  documentName: string,
+  pageTotal: number
+): Promise<string> {
+  const result = await chatCompletion(
+    apiKey,
+    [
+      { role: "system", content: EXTRACTION_SYSTEM_PROMPT },
+      {
+        role: "user",
+        content: buildPageExtractionContent(documentName, page, pageTotal),
+      },
+    ],
+    { model: EXTRACTION_MODEL, jsonMode: true, maxTokens: 8192, temperature: 0.2 }
+  );
+  return result.content;
+}
+
+export async function extractQuestionsFromPages(
+  apiKey: string,
+  pages: PageExtractionInput[],
+  documentName: string
+): Promise<string> {
+  const merged = new Map<string, ExtractedQuestion>();
+  const pageTotal = pages.length;
+
+  for (const page of pages) {
+    if (!page.markdown.trim()) continue;
+    try {
+      const jsonContent = await extractQuestionsFromPage(
+        apiKey,
+        page,
+        documentName,
+        pageTotal
+      );
+      const parsed = parseLlmJsonContent(jsonContent) as {
+        questions?: Array<
+          ExtractedQuestion & {
+            imageRefs?: number[];
+          }
+        >;
+      };
+      if (!Array.isArray(parsed.questions)) continue;
+
+      for (const q of parsed.questions) {
+        const key = q.originalText?.trim().toLowerCase().slice(0, 240);
+        if (!key || merged.has(key)) continue;
+
+        const withPage: ExtractedQuestion = {
+          ...q,
+          page: page.pageNumber,
+        };
+
+        if (Array.isArray(q.imageRefs) && q.imageRefs.length > 0) {
+          withPage.images = q.imageRefs
+            .map((refIndex) => page.images[refIndex])
+            .filter((img): img is StoredPageImage => Boolean(img))
+            .map((img) => ({
+              r2Key: img.r2Key,
+              page: img.page,
+              type: img.mimeType,
+              position: img.position,
+              alt: img.alt,
+            }));
+        }
+
+        merged.set(key, withPage);
+      }
+    } catch (error) {
+      console.error("Question extraction page failed", {
+        documentName,
+        page: page.pageNumber,
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  return JSON.stringify({ questions: [...merged.values()] });
+}
+
 async function extractQuestionsFromChunk(
   apiKey: string,
   chunk: string,
@@ -130,8 +260,13 @@ async function extractQuestionsFromChunk(
 export async function extractQuestionsFromMarkdown(
   apiKey: string,
   markdown: string,
-  documentName: string
+  documentName: string,
+  pages?: PageExtractionInput[]
 ): Promise<string> {
+  if (pages && pages.length > 0) {
+    return extractQuestionsFromPages(apiKey, pages, documentName);
+  }
+
   const chunks = chunkMarkdownForExtraction(markdown);
   const merged = new Map<string, import("../types").ExtractedQuestion>();
 

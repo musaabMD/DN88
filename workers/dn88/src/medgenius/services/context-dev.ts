@@ -551,6 +551,97 @@ function estimatePageCount(
   return Math.max(1, Math.ceil(markdown.length / 3000));
 }
 
+const MAX_PDF_PAGES = 500;
+
+function isPdfDocument(filename: string, mimeType: string): boolean {
+  const extension = extractExtension(filename);
+  return extension === "pdf" || mimeType === "application/pdf";
+}
+
+/**
+ * Parse a PDF one page at a time via Context.dev `pdf[start]` / `pdf[end]`.
+ * Pages are joined with form-feed (`\f`) for downstream page-aligned extraction.
+ */
+export async function parsePdfPageByPageWithContextDev(
+  apiKey: string | undefined,
+  params: ContextDevParseParams
+): Promise<ContextDevParseResult> {
+  if (!apiKey) {
+    return fallbackParse(params);
+  }
+
+  assertParseableSize(params.fileBytes.byteLength);
+
+  const pages: string[] = [];
+  let totalCredits = 0;
+  let creditsRemaining: number | undefined;
+
+  for (let pageNum = 1; pageNum <= MAX_PDF_PAGES; pageNum += 1) {
+    try {
+      const result = await parseDocumentWithContextDev(apiKey, {
+        ...params,
+        options: {
+          includeLinks: true,
+          includeImages: true,
+          shortenBase64Images: false,
+          useMainContentOnly: false,
+          ocr: true,
+          pdf: { start: pageNum, end: pageNum },
+          client: params.options?.client ?? "drnote-page",
+        },
+      });
+
+      const slice = result.markdown.trim();
+      if (!slice) break;
+
+      pages.push(slice);
+      totalCredits += result.creditsConsumed;
+      creditsRemaining = result.creditsRemaining;
+    } catch (error) {
+      if (pageNum === 1) throw error;
+      if (
+        error instanceof ContextDevParseError &&
+        (error.errorCode === "WEBSITE_ACCESS_ERROR" || error.status === 400)
+      ) {
+        break;
+      }
+      throw error;
+    }
+  }
+
+  if (pages.length === 0) {
+    throw new ContextDevParseError({
+      status: 415,
+      errorCode: "UNSUPPORTED_CONTENT",
+      message: sanitizeUserError("Could not extract any pages from this PDF.", "parse"),
+    });
+  }
+
+  const markdown = pages.join("\f\n");
+  return {
+    markdown,
+    type: "pdf",
+    pageCount: pages.length,
+    images: [],
+    jobId: crypto.randomUUID(),
+    creditsConsumed: totalCredits,
+    creditsRemaining,
+  };
+}
+
+/**
+ * Choose page-by-page PDF parse or whole-document parse for other formats.
+ */
+export async function parseDocumentPageAware(
+  apiKey: string | undefined,
+  params: ContextDevParseParams
+): Promise<ContextDevParseResult> {
+  if (isPdfDocument(params.filename, params.mimeType)) {
+    return parsePdfPageByPageWithContextDev(apiKey, params);
+  }
+  return parseDocumentWithOcrFallback(apiKey, params);
+}
+
 export async function computeFileHash(bytes: ArrayBuffer): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   return Array.from(new Uint8Array(digest))

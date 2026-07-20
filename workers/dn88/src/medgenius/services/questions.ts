@@ -193,7 +193,18 @@ export function serializeQuestion(row: QuestionRow, images?: Array<Record<string
       incorrect: row.stats_incorrect,
       skipped: row.stats_skipped,
     },
-    images: images ?? [],
+    images: (images ?? []).map((img) => {
+      const record = img as Record<string, unknown>;
+      const filename = typeof record.filename === "string" ? record.filename : null;
+      const documentId = row.document_id;
+      return {
+        ...record,
+        url:
+          filename && documentId
+            ? `/documents/${documentId}/images/${filename}`
+            : undefined,
+      };
+    }),
   };
 }
 
@@ -215,14 +226,18 @@ export async function getQuestionImages(
       alt_text: string | null;
     }>();
 
-  return (result.results ?? []).map((img) => ({
-    id: img.id,
-    r2Key: img.r2_key,
-    page: img.page_number,
-    type: img.image_type,
-    position: img.position,
-    alt: img.alt_text,
-  }));
+  return (result.results ?? []).map((img) => {
+    const filename = img.r2_key.split("/").pop() ?? img.r2_key;
+    return {
+      id: img.id,
+      r2Key: img.r2_key,
+      filename,
+      page: img.page_number,
+      type: img.image_type,
+      position: img.position,
+      alt: img.alt_text,
+    };
+  });
 }
 
 export async function detectDuplicateGroups(
