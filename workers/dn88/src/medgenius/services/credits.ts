@@ -134,8 +134,12 @@ export async function checkCredits(
   db: D1Database,
   user: MedGeniusUserRow,
   cost: number,
-  options?: { aiTokens?: number }
+  options?: { aiTokens?: number; testMode?: boolean }
 ): Promise<CreditCheckResult> {
+  if (options?.testMode) {
+    return { ok: true, reserved: 0 };
+  }
+
   const limits = PLAN_LIMITS[user.plan];
   const dayKey = currentDayKey();
 
@@ -169,7 +173,8 @@ export async function spendCredits(
   userId: string,
   cost: number,
   operation: string,
-  reference?: { type?: string; id?: string; metadata?: Record<string, unknown> }
+  reference?: { type?: string; id?: string; metadata?: Record<string, unknown> },
+  options?: { testMode?: boolean }
 ): Promise<number> {
   const user = await db
     .prepare("SELECT * FROM medgenius_users WHERE user_id = ?")
@@ -177,6 +182,10 @@ export async function spendCredits(
     .first<MedGeniusUserRow>();
 
   if (!user) throw new CreditError("INSUFFICIENT_CREDITS", "User profile not found");
+
+  if (options?.testMode) {
+    return user.credits_balance;
+  }
 
   const check = await checkCredits(db, user, cost);
   if (!check.ok) {
@@ -220,8 +229,11 @@ export async function recordAiTokenUsage(
   db: D1Database,
   userId: string,
   tokens: number,
-  tokenCost: number
+  tokenCost: number,
+  options?: { testMode?: boolean }
 ): Promise<void> {
+  if (options?.testMode) return;
+
   const dayKey = currentDayKey();
   const user = await db
     .prepare("SELECT * FROM medgenius_users WHERE user_id = ?")
@@ -251,8 +263,13 @@ export async function recordAiTokenUsage(
 export async function checkDocumentLimits(
   db: D1Database,
   user: MedGeniusUserRow,
-  pageCount: number
+  pageCount: number,
+  options?: { testMode?: boolean }
 ): Promise<CreditCheckResult> {
+  if (options?.testMode) {
+    return { ok: true, reserved: 0 };
+  }
+
   const limits = PLAN_LIMITS[user.plan];
 
   if (user.documents_count >= limits.maxDocuments) {
@@ -278,8 +295,11 @@ export async function checkDocumentLimits(
 export async function incrementDocumentUsage(
   db: D1Database,
   userId: string,
-  pageCount: number
+  pageCount: number,
+  options?: { testMode?: boolean }
 ): Promise<void> {
+  if (options?.testMode) return;
+
   await db
     .prepare(
       `UPDATE medgenius_users SET
@@ -292,10 +312,11 @@ export async function incrementDocumentUsage(
     .run();
 }
 
-export function getCreditSummary(user: MedGeniusUserRow) {
+export function getCreditSummary(user: MedGeniusUserRow, testMode = false) {
   const limits = PLAN_LIMITS[user.plan];
   return {
     plan: user.plan,
+    testMode,
     creditsBalance: user.credits_balance,
     creditsUsedMonth: user.credits_used_month,
     creditsMonthlyLimit: limits.monthlyCredits,

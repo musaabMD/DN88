@@ -6,6 +6,7 @@ import {
 } from "./credits";
 import { resolvePlan } from "../config/plans";
 import { tutorReply, estimateTokenCreditCost } from "./openrouter";
+import { isMedGeniusTestMode } from "./test-mode";
 import type { Bindings } from "../../types";
 
 export async function handleTutorChat(
@@ -38,7 +39,8 @@ export async function handleTutorChat(
   const user = await ensureUserProfile(env.DB, params.userId, params.email, plan);
 
   const estimatedCost = 13;
-  const check = await checkCredits(env.DB, user, estimatedCost, { aiTokens: 2000 });
+  const testMode = isMedGeniusTestMode(env.MEDGENIUS_TEST_MODE);
+  const check = await checkCredits(env.DB, user, estimatedCost, { aiTokens: 2000, testMode });
   if (!check.ok) {
     throw new Error(check.error);
   }
@@ -81,7 +83,8 @@ export async function handleTutorChat(
     env,
     params.userId,
     result.tokensUsed,
-    tokenCost
+    tokenCost,
+    testMode
   );
 
   const assistantMessageId = crypto.randomUUID();
@@ -111,9 +114,10 @@ async function recordAiTokenUsageAndGetBalance(
   env: Bindings,
   userId: string,
   tokens: number,
-  tokenCost: number
+  tokenCost: number,
+  testMode: boolean
 ): Promise<number> {
-  await recordAiTokenUsage(env.DB, userId, tokens, tokenCost);
+  await recordAiTokenUsage(env.DB, userId, tokens, tokenCost, { testMode });
   const user = await env.DB.prepare("SELECT * FROM medgenius_users WHERE user_id = ?")
     .bind(userId)
     .first<{ credits_balance: number }>();

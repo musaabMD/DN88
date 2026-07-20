@@ -22,6 +22,9 @@
   "observability": {
     "enabled": true
   },
+  "vars": {
+    "MEDGENIUS_TEST_MODE": "true"
+  },
   "d1_databases": [
     {
       "binding": "DB",

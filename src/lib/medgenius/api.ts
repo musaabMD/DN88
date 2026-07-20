@@ -3,6 +3,7 @@ import { sanitizeUserError } from "./errors";
 
 export type CreditSummary = {
   plan: "free" | "starter" | "student" | "pro";
+  testMode?: boolean;
   creditsBalance: number;
   creditsUsedMonth: number;
   creditsMonthlyLimit: number;

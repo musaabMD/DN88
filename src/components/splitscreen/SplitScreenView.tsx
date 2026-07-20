@@ -2,18 +2,19 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { SplitScreenPdfPanel } from "@/components/splitscreen/SplitScreenPdfPanel";
 import { SplitScreenPanelShell } from "@/components/splitscreen/SplitScreenPanelShell";
 import {
   SplitScreenMobileToggle,
   type SplitScreenMobilePane,
 } from "@/components/splitscreen/SplitScreenMobileToggle";
+import { SplitScreenUploadScreen } from "@/components/splitscreen/SplitScreenUploadScreen";
 import { SS } from "@/components/splitscreen/splitscreen-theme";
 import { HomeLocaleProvider, useHomeLocale } from "@/components/home/HomeLocaleProvider";
-import { MedGeniusCreditsProvider } from "@/lib/medgenius/credits-context";
-import { getDemoFilesForExam } from "@/lib/medgenius/demo-files";
+import { MedGeniusCreditsProvider, useMedGeniusCreditsContext } from "@/lib/medgenius/credits-context";
+import { getDemoFilesForExam, isDemoFilesForced } from "@/lib/medgenius/demo-files";
 import { useDocumentStudy, useExamDocuments } from "@/lib/medgenius/home-data";
 
 const MOBILE_MAX_WIDTH = 767;
@@ -66,16 +67,20 @@ export function SplitScreenView() {
 }
 
 function SplitScreenInner() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { content } = useHomeLocale();
+  const { credits } = useMedGeniusCreditsContext();
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobilePane, setMobilePane] = useState<SplitScreenMobilePane>("pdf");
   const [pendingAskQuote, setPendingAskQuote] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const examId = searchParams.get("exam") ?? "smle";
   const docParam = searchParams.get("doc");
+  const useDemo = isDemoFilesForced() || searchParams.get("demo") === "1";
   const exam = EXAMS.find((item) => item.id === examId) ?? EXAMS[0];
-  const { files: liveFiles } = useExamDocuments(exam.id, 0);
+  const { files: liveFiles } = useExamDocuments(exam.id, refreshKey);
   const demoFiles = useMemo(() => getDemoFilesForExam(exam.id), [exam.id]);
 
   useEffect(() => {
@@ -99,26 +104,47 @@ function SplitScreenInner() {
     setMobilePane("study");
   }, []);
 
+  const handleUploaded = useCallback(
+    (documentId: string) => {
+      setRefreshKey((value) => value + 1);
+      router.replace(`/splitscreen?exam=${encodeURIComponent(examId)}&doc=${encodeURIComponent(documentId)}`);
+    },
+    [examId, router]
+  );
+
   const file = useMemo(() => {
     if (docParam) {
       const live = liveFiles.find((item) => item.documentId === docParam || item.id === docParam);
       if (live) return live;
     }
-    if (liveFiles[0]) return liveFiles[0];
-    const demo = demoFiles[0];
-    if (!demo) return null;
-    return {
-      id: demo.id,
-      name: demo.name,
-      author: demo.author,
-      pages: demo.pages,
-      color: demo.color,
-      votes: demo.votes,
-      documentId: undefined,
-    };
-  }, [docParam, demoFiles, liveFiles]);
+    if (useDemo) {
+      const demo = demoFiles[0];
+      if (!demo) return null;
+      return {
+        id: demo.id,
+        name: demo.name,
+        author: demo.author,
+        pages: demo.pages,
+        color: demo.color,
+        votes: demo.votes,
+        documentId: undefined,
+      };
+    }
+    return null;
+  }, [docParam, demoFiles, liveFiles, useDemo]);
 
   const documentStudy = useDocumentStudy(file?.documentId);
+  const testMode = Boolean(credits?.testMode);
+
+  if (mounted && !file) {
+    return (
+      <SplitScreenUploadScreen
+        examId={examId}
+        testMode={testMode}
+        onUploaded={handleUploaded}
+      />
+    );
+  }
 
   const pdfPanel =
     file ? (
@@ -204,13 +230,22 @@ function SplitScreenInner() {
             {file?.name ?? "Pick a file"}
           </h1>
         </div>
-        <Link
-          href="/qbank/smle/"
-          className="shrink-0 rounded-xl border bg-white px-2.5 py-2 text-[11px] font-extrabold shadow-sm transition hover:opacity-90 sm:px-3 sm:text-xs"
-          style={{ borderColor: SS.panelBorder, color: SS.sub }}
-        >
-          Back
-        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          <Link
+            href={`/splitscreen?exam=${encodeURIComponent(examId)}`}
+            className="rounded-xl border bg-white px-2.5 py-2 text-[11px] font-extrabold shadow-sm transition hover:opacity-90 sm:px-3 sm:text-xs"
+            style={{ borderColor: SS.panelBorder, color: SS.sub }}
+          >
+            Upload
+          </Link>
+          <Link
+            href="/qbank/smle/"
+            className="rounded-xl border bg-white px-2.5 py-2 text-[11px] font-extrabold shadow-sm transition hover:opacity-90 sm:px-3 sm:text-xs"
+            style={{ borderColor: SS.panelBorder, color: SS.sub }}
+          >
+            Back
+          </Link>
+        </div>
       </header>
 
       <div className="min-h-0 flex-1 p-2 sm:p-3">{panelArea}</div>

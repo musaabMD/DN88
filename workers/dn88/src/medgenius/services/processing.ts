@@ -38,6 +38,11 @@ import {
 import { sanitizeUserError } from "./user-errors";
 import type { Bindings } from "../../types";
 import type { ProcessingStage, QueueMessage } from "../types";
+import { isMedGeniusTestMode } from "./test-mode";
+
+function testModeFromEnv(env: Bindings): boolean {
+  return isMedGeniusTestMode(env.MEDGENIUS_TEST_MODE);
+}
 
 export async function createDocumentUpload(
   env: Bindings,
@@ -169,6 +174,7 @@ async function runParseStage(
 
   if (!doc) throw new Error("Document not found");
 
+  const testMode = testModeFromEnv(env);
   const obj = await env.USER_CONTENT.get(doc.r2_original_key);
   if (!obj) throw new Error("Original file missing from storage");
 
@@ -220,7 +226,7 @@ async function runParseStage(
       contextDevType: parsed.type,
       creditsConsumed: parsed.creditsConsumed,
     },
-  });
+  }, { testMode });
 
   await storeMarkdown(env.USER_CONTENT, keys.markdown, finalMarkdown);
 
@@ -233,7 +239,7 @@ async function runParseStage(
     .bind(parsed.pageCount, keys.markdown, parsed.jobId, documentId)
     .run();
 
-  await incrementDocumentUsage(env.DB, userId, parsed.pageCount);
+  await incrementDocumentUsage(env.DB, userId, parsed.pageCount, { testMode });
   await completeJob(env, jobId, 100);
 
   const nextJobId = crypto.randomUUID();
@@ -266,6 +272,7 @@ async function runExtractQuestionsStage(
 
   if (!doc?.r2_markdown_key) throw new Error("Markdown not found");
 
+  const testMode = testModeFromEnv(env);
   const markdown = await getMarkdown(env.USER_CONTENT, doc.r2_markdown_key);
   if (!markdown) throw new Error("Markdown content missing");
 
@@ -342,7 +349,7 @@ async function runExtractQuestionsStage(
     type: "document",
     id: documentId,
     metadata: { count: questions.length, recall: recallQuestions.length, ai: aiQuestions.length },
-  });
+  }, { testMode });
 
   await insertQuestions(env.DB, userId, documentId, questions);
 
@@ -358,7 +365,7 @@ async function runExtractQuestionsStage(
     await spendCredits(env.DB, userId, summaryCost, "summary_generate", {
       type: "document",
       id: documentId,
-    });
+    }, { testMode });
 
     await env.DB.prepare(
       `INSERT INTO medgenius_summaries (id, user_id, document_id, summary_type, content_markdown)
@@ -404,7 +411,7 @@ async function runDuplicateStage(
     await spendCredits(env.DB, userId, cost, "duplicate_detection", {
       type: "document",
       id: documentId,
-    });
+    }, { testMode });
 
     await detectDuplicateGroups(env.DB, userId, documentId);
   } catch (error) {
@@ -476,7 +483,7 @@ async function runFlashcardStage(
       await spendCredits(env.DB, userId, computeCreditCost("flashcardGenerate"), "flashcard_generate", {
         type: "question",
         id: q.id,
-      });
+      }, { testMode });
 
       await env.DB.prepare(
         `INSERT INTO medgenius_flashcards

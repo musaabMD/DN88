@@ -34,6 +34,7 @@ export type Bindings = {
   OPENAI_API_KEY?: string;
   OPENROUTER_API_KEY?: string;
   CONTEXT_DEV_API_KEY?: string;
+  MEDGENIUS_TEST_MODE?: string;
   ADMIN_BOOTSTRAP_IDS?: string;
   CATALOG_SYNC_SECRET?: string;
 };
