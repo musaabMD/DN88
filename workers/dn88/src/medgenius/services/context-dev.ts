@@ -1,4 +1,5 @@
 import { sanitizeUserError } from "./user-errors";
+import { mergePageRangeMarkdown } from "../mcq/markdown-pages";
 import { isCorruptParsedMarkdown, markdownNeedsOcrRetry } from "./markdown-quality";
 
 /** Context.dev Parse API body limit (25 MiB). */
@@ -268,6 +269,66 @@ export async function parseDocumentWithOcrFallback(
   }
 
   return result;
+}
+
+const PDF_BATCH_SIZE = 8;
+
+/**
+ * Parse a PDF in page batches so each section gets a `<!-- PAGE:n -->` marker.
+ * Falls back to single parse when batching fails.
+ */
+export async function parsePdfWithPageMarkers(
+  apiKey: string | undefined,
+  params: ContextDevParseParams
+): Promise<ContextDevParseResult> {
+  if (!apiKey) {
+    return parseDocumentWithOcrFallback(apiKey, params);
+  }
+
+  const parts: Array<{ startPage: number; markdown: string }> = [];
+  let totalCredits = 0;
+  let startPage = 1;
+
+  while (startPage <= 500) {
+    const endPage = startPage + PDF_BATCH_SIZE - 1;
+    try {
+      const batch = await parseDocumentWithContextDev(apiKey, {
+        ...params,
+        options: {
+          includeLinks: true,
+          includeImages: true,
+          shortenBase64Images: true,
+          useMainContentOnly: false,
+          ocr: params.options?.ocr ?? true,
+          pdf: { start: startPage, end: endPage },
+          client: params.options?.client ?? "drnote",
+        },
+      });
+
+      const trimmed = batch.markdown.trim();
+      if (trimmed.length < 40) break;
+
+      parts.push({ startPage, markdown: trimmed });
+      totalCredits += batch.creditsConsumed;
+      startPage = endPage + 1;
+    } catch {
+      break;
+    }
+  }
+
+  if (parts.length === 0) {
+    return parseDocumentWithOcrFallback(apiKey, params);
+  }
+
+  const markdown = mergePageRangeMarkdown(parts);
+  return {
+    markdown,
+    type: "pdf",
+    pageCount: parts.length > 0 ? startPage - 1 : estimatePageCount(markdown),
+    images: [],
+    jobId: crypto.randomUUID(),
+    creditsConsumed: totalCredits,
+  };
 }
 
 function assertParseableSize(byteLength: number): void {

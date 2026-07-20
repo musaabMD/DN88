@@ -1048,6 +1048,9 @@ function AddFile({
   const [customExamName, setCustomExamName] = useState("");
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [processingMode, setProcessingMode] = useState<"auto" | "extract" | "generate" | "extract_and_generate">("auto");
+  const [qualityMode, setQualityMode] = useState<"fast" | "balanced" | "maximum">("balanced");
+  const [incompletePolicy, setIncompletePolicy] = useState<"keep_for_review" | "exclude">("keep_for_review");
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const clerkEnabled = useClerkEnabled();
@@ -1085,6 +1088,11 @@ function AddFile({
         file,
         name: name.trim(),
         examId: uploadExamId,
+        processingOptions: {
+          mode: processingMode,
+          quality: qualityMode,
+          incompletePolicy,
+        },
       });
       onDone(
         result.reprocessed
@@ -1145,6 +1153,57 @@ function AddFile({
           }}
         />
         <input className="dn-modal-input" value={name} onChange={(e) => setName(e.target.value)} placeholder={m.fileNamePlaceholder} />
+
+        <div className="space-y-3 px-1 text-left text-sm">
+          <div>
+            <p className="mb-1.5 font-semibold text-slate-700">Processing mode</p>
+            <div className="space-y-1">
+              {([
+                ["auto", "Auto-detect"],
+                ["extract", "Extract existing MCQs only"],
+                ["generate", "Generate MCQs from educational content"],
+                ["extract_and_generate", "Extract existing + generate additional"],
+              ] as const).map(([value, label]) => (
+                <label key={value} className="flex items-center gap-2">
+                  <input type="radio" name="processingMode" checked={processingMode === value} onChange={() => setProcessingMode(value)} />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-1.5 font-semibold text-slate-700">Quality</p>
+            <div className="space-y-1">
+              {([
+                ["fast", "Fast — text/Markdown only"],
+                ["balanced", "Balanced — page-aware parsing"],
+                ["maximum", "Maximum — full page-range parsing"],
+              ] as const).map(([value, label]) => (
+                <label key={value} className="flex items-center gap-2">
+                  <input type="radio" name="qualityMode" checked={qualityMode === value} onChange={() => setQualityMode(value)} />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-1.5 font-semibold text-slate-700">Incomplete questions</p>
+            <div className="space-y-1">
+              {([
+                ["keep_for_review", "Keep for review"],
+                ["exclude", "Exclude from quiz"],
+              ] as const).map(([value, label]) => (
+                <label key={value} className="flex items-center gap-2">
+                  <input type="radio" name="incompletePolicy" checked={incompletePolicy === value} onChange={() => setIncompletePolicy(value)} />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+
         {error && <p className="px-1 text-sm font-semibold text-red-500">{error}</p>}
         <Chunky bg={C.green} shadow={C.greenDark} full disabled={!canUpload} onClick={handleUpload}>
           <span className="dn-inline"><Upload size={16} strokeWidth={2.6} /> {uploading ? m.uploading : file ? m.uploadFile : m.chooseFile}</span>

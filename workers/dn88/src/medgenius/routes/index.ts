@@ -46,6 +46,7 @@ import {
   generateBoardQuestion,
 } from "../services/conflicts";
 import { sanitizeUserError } from "../services/user-errors";
+import { parseProcessingOptions, type ProcessingOptions } from "../mcq/types";
 
 export const medgeniusRoutes = new Hono<{ Bindings: Bindings }>();
 
@@ -226,6 +227,17 @@ medgeniusRoutes.post("/documents/upload", async (c) => {
   const file = formData.get("file");
   const name = (formData.get("name") as string | null)?.trim();
   const examId = (formData.get("examId") as string | null)?.trim() || undefined;
+  const processingMode = (formData.get("processingMode") as string | null)?.trim();
+  const qualityMode = (formData.get("qualityMode") as string | null)?.trim();
+  const incompletePolicy = (formData.get("incompletePolicy") as string | null)?.trim();
+
+  const processingOptions: ProcessingOptions = parseProcessingOptions(
+    JSON.stringify({
+      mode: processingMode,
+      quality: qualityMode,
+      incompletePolicy,
+    })
+  );
 
   if (!(file instanceof File)) {
     return c.json({ error: "Missing file" }, 400);
@@ -260,6 +272,7 @@ medgeniusRoutes.post("/documents/upload", async (c) => {
       filename: file.name,
       mimeType: file.type || "application/octet-stream",
       fileBytes,
+      processingOptions,
     });
 
     if (result.duplicate) {

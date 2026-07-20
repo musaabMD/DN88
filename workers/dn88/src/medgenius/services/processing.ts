@@ -7,6 +7,7 @@ import { isCorruptParsedMarkdown } from "./markdown-quality";
 import {
   computeFileHash,
   parseDocumentWithOcrFallback,
+  parsePdfWithPageMarkers,
 } from "./context-dev";
 import {
   buildR2Keys,
@@ -20,11 +21,16 @@ import {
   detectDuplicateGroups,
   insertQuestions,
   mergeExtractedQuestions,
-  parseExtractedQuestions,
 } from "./questions";
 import { extractRecallMcqsFromMarkdown } from "./recall-extraction";
 import {
-  extractQuestionsFromMarkdown,
+  DEFAULT_PROCESSING_OPTIONS,
+  type ProcessingOptions,
+  parseProcessingOptions,
+} from "../mcq/types";
+import { runMcqExtractionPipeline } from "../mcq/pipeline";
+import { ensurePageAwareMarkdown } from "../mcq/markdown-pages";
+import {
   generateDocumentSummary,
   generateFlashcardsFromQuestion,
 } from "./openrouter";
@@ -41,6 +47,7 @@ export async function createDocumentUpload(
     filename: string;
     mimeType: string;
     fileBytes: ArrayBuffer;
+    processingOptions?: ProcessingOptions;
   }
 ): Promise<{ documentId: string; duplicate: boolean; reprocessed?: boolean }> {
   const fileHash = await computeFileHash(params.fileBytes);
@@ -56,6 +63,7 @@ export async function createDocumentUpload(
 
   const documentId = crypto.randomUUID();
   const keys = buildR2Keys(params.userId, documentId, params.filename);
+  const processingOptions = params.processingOptions ?? DEFAULT_PROCESSING_OPTIONS;
 
   await env.USER_CONTENT.put(keys.original, params.fileBytes, {
     httpMetadata: { contentType: params.mimeType },
@@ -65,8 +73,9 @@ export async function createDocumentUpload(
   await env.DB.prepare(
     `INSERT INTO medgenius_documents (
       id, user_id, exam_id, name, original_filename, mime_type,
-      file_size_bytes, file_hash, r2_original_key, processing_status, processing_progress
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 0)`
+      file_size_bytes, file_hash, r2_original_key, processing_status, processing_progress,
+      processing_options_json
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 0, ?)`
   )
     .bind(
       documentId,
@@ -77,7 +86,8 @@ export async function createDocumentUpload(
       params.mimeType,
       params.fileBytes.byteLength,
       fileHash,
-      keys.original
+      keys.original,
+      JSON.stringify(processingOptions)
     )
     .run();
 
@@ -158,6 +168,7 @@ async function runParseStage(
       mime_type: string;
       r2_original_key: string;
       name: string;
+      processing_options_json: string | null;
     }>();
 
   if (!doc) throw new Error("Document not found");
@@ -166,7 +177,12 @@ async function runParseStage(
   if (!obj) throw new Error("Original file missing from storage");
 
   const fileBytes = await obj.arrayBuffer();
-  const parsed = await parseDocumentWithOcrFallback(env.CONTEXT_DEV_API_KEY, {
+  const processingOptions = parseProcessingOptions(doc.processing_options_json);
+  const isPdf =
+    doc.mime_type === "application/pdf" ||
+    doc.original_filename.toLowerCase().endsWith(".pdf");
+
+  const parseParams = {
     fileBytes,
     filename: doc.original_filename,
     mimeType: doc.mime_type,
@@ -176,7 +192,12 @@ async function runParseStage(
       shortenBase64Images: true,
       useMainContentOnly: false,
     },
-  });
+  };
+
+  const parsed =
+    isPdf && processingOptions.quality !== "fast"
+      ? await parsePdfWithPageMarkers(env.CONTEXT_DEV_API_KEY, parseParams)
+      : await parseDocumentWithOcrFallback(env.CONTEXT_DEV_API_KEY, parseParams);
 
   const parseCost = parsed.creditsConsumed;
   await spendCredits(env.DB, userId, parseCost, "page_parse", {
@@ -190,7 +211,8 @@ async function runParseStage(
   });
 
   const keys = buildR2Keys(userId, documentId, doc.original_filename);
-  await storeMarkdown(env.USER_CONTENT, keys.markdown, parsed.markdown);
+  const pageAwareMarkdown = ensurePageAwareMarkdown(parsed.markdown);
+  await storeMarkdown(env.USER_CONTENT, keys.markdown, pageAwareMarkdown);
 
   await env.DB.prepare(
     `UPDATE medgenius_documents SET
@@ -230,7 +252,11 @@ async function runExtractQuestionsStage(
 
   const doc = await env.DB.prepare("SELECT * FROM medgenius_documents WHERE id = ?")
     .bind(documentId)
-    .first<{ name: string; r2_markdown_key: string | null }>();
+    .first<{
+      name: string;
+      r2_markdown_key: string | null;
+      processing_options_json: string | null;
+    }>();
 
   if (!doc?.r2_markdown_key) throw new Error("Markdown not found");
 
@@ -251,15 +277,26 @@ async function runExtractQuestionsStage(
 
   const recallQuestions = extractRecallMcqsFromMarkdown(markdown);
   let aiQuestions: import("../types").ExtractedQuestion[] = [];
+  const processingOptions = parseProcessingOptions(doc.processing_options_json);
 
   if (env.OPENROUTER_API_KEY) {
     try {
-      const jsonContent = await extractQuestionsFromMarkdown(
+      const pipelineResult = await runMcqExtractionPipeline(
         env.OPENROUTER_API_KEY,
         markdown,
-        doc.name
+        doc.name,
+        processingOptions
       );
-      aiQuestions = parseExtractedQuestions(jsonContent);
+      aiQuestions = pipelineResult.questions;
+
+      if (pipelineResult.warnings.length > 0) {
+        console.warn("MCQ extraction pipeline warnings", {
+          documentId,
+          warnings: pipelineResult.warnings,
+          stats: pipelineResult.stats,
+          contentType: pipelineResult.contentType,
+        });
+      }
     } catch (error) {
       console.error("OpenRouter question extraction failed; using recall parser if available", {
         documentId,

@@ -65,6 +65,7 @@ export type DocumentRow = {
   processing_progress: number;
   processing_error: string | null;
   context_dev_job_id: string | null;
+  processing_options_json: string | null;
   processed_at: string | null;
   created_at: string;
   updated_at: string;
