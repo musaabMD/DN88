@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import type { Bindings } from "../types";
+import { extractRagPage, mergeRagDocumentResult } from "./extract-page";
 
 type AuthedEnv = {
   Bindings: Bindings;
@@ -71,12 +72,113 @@ export function createRagRoutes(getAuthedUserId: (c: {
   });
 
   app.get("/health", (c) => {
-    const configured = Boolean(c.env.TRIGGER_SECRET_KEY);
     return c.json({
       ok: true,
-      triggerConfigured: configured,
+      triggerConfigured: Boolean(c.env.TRIGGER_SECRET_KEY),
+      openRouterConfigured: Boolean(c.env.OPENROUTER_API_KEY),
+      extractionMode: c.env.OPENROUTER_API_KEY
+        ? c.env.TRIGGER_SECRET_KEY
+          ? "worker_or_trigger"
+          : "worker"
+        : c.env.TRIGGER_SECRET_KEY
+          ? "trigger"
+          : "none",
       projectRef: "proj_urgydtjlxezekgtpcxst",
     });
+  });
+
+  app.post("/extract-page", async (c) => {
+    const apiKey = c.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      return c.json({ error: "OPENROUTER_API_KEY not configured on Worker" }, 503);
+    }
+
+    const body = (await c.req.json()) as {
+      documentId?: string;
+      pageNumber?: number;
+      pageText?: string | null;
+      pageImageUrl?: string | null;
+      nearbyPageHints?: Array<{ pageNumber: number; textPreview: string }>;
+    };
+
+    if (!body.documentId || !body.pageNumber) {
+      return c.json({ error: "documentId and pageNumber are required" }, 400);
+    }
+
+    try {
+      const result = await extractRagPage(apiKey, {
+        documentId: body.documentId,
+        pageNumber: body.pageNumber,
+        pageText: body.pageText,
+        pageImageUrl: body.pageImageUrl,
+        nearbyPageHints: body.nearbyPageHints,
+      });
+      return c.json(result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Extraction failed";
+      return c.json({ error: message }, 502);
+    }
+  });
+
+  app.post("/extract-document", async (c) => {
+    const apiKey = c.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      return c.json({ error: "OPENROUTER_API_KEY not configured on Worker" }, 503);
+    }
+
+    const body = (await c.req.json()) as {
+      documentId?: string;
+      pages?: Array<{
+        pageNumber: number;
+        pageText?: string | null;
+        pageImageUrl?: string | null;
+      }>;
+    };
+
+    if (!body.documentId || !body.pages?.length) {
+      return c.json({ error: "documentId and pages are required" }, 400);
+    }
+
+    if (body.pages.length > 40) {
+      return c.json(
+        { error: "Too many pages in one request (max 40). Process in smaller batches." },
+        400,
+      );
+    }
+
+    try {
+      const sorted = [...body.pages].sort((a, b) => a.pageNumber - b.pageNumber);
+      const pageResults = [];
+
+      for (const page of sorted) {
+        const nearby = sorted
+          .filter(
+            (p) =>
+              p.pageNumber !== page.pageNumber &&
+              Math.abs(p.pageNumber - page.pageNumber) <= 1,
+          )
+          .map((p) => ({
+            pageNumber: p.pageNumber,
+            textPreview: (p.pageText ?? "").slice(0, 500),
+          }));
+
+        const result = await extractRagPage(apiKey, {
+          documentId: body.documentId,
+          pageNumber: page.pageNumber,
+          pageText: page.pageText,
+          pageImageUrl: page.pageImageUrl,
+          nearbyPageHints: nearby,
+        });
+        pageResults.push(result);
+      }
+
+      return c.json(
+        mergeRagDocumentResult(body.documentId, sorted.length, pageResults),
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Extraction failed";
+      return c.json({ error: message }, 502);
+    }
   });
 
   app.post("/tasks/:taskId/trigger", async (c) => {

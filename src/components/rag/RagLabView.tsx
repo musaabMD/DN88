@@ -12,6 +12,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   EXAMPLE_EXTRACTED_QUESTION,
+  extractDocumentViaWorker,
   fetchRagHealth,
   fetchRagRun,
   triggerRagTask,
@@ -98,10 +99,11 @@ export function RagLabView() {
   const [pageIndex, setPageIndex] = useState(0);
   const [rendering, setRendering] = useState(false);
   const [renderProgress, setRenderProgress] = useState<string | null>(null);
-  const [maxPages, setMaxPages] = useState(3);
+  const [maxPages, setMaxPages] = useState(10);
   const [health, setHealth] = useState<RagHealth | null>(null);
   const [runId, setRunId] = useState<string | null>(null);
   const [runStatus, setRunStatus] = useState<string | null>(null);
+  const [extractProgress, setExtractProgress] = useState<string | null>(null);
   const [result, setResult] = useState<DocumentExtractionResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -110,7 +112,7 @@ export function RagLabView() {
   );
   const [selectedRegionId, setSelectedRegionId] = useState<string | null>(null);
   const [versionTab, setVersionTab] = useState<VersionTab>("source");
-  const [useExample, setUseExample] = useState(true);
+  const [useExample, setUseExample] = useState(false);
 
   const documentId = useMemo(
     () => `doc_${file?.name?.replace(/\W+/g, "_").slice(0, 40) || "demo"}`,
@@ -251,6 +253,7 @@ export function RagLabView() {
     setRendering(true);
     setError(null);
     setRenderProgress("Reading PDF…");
+    if (signedIn) void refreshHealth();
     try {
       const rendered = await renderPdfPages(file, {
         maxPages,
@@ -270,27 +273,55 @@ export function RagLabView() {
 
   const handleExtract = async () => {
     if (!signedIn || pages.length === 0 || busy) return;
+    if (!health?.openRouterConfigured) {
+      setError("Extraction API is not configured on the Worker yet.");
+      return;
+    }
+
     setBusy(true);
     setError(null);
-    setRunStatus("QUEUED");
+    setUseExample(false);
+    setResult(null);
+    setSelectedQuestionId(null);
+    setExtractProgress(`Extracting page 0/${pages.length}…`);
+
     try {
       const token = await getClerkToken();
-      void refreshHealth();
-      const handle = await triggerRagTask(token, "process-document", {
+      const merged = await extractDocumentViaWorker(
+        token,
         documentId,
-        pages: pages.map((p) => ({
+        pages.map((p) => ({
           pageNumber: p.pageNumber,
           pageText: p.pageText,
           pageImageUrl: p.pageImageUrl,
         })),
-      });
-      setRunId(handle.runId);
-      setRunStatus("QUEUED");
+        (done, total) =>
+          setExtractProgress(`Extracting page ${done}/${total}…`),
+      );
+
+      setResult(merged);
+      setExtractProgress(
+        merged.questions.length > 0
+          ? `Done — ${merged.questions.length} question(s) from ${pages.length} page(s).`
+          : `Done — no questions detected on ${pages.length} page(s).`,
+      );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to start extraction");
+      setError(err instanceof Error ? err.message : "Failed to extract questions");
+      setExtractProgress(null);
+    } finally {
       setBusy(false);
     }
   };
+
+  const extractionReady = Boolean(health?.openRouterConfigured);
+  const canExtract = signedIn && pages.length > 0 && !busy && extractionReady;
+  const extractDisabledReason = !signedIn
+    ? "Sign in to extract questions."
+    : pages.length === 0
+      ? "Render the PDF pages first."
+      : !extractionReady
+        ? "Worker extraction is not configured."
+        : null;
 
   const handleHello = async () => {
     if (!signedIn || busy) return;
@@ -334,12 +365,20 @@ export function RagLabView() {
             <span
               className="rounded-md px-2.5 py-1 font-semibold"
               style={{
-                background: health?.triggerConfigured ? C.accentSoft : C.warnSoft,
-                color: health?.triggerConfigured ? C.accent : C.warn,
+                background: extractionReady ? C.accentSoft : C.warnSoft,
+                color: extractionReady ? C.accent : C.warn,
               }}
             >
-              Trigger {health?.triggerConfigured ? "ready" : "not configured"}
+              Extraction {extractionReady ? "ready" : "not configured"}
             </span>
+            {health?.triggerConfigured ? (
+              <span
+                className="rounded-md px-2.5 py-1 font-semibold"
+                style={{ background: C.accentSoft, color: C.accent }}
+              >
+                Trigger ready
+              </span>
+            ) : null}
             <button
               type="button"
               onClick={() => void refreshHealth()}
@@ -366,7 +405,7 @@ export function RagLabView() {
 
           {mounted && clerkEnabled && !signedIn ? (
             <div className="mt-4 rounded-lg p-3 text-sm" style={{ background: C.warnSoft, color: C.warn }}>
-              <p className="font-semibold">Sign in to trigger Trigger.dev tasks</p>
+              <p className="font-semibold">Sign in to extract questions from your PDF</p>
               <div className="mt-2">
                 <SignInButton mode="modal">
                   <button
@@ -406,18 +445,24 @@ export function RagLabView() {
             {file ? file.name : "Choose PDF"}
           </button>
 
-          <label className="mt-3 block text-xs font-semibold" style={{ color: C.sub }}>
-            Max pages (incremental)
+          <p className="mt-3 text-xs font-semibold" style={{ color: C.sub }}>
+            2. Render pages
+          </p>
+          <label className="mt-2 block text-xs font-semibold" style={{ color: C.sub }}>
+            Max pages per batch
             <input
               type="number"
               min={1}
-              max={50}
+              max={20}
               value={maxPages}
-              onChange={(e) => setMaxPages(Number(e.target.value) || 1)}
+              onChange={(e) => setMaxPages(Math.min(20, Number(e.target.value) || 1))}
               className="mt-1 w-full rounded-md border px-2 py-1.5 text-sm"
               style={{ borderColor: C.line }}
             />
           </label>
+          <p className="mt-1 text-[11px]" style={{ color: C.sub }}>
+            Start with 5–10 pages. Large PDFs can be processed in multiple batches.
+          </p>
 
           <button
             type="button"
@@ -432,14 +477,19 @@ export function RagLabView() {
 
           <button
             type="button"
-            disabled={!signedIn || pages.length === 0 || busy}
+            disabled={!canExtract}
             onClick={() => void handleExtract()}
             className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-bold text-white disabled:opacity-50"
             style={{ background: C.ink }}
           >
             {busy ? <Loader2 className="size-4 animate-spin" /> : <Play className="size-4" />}
-            Run process-document
+            Extract questions
           </button>
+          {extractDisabledReason ? (
+            <p className="mt-1 text-[11px]" style={{ color: C.sub }}>
+              {extractDisabledReason}
+            </p>
+          ) : null}
 
           <button
             type="button"
@@ -470,6 +520,11 @@ export function RagLabView() {
               {renderProgress}
             </p>
           ) : null}
+          {extractProgress ? (
+            <p className="mt-2 text-xs font-semibold" style={{ color: C.accent }}>
+              {extractProgress}
+            </p>
+          ) : null}
           {runId ? (
             <p className="mt-3 text-xs leading-relaxed" style={{ color: C.sub }}>
               Run <span className="font-mono">{runId}</span>
@@ -488,6 +543,11 @@ export function RagLabView() {
               Questions
             </p>
             <ul className="mt-2 space-y-1.5">
+              {questions.length === 0 ? (
+                <li className="rounded-md px-2 py-3 text-xs" style={{ color: C.sub, background: C.bg }}>
+                  No questions yet. Choose a PDF, render pages, then extract.
+                </li>
+              ) : null}
               {questions.map((q) => {
                 const label = originLabel(q.origin);
                 const active = q.id === activeQuestionId;
