@@ -168,6 +168,135 @@ export async function extractDocumentViaWorker(
   return mergeRagPageResults(documentId, sorted.length, pageResults);
 }
 
+function mergeDocumentResults(
+  documentId: string,
+  results: DocumentExtractionResult[],
+): DocumentExtractionResult {
+  if (results.length === 0) {
+    return {
+      documentId,
+      pageCount: 0,
+      questions: [],
+      regions: [],
+      evidence: [],
+      ragReady: [],
+      warnings: [],
+    };
+  }
+
+  return {
+    documentId,
+    pageCount: Math.max(...results.map((r) => r.pageCount)),
+    questions: results.flatMap((r) => r.questions),
+    regions: results.flatMap((r) => r.regions),
+    evidence: results.flatMap((r) => r.evidence),
+    ragReady: results.flatMap((r) => r.ragReady),
+    warnings: results.flatMap((r) => r.warnings),
+  };
+}
+
+const TRIGGER_BATCH_SIZE = 8;
+
+async function pollRagRunUntilDone(
+  token: string | null,
+  runId: string,
+  timeoutMs = 3_600_000,
+): Promise<DocumentExtractionResult> {
+  const started = Date.now();
+
+  while (Date.now() - started < timeoutMs) {
+    const { run } = await fetchRagRun(token, runId);
+    const status = run.status?.toUpperCase() ?? "";
+
+    if (status === "COMPLETED" && run.output) {
+      return run.output as DocumentExtractionResult;
+    }
+
+    if (
+      status === "FAILED" ||
+      status === "CRASHED" ||
+      status === "CANCELED" ||
+      status === "SYSTEM_FAILURE" ||
+      status === "TIMED_OUT"
+    ) {
+      const message =
+        typeof run.error === "string"
+          ? run.error
+          : run.error?.message ?? `Trigger run ${status}`;
+      throw new Error(message);
+    }
+
+    await new Promise((resolve) => window.setTimeout(resolve, 2500));
+  }
+
+  throw new Error("Trigger run timed out waiting for completion");
+}
+
+/** Uses Trigger.dev background jobs — batches pages internally for payload size. */
+export async function extractDocumentViaTrigger(
+  token: string | null,
+  documentId: string,
+  pages: Array<{
+    pageNumber: number;
+    pageText?: string | null;
+    pageImageUrl?: string | null;
+  }>,
+  onProgress?: (done: number, total: number, status?: string) => void,
+): Promise<DocumentExtractionResult> {
+  const sorted = [...pages].sort((a, b) => a.pageNumber - b.pageNumber);
+  const batchResults: DocumentExtractionResult[] = [];
+  let processedPages = 0;
+
+  for (let offset = 0; offset < sorted.length; offset += TRIGGER_BATCH_SIZE) {
+    const batch = sorted.slice(offset, offset + TRIGGER_BATCH_SIZE);
+    onProgress?.(
+      processedPages,
+      sorted.length,
+      `Trigger.dev processing pages ${batch[0]?.pageNumber ?? 1}–${batch[batch.length - 1]?.pageNumber ?? 1}…`,
+    );
+
+    const handle = await triggerRagTask(token, "process-document", {
+      documentId,
+      pages: batch,
+      resumeFromPage: batch[0]?.pageNumber,
+    });
+
+    const result = await pollRagRunUntilDone(token, handle.runId);
+    batchResults.push(result);
+    processedPages += batch.length;
+    onProgress?.(processedPages, sorted.length);
+  }
+
+  return mergeDocumentResults(documentId, batchResults);
+}
+
+export async function extractDocument(
+  token: string | null,
+  documentId: string,
+  pages: Array<{
+    pageNumber: number;
+    pageText?: string | null;
+    pageImageUrl?: string | null;
+  }>,
+  options: {
+    preferTrigger: boolean;
+    onProgress?: (done: number, total: number, status?: string) => void;
+  },
+): Promise<DocumentExtractionResult> {
+  if (options.preferTrigger) {
+    return extractDocumentViaTrigger(
+      token,
+      documentId,
+      pages,
+      options.onProgress,
+    );
+  }
+
+  return extractDocumentViaWorker(token, documentId, pages, (done, total) =>
+    options.onProgress?.(done, total),
+  );
+}
+
 export const EXAMPLE_EXTRACTED_QUESTION = {
   id: "q_doc123_006_01",
   origin: "extracted" as const,

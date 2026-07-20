@@ -139,13 +139,6 @@ export function createRagRoutes(getAuthedUserId: (c: {
       return c.json({ error: "documentId and pages are required" }, 400);
     }
 
-    if (body.pages.length > 40) {
-      return c.json(
-        { error: "Too many pages in one request (max 40). Process in smaller batches." },
-        400,
-      );
-    }
-
     try {
       const sorted = [...body.pages].sort((a, b) => a.pageNumber - b.pageNumber);
       const pageResults = [];
