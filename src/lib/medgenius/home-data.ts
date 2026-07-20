@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getClerkToken } from "@/lib/clerk-token";
+import { getClerkToken, isClerkSignedIn } from "@/lib/clerk-token";
 import { useClerkEnabled } from "@/hooks/useClerkEnabled";
 import {
   fetchDocumentStatus,
@@ -160,21 +160,68 @@ export function markdownToReadPages(markdown: string): HomeReadPage[] {
   });
 }
 
+function useClerkSessionReady(): boolean {
+  const clerkEnabled = useClerkEnabled();
+  const [tokenReady, setTokenReady] = useState(false);
+
+  useEffect(() => {
+    if (!clerkEnabled) return;
+
+    let cancelled = false;
+    let interval: number | null = null;
+    let timeout: number | null = null;
+
+    const waitForToken = async (): Promise<boolean> => {
+      const token = await getClerkToken();
+      if (cancelled) return false;
+      if (token) {
+        setTokenReady(true);
+        return true;
+      }
+      return false;
+    };
+
+    void (async () => {
+      if (await waitForToken()) return;
+
+      interval = window.setInterval(() => {
+        void waitForToken().then((hasToken) => {
+          if (hasToken && interval !== null) window.clearInterval(interval);
+        });
+      }, 150);
+      timeout = window.setTimeout(() => {
+        if (interval !== null) window.clearInterval(interval);
+        if (!cancelled) setTokenReady(true);
+      }, 8000);
+    })();
+
+    return () => {
+      cancelled = true;
+      if (interval !== null) window.clearInterval(interval);
+      if (timeout !== null) window.clearTimeout(timeout);
+    };
+  }, [clerkEnabled]);
+
+  return !clerkEnabled || tokenReady;
+}
+
 export function useExamDocuments(examId: string | undefined, refreshKey = 0) {
   const clerkEnabled = useClerkEnabled();
+  const sessionReady = useClerkSessionReady();
+  const signedIn = clerkEnabled && sessionReady && isClerkSignedIn();
+  const canFetch = signedIn && Boolean(examId);
   const [files, setFiles] = useState<HomeExamFile[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const refresh = useCallback(async () => {
-    if (!clerkEnabled || !examId) {
-      setFiles([]);
-      return;
-    }
+  const loadDocuments = useCallback(async () => {
+    if (!canFetch || !examId) return;
+
     setError(null);
+    setLoading(true);
     try {
       const token = await getClerkToken();
-      setLoading(true);
+      if (!token) return;
       const { documents } = await fetchDocuments(token, examId);
       setFiles(documents.map(documentToExamFile));
     } catch (err) {
@@ -183,19 +230,27 @@ export function useExamDocuments(examId: string | undefined, refreshKey = 0) {
     } finally {
       setLoading(false);
     }
-  }, [clerkEnabled, examId]);
+  }, [canFetch, examId]);
+
+  const refresh = useCallback(async () => {
+    if (!clerkEnabled || !examId) {
+      setFiles([]);
+      return;
+    }
+    if (!signedIn) return;
+    await loadDocuments();
+  }, [clerkEnabled, examId, loadDocuments, signedIn]);
 
   useEffect(() => {
-    if (!clerkEnabled || !examId) return;
+    if (!canFetch || !examId) return;
 
     let cancelled = false;
-
-    (async () => {
+    void (async () => {
       setError(null);
+      setLoading(true);
       try {
         const token = await getClerkToken();
-        if (cancelled) return;
-        setLoading(true);
+        if (cancelled || !token) return;
         const { documents } = await fetchDocuments(token, examId);
         if (cancelled) return;
         setFiles(documents.map(documentToExamFile));
@@ -211,11 +266,13 @@ export function useExamDocuments(examId: string | undefined, refreshKey = 0) {
     return () => {
       cancelled = true;
     };
-  }, [clerkEnabled, examId, refreshKey]);
+  }, [canFetch, examId, refreshKey]);
+
+  const waitingForSession = clerkEnabled && Boolean(examId) && !sessionReady;
 
   return {
-    files: clerkEnabled && examId ? files : [],
-    loading: clerkEnabled && examId ? loading : false,
+    files: clerkEnabled && examId && signedIn ? files : [],
+    loading: clerkEnabled && examId ? waitingForSession || loading : false,
     error: clerkEnabled && examId ? error : null,
     refresh,
   };
