@@ -19,6 +19,7 @@ import { sanitizeUserError } from "@/lib/medgenius/errors";
 import {
   useExamDocuments,
   useDocumentStudy,
+  type DocumentStudyData,
   type HomeFlashCard,
   type HomeQuestion,
   type HomeReadPage,
@@ -1355,16 +1356,20 @@ function ExamPage(props: {
 /* ------------------------------------------------------------------ */
 /*  Study (full screen)                                                */
 /* ------------------------------------------------------------------ */
-function Study({ file, exam, saved, onToggleSave, onClose, flash, splitScreen, pendingAskQuote, onPendingAskHandled }: {
+function Study({ file, exam, saved, onToggleSave, onClose, flash, splitScreen, pendingAskQuote, onPendingAskHandled, documentStudy: documentStudyProp }: {
   file: ExamFile; exam: Exam | null; saved: boolean; onToggleSave: () => void; onClose: () => void; flash: (m: string) => void;
   splitScreen?: boolean;
   pendingAskQuote?: string | null;
   onPendingAskHandled?: () => void;
+  documentStudy?: DocumentStudyData;
 }) {
   const { m, content } = useHomeLocale();
   const clerkEnabled = useClerkEnabled();
   const studyTabs = splitScreen ? TABS.filter(({ key }) => key !== "Read") : TABS;
-  const live = useDocumentStudy(clerkEnabled && file.documentId ? file.documentId : undefined);
+  const fetchedStudy = useDocumentStudy(
+    documentStudyProp ? undefined : clerkEnabled && file.documentId ? file.documentId : undefined
+  );
+  const live = documentStudyProp ?? fetchedStudy;
   const useLive = Boolean(clerkEnabled && file.documentId);
   const questions: HomeQuestion[] = useLive ? live.questions : content.questions;
   const readPages: HomeReadPage[] = useLive ? live.readPages : content.readPages;
@@ -1425,6 +1430,13 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, splitScreen, p
   }, [useLive, live.processingError, m.noQuestionsExtracted]);
 
   const autoExtractRef = useRef(false);
+  useEffect(() => {
+    autoExtractRef.current = false;
+    setAnswers({});
+    setFlagged(new Set());
+    setSessions(loadSessions(file.id, 0));
+  }, [file.documentId, file.id]);
+
   useEffect(() => {
     if (!useLive || !file.documentId || autoExtractRef.current) return;
     if (live.loading || live.status !== "completed") return;
@@ -1744,13 +1756,15 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, splitScreen, p
       </header>
 
       <div className="dn-fs-body" onMouseUp={onBodyMouseUp}>
-        {processing && !chatOpen && (
+        {processing && !chatOpen ? (
           <div className="dn-empty" style={{ padding: "24px 16px" }}>
             <Sparkles size={26} color={C.purple} />
             <p>{m.preparingStudyMaterials}{live.progress > 0 ? ` ${live.progress}%` : ""}</p>
+            {live.processingError ? (
+              <p className="mt-2 text-sm font-semibold text-amber-700">{live.processingError}</p>
+            ) : null}
           </div>
-        )}
-        {splitScreen && chatOpen ? (
+        ) : splitScreen && chatOpen ? (
           <ChatPanel
             inline
             documentId={file.documentId}
@@ -1841,11 +1855,13 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, splitScreen, p
 export function SplitScreenStudyPanel({
   file,
   exam,
+  documentStudy,
   pendingAskQuote,
   onPendingAskHandled,
 }: {
   file: ExamFile;
   exam: Exam | null;
+  documentStudy: DocumentStudyData;
   pendingAskQuote?: string | null;
   onPendingAskHandled?: () => void;
 }) {
@@ -1896,6 +1912,7 @@ export function SplitScreenStudyPanel({
         onClose={() => {}}
         flash={flash}
         splitScreen
+        documentStudy={documentStudy}
         pendingAskQuote={pendingAskQuote}
         onPendingAskHandled={onPendingAskHandled}
       />
@@ -2625,7 +2642,10 @@ function SummaryNotion({ file, summaries, splitScreen }: { file: ExamFile; summa
   const { summary } = content;
   const [done, setDone] = useState<Set<number>>(new Set());
   const [page, setPage] = useState(1);
-  const primary = summaries.find((s) => s.type === "summary") ?? summaries[0];
+  const primary =
+    summaries.find((s) => s.type === "high_yield") ??
+    summaries.find((s) => s.type === "summary") ??
+    summaries[0];
   const liveBullets = primary
     ? primary.content
         .split("\n")
