@@ -552,10 +552,40 @@ function estimatePageCount(
 }
 
 const MAX_PDF_PAGES = 500;
+const PAGE_PARSE_DELAY_MS = 350;
+const MAX_PARSE_RETRIES = 4;
 
 function isPdfDocument(filename: string, mimeType: string): boolean {
   const extension = extractExtension(filename);
   return extension === "pdf" || mimeType === "application/pdf";
+}
+
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function parseWithRetry(
+  apiKey: string | undefined,
+  params: ContextDevParseParams
+): Promise<ContextDevParseResult> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < MAX_PARSE_RETRIES; attempt += 1) {
+    try {
+      return await parseDocumentWithContextDev(apiKey, params);
+    } catch (error) {
+      lastError = error;
+      if (
+        error instanceof ContextDevParseError &&
+        error.retryable &&
+        attempt < MAX_PARSE_RETRIES - 1
+      ) {
+        await sleep(800 * (attempt + 1));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError;
 }
 
 /**
@@ -577,8 +607,12 @@ export async function parsePdfPageByPageWithContextDev(
   let creditsRemaining: number | undefined;
 
   for (let pageNum = 1; pageNum <= MAX_PDF_PAGES; pageNum += 1) {
+    if (pageNum > 1) {
+      await sleep(PAGE_PARSE_DELAY_MS);
+    }
+
     try {
-      const result = await parseDocumentWithContextDev(apiKey, {
+      const result = await parseWithRetry(apiKey, {
         ...params,
         options: {
           includeLinks: true,
@@ -630,16 +664,40 @@ export async function parsePdfPageByPageWithContextDev(
 }
 
 /**
- * Choose page-by-page PDF parse or whole-document parse for other formats.
+ * Prefer whole-document parse (faster, fewer rate limits). Fall back to page-by-page for PDFs
+ * when whole-document output is empty or corrupt.
  */
 export async function parseDocumentPageAware(
   apiKey: string | undefined,
   params: ContextDevParseParams
 ): Promise<ContextDevParseResult> {
-  if (isPdfDocument(params.filename, params.mimeType)) {
-    return parsePdfPageByPageWithContextDev(apiKey, params);
+  if (!isPdfDocument(params.filename, params.mimeType)) {
+    return parseDocumentWithOcrFallback(apiKey, params);
   }
-  return parseDocumentWithOcrFallback(apiKey, params);
+
+  try {
+    const whole = await parseDocumentWithOcrFallback(apiKey, {
+      ...params,
+      options: {
+        includeLinks: true,
+        includeImages: true,
+        shortenBase64Images: false,
+        useMainContentOnly: false,
+        ...params.options,
+      },
+    });
+
+    if (!isCorruptParsedMarkdown(whole.markdown) && whole.markdown.trim().length >= 120) {
+      return whole;
+    }
+  } catch (error) {
+    console.warn("Whole-document PDF parse failed; falling back to page-by-page", {
+      filename: params.filename,
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+
+  return parsePdfPageByPageWithContextDev(apiKey, params);
 }
 
 export async function computeFileHash(bytes: ArrayBuffer): Promise<string> {

@@ -35,12 +35,17 @@ function decodeDataUrl(dataUrl: string): { bytes: Uint8Array; mimeType: string }
 }
 
 /** Split stored markdown into page slices (form-feed delimiters from page-by-page parse). */
-export function splitMarkdownByPages(markdown: string): string[] {
+export function splitMarkdownByPages(markdown: string, targetPageCount?: number): string[] {
   const text = markdown.trim();
   if (!text) return [""];
   if (text.includes("\f")) {
     const pages = text.split("\f").map((page) => page.trim()).filter(Boolean);
-    return pages.length > 0 ? pages : [text];
+    if (pages.length > 0) {
+      if (targetPageCount && targetPageCount > pages.length) {
+        return chunkMarkdownEvenly(text.replace(/\f/g, "\n\n"), targetPageCount);
+      }
+      return pages;
+    }
   }
   const explicit = text.match(/<!--\s*pages:\s*(\d+)\s*-->/i);
   if (explicit?.[1]) {
@@ -50,7 +55,66 @@ export function splitMarkdownByPages(markdown: string): string[] {
       if (sections.length >= target) return sections.slice(0, target);
     }
   }
+
+  const sections = text.split(/\n(?=##?\s+)/).filter((section) => section.trim());
+  if (sections.length > 1) {
+    if (targetPageCount && targetPageCount > 0 && sections.length !== targetPageCount) {
+      return chunkSections(sections, targetPageCount);
+    }
+    return sections;
+  }
+
+  if (targetPageCount && targetPageCount > 1) {
+    return chunkMarkdownEvenly(text, targetPageCount);
+  }
+
   return [text];
+}
+
+const PAGE_CHARS = 2800;
+
+function chunkSections(sections: string[], targetCount: number): string[] {
+  if (sections.length <= targetCount) {
+    const padded = [...sections];
+    while (padded.length < targetCount) {
+      padded.push("");
+    }
+    return padded;
+  }
+
+  const pages: string[] = [];
+  const perPage = Math.ceil(sections.length / targetCount);
+  for (let index = 0; index < sections.length; index += perPage) {
+    pages.push(sections.slice(index, index + perPage).join("\n\n"));
+  }
+  return pages.slice(0, targetCount);
+}
+
+function chunkMarkdownEvenly(text: string, targetCount: number): string[] {
+  const paragraphs = text.split(/\n{2,}/).filter(Boolean);
+  if (paragraphs.length === 0) return [text];
+
+  const pages: string[] = [];
+  let current = "";
+
+  for (const paragraph of paragraphs) {
+    const next = current ? `${current}\n\n${paragraph}` : paragraph;
+    if (current && pages.length < targetCount - 1 && next.length > PAGE_CHARS) {
+      pages.push(current);
+      current = paragraph;
+      continue;
+    }
+    current = next;
+  }
+
+  if (current) pages.push(current);
+  if (pages.length === 0) return [text];
+
+  while (pages.length < targetCount) {
+    pages.push("");
+  }
+
+  return pages.slice(0, targetCount);
 }
 
 /**

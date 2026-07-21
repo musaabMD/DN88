@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getClerkToken, isClerkSignedIn } from "@/lib/clerk-token";
 import { useClerkEnabled } from "@/hooks/useClerkEnabled";
 import {
@@ -347,7 +347,7 @@ export function useDocumentStudy(documentId: string | undefined): DocumentStudyD
         setFlashcards(fRes.flashcards.map(apiFlashcardToHome));
         setSummaries(sRes.summaries);
 
-        if (doc.status === "completed") {
+        if (doc.status === "completed" || doc.status === "extracting" || doc.status === "embedding") {
           try {
             const md = await fetchDocumentMarkdown(token, documentId);
             if (!cancelled && md.markdown) {
@@ -355,7 +355,7 @@ export function useDocumentStudy(documentId: string | undefined): DocumentStudyD
               setReadPages(markdownToReadPages(md.markdown));
             }
           } catch {
-            /* markdown optional */
+            /* markdown optional until parse finishes */
           }
         }
       } catch (err) {
@@ -377,15 +377,27 @@ export function useDocumentStudy(documentId: string | undefined): DocumentStudyD
         setStatus(doc.status);
         setProgress(doc.progress ?? 0);
         setProcessingError(doc.error ?? null);
-        if (doc.status === "completed" || doc.status === "failed") {
-          if (pollRef.current !== null) {
-            window.clearInterval(pollRef.current);
-            pollRef.current = null;
-          }
-          if (doc.status === "completed") {
+          if (doc.status === "completed" || doc.status === "failed") {
+            if (pollRef.current !== null) {
+              window.clearInterval(pollRef.current);
+              pollRef.current = null;
+            }
+            if (doc.status === "completed") {
+              void loadContent();
+            }
+          } else if (doc.status === "extracting" || doc.status === "embedding") {
+            try {
+              const token = await getClerkToken();
+              const md = await fetchDocumentMarkdown(token, documentId);
+              if (!cancelled && md.markdown) {
+                setRawMarkdown(md.markdown);
+                setReadPages(markdownToReadPages(md.markdown));
+              }
+            } catch {
+              /* markdown may not exist yet */
+            }
             void loadContent();
           }
-        }
       } catch {
         /* ignore polling errors */
       }
@@ -413,5 +425,67 @@ export function useDocumentStudy(documentId: string | undefined): DocumentStudyD
     processingError,
     loading,
     error,
+  };
+}
+
+/** Resolve a document id from the URL into a HomeExamFile before the exam file list refreshes. */
+export function useResolvedExamFile(
+  documentId: string | null | undefined,
+  liveFiles: HomeExamFile[],
+  refreshKey = 0
+): { file: HomeExamFile | null; loading: boolean; error: string | null } {
+  const clerkEnabled = useClerkEnabled();
+  const sessionReady = useClerkSessionReady();
+  const signedIn = clerkEnabled && sessionReady && isClerkSignedIn();
+  const enabled = signedIn && Boolean(documentId);
+
+  const fromList = useMemo(() => {
+    if (!documentId) return null;
+    return (
+      liveFiles.find((item) => item.documentId === documentId || item.id === documentId) ?? null
+    );
+  }, [documentId, liveFiles]);
+
+  const [fetched, setFetched] = useState<{ id: string; file: HomeExamFile } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!enabled || !documentId || fromList) return;
+
+    let cancelled = false;
+    void (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = await getClerkToken();
+        if (cancelled || !token) return;
+        const doc = await fetchDocumentStatus(token, documentId);
+        if (cancelled) return;
+        setFetched({ id: documentId, file: documentToExamFile(doc, 0) });
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            sanitizeUserError(err instanceof Error ? err.message : "Failed to load document")
+          );
+          setFetched(null);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [documentId, enabled, fromList, refreshKey]);
+
+  const resolved =
+    fetched && documentId && fetched.id === documentId ? fetched.file : null;
+
+  return {
+    file: fromList ?? resolved,
+    loading: Boolean(documentId && enabled && !fromList && loading),
+    error: documentId ? error : null,
   };
 }

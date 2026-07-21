@@ -58,8 +58,8 @@ export async function createDocumentUpload(
   const fileHash = await computeFileHash(params.fileBytes);
   const existing = await findDuplicateDocument(env.DB, params.userId, fileHash);
   if (existing) {
-    const corrupt = await documentHasCorruptMarkdown(env, existing);
-    if (corrupt) {
+    const needsReprocess = await documentNeedsReprocess(env, existing.id, existing);
+    if (needsReprocess) {
       await reprocessDocument(env, existing.id, params.userId);
       return { documentId: existing.id, duplicate: false, reprocessed: true };
     }
@@ -192,7 +192,7 @@ async function runParseStage(
   });
 
   const keys = buildR2Keys(userId, documentId, doc.original_filename);
-  const rawPages = splitMarkdownByPages(parsed.markdown);
+  const rawPages = splitMarkdownByPages(parsed.markdown, parsed.pageCount);
   const processedPages: string[] = [];
   const allImages: StoredPageImage[] = [];
 
@@ -268,7 +268,7 @@ async function runExtractQuestionsStage(
 
   const doc = await env.DB.prepare("SELECT * FROM medgenius_documents WHERE id = ?")
     .bind(documentId)
-    .first<{ name: string; r2_markdown_key: string | null }>();
+    .first<{ name: string; r2_markdown_key: string | null; page_count: number | null }>();
 
   if (!doc?.r2_markdown_key) throw new Error("Markdown not found");
 
@@ -293,7 +293,7 @@ async function runExtractQuestionsStage(
 
   if (env.OPENROUTER_API_KEY) {
     try {
-      const pageSlices = splitMarkdownByPages(markdown);
+      const pageSlices = splitMarkdownByPages(markdown, doc.page_count ?? undefined);
       const imagesByPage = await loadDocumentImageManifest(env.USER_CONTENT, documentId, userId);
       const pageInputs: PageExtractionInput[] = [];
       for (let index = 0; index < pageSlices.length; index += 1) {
@@ -406,6 +406,7 @@ async function runDuplicateStage(
   userId: string,
   jobId: string
 ): Promise<void> {
+  const testMode = testModeFromEnv(env);
   try {
     const cost = computeCreditCost("duplicateDetection");
     await spendCredits(env.DB, userId, cost, "duplicate_detection", {
@@ -445,6 +446,7 @@ async function runFlashcardStage(
   userId: string,
   jobId: string
 ): Promise<void> {
+  const testMode = testModeFromEnv(env);
   if (!env.OPENROUTER_API_KEY) {
     await updateDocumentStatus(env.DB, documentId, "completed", 100);
     await completeJob(env, jobId, 100);
@@ -582,6 +584,33 @@ export async function documentHasCorruptMarkdown(
   const markdown = await getMarkdown(env.USER_CONTENT, doc.r2_markdown_key);
   if (!markdown) return false;
   return isCorruptParsedMarkdown(markdown);
+}
+
+async function documentNeedsReprocess(
+  env: Bindings,
+  documentId: string,
+  doc: {
+    r2_markdown_key: string | null;
+    processing_status?: string | null;
+  }
+): Promise<boolean> {
+  if (await documentHasCorruptMarkdown(env, doc)) return true;
+
+  const status = doc.processing_status ?? "";
+  if (status === "failed") return true;
+
+  const testMode = testModeFromEnv(env);
+  if (!testMode) return false;
+
+  if (status !== "completed") return true;
+
+  const questionCount = await env.DB.prepare(
+    "SELECT COUNT(*) AS count FROM medgenius_questions WHERE document_id = ?"
+  )
+    .bind(documentId)
+    .first<{ count: number }>();
+
+  return (questionCount?.count ?? 0) === 0;
 }
 
 export async function reprocessDocument(
