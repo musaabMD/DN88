@@ -4,7 +4,11 @@ import { SignInButton } from "@clerk/clerk-react";
 import { FileText, Loader2, Upload } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { SS } from "@/components/splitscreen/splitscreen-theme";
-import { useClerkEnabled, useClientMounted } from "@/hooks/useClerkEnabled";
+import {
+  useClerkEnabled,
+  useClerkRuntime,
+  useClientMounted,
+} from "@/hooks/useClerkEnabled";
 import { CLERK_SIGN_IN_URL, CLERK_SIGN_UP_URL } from "@/lib/clerk";
 import { isClerkSignedIn } from "@/lib/clerk-token";
 import { sanitizeUserError } from "@/lib/medgenius/errors";
@@ -27,6 +31,7 @@ export function SplitScreenUploadScreen({
 }: SplitScreenUploadScreenProps) {
   const mounted = useClientMounted();
   const clerkEnabled = useClerkEnabled();
+  const clerkRuntime = useClerkRuntime();
   const signedIn = mounted && clerkEnabled && isClerkSignedIn();
   const inputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
@@ -157,7 +162,16 @@ export function SplitScreenUploadScreen({
             <p className="text-sm font-semibold" style={{ color: SS.sub }}>
               Sign in to upload and test the extraction pipeline.
             </p>
-            {clerkEnabled ? (
+            {!clerkRuntime.checked && !clerkEnabled ? (
+              <button
+                type="button"
+                disabled
+                className="mt-4 rounded-xl px-5 py-3 text-sm font-extrabold text-white opacity-60"
+                style={{ background: SS.blue }}
+              >
+                Sign in
+              </button>
+            ) : clerkEnabled ? (
               <SignInButton mode="modal">
                 <button
                   type="button"

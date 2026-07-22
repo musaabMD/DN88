@@ -1,14 +1,16 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
-import { isClerkActiveForHost } from "@/lib/clerk";
-
-function subscribe(): () => void {
-  return () => {};
-}
+import { useEffect, useSyncExternalStore } from "react";
+import {
+  ensureClerkRuntimeConfig,
+  getClerkRuntimeServerSnapshot,
+  getClerkRuntimeSnapshot,
+  isClerkRuntimeActiveForHost,
+  subscribeClerkRuntime,
+} from "@/lib/clerk-runtime";
 
 function getClerkEnabledSnapshot(): boolean {
-  return isClerkActiveForHost(window.location.hostname);
+  return isClerkRuntimeActiveForHost(window.location.hostname);
 }
 
 function getClerkEnabledServerSnapshot(): boolean {
@@ -17,17 +19,33 @@ function getClerkEnabledServerSnapshot(): boolean {
 
 /** True when the current hostname should use Clerk (drnote.co, not pages.dev). */
 export function useClerkEnabled(): boolean {
+  useEffect(() => {
+    void ensureClerkRuntimeConfig();
+  }, []);
+
   return useSyncExternalStore(
-    subscribe,
+    subscribeClerkRuntime,
     getClerkEnabledSnapshot,
     getClerkEnabledServerSnapshot
+  );
+}
+
+export function useClerkRuntime() {
+  useEffect(() => {
+    void ensureClerkRuntimeConfig();
+  }, []);
+
+  return useSyncExternalStore(
+    subscribeClerkRuntime,
+    getClerkRuntimeSnapshot,
+    getClerkRuntimeServerSnapshot
   );
 }
 
 /** True after the client has mounted (avoids hydration mismatch with Clerk UI). */
 export function useClientMounted(): boolean {
   return useSyncExternalStore(
-    subscribe,
+    () => () => {},
     () => true,
     () => false
   );

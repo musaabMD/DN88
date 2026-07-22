@@ -28,13 +28,9 @@ export function isClerkHost(hostname: string): boolean {
   return (CLERK_ENABLED_HOSTS as readonly string[]).includes(hostname);
 }
 
-/**
- * Clerk is optional. Treat missing or placeholder keys as "not configured"
- * so the app stays in guest mode until real keys are added.
- */
-export function isClerkConfigured(): boolean {
-  const key = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim();
+export function isPublishableKeyConfigured(key: string | null | undefined): key is string {
   if (!key) return false;
+  const trimmed = key.trim();
 
   const placeholders = [
     "your_key",
@@ -43,9 +39,17 @@ export function isClerkConfigured(): boolean {
     "changeme",
     "placeholder",
   ];
-  if (placeholders.some((p) => key.toLowerCase().includes(p))) return false;
+  if (placeholders.some((p) => trimmed.toLowerCase().includes(p))) return false;
 
-  return /^pk_(test|live)_[a-zA-Z0-9_$]+$/.test(key) && key.length > 20;
+  return /^pk_(test|live)_[a-zA-Z0-9_$]+$/.test(trimmed) && trimmed.length > 20;
+}
+
+/**
+ * Clerk is optional. Treat missing or placeholder keys as "not configured"
+ * so the app can fetch runtime config before enabling auth UI.
+ */
+export function isClerkConfigured(): boolean {
+  return isPublishableKeyConfigured(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 }
 
 export function isClerkActiveForHost(hostname: string): boolean {

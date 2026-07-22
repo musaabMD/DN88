@@ -7,7 +7,11 @@ import {
   SignInButton,
   UserButton,
 } from "@clerk/clerk-react";
-import { useClientMounted, useClerkEnabled } from "@/hooks/useClerkEnabled";
+import {
+  useClientMounted,
+  useClerkEnabled,
+  useClerkRuntime,
+} from "@/hooks/useClerkEnabled";
 import {
   CLERK_SIGN_IN_URL,
   CLERK_SIGN_UP_URL,
@@ -31,6 +35,19 @@ function AccountPortalAuthControls({ compact = false }: { compact?: boolean }) {
         {compact ? "Sign in" : "Get started"}
       </a>
     </>
+  );
+}
+
+function AuthLoadingControls({ compact = false }: { compact?: boolean }) {
+  return (
+    <button
+      type="button"
+      disabled
+      className={`${primaryNavButtonClass} opacity-60`}
+      aria-busy="true"
+    >
+      {compact ? "Sign in" : "Get started"}
+    </button>
   );
 }
 
@@ -66,7 +83,12 @@ function ClerkUserAuthControls({ compact = false }: { compact?: boolean }) {
 
 export function UserAuthControls({ compact = false }: { compact?: boolean }) {
   const clerkEnabled = useClerkEnabled();
+  const runtime = useClerkRuntime();
   const mounted = useClientMounted();
+
+  if (!mounted || (!runtime.checked && !clerkEnabled)) {
+    return <AuthLoadingControls compact={compact} />;
+  }
 
   if (!mounted || !clerkEnabled) {
     return <AccountPortalAuthControls compact={compact} />;

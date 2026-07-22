@@ -249,6 +249,20 @@ app.get("/health", (c) => {
   });
 });
 
+app.get("/api/public-config", (c) => {
+  return c.json(
+    {
+      clerk: {
+        publishableKey: c.env.CLERK_PUBLISHABLE_KEY || null,
+      },
+    },
+    200,
+    {
+      "Cache-Control": "public, max-age=300",
+    }
+  );
+});
+
 app.get("/catalog/articles/:file", async (c) => {
   const file = c.req.param("file");
   if (/^(dn88|dl88)-/i.test(file)) {
