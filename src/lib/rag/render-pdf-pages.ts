@@ -106,6 +106,10 @@ function mergeNativeAndOcrText(nativeText: string, ocrText: string) {
   return `${native}\n\n${ocr}`;
 }
 
+function countMeaningfulText(text: string) {
+  return (text.match(/[\p{L}\p{N}]/gu) ?? []).length;
+}
+
 export async function renderPdfPages(
   file: File,
   options?: {
@@ -130,14 +134,20 @@ export async function renderPdfPages(
   for (let pageNumber = 1; pageNumber <= total; pageNumber += 1) {
     options?.onProgress?.(pageNumber, total, "render");
     const page = await doc.getPage(pageNumber);
-    const viewport = page.getViewport({ scale });
     let pageImageUrl = "";
-    const width = Math.floor(viewport.width);
-    const height = Math.floor(viewport.height);
-    const needsCanvas = renderImages || ocrMode !== "never";
+    const baseViewport = page.getViewport({ scale: 1 });
+    const width = Math.floor(baseViewport.width * scale);
+    const height = Math.floor(baseViewport.height * scale);
+    const textContent = await page.getTextContent();
+    const nativeText = extractTextLines(textContent);
+    const shouldOcr =
+      ocrMode === "always" ||
+      (ocrMode === "auto" && countMeaningfulText(nativeText) < ocrMinChars);
+    const needsCanvas = renderImages || shouldOcr;
     let canvas: HTMLCanvasElement | null = null;
 
     if (needsCanvas) {
+      const viewport = page.getViewport({ scale });
       canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
@@ -147,18 +157,14 @@ export async function renderPdfPages(
       ctx.fillRect(0, 0, width, height);
 
       await page.render({ canvasContext: ctx, viewport }).promise;
-      pageImageUrl = canvas.toDataURL("image/jpeg", 0.82);
+      if (renderImages) {
+        pageImageUrl = canvas.toDataURL("image/jpeg", 0.82);
+      }
     }
 
-    const textContent = await page.getTextContent();
-    const nativeText = extractTextLines(textContent);
     let ocrText = "";
 
-    if (
-      canvas &&
-      (ocrMode === "always" ||
-        (ocrMode === "auto" && nativeText.replace(/\s+/g, "").length < ocrMinChars))
-    ) {
+    if (canvas && shouldOcr) {
       options?.onProgress?.(pageNumber, total, "ocr");
       ocrText = await recognizePageText(pageImageUrl || canvas.toDataURL("image/jpeg", 0.82));
     }
