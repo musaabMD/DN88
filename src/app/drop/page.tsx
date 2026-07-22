@@ -10,7 +10,7 @@ export default function DropPage() {
     <main className="h-[100dvh] w-full overflow-hidden bg-[#f7f6f2]">
       <iframe
         title="fileDrop"
-        src="https://filedrop.mousab-r.workers.dev"
+        src="https://filedrop.mousab-r.workers.dev/?simple=1"
         className="h-full w-full border-0"
         allow="clipboard-read; clipboard-write"
       />
