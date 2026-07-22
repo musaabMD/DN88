@@ -27,6 +27,10 @@ let runtimeConfig: RuntimeConfig | null = null;
 let runtimeChecked = Boolean(buildPublishableKey);
 let runtimePromise: Promise<void> | null = null;
 const listeners = new Set<() => void>();
+let cachedSnapshot: RuntimeSnapshot = {
+  checked: runtimeChecked,
+  publishableKey: buildPublishableKey,
+};
 
 function notifyListeners() {
   for (const listener of listeners) listener();
@@ -40,10 +44,19 @@ export function subscribeClerkRuntime(listener: () => void): () => void {
 export function getClerkRuntimeSnapshot(): RuntimeSnapshot {
   const runtimeKey = runtimeConfig?.publishableKey;
   const publishableKey = buildPublishableKey ?? runtimeKey ?? null;
-  return {
+  const nextSnapshot = {
     checked: runtimeChecked,
     publishableKey: isPublishableKeyConfigured(publishableKey) ? publishableKey : null,
   };
+
+  if (
+    cachedSnapshot.checked !== nextSnapshot.checked ||
+    cachedSnapshot.publishableKey !== nextSnapshot.publishableKey
+  ) {
+    cachedSnapshot = nextSnapshot;
+  }
+
+  return cachedSnapshot;
 }
 
 export function getClerkRuntimeServerSnapshot(): RuntimeSnapshot {
