@@ -5,6 +5,7 @@ import { FileText, Loader2, Upload } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { SS } from "@/components/splitscreen/splitscreen-theme";
 import { useClerkEnabled, useClientMounted } from "@/hooks/useClerkEnabled";
+import { CLERK_SIGN_IN_URL, CLERK_SIGN_UP_URL } from "@/lib/clerk";
 import {
   fetchDocumentStatus,
   MedGeniusApiError,
@@ -147,9 +148,22 @@ export function SplitScreenUploadScreen({
                 </button>
               </SignInButton>
             ) : (
-              <p className="mt-4 text-xs font-semibold" style={{ color: SS.faint }}>
-                Auth is only enabled on drnote.co
-              </p>
+              <div className="mt-4 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
+                <a
+                  href={CLERK_SIGN_IN_URL}
+                  className="rounded-xl px-5 py-3 text-sm font-extrabold text-white"
+                  style={{ background: SS.blue }}
+                >
+                  Sign in
+                </a>
+                <a
+                  href={CLERK_SIGN_UP_URL}
+                  className="rounded-xl border px-5 py-3 text-sm font-extrabold"
+                  style={{ borderColor: SS.panelBorder, color: SS.ink }}
+                >
+                  Create account
+                </a>
+              </div>
             )}
           </div>
         ) : (

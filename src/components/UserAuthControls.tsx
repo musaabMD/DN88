@@ -8,15 +8,29 @@ import {
   UserButton,
 } from "@clerk/clerk-react";
 import { useClientMounted, useClerkEnabled } from "@/hooks/useClerkEnabled";
-import { CLERK_USER_PROFILE_URL } from "@/lib/clerk";
+import {
+  CLERK_SIGN_IN_URL,
+  CLERK_SIGN_UP_URL,
+  CLERK_USER_PROFILE_URL,
+} from "@/lib/clerk";
 import { DASHBOARD_PATH } from "@/lib/routes";
 import { primaryNavButtonClass, primaryNavLinkClass } from "@/components/ProductSiteNav";
 
-function GuestAuthControls({ compact = false }: { compact?: boolean }) {
+function AccountPortalAuthControls({ compact = false }: { compact?: boolean }) {
   return (
-    <span className="text-xs font-bold text-[#AFAFAF]">
-      {compact ? "Guest" : "Guest mode"}
-    </span>
+    <>
+      {!compact ? (
+        <Link href={DASHBOARD_PATH} className={primaryNavLinkClass}>
+          Dashboard
+        </Link>
+      ) : null}
+      <a
+        href={compact ? CLERK_SIGN_IN_URL : CLERK_SIGN_UP_URL}
+        className={primaryNavButtonClass}
+      >
+        {compact ? "Sign in" : "Get started"}
+      </a>
+    </>
   );
 }
 
@@ -55,7 +69,7 @@ export function UserAuthControls({ compact = false }: { compact?: boolean }) {
   const mounted = useClientMounted();
 
   if (!mounted || !clerkEnabled) {
-    return <GuestAuthControls compact={compact} />;
+    return <AccountPortalAuthControls compact={compact} />;
   }
 
   return <ClerkUserAuthControls compact={compact} />;
