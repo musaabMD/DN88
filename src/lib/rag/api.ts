@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from "@/lib/api";
+import { extractDocumentLocally } from "./local-extraction";
 import type { DocumentExtractionResult } from "./schemas";
 
 async function ragFetch<T>(
@@ -30,7 +31,7 @@ export type RagHealth = {
   ok: boolean;
   triggerConfigured: boolean;
   openRouterConfigured?: boolean;
-  extractionMode?: "worker" | "trigger" | "worker_or_trigger" | "none";
+  extractionMode?: "local" | "worker" | "trigger" | "worker_or_trigger" | "none";
   projectRef: string;
 };
 
@@ -283,18 +284,12 @@ export async function extractDocument(
     onProgress?: (done: number, total: number, status?: string) => void;
   },
 ): Promise<DocumentExtractionResult> {
-  if (options.preferTrigger) {
-    return extractDocumentViaTrigger(
-      token,
-      documentId,
-      pages,
-      options.onProgress,
-    );
-  }
-
-  return extractDocumentViaWorker(token, documentId, pages, (done, total) =>
-    options.onProgress?.(done, total),
-  );
+  void token;
+  void options.preferTrigger;
+  options.onProgress?.(0, pages.length, "Extracting locally from PDF text…");
+  const result = extractDocumentLocally(documentId, pages);
+  options.onProgress?.(pages.length, pages.length, "Local extraction complete.");
+  return result;
 }
 
 export const EXAMPLE_EXTRACTED_QUESTION = {

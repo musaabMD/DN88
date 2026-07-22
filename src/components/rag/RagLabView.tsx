@@ -3,11 +3,7 @@
 import { SignInButton } from "@clerk/clerk-react";
 import { Loader2, Upload } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
-import {
-  extractDocument,
-  fetchRagHealth,
-  type RagHealth,
-} from "@/lib/rag/api";
+import { extractDocument } from "@/lib/rag/api";
 import { renderPdfPages, type RenderedPdfPage } from "@/lib/rag/render-pdf-pages";
 import type {
   CanonicalQuestion,
@@ -132,11 +128,6 @@ export function RagLabView() {
 
       try {
         const token = await getClerkToken();
-        const health = await fetchRagHealth(token);
-
-        if (!health.triggerConfigured && !health.openRouterConfigured) {
-          throw new Error("Extraction is not configured on the server.");
-        }
 
         const rendered = await renderPdfPages(picked, {
           scale: 1.5,
@@ -145,7 +136,7 @@ export function RagLabView() {
         });
 
         setPages(rendered);
-        setStatus(`Extracting ${rendered.length} page(s)…`);
+        setStatus(`Extracting ${rendered.length} page(s) locally…`);
 
         const merged = await extractDocument(
           token,
@@ -156,7 +147,7 @@ export function RagLabView() {
             pageImageUrl: p.pageImageUrl,
           })),
           {
-            preferTrigger: Boolean(health.triggerConfigured),
+            preferTrigger: false,
             onProgress: (done, total, batchStatus) => {
               setStatus(batchStatus ?? `Extracting page ${done}/${total}…`);
             },

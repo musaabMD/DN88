@@ -1,6 +1,6 @@
 /**
  * Client-side PDF page rendering helpers for the /rag lab.
- * Renders pages to data-URL PNGs for Trigger.dev vision extraction.
+ * Renders pages for review and preserves native text line breaks for local extraction.
  */
 
 export type RenderedPdfPage = {
@@ -21,6 +21,48 @@ async function loadPdfJs() {
     });
   }
   return pdfjsPromise;
+}
+
+function extractTextLines(textContent: { items: unknown[] }) {
+  const items = textContent.items as Array<{
+    str?: string;
+    transform?: number[];
+    width?: number;
+    height?: number;
+  }>;
+  const rows: Array<{ y: number; x: number; text: string }> = [];
+
+  for (const item of items) {
+    const text = item.str?.trim();
+    const transform = item.transform;
+
+    if (!text || !Array.isArray(transform)) {
+      continue;
+    }
+
+    rows.push({
+      x: Number(transform[4] ?? 0),
+      y: Number(transform[5] ?? 0),
+      text,
+    });
+  }
+
+  return rows
+    .sort((a, b) => Math.abs(b.y - a.y) > 3 ? b.y - a.y : a.x - b.x)
+    .reduce<Array<{ y: number; parts: string[] }>>((lines, item) => {
+      const current = lines.at(-1);
+
+      if (!current || Math.abs(current.y - item.y) > 3) {
+        lines.push({ y: item.y, parts: [item.text] });
+      } else {
+        current.parts.push(item.text);
+      }
+
+      return lines;
+    }, [])
+    .map((line) => line.parts.join(" ").replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .join("\n");
 }
 
 export async function renderPdfPages(
@@ -50,11 +92,7 @@ export async function renderPdfPages(
     await page.render({ canvasContext: ctx, viewport }).promise;
 
     const textContent = await page.getTextContent();
-    const pageText = textContent.items
-      .map((item) => ("str" in item ? item.str : ""))
-      .join(" ")
-      .replace(/\s+/g, " ")
-      .trim();
+    const pageText = extractTextLines(textContent);
 
     pages.push({
       pageNumber,
