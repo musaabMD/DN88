@@ -77,7 +77,11 @@ export function extractionToLocalDocument(params: {
   id: string;
   name: string;
   color: string;
-  pageTexts: Array<{ pageNumber: number; pageText: string }>;
+  pageTexts: Array<{
+    pageNumber: number;
+    pageText: string;
+    textSource?: "native" | "ocr" | "native+ocr" | "none";
+  }>;
   extraction: DocumentExtractionResult;
 }): LocalSplitScreenDocument {
   const rawMarkdown = buildMarkdown(params.name, params.pageTexts, params.extraction);
@@ -107,10 +111,19 @@ export function extractionToLocalDocument(params: {
     };
   });
 
-  const flashcards = questions.slice(0, 80).map((question) => ({
-    t: question.stem,
-    d: question.options[question.correct] ?? question.explain,
-  }));
+  const flashcards = questions.slice(0, 120).map((question, index) => {
+    const answer = question.options[question.correct] ?? "Review source answer";
+    return {
+      t: `Q${index + 1}: ${question.stem}`,
+      d: `${answer}\n\n${question.explain}`,
+    };
+  });
+
+  const pagesWithText = params.pageTexts.filter((page) => page.pageText.trim()).length;
+  const quizReady = params.extraction.questions.filter(
+    (question) => question.usabilityStatus === "quiz_ready",
+  ).length;
+  const reviewNeeded = Math.max(0, params.extraction.questions.length - quizReady);
 
   return {
     id: params.id,
@@ -124,9 +137,16 @@ export function extractionToLocalDocument(params: {
     summaries: [
       {
         id: `${params.id}_summary`,
-        type: "Local extraction",
-        content: `${params.extraction.pageCount} page(s), ${questions.length} question(s), processed locally in this browser.`,
+        type: "Extraction summary",
+        content: [
+          `${params.extraction.pageCount} pages processed locally.`,
+          `${pagesWithText} pages had extracted text.`,
+          `${questions.length} MCQs detected.`,
+          `${quizReady} quiz-ready questions.`,
+          reviewNeeded ? `${reviewNeeded} questions need review.` : "No review-only questions detected.",
+        ].join(" "),
       },
+      ...buildPageSummaries(params.pageTexts).slice(0, 12),
     ],
     createdAt: Date.now(),
   };
@@ -134,7 +154,11 @@ export function extractionToLocalDocument(params: {
 
 function buildMarkdown(
   title: string,
-  pageTexts: Array<{ pageNumber: number; pageText: string }>,
+  pageTexts: Array<{
+    pageNumber: number;
+    pageText: string;
+    textSource?: "native" | "ocr" | "native+ocr" | "none";
+  }>,
   extraction: DocumentExtractionResult,
 ): string {
   const chunks = [`# ${title}`];
@@ -162,8 +186,32 @@ function buildMarkdown(
   chunks.push("## Page Text");
   for (const page of pageTexts) {
     chunks.push(`### Page ${page.pageNumber}`);
+    chunks.push(`Source: ${page.textSource ?? "native"}`);
     chunks.push(page.pageText.trim() || "_No selectable text found on this page._");
   }
 
   return chunks.join("\n\n");
+}
+
+function buildPageSummaries(
+  pageTexts: Array<{
+    pageNumber: number;
+    pageText: string;
+    textSource?: "native" | "ocr" | "native+ocr" | "none";
+  }>,
+): HomeSummary[] {
+  return pageTexts
+    .filter((page) => page.pageText.trim().length > 80)
+    .map((page) => {
+      const lines = page.pageText
+        .split(/\n+/)
+        .map((line) => line.replace(/\s+/g, " ").trim())
+        .filter(Boolean);
+      const content = lines.slice(0, 5).join(" ");
+      return {
+        id: `page_${page.pageNumber}_summary`,
+        type: `Page ${page.pageNumber}`,
+        content: `${content.slice(0, 700)}${content.length > 700 ? "..." : ""}`,
+      };
+    });
 }

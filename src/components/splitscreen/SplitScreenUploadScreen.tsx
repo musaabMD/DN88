@@ -63,10 +63,18 @@ export function SplitScreenUploadScreen({
         .slice(2, 8)}`;
 
       const pages = await renderPdfPages(file, {
-        scale: 1,
+        scale: 1.6,
         renderImages: false,
-        onProgress: (done, total) => {
-          setStatusText(`Reading text ${done}/${total}…`);
+        ocr: "auto",
+        ocrMinChars: 180,
+        onProgress: (done, total, label) => {
+          if (label === "ocr") {
+            setStatusText(`OCR page ${done}/${total}…`);
+          } else if (label === "render") {
+            setStatusText(`Reading page ${done}/${total}…`);
+          } else {
+            setStatusText(`Text ready ${done}/${total} (${label ?? "native"})…`);
+          }
         },
       });
 
@@ -95,6 +103,7 @@ export function SplitScreenUploadScreen({
           pageTexts: pages.map((page) => ({
             pageNumber: page.pageNumber,
             pageText: page.pageText,
+            textSource: page.textSource,
           })),
           extraction,
         }),

@@ -6,6 +6,7 @@
 export type RenderedPdfPage = {
   pageNumber: number;
   pageText: string;
+  textSource: "native" | "ocr" | "native+ocr" | "none";
   pageImageUrl: string;
   width: number;
   height: number;
@@ -26,10 +27,27 @@ async function loadPdfJs() {
 function extractTextLines(textContent: { items: unknown[] }) {
   const items = textContent.items as Array<{
     str?: string;
+    hasEOL?: boolean;
     transform?: number[];
     width?: number;
     height?: number;
   }>;
+
+  const sequencedText = items
+    .map((item) => {
+      const text = item.str ?? "";
+      if (!text.trim()) return "";
+      return `${text}${item.hasEOL ? "\n" : " "}`;
+    })
+    .join("")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  if (sequencedText.length > 40) {
+    return sequencedText;
+  }
+
   const rows: Array<{ y: number; x: number; text: string }> = [];
 
   for (const item of items) {
@@ -65,13 +83,38 @@ function extractTextLines(textContent: { items: unknown[] }) {
     .join("\n");
 }
 
+async function recognizePageText(imageDataUrl: string) {
+  const { recognize } = await import("tesseract.js");
+  const result = await recognize(imageDataUrl, "eng+ara");
+  return result.data.text
+    .replace(/\u00d9/g, "ff")
+    .replace(/\u00fb/g, "fi")
+    .replace(/\u00f9/g, "fi")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function mergeNativeAndOcrText(nativeText: string, ocrText: string) {
+  const native = nativeText.trim();
+  const ocr = ocrText.trim();
+
+  if (!native) return ocr;
+  if (!ocr) return native;
+  if (ocr.length > native.length * 1.4) return ocr;
+  if (native.length > ocr.length * 1.4) return native;
+  return `${native}\n\n${ocr}`;
+}
+
 export async function renderPdfPages(
   file: File,
   options?: {
     maxPages?: number;
     scale?: number;
     renderImages?: boolean;
-    onProgress?: (done: number, total: number) => void;
+    ocr?: "never" | "auto" | "always";
+    ocrMinChars?: number;
+    onProgress?: (done: number, total: number, label?: string) => void;
   },
 ): Promise<RenderedPdfPage[]> {
   const pdfjs = await loadPdfJs();
@@ -80,38 +123,66 @@ export async function renderPdfPages(
   const total = Math.min(doc.numPages, options?.maxPages ?? doc.numPages);
   const scale = options?.scale ?? 1.5;
   const renderImages = options?.renderImages ?? true;
+  const ocrMode = options?.ocr ?? "never";
+  const ocrMinChars = options?.ocrMinChars ?? 140;
   const pages: RenderedPdfPage[] = [];
 
   for (let pageNumber = 1; pageNumber <= total; pageNumber += 1) {
+    options?.onProgress?.(pageNumber, total, "render");
     const page = await doc.getPage(pageNumber);
     const viewport = page.getViewport({ scale });
     let pageImageUrl = "";
     const width = Math.floor(viewport.width);
     const height = Math.floor(viewport.height);
+    const needsCanvas = renderImages || ocrMode !== "never";
+    let canvas: HTMLCanvasElement | null = null;
 
-    if (renderImages) {
-      const canvas = document.createElement("canvas");
+    if (needsCanvas) {
+      canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
-      const ctx = canvas.getContext("2d");
+      const ctx = canvas.getContext("2d", { alpha: false });
       if (!ctx) throw new Error("Canvas 2D context unavailable");
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, width, height);
 
       await page.render({ canvasContext: ctx, viewport }).promise;
-      pageImageUrl = canvas.toDataURL("image/png");
+      pageImageUrl = canvas.toDataURL("image/jpeg", 0.82);
     }
 
     const textContent = await page.getTextContent();
-    const pageText = extractTextLines(textContent);
+    const nativeText = extractTextLines(textContent);
+    let ocrText = "";
+
+    if (
+      canvas &&
+      (ocrMode === "always" ||
+        (ocrMode === "auto" && nativeText.replace(/\s+/g, "").length < ocrMinChars))
+    ) {
+      options?.onProgress?.(pageNumber, total, "ocr");
+      ocrText = await recognizePageText(pageImageUrl || canvas.toDataURL("image/jpeg", 0.82));
+    }
+
+    const pageText = mergeNativeAndOcrText(nativeText, ocrText);
+    const textSource =
+      nativeText.trim() && ocrText.trim()
+        ? "native+ocr"
+        : ocrText.trim()
+          ? "ocr"
+          : nativeText.trim()
+            ? "native"
+            : "none";
 
     pages.push({
       pageNumber,
       pageText,
+      textSource,
       pageImageUrl,
       width,
       height,
     });
 
-    options?.onProgress?.(pageNumber, total);
+    options?.onProgress?.(pageNumber, total, textSource);
   }
 
   return pages;

@@ -116,13 +116,13 @@ function splitQuestionBlocks(text: string) {
     return [];
   }
 
-  const numberedBlocks = normalized
-    .split(/\n(?=(?:Q(?:uestion)?\s*)?\d{1,4}[\).:-]\s+)/i)
+  const paragraphBlocks = normalized
+    .split(/\n\s*\n+/)
     .map((block) => block.trim())
-    .filter((block) => block.split(/\n/).length >= 2);
+    .filter((block) => block.split(/\n/).filter(Boolean).length >= 3);
 
-  if (numberedBlocks.length > 1) {
-    return numberedBlocks;
+  if (paragraphBlocks.length > 1) {
+    return paragraphBlocks;
   }
 
   const lines = normalized
@@ -133,7 +133,7 @@ function splitQuestionBlocks(text: string) {
   let current: string[] = [];
 
   for (const line of lines) {
-    if (startsNewRecallBlock(line, current)) {
+    if (startsNewRecallBlock(line, current) || startsNewNumberedBlock(line, current)) {
       blocks.push(current);
       current = [line];
     } else {
@@ -148,6 +148,10 @@ function splitQuestionBlocks(text: string) {
   return blocks
     .map((block) => block.join("\n"))
     .filter((block) => block.split(/\n/).length >= 3);
+}
+
+function startsNewNumberedBlock(line: string, current: string[]) {
+  return current.length >= 3 && /^(?:Q(?:uestion)?\s*)?\d{1,4}[\).:-]\s+/i.test(line);
 }
 
 function startsNewRecallBlock(line: string, current: string[]) {
