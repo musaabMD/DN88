@@ -16,6 +16,11 @@ import { HomeLocaleProvider, useHomeLocale } from "@/components/home/HomeLocaleP
 import { MedGeniusCreditsProvider, useMedGeniusCreditsContext } from "@/lib/medgenius/credits-context";
 import { getDemoFilesForExam, isDemoFilesForced } from "@/lib/medgenius/demo-files";
 import { useDocumentStudy, useExamDocuments } from "@/lib/medgenius/home-data";
+import {
+  isLocalSplitScreenDocumentId,
+  loadLocalSplitScreenDocument,
+  type LocalSplitScreenDocument,
+} from "@/lib/splitscreen/local-documents";
 
 const MOBILE_MAX_WIDTH = 767;
 
@@ -76,12 +81,39 @@ function SplitScreenInner() {
   const [mobilePane, setMobilePane] = useState<SplitScreenMobilePane>("pdf");
   const [pendingAskQuote, setPendingAskQuote] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [localDocument, setLocalDocument] = useState<LocalSplitScreenDocument | null>(null);
+  const [localLoading, setLocalLoading] = useState(false);
   const examId = searchParams.get("exam") ?? "smle";
   const docParam = searchParams.get("doc");
   const useDemo = isDemoFilesForced() || searchParams.get("demo") === "1";
   const exam = EXAMS.find((item) => item.id === examId) ?? EXAMS[0];
   const { files: liveFiles } = useExamDocuments(exam.id, refreshKey);
   const demoFiles = useMemo(() => getDemoFilesForExam(exam.id), [exam.id]);
+
+  useEffect(() => {
+    if (!isLocalSplitScreenDocumentId(docParam)) {
+      setLocalDocument(null);
+      setLocalLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLocalLoading(true);
+    void loadLocalSplitScreenDocument(docParam)
+      .then((document) => {
+        if (!cancelled) setLocalDocument(document);
+      })
+      .catch(() => {
+        if (!cancelled) setLocalDocument(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLocalLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [docParam]);
 
   useEffect(() => {
     setMounted(true);
@@ -113,6 +145,22 @@ function SplitScreenInner() {
   );
 
   const file = useMemo(() => {
+    if (localDocument) {
+      return {
+        id: localDocument.id,
+        name: localDocument.name,
+        author: "Local extraction",
+        pages: localDocument.pageCount,
+        color: localDocument.color,
+        votes: { today: 0, week: 0, month: 0, all: 0 },
+        documentId: undefined,
+        localQuestions: localDocument.questions,
+        localReadPages: localDocument.readPages,
+        localRawMarkdown: localDocument.rawMarkdown,
+        localFlashcards: localDocument.flashcards,
+        localSummaries: localDocument.summaries,
+      };
+    }
     if (docParam) {
       const live = liveFiles.find((item) => item.documentId === docParam || item.id === docParam);
       if (live) return live;
@@ -131,10 +179,18 @@ function SplitScreenInner() {
       };
     }
     return null;
-  }, [docParam, demoFiles, liveFiles, useDemo]);
+  }, [docParam, demoFiles, liveFiles, localDocument, useDemo]);
 
   const documentStudy = useDocumentStudy(file?.documentId);
   const testMode = Boolean(credits?.testMode);
+
+  if (mounted && localLoading) {
+    return (
+      <div className="flex h-full items-center justify-center p-6 text-sm font-semibold" style={{ color: SS.sub }}>
+        Loading extracted file…
+      </div>
+    );
+  }
 
   if (mounted && !file) {
     return (
@@ -154,8 +210,8 @@ function SplitScreenInner() {
         pages={file.pages}
         color={file.color}
         documentId={file.documentId}
-        readPages={content.readPages}
-        rawMarkdown={documentStudy.rawMarkdown}
+        readPages={localDocument?.readPages ?? documentStudy.readPages ?? content.readPages}
+        rawMarkdown={localDocument?.rawMarkdown ?? documentStudy.rawMarkdown}
         markdownLoading={Boolean(file.documentId && documentStudy.loading)}
         onAskSelection={handleAskFromPdf}
       />

@@ -6,13 +6,14 @@ import { useCallback, useRef, useState } from "react";
 import { SS } from "@/components/splitscreen/splitscreen-theme";
 import { useClerkEnabled, useClientMounted } from "@/hooks/useClerkEnabled";
 import { CLERK_SIGN_IN_URL, CLERK_SIGN_UP_URL } from "@/lib/clerk";
-import {
-  fetchDocumentStatus,
-  MedGeniusApiError,
-  uploadDocument,
-} from "@/lib/medgenius/api";
-import { getClerkToken, isClerkSignedIn } from "@/lib/clerk-token";
+import { isClerkSignedIn } from "@/lib/clerk-token";
 import { sanitizeUserError } from "@/lib/medgenius/errors";
+import { extractDocument } from "@/lib/rag/api";
+import { renderPdfPages } from "@/lib/rag/render-pdf-pages";
+import {
+  extractionToLocalDocument,
+  saveLocalSplitScreenDocument,
+} from "@/lib/splitscreen/local-documents";
 
 type SplitScreenUploadScreenProps = {
   examId: string;
@@ -21,7 +22,6 @@ type SplitScreenUploadScreenProps = {
 };
 
 export function SplitScreenUploadScreen({
-  examId,
   testMode,
   onUploaded,
 }: SplitScreenUploadScreenProps) {
@@ -49,52 +49,63 @@ export function SplitScreenUploadScreen({
     }
   }, [name]);
 
-  const pollUntilReady = useCallback(async (documentId: string, token: string | null) => {
-    for (let attempt = 0; attempt < 120; attempt += 1) {
-      const doc = await fetchDocumentStatus(token, documentId);
-      if (doc.status === "completed" || doc.status === "failed") {
-        return doc;
-      }
-      setStatusText(`Processing… ${doc.progress ?? 0}% (${doc.status})`);
-      await new Promise((resolve) => window.setTimeout(resolve, 3000));
-    }
-    return fetchDocumentStatus(token, documentId);
-  }, []);
-
   const handleUpload = async () => {
     if (!file || !name.trim() || uploading) return;
     if (!signedIn) return;
 
     setUploading(true);
     setError(null);
-    setStatusText("Uploading PDF…");
+    setStatusText("Reading PDF locally…");
 
     try {
-      const token = await getClerkToken();
-      const result = await uploadDocument(token, {
-        file,
-        name: name.trim(),
-        examId,
+      const documentId = `local_${Date.now().toString(36)}_${Math.random()
+        .toString(36)
+        .slice(2, 8)}`;
+
+      const pages = await renderPdfPages(file, {
+        scale: 1,
+        renderImages: false,
+        onProgress: (done, total) => {
+          setStatusText(`Reading text ${done}/${total}…`);
+        },
       });
 
-      if (result.duplicate) {
-        onUploaded(result.documentId);
-        return;
-      }
+      setStatusText(`Extracting questions from ${pages.length} page(s)…`);
+      const extraction = await extractDocument(
+        null,
+        documentId,
+        pages.map((page) => ({
+          pageNumber: page.pageNumber,
+          pageText: page.pageText,
+        })),
+        {
+          preferTrigger: false,
+          onProgress: (done, total, text) => {
+            setStatusText(text ?? `Extracting ${done}/${total}…`);
+          },
+        },
+      );
 
-      setStatusText("Parsing pages and extracting questions…");
-      const doc = await pollUntilReady(result.documentId, token);
+      setStatusText("Opening split screen…");
+      await saveLocalSplitScreenDocument(
+        extractionToLocalDocument({
+          id: documentId,
+          name: name.trim(),
+          color: SS.green,
+          pageTexts: pages.map((page) => ({
+            pageNumber: page.pageNumber,
+            pageText: page.pageText,
+          })),
+          extraction,
+        }),
+      );
 
-      if (doc.status === "failed") {
-        throw new Error(doc.error ?? "Processing failed");
-      }
-
-      onUploaded(result.documentId);
+      onUploaded(documentId);
     } catch (err) {
-      const message =
-        err instanceof MedGeniusApiError
-          ? err.message
-          : sanitizeUserError(err instanceof Error ? err.message : "Upload failed", "upload");
+      const message = sanitizeUserError(
+        err instanceof Error ? err.message : "Local extraction failed",
+        "upload",
+      );
       setError(message);
       setStatusText(null);
     } finally {

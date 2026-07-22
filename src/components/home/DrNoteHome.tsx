@@ -85,6 +85,11 @@ interface ExamFile {
   status?: string;
   progress?: number;
   isLive?: boolean;
+  localQuestions?: HomeQuestion[];
+  localReadPages?: HomeReadPage[];
+  localRawMarkdown?: string;
+  localFlashcards?: HomeFlashCard[];
+  localSummaries?: HomeSummary[];
 }
 
 const EXAMS: Exam[] = [
@@ -1366,10 +1371,10 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, splitScreen, p
   const studyTabs = splitScreen ? TABS.filter(({ key }) => key !== "Read") : TABS;
   const live = useDocumentStudy(clerkEnabled && file.documentId ? file.documentId : undefined);
   const useLive = Boolean(clerkEnabled && file.documentId);
-  const questions: HomeQuestion[] = useLive ? live.questions : content.questions;
-  const readPages: HomeReadPage[] = useLive ? live.readPages : content.readPages;
-  const flashcards: HomeFlashCard[] = useLive ? live.flashcards : content.cards;
-  const summaries: HomeSummary[] = useLive ? live.summaries : [];
+  const questions: HomeQuestion[] = useLive ? live.questions : (file.localQuestions ?? content.questions);
+  const readPages: HomeReadPage[] = useLive ? live.readPages : (file.localReadPages ?? content.readPages);
+  const flashcards: HomeFlashCard[] = useLive ? live.flashcards : (file.localFlashcards ?? content.cards);
+  const summaries: HomeSummary[] = useLive ? live.summaries : (file.localSummaries ?? []);
   const processing = useLive && live.status && live.status !== "completed" && live.status !== "failed";
   const analytics = useHomeAnalytics(useLive);
   const backendSessionRef = useRef<string | null>(null);
@@ -1768,7 +1773,7 @@ function Study({ file, exam, saved, onToggleSave, onClose, flash, splitScreen, p
             key={file.id}
             file={file}
             pages={readPages}
-            rawMarkdown={useLive ? live.rawMarkdown : null}
+            rawMarkdown={useLive ? live.rawMarkdown : (file.localRawMarkdown ?? null)}
             canReprocess={useLive && Boolean(file.documentId)}
             reprocessing={reprocessing}
             onReprocess={handleReprocess}

@@ -70,6 +70,7 @@ export async function renderPdfPages(
   options?: {
     maxPages?: number;
     scale?: number;
+    renderImages?: boolean;
     onProgress?: (done: number, total: number) => void;
   },
 ): Promise<RenderedPdfPage[]> {
@@ -78,18 +79,26 @@ export async function renderPdfPages(
   const doc = await pdfjs.getDocument({ data }).promise;
   const total = Math.min(doc.numPages, options?.maxPages ?? doc.numPages);
   const scale = options?.scale ?? 1.5;
+  const renderImages = options?.renderImages ?? true;
   const pages: RenderedPdfPage[] = [];
 
   for (let pageNumber = 1; pageNumber <= total; pageNumber += 1) {
     const page = await doc.getPage(pageNumber);
     const viewport = page.getViewport({ scale });
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.floor(viewport.width);
-    canvas.height = Math.floor(viewport.height);
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Canvas 2D context unavailable");
+    let pageImageUrl = "";
+    const width = Math.floor(viewport.width);
+    const height = Math.floor(viewport.height);
 
-    await page.render({ canvasContext: ctx, viewport }).promise;
+    if (renderImages) {
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas 2D context unavailable");
+
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      pageImageUrl = canvas.toDataURL("image/png");
+    }
 
     const textContent = await page.getTextContent();
     const pageText = extractTextLines(textContent);
@@ -97,9 +106,9 @@ export async function renderPdfPages(
     pages.push({
       pageNumber,
       pageText,
-      pageImageUrl: canvas.toDataURL("image/png"),
-      width: canvas.width,
-      height: canvas.height,
+      pageImageUrl,
+      width,
+      height,
     });
 
     options?.onProgress?.(pageNumber, total);
