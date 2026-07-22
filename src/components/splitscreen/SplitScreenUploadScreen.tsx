@@ -77,6 +77,8 @@ export function SplitScreenUploadScreen({
       });
 
       if (result.duplicate) {
+        setStatusText("Using existing upload — opening split screen…");
+        await pollUntilReady(result.documentId, token);
         onUploaded(result.documentId);
         return;
       }

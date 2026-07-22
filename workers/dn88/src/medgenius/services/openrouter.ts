@@ -90,8 +90,12 @@ Rules:
 - Include questions even when the answer key is missing (set correctAnswer null, confidence low)
 - Never invent questions not present in the source chunk
 - Always set page to the PDF page number provided in the user message
+- Adjacent-page context may be included for stems/options that cross a page break — use it to complete questions that start or continue on this page; do not extract questions that belong entirely to another page
 - When images are attached, use imageRefs (0-based indices) for questions that reference ECGs, scans, histology, or diagrams
 - Image-based MCQs: describe what the image shows in cleanedText when the stem references a figure`;
+
+/** Characters of neighboring pages to include so vignettes spanning page breaks stay intact. */
+const ADJACENT_PAGE_OVERLAP_CHARS = 1_200;
 
 export function chunkMarkdownForExtraction(markdown: string, maxChunkSize = 18_000): string[] {
   if (markdown.length <= maxChunkSize) return [markdown];
@@ -126,12 +130,49 @@ export type PageExtractionInput = {
   imageDataUrls?: string[];
 };
 
+function tailText(text: string, maxChars: number): string {
+  const trimmed = text.trim();
+  if (trimmed.length <= maxChars) return trimmed;
+  return trimmed.slice(-maxChars);
+}
+
+function headText(text: string, maxChars: number): string {
+  const trimmed = text.trim();
+  if (trimmed.length <= maxChars) return trimmed;
+  return trimmed.slice(0, maxChars);
+}
+
 function buildPageExtractionContent(
   documentName: string,
   page: PageExtractionInput,
-  pageTotal: number
+  pageTotal: number,
+  adjacent?: { previous?: string; next?: string }
 ): OpenRouterChatMessage["content"] {
-  const header = `Document: ${documentName}\nPDF page ${page.pageNumber} of ${pageTotal}\n\n${page.markdown}`;
+  const sections: string[] = [
+    `Document: ${documentName}`,
+    `PDF page ${page.pageNumber} of ${pageTotal}`,
+    "",
+  ];
+
+  if (adjacent?.previous?.trim()) {
+    sections.push(
+      `--- Context from end of previous page (for incomplete stems only) ---`,
+      adjacent.previous.trim(),
+      ""
+    );
+  }
+
+  sections.push(`--- Current page (extract questions from here) ---`, page.markdown);
+
+  if (adjacent?.next?.trim()) {
+    sections.push(
+      "",
+      `--- Context from start of next page (for options/answers continuing past the break) ---`,
+      adjacent.next.trim()
+    );
+  }
+
+  const header = sections.join("\n");
   const parts: OpenRouterContentPart[] = [{ type: "text", text: header }];
 
   const dataUrls = page.imageDataUrls ?? [];
@@ -158,7 +199,8 @@ async function extractQuestionsFromPage(
   apiKey: string,
   page: PageExtractionInput,
   documentName: string,
-  pageTotal: number
+  pageTotal: number,
+  adjacent?: { previous?: string; next?: string }
 ): Promise<string> {
   const result = await chatCompletion(
     apiKey,
@@ -166,7 +208,7 @@ async function extractQuestionsFromPage(
       { role: "system", content: EXTRACTION_SYSTEM_PROMPT },
       {
         role: "user",
-        content: buildPageExtractionContent(documentName, page, pageTotal),
+        content: buildPageExtractionContent(documentName, page, pageTotal, adjacent),
       },
     ],
     { model: EXTRACTION_MODEL, jsonMode: true, maxTokens: 8192, temperature: 0.2 }
@@ -182,14 +224,28 @@ export async function extractQuestionsFromPages(
   const merged = new Map<string, ExtractedQuestion>();
   const pageTotal = pages.length;
 
-  for (const page of pages) {
-    if (!page.markdown.trim()) continue;
+  for (let index = 0; index < pages.length; index += 1) {
+    const page = pages[index];
+    if (!page || !page.markdown.trim()) continue;
+
+    const previousPage = pages[index - 1];
+    const nextPage = pages[index + 1];
+    const adjacent = {
+      previous: previousPage?.markdown
+        ? tailText(previousPage.markdown, ADJACENT_PAGE_OVERLAP_CHARS)
+        : undefined,
+      next: nextPage?.markdown
+        ? headText(nextPage.markdown, ADJACENT_PAGE_OVERLAP_CHARS)
+        : undefined,
+    };
+
     try {
       const jsonContent = await extractQuestionsFromPage(
         apiKey,
         page,
         documentName,
-        pageTotal
+        pageTotal,
+        adjacent
       );
       const parsed = parseLlmJsonContent(jsonContent) as {
         questions?: Array<

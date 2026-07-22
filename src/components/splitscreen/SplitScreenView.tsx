@@ -4,8 +4,8 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { SplitScreenPdfPanel } from "@/components/splitscreen/SplitScreenPdfPanel";
-import { SplitScreenPanelShell } from "@/components/splitscreen/SplitScreenPanelShell";
 import {
   SplitScreenMobileToggle,
   type SplitScreenMobilePane,
@@ -15,7 +15,11 @@ import { SS } from "@/components/splitscreen/splitscreen-theme";
 import { HomeLocaleProvider, useHomeLocale } from "@/components/home/HomeLocaleProvider";
 import { MedGeniusCreditsProvider, useMedGeniusCreditsContext } from "@/lib/medgenius/credits-context";
 import { getDemoFilesForExam, isDemoFilesForced } from "@/lib/medgenius/demo-files";
-import { useDocumentStudy, useExamDocuments } from "@/lib/medgenius/home-data";
+import {
+  useDocumentStudy,
+  useExamDocuments,
+  useResolvedExamFile,
+} from "@/lib/medgenius/home-data";
 
 const MOBILE_MAX_WIDTH = 767;
 
@@ -81,6 +85,11 @@ function SplitScreenInner() {
   const useDemo = isDemoFilesForced() || searchParams.get("demo") === "1";
   const exam = EXAMS.find((item) => item.id === examId) ?? EXAMS[0];
   const { files: liveFiles } = useExamDocuments(exam.id, refreshKey);
+  const { file: resolvedFile, loading: resolvingDoc, error: resolveError } = useResolvedExamFile(
+    docParam,
+    liveFiles,
+    refreshKey
+  );
   const demoFiles = useMemo(() => getDemoFilesForExam(exam.id), [exam.id]);
 
   useEffect(() => {
@@ -113,10 +122,7 @@ function SplitScreenInner() {
   );
 
   const file = useMemo(() => {
-    if (docParam) {
-      const live = liveFiles.find((item) => item.documentId === docParam || item.id === docParam);
-      if (live) return live;
-    }
+    if (docParam && resolvedFile) return resolvedFile;
     if (useDemo) {
       const demo = demoFiles[0];
       if (!demo) return null;
@@ -131,12 +137,59 @@ function SplitScreenInner() {
       };
     }
     return null;
-  }, [docParam, demoFiles, liveFiles, useDemo]);
+  }, [docParam, demoFiles, resolvedFile, useDemo]);
 
   const documentStudy = useDocumentStudy(file?.documentId);
   const testMode = Boolean(credits?.testMode);
 
-  if (mounted && !file) {
+  const readPagesForPdf = useMemo(() => {
+    if (file?.documentId && documentStudy.readPages.length > 0) {
+      return documentStudy.readPages;
+    }
+    return content.readPages;
+  }, [content.readPages, documentStudy.readPages, file?.documentId]);
+
+  if (!mounted) {
+    return (
+      <div className="flex h-[100dvh] items-center justify-center" style={{ background: SS.pageBg }}>
+        <Loader2 className="animate-spin" size={28} style={{ color: SS.blue }} />
+      </div>
+    );
+  }
+
+  if (docParam && resolvingDoc) {
+    return (
+      <div
+        className="flex h-[100dvh] flex-col items-center justify-center gap-3 px-4"
+        style={{ background: SS.pageBg, color: SS.ink }}
+      >
+        <Loader2 className="animate-spin" size={32} style={{ color: SS.blue }} />
+        <p className="text-sm font-semibold" style={{ color: SS.sub }}>
+          Loading your document…
+        </p>
+      </div>
+    );
+  }
+
+  if (resolveError && docParam) {
+    return (
+      <div
+        className="flex h-[100dvh] flex-col items-center justify-center gap-3 px-4 text-center"
+        style={{ background: SS.pageBg, color: SS.ink }}
+      >
+        <p className="text-sm font-semibold text-red-600">{resolveError}</p>
+        <Link
+          href={`/splitscreen?exam=${encodeURIComponent(examId)}`}
+          className="rounded-xl border bg-white px-4 py-2 text-sm font-extrabold"
+          style={{ borderColor: SS.panelBorder, color: SS.sub }}
+        >
+          Back to upload
+        </Link>
+      </div>
+    );
+  }
+
+  if (!file) {
     return (
       <SplitScreenUploadScreen
         examId={examId}
@@ -146,26 +199,19 @@ function SplitScreenInner() {
     );
   }
 
-  const pdfPanel =
-    file ? (
-      <SplitScreenPdfPanel
-        fileId={file.id}
-        fileName={file.name}
-        pages={file.pages}
-        color={file.color}
-        documentId={file.documentId}
-        readPages={content.readPages}
-        rawMarkdown={documentStudy.rawMarkdown}
-        markdownLoading={Boolean(file.documentId && documentStudy.loading)}
-        onAskSelection={handleAskFromPdf}
-      />
-    ) : (
-      <SplitScreenPanelShell title="Original PDF" subtitle="No file" accent="#94A3B8">
-        <div className="flex h-full items-center justify-center p-6 text-sm font-semibold" style={{ color: SS.sub }}>
-          No demo file available
-        </div>
-      </SplitScreenPanelShell>
-    );
+  const pdfPanel = (
+    <SplitScreenPdfPanel
+      fileId={file.id}
+      fileName={file.name}
+      pages={file.pages}
+      color={file.color}
+      documentId={file.documentId}
+      readPages={readPagesForPdf}
+      rawMarkdown={documentStudy.rawMarkdown}
+      markdownLoading={Boolean(file.documentId && documentStudy.loading && !documentStudy.rawMarkdown)}
+      onAskSelection={handleAskFromPdf}
+    />
+  );
 
   const studyShellStyle = {
     borderColor: SS.panelBorder,
@@ -174,17 +220,12 @@ function SplitScreenInner() {
   const studyShellClass =
     "flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border bg-white";
 
-  const studyPanel = !mounted ? (
-    <div className={studyShellClass} style={studyShellStyle}>
-      <div className="flex h-full items-center justify-center p-6 text-sm font-semibold" style={{ color: SS.sub }}>
-        Loading study panel…
-      </div>
-    </div>
-  ) : file && exam ? (
+  const studyPanel = file && exam ? (
     <div className={studyShellClass} style={studyShellStyle}>
       <SplitScreenStudyPanel
         file={file}
         exam={exam}
+        documentStudy={documentStudy}
         pendingAskQuote={pendingAskQuote}
         onPendingAskHandled={handlePendingAskHandled}
       />
@@ -197,12 +238,7 @@ function SplitScreenInner() {
     </div>
   );
 
-  const panelArea = !mounted ? (
-    <div className="grid h-full grid-cols-1 gap-3 md:grid-cols-2">
-      {pdfPanel}
-      <div className="hidden md:block">{studyPanel}</div>
-    </div>
-  ) : isMobile ? (
+  const panelArea = isMobile ? (
     <div className="flex h-full min-h-0 flex-col gap-2">
       <SplitScreenMobileToggle pane={mobilePane} onPaneChange={setMobilePane} />
       <div className="min-h-0 flex-1">
@@ -227,8 +263,13 @@ function SplitScreenInner() {
             {isMobile ? (mobilePane === "pdf" ? "PDF" : "Study") : "Split screen"}
           </p>
           <h1 className="truncate text-sm font-black tracking-tight sm:text-base" style={{ color: SS.ink }}>
-            {file?.name ?? "Pick a file"}
+            {file.name}
           </h1>
+          {documentStudy.processingError ? (
+            <p className="mt-0.5 truncate text-[11px] font-semibold text-amber-700">
+              {documentStudy.processingError}
+            </p>
+          ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Link
